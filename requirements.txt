@@ -1,0 +1,7 @@
+requests>=2.31
+flet>=0.24
+fastapi>=0.115
+uvicorn>=0.30
+pydantic>=2.7
+psutil>=5.9
+pyttsx3>=2.90
