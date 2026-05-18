@@ -1,0 +1,31 @@
+
+
+Update consensus\_themes.py (new or merged from your existing structure) to include:
+
+WH40K → your full Inquisition ASCII
+
+EVA/NERV → your full NERV logo
+
+Helldivers → your Helldivers banner
+
+Arasaka → your Arasaka ASCII
+
+Janus → your Janus ASCII
+
+Each with its own animation sequence, colors, and style configuration.
+
+Patch main.py so:
+
+It loads the correct theme’s logo & animation at boot.
+
+Theme dropdown includes all five themes.
+
+On theme selection (or at startup with default), it applies:
+
+Logo
+
+Animation speed
+
+Color palette
+
+Background & font adjustments

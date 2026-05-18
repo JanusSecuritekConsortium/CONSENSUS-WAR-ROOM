@@ -1,0 +1,48 @@
+{
+  "MILITARY": {
+    "title": "TACTICAL BIOS 6.1.1 \u2014 (C) ARASAKA CORPORATION",
+    "steps": [
+      "Initializing mission-critical systems...",
+      "Establishing monolith uplinks",
+      "Rationalis operational",
+      "Bellator calibrated",
+      "Aeternum memory context restored",
+      "Voice system online",
+      "Verdict transmission enabled"
+    ]
+  },
+  "EVA": {
+    "title": "BOOTING MAGI SYSTEM \u2014 NERV HQ",
+    "steps": [
+      "Harmonizing cognitive triad...",
+      "SYNAPSE: OK | LORE: OK | RATIO: OK",
+      "Activating cortical bridge",
+      "Memory buffer synchronization",
+      "Voice carrier modulator online",
+      "Judgement gate aligned"
+    ]
+  },
+  "WH40K": {
+    "title": "AWAKENING MACHINE SPIRIT \u2014 MARS FORGE",
+    "steps": [
+      "Chanting Litany of Activation...",
+      "Purging corrupted logic circuits",
+      "Igniting sacred cogitators",
+      "Blessing memory banks",
+      "Servitor binding successful",
+      "Vox-comms calibrated to Noosphere",
+      "Judgement seal sanctified"
+    ]
+  },
+  "HELLDIVERS": {
+    "title": "DEPLOYING DEMOCRACY MODULES \u2014 SUPER EARTH",
+    "steps": [
+      "Activating Patriot Protocol...",
+      "Scanning for bugs (and traitors)",
+      "Reinforcing liberty algorithms",
+      "Inserting Truth Serum into pipeline",
+      "Voice of Freedom: OK",
+      "Ready to spread Managed Democracy\u2122"
+    ]
+  }
+}
