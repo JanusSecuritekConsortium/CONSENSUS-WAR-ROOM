@@ -106,6 +106,20 @@ Common backend choices:
 - `future_implementations/`: Riko and Flet prototype material for later work
 - `archive/`: historical code snapshots and imported demos
 
+## Wider Local Workspace
+
+This repository sits inside a larger `G:\` workspace that includes Msty Studio,
+local model folders, TARS assets, Kiwix/Msty knowledge exports, Flet prototypes,
+and Obsidian notes. See:
+
+- `docs/WORKSPACE_ECOSYSTEM.md`
+- `docs/MSTY_STUDIO_CONTEXT.md`
+- `scripts/workspace_inventory.ps1`
+
+Those files document how the project relates to the wider local system without
+committing installed applications, model weights, private notes, or generated
+runtime data.
+
 ## Git Hygiene
 
 The repository intentionally ignores runtime state, caches, logs, memory dumps,
