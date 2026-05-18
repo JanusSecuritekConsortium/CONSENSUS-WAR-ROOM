@@ -1,0 +1,97 @@
+================================================================================
+   ███████╗██╗  ██╗ ██████╗ ██████╗ ███╗   ███╗███╗   ███╗
+   ██╔════╝╚██╗██╔╝██╔════╝██╔═══██╗████╗ ████║████╗ ████║
+   █████╗   ╚███╔╝ ██║     ██║   ██║██╔████╔██║██╔████╔██║
+   ██╔══╝   ██╔██╗ ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║
+   ███████╗██╔╝ ██╗╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║
+   ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝
+
+                        CONSENSUS WAR ROOM
+================================================================================
+
+CONSENSUS War Room | canonical=military
+------------------------------------------------------------------------
+THEME METADATA
+aliases: MILITARY, WAR_ROOM, TACTICAL
+boot_profile: military_boot
+boot_headline: COMMAND-LINE DIAGNOSTIC BOOT
+loading_animation: tactical_green_bar
+panel_style: terminal
+border_style: single-line tactical
+font_family: Consolas, Cascadia Mono, monospace
+logo: consensus -> G:\CONSENSUS_SYSTEM\static\logos\consensus_logo.txt
+
+MONOLITH LABELS
+RATIONALIS: LOGICAL ANALYSIS MATRIX | EXCOMM REASON CORE
+AETERNUM: ECONOMIC INTELLIGENCE DIVISION | EXCOMM LEDGER CORE
+BELLATOR: TACTICAL OPERATIONS CENTER | EXCOMM TACTICAL CORE
+
+INTERFACE LABELS
+history: DECISION ARCHIVE
+analytics: INTELLIGENCE ANALYTICS
+system_status: EXCOMM ONLINE
+vote_status: TRIBUNAL DELIBERATION
+vote_approve: AUTHORIZATION GRANTED
+vote_deny: AUTHORIZATION DENIED
+vote_deadlock: COMMAND DEADLOCK
+
+COLORS
+primary: #39ff14
+secondary: #9bbf9b
+accent: #ffbf00
+background: #050806
+surface: #101810
+text: #d8ffe0
+warning: #ffbf00
+error: #ff3b30
+
+THEME BIOS SAMPLE
+CONSENSUS WAR ROOM BIOS SAMPLE
+PROFILE: military_boot
+LOGO ASSET: consensus
+PANEL: terminal
+BORDER: single-line tactical
+------------------------------------------------------------------------
+EXCOMM WAR ROOM BIOS v7.3.0
+Copyright (C) EXCOMM / CONSENSUS Tactical Systems
+DATE: 2026-05-07
+SERIAL: 0xC0A57A71C | BUILD: v7.3.0 | THEME: MILITARY
+
+Memory Test: 008192 MB OK
+Memory Test: 016384 MB OK
+Memory Test: 024576 MB OK
+Memory Test: 032581 MB OK
+
+Detecting devices:
+- Neural Processor
+- Quantum Cryptographic Module
+- EXCOMM Tactical Display Engine
+- Hyperlane Storage
+- Secure Tunnel Port 7851
+- Proposal Watcher
+- Memory Store
+
+                                   POST:
+                                   [OK] Core Integrity
+                                   [OK] Theme Catalog
+                                   [OK] Static Logos
+                                   [OK] Agent Registry
+                                   [OK] Msty Runtime Adapter
+                                   [WARN] MSTY PROVIDER DEGRADED
+
+                                      Tribunal initialization:
+                                      RATIONALIS....ONLINE
+                                      AETERNUM......ONLINE
+                                      BELLATOR......ONLINE
+                                      ARBITER.......ONLINE
+
+WAR ROOM INIT PROTOCOL COMPLETE
+TRANSFERRING CONTROL TO CONSENSUS LOADER...
+
+THEME LOADING SAMPLE
+[LOAD:tactical_green_bar] TACTICAL GREEN BAR
+TACTICAL [###############---------]  66%
+[STAGE] SYSTEM CHECK
+[STAGE] COMMS
+[STAGE] MONOLITH LINK
+[STAGE] TACTICAL BUS

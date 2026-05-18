@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+import flet as ft
+
+from core.models import Theme, TribunalResult
+from ui.war_room_runtime import lifecycle_banner_label
+
+
+def _confidence_color(theme: Theme, value: float) -> str:
+    if value >= 0.75:
+        return theme.primary_color
+    if value >= 0.45:
+        return theme.warning_color
+    return theme.error_color
+
+
+def _vote_breakdown(theme: Theme, result: TribunalResult) -> ft.Control:
+    rows = []
+    for key, vote in result.votes.items():
+        labels = theme.monolith_labels.get(key, {"node": key})
+        rows.append(
+            ft.Row(
+                [
+                    ft.Text(labels["node"], color=theme.secondary_color, width=190, size=11),
+                    ft.Text(vote.vote.value, color=theme.accent_color, width=90, weight=ft.FontWeight.BOLD, size=11),
+                    ft.Text(f"{vote.confidence:.0%}", color=theme.text_color, size=11),
+                ],
+                spacing=8,
+            )
+        )
+    return ft.Column(rows, spacing=2)
+
+
+def build_verdict_panel(
+    theme: Theme,
+    result: TribunalResult | None,
+    current_proposal: str = "",
+    lifecycle_state: str = "IDLE",
+    synthesis_text: str = "",
+    displayed_confidence: float | None = None,
+    prior_decisions_used: int = 0,
+    context_summary: str = "",
+    cursor_visible: bool = True,
+    consensus_locked: bool = False,
+) -> ft.Control:
+    if result is None:
+        verdict = f"AWAITING PROPOSAL {'_' if cursor_visible else ' '}"
+        confidence_value = displayed_confidence or 0.0
+        confidence = "--"
+        reason = synthesis_text or "NO ACTIVE PROPOSAL\nTRIBUNAL READY FOR DELIBERATION\nALL MONOLITHS SYNCHRONIZED"
+        votes = ft.Text("No tribunal vote vector.", color=theme.secondary_color, font_family=theme.font_family, size=11)
+    else:
+        verdict = f"{result.verdict.value}{'_' if cursor_visible and not consensus_locked else ''}"
+        confidence_value = result.confidence if displayed_confidence is None else displayed_confidence
+        confidence = f"{confidence_value:.0%}"
+        reason = synthesis_text or result.reason
+        votes = _vote_breakdown(theme, result)
+    lock_text = "[CONSENSUS LOCKED]" if consensus_locked else "CONSENSUS LINK ACTIVE"
+    banner = lifecycle_banner_label(lifecycle_state, consensus_locked=consensus_locked)
+    confidence_color = _confidence_color(theme, confidence_value)
+    banner_color = confidence_color if result is not None else theme.primary_color
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Text("ARBITER VERDICT", color=theme.primary_color, weight=ft.FontWeight.BOLD),
+                        ft.Text("LIVE", color=theme.accent_color, font_family=theme.font_family),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Container(
+                    ft.Text(banner, color=banner_color, weight=ft.FontWeight.BOLD, size=12, font_family=theme.font_family),
+                    padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                    border=ft.border.all(1, banner_color),
+                    bgcolor=theme.background_color,
+                ),
+                ft.Text(f"LIFECYCLE: {lifecycle_state}", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
+                ft.Text(f"CURRENT: {current_proposal or '--'}", color=theme.text_color, size=12),
+                ft.Text(verdict, color=theme.accent_color, weight=ft.FontWeight.BOLD, size=32),
+                ft.Text(lock_text, color=theme.primary_color if consensus_locked else theme.secondary_color, size=11, font_family=theme.font_family),
+                ft.Row(
+                    [
+                        ft.Text(f"CONFIDENCE: {confidence}", color=theme.text_color, width=140),
+                        ft.ProgressBar(value=confidence_value, color=confidence_color, bgcolor=theme.background_color, expand=True),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                ft.Text("TRIBUNAL VECTOR", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
+                votes,
+                ft.Text("ARBITER SYNTHESIS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
+                ft.Text(reason, color=theme.text_color, selectable=True),
+                ft.Text(f"Context used: {prior_decisions_used} prior decisions", color=theme.secondary_text or theme.secondary_color, size=11),
+                ft.Text(context_summary or "No retrieved context.", color=theme.muted_text or theme.secondary_color, size=10, selectable=True),
+            ],
+            spacing=10,
+        ),
+        padding=14,
+        border=ft.border.all(2, theme.primary_color),
+        bgcolor=theme.surface_color,
+    )

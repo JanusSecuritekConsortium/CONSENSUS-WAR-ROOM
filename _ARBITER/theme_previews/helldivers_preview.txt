@@ -1,0 +1,121 @@
+
+
+
+
+                           ++++++
+                           ++++++
+                         +++++++++++
+                        +++ ++++ +++
+                        ++++++++++++
+                      ++++++++ +++ +++
+                    +++++++      ++++ ++
+              ++  +++  +++++ ++ ++++++++++  ++
+             ++  +++++++ ++++  +  +++++++++  ++
+             +  +++++++++++  +  + ++++++++++  +
+            +   +  ++     +  ++  ++++++++++++  +
+   +      +++  ++   +      + ++++++++++++++++  +++      +
+  ++++    +++  ++++++++++++ ++ ++++++++++++++  +++     +++
+  + +     +++  ++   +    ++ +++++++++++++++++  +++     + +
+          ++++ ++   +    +++++++++++ ++++++++  +++
+         +++ +  ++   + +++  + +++++++++++ ++  + +++
+          +++++  ++   ++++++      ++++++  +  +++++
+           + +++  ++ ++++++++++++++++++ ++  +++ +
+       +    +++++   ++++++++++++++++++++   +++ +    +
+     +++++   ++++++   +++  +++++++++++   ++++++   +++++
+      +++      +++++++    ++++++++    +++++++      +++
+                 ++ ++++++  ++++  +++++++++
+                   +++++++ ++++++ +++++++
+                       +++++ ++ +++++      +
+              ++++++       ++++++       ++++ +
+               +++                        +++
+                           ++++++
+                             ++
+
+
+Managed Democracy Tribunal | canonical=helldivers
+------------------------------------------------------------------------
+THEME METADATA
+aliases: HELLDIVERS, SUPER_EARTH, DEMOCRACY
+boot_profile: helldivers_boot
+boot_headline: SUPER EARTH COMMAND AUTHORIZATION
+loading_animation: managed_democracy
+panel_style: super earth command
+border_style: hazard stripe
+font_family: Consolas, Cascadia Mono, monospace
+logo: helldivers -> G:\CONSENSUS_SYSTEM\static\logos\helldivers_logo.txt
+
+MONOLITH LABELS
+RATIONALIS: DEMOCRACY ASSESSMENT ENGINE | CIVIC TRUTH CORE
+AETERNUM: FREEDOM FORECASTING SYSTEM | REQUISITION FORECAST CORE
+BELLATOR: LIBERTY DEFENSE MATRIX | SUPER EARTH FIREBREAK CORE
+
+INTERFACE LABELS
+history: PATRIOTIC OPERATIONS RECORD
+analytics: MANAGED DEMOCRACY INSIGHTS
+system_status: SUPER EARTH: ONLINE
+vote_status: DEMOCRATIC DELIBERATION
+vote_approve: LIBERTY ASSURED
+vote_deny: FREEDOM ENDANGERED
+vote_deadlock: DEMOCRACY COMPROMISED
+
+COLORS
+primary: #1f8cff
+secondary: #101820
+accent: #f5f5f5
+background: #061018
+surface: #102033
+text: #e8f4ff
+warning: #ffd100
+error: #ff3b30
+
+THEME BIOS SAMPLE
+MANAGED DEMOCRACY TRIBUNAL BIOS SAMPLE
+PROFILE: helldivers_boot
+LOGO ASSET: helldivers
+PANEL: super earth command
+BORDER: hazard stripe
+------------------------------------------------------------------------
+SUPER EARTH COMMAND BIOS v7.3.0
+Copyright (C) SUPER EARTH MINISTRY OF TRUTH / Managed Democracy Systems
+Managed Democracy Tactical Build / Liberty Authorization Line
+DATE: 2026-05-07
+SERIAL: SEAF-7851-LIBERTY | BUILD: v7.3.0 | THEME: HELLDIVERS
+
+Memory Test: 008192 MB OK
+Memory Test: 016384 MB OK
+Memory Test: 024576 MB OK
+Memory Test: 032581 MB OK
+
+Detecting devices:
+- Neural Processor
+- Quantum Cryptographic Module
+- Super Earth Tactical Display Engine
+- Hyperlane Storage
+- Secure Tunnel Port 7851
+- Proposal Watcher
+- Memory Store
+
+                                   POST:
+                                   [OK] Core Integrity
+                                   [OK] Theme Catalog
+                                   [OK] Static Logos
+                                   [OK] Agent Registry
+                                   [OK] Msty Runtime Adapter
+                                   [WARN] MSTY PROVIDER DEGRADED
+
+                                      Tribunal initialization:
+                                      RATIONALIS....ONLINE
+                                      AETERNUM......ONLINE
+                                      BELLATOR......ONLINE
+                                      ARBITER.......ONLINE
+
+WAR ROOM INIT PROTOCOL COMPLETE
+TRANSFERRING CONTROL TO CONSENSUS LOADER...
+
+THEME LOADING SAMPLE
+[LOAD:managed_democracy] LIBERTY AND DEMOCRACY BAR
+DEMOCRATIC AUTHORIZATION [████████░░░░]  71%
+[STAGE] DEMOCRATIC AUTHORIZATION
+[STAGE] LIBERTY LOGIC
+[STAGE] REQUISITION ACCOUNTING
+[STAGE] STRATAGEM SAFETY

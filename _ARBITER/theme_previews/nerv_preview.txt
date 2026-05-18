@@ -1,0 +1,116 @@
+                                __ _._.,._.__
+                          .o8888888888888888P'
+                        .d88888888888888888K
+          ,8            888888888888888888888boo._
+         :88b           888888888888888888888888888b.
+          `Y8b          88888888888888888888888888888b.
+            `Yb.       d8888888888888888888888888888888b
+              `Yb.___.88888888888888888888888888888888888b
+                `Y888888888888888888888888888888CG88888P"'
+                  `88888888888888888888888888888MM88P"'
+ Y888K     Y8P Y888888888888888888888888oo._
+   88888b    8    8888`Y88888888888888888888888oo.
+   8"Y8888b  8    8888  ,8888888888888888888888888o,
+   8  "Y8888b8    8888 Y8`Y8888888888888888888888b.
+   8    "Y8888    8888   Y  `Y8888888888888888888888
+   8      "Y88    8888     .d `Y88888888888888888888b
+ .d8b.      "8  .d8888b..d88P   `Y88888888888888888888
+                                  `Y88888888888888888b.
+                   "Y888P Y8b. "Y888888888888888888888
+                     888    888   Y888`Y888888888888888
+                     888   d88P    Y88b `Y8888888888888
+                     888"Y88K"      Y88b dPY8888888888P
+                     888  Y88b       Y88dP  `Y88888888b
+                     888   Y88b       Y8P     `Y8888888
+                   .d888b.  Y88b.      Y        `Y88888
+                                                  `Y88K
+                                                    `Y8
+                                                      '
+
+NERV Tribunal Interlock | canonical=nerv
+------------------------------------------------------------------------
+THEME METADATA
+aliases: NERV, EVA/NERV
+boot_profile: nerv_boot
+boot_headline: NERV MAGI INTERLOCK BOOT
+loading_animation: nerv_magi_interlock
+panel_style: nerv command
+border_style: red alert segmented
+font_family: Consolas, Cascadia Mono, monospace
+logo: nerv -> G:\CONSENSUS_SYSTEM\static\logos\nerv_logo.txt
+
+MONOLITH LABELS
+RATIONALIS: MAGI CASPER-3 | LOGICAL SUBSYSTEM
+AETERNUM: MAGI BALTHASAR-2 | TEMPORAL PREDICTION CORE
+BELLATOR: MAGI MELCHIOR-1 | PATERNAL DEFENSE PROTOCOL
+
+INTERFACE LABELS
+history: CENTRAL DOGMA ARCHIVES
+analytics: PATTERN RECOGNITION SYSTEM
+system_status: MAGI SYSTEM STATUS
+vote_status: CONSENSUS CALCULATION
+vote_approve: PATTERN BLUE CONFIRMED
+vote_deny: PATTERN RED DETECTED
+vote_deadlock: PATTERN ORANGE - INDETERMINATE
+
+COLORS
+primary: #ff5400
+secondary: #b11226
+accent: #ffffff
+background: #110607
+surface: #211010
+text: #fff4e8
+warning: #ff9d00
+error: #ff1f1f
+
+THEME BIOS SAMPLE
+NERV TRIBUNAL INTERLOCK BIOS SAMPLE
+PROFILE: nerv_boot
+LOGO ASSET: nerv
+PANEL: nerv command
+BORDER: red alert segmented
+------------------------------------------------------------------------
+MAGI / NERV BIOS v7.3.0
+Copyright (C) NERV / MAGI Tactical Systems
+MAGI Consensus Array / NERV Tactical Interlock Line
+DATE: 2026-05-07
+SERIAL: MAGI-NERV-7851 | BUILD: v7.3.0 | THEME: NERV
+
+Memory Test: 008192 MB OK
+Memory Test: 016384 MB OK
+Memory Test: 024576 MB OK
+Memory Test: 032581 MB OK
+
+Detecting devices:
+- Neural Processor
+- Quantum Cryptographic Module
+- NERV ARX-7 GPU
+- Hyperlane Storage
+- Secure Tunnel Port 7851
+- Proposal Watcher
+- Memory Store
+
+                                   POST:
+                                   [OK] Core Integrity
+                                   [OK] Theme Catalog
+                                   [OK] Static Logos
+                                   [OK] Agent Registry
+                                   [OK] Msty Runtime Adapter
+                                   [WARN] MSTY PROVIDER DEGRADED
+
+                                      Tribunal initialization:
+                                      RATIONALIS....ONLINE
+                                      AETERNUM......ONLINE
+                                      BELLATOR......ONLINE
+                                      ARBITER.......ONLINE
+
+WAR ROOM INIT PROTOCOL COMPLETE
+TRANSFERRING CONTROL TO CONSENSUS LOADER...
+
+THEME LOADING SAMPLE
+[LOAD:nerv_magi_interlock] NERV MAGI-LINK INTERLOCK
+MAGI-LINK [■■■■■■■■■■■□□□□□]  72%
+[STAGE] MAGI LINK
+[STAGE] SYNCHRONIZATION RATE
+[STAGE] PATTERN ANALYSIS
+[STAGE] INTERLOCK BUS

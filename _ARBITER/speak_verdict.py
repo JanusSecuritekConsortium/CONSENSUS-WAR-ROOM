@@ -1,0 +1,1 @@
+# Simulated content for speak_verdict.py

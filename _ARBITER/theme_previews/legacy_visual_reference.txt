@@ -1,0 +1,199 @@
+LEGACY VISUAL REFERENCE
+========================================================================
+NERV LOGO
+                                __ _._.,._.__
+                          .o8888888888888888P'
+                        .d88888888888888888K
+          ,8            888888888888888888888boo._
+         :88b           888888888888888888888888888b.
+          `Y8b          88888888888888888888888888888b.
+            `Yb.       d8888888888888888888888888888888b
+              `Yb.___.88888888888888888888888888888888888b
+                `Y888888888888888888888888888888CG88888P"'
+                  `88888888888888888888888888888MM88P"'
+ Y888K     Y8P Y888888888888888888888888oo._
+   88888b    8    8888`Y88888888888888888888888oo.
+   8"Y8888b  8    8888  ,8888888888888888888888888o,
+   8  "Y8888b8    8888 Y8`Y8888888888888888888888b.
+   8    "Y8888    8888   Y  `Y8888888888888888888888
+   8      "Y88    8888     .d `Y88888888888888888888b
+ .d8b.      "8  .d8888b..d88P   `Y88888888888888888888
+                                  `Y88888888888888888b.
+                   "Y888P Y8b. "Y888888888888888888888
+                     888    888   Y888`Y888888888888888
+                     888   d88P    Y88b `Y8888888888888
+                     888"Y88K"      Y88b dPY8888888888P
+                     888  Y88b       Y88dP  `Y88888888b
+                     888   Y88b       Y8P     `Y8888888
+                   .d888b.  Y88b.      Y        `Y88888
+                                                  `Y88K
+                                                    `Y8
+                                                      '
+
+ARASAKA LOGO
+                                                   .--:////:--.
+                                              ./ydmNNNmmmmmNNNmdy/.
+                                            .+dNNmyo/+shddhs+/oymNNd+.
+                                         .sNMdo-`  .yNMMMMMMNy.  `-odMNs.
+                                       `+NMd/`    hMMMMMMMMMMMh    `/dMN+`
+                                      `yMNo`     `MMMMMMMMMMMMM`     `oNMy`
+                                      yMN/`.:/+/.`yMMMMMMMMMMMy`./+/:.`/NMy
+                                     +MM+/dNMMMMMdosMMMMMMMMmsodMMMMMNd/+MM+
+                                    `NMdoMMMMMMMMMMMy`:hMMh:`yMMMMMMMMMMoMdMN`
+                                    :MMo:NMMMMMMMMMM.  oMMo  .MMMMMMMMMMN:oMM:
+                                     /MM/dMMMMMMMMMMm` oMMo  `mmMMMMMMMMMd/MM/
+                                     :MMo.hMMMMMMMMMh. oMMo  .hMMMMMMMMMh.oMM:
+                                     `NMd `-ohddhssNMNsyMMysNMNsshdddho-` dMN`
+                                      +MM+          .sNMMMMNs.          +MM+
+                                       yMM/          .sNNNNs.          /MMy
+                                         +NMm/`        oMMo         `/mMN+
+                                          .sNMmo-      oMMo       -omMNs.
+                                            +hMMnho/-.++dd+-./ohNMMh+`
+                                                `/sdmNNNNNNNNNmds/`
+                                                   .--:////:--.
+
+   .sdmNNNs-     mNNNNNNNNNNm/    /ymNNNm+          mM+NNNmy:-.    .sdmNNNs-     .NNN``:smNNd     dddmNNNhh:
+ .yMMMhsohNNs.   NMMhssssssdMMd  .dMMyssdMMmo     ///yyMMyyyy-   yMMMhsoyNNNy     /MMMymMNh      yNNNhsoyNMNs-
+ oMMd     +mMMo  MMo:       hhss  dMMs    /MNN-    .ymmMM        oMMd     mMMo    MMMNNMMMM     /MMN-`   .hMMh
+ .MMMy     dMMo  dMMdmo-          NMM+    /MMM:      /ymMMmy:    yMM      hMMo     hmMMMm+       +MMm     .oMMh
+  -mMMm+--`dMMo  dNMmNMMdo-        +NNNy/--`MMM/        +yNMMMm   smMMm+---`hMM    hmMMMMMN+     .dMMdo:--`oMNh
+   . smMMMNsdMMo    `odNMMdo-        :hmMMMM/MMM:   MMMMMMMMMM     s.smMMMMMyhMMo  s---`:smMNN     dmNMMMMdoMMho
+       -////:://-      .:////:.        .:////://:. .:////////-         ./////:://- ///     ////      ::////-//:/-
+
+JANUS LOGO
+                                88888    db    88b 88 88   88 .dP"Y8
+                                   88   dPYb   88Yb88 88   88 `Ybo."
+                               o.  88  dP__Yb  88 Y88 Y8   8P o.`Y8b
+                                "bodP dP""''Yb 88  Y8 `YbodP' 8bodP'
+
+                    .dP"Y8 888888  dP""b8 88   88 88""Yb 88 888888 888888 88  dP
+                    `Ybo." 88__   dP   `" 88   88 88__dP 88   88   88__   88odP
+                    o.`Y8b 88""   Yb      Y8   8P 88"Yb  88   88   88""   88"Yb
+                    8bodP' 888888  YboodP `YbodP' 88  Yb 88   88   888888 88  Yb
+
+               dP""b8  dP"Yb  88b 88 .dP"Y8  dP"Yb  88""Yb 888888 88 88   88 8b    d8
+              dP   `" dP   Yb 88Yb88 `Ybo." dP   Yb 88__dP   88   88 88   88 88b  d88
+              Yb      Yb   dP 88 Y88 o.`Y8b Yb   dP 88"Yb    88   88 Y8   8P 88YbdP88
+               YboodP  YbodP  88  Y8 8bodP'  YbodP  88  Yb   88   88 `YbodP' 88 YY 88
+
+====================================================================================================
+                                      Duobus vultibus, una voluntas.
+====================================================================================================
+
+CONSENSUS LOGO
+================================================================================
+||                                                                            ||
+||        ____ ___  _   _ ____  _____ _   _ ____  _   _ ____                  ||
+||       / ___/ _ \| \ | / ___|| ____| \ | / ___|| | | / ___|                 ||
+||      | |  | | | |  \| \___ \|  _| |  \| \___ \| | | \___ \                 ||
+||      | |__| |_| | |\  |___) | |___| |\  |___) | |_| |___) |                ||
+||       \____\___/|_| \_|____/|_____|_| \_|____/ \___/|____/                 ||
+||                                                                            ||
+||              _______  ______ ___  __  __ __  __                            ||
+||             | ____\ \/ / ___/ _ \|  \/  |  \/  |                           ||
+||             |  _|  \  / |  | | | | |\/| | |\/| |                           ||
+||             | |___ /  \ |__| |_| | |  | | |  | |                           ||
+||             |_____/_/\_\____\___/|_|  |_|_|  |_|                           ||
+||                                                                            ||
+||                    WAR ROOM BIOS / AI TRIBUNAL                              ||
+||                    RATIONALIS / AETERNUM / BELLATOR                         ||
+||                    COMMAND AUTHORITY: EXCOMM                                ||
+||                                                                            ||
+================================================================================
+
+LEGACY_REFERENCE_SEQUENCE
+GLOBAL BOOT SAMPLE
+                                __ _._.,._.__
+                          .o8888888888888888P'
+                        .d88888888888888888K
+          ,8            888888888888888888888boo._
+         :88b           888888888888888888888888888b.
+          `Y8b          88888888888888888888888888888b.
+            `Yb.       d8888888888888888888888888888888b
+              `Yb.___.88888888888888888888888888888888888b
+                `Y888888888888888888888888888888CG88888P"'
+                  `88888888888888888888888888888MM88P"'
+ Y888K     Y8P Y888888888888888888888888oo._
+   88888b    8    8888`Y88888888888888888888888oo.
+   8"Y8888b  8    8888  ,8888888888888888888888888o,
+   8  "Y8888b8    8888 Y8`Y8888888888888888888888b.
+   8    "Y8888    8888   Y  `Y8888888888888888888888
+   8      "Y88    8888     .d `Y88888888888888888888b
+ .d8b.      "8  .d8888b..d88P   `Y88888888888888888888
+                                  `Y88888888888888888b.
+                   "Y888P Y8b. "Y888888888888888888888
+                     888    888   Y888`Y888888888888888
+                     888   d88P    Y88b `Y8888888888888
+                     888"Y88K"      Y88b dPY8888888888P
+                     888  Y88b       Y88dP  `Y88888888b
+                     888   Y88b       Y8P     `Y8888888
+                   .d888b.  Y88b.      Y        `Y88888
+                                                  `Y88K
+                                                    `Y8
+                                                      '
+
+CONSENSUS TACTICAL BIOS v7.2.4 - (C) ARASAKA CORPORATION
+Chief Architect: Erhardt Von Grupten Mundt
+Quantum Computing Division / Tactical AI Systems
+-------------------------------------------------------------------------------
+WAR ROOM INIT PROTOCOL | S/N: 0xC0A57A71C | BUILD: v7.2.4
+Neural Processor: 4.1 GHz | Threads: 16 Active
+
+[SYS] POST: Quantum Core Check.................................OK
+[SYS] CPU: Consensus Neural Thread v9.12.......................OK
+[SYS] RAM: 65536MB ECC Quantum Memory..........................OK
+[SYS] GPU: NERV ARX-7 [8192 TFLOPS]............................OK
+[SYS] TPM: Quantum Cryptographic Module........................OK
+[SYS] NVMe: Hyperlane Storage x16..............................OK
+[SYS] NET: Secure Tunnel Port 7851.............................OK
+
+[INIT] Initializing AI Tribunal:
+ -> RATIONALIS [Logic Engine]...................................OK
+ -> AETERNUM [Temporal Core]....................................OK
+ -> BELLATOR [Tactical Matrix]..................................OK
+
+[AI] Neural Networks: Calibrated...............................OK
+[AI] TTS Engine: GLaDOS Core....................................OK
+[AI] Proposal Watcher: Armed....................................OK
+[AI] Memory Store: Mounted......................................OK
+
+[SEC] Firewall: Hardened........................................OK
+[SEC] Audit Trail: Immutable....................................ACTIVE
+
+CONSENSUS SYSTEM READY
+
+GLOBAL LOADING SAMPLE
+                                                   .--:////:--.
+                                              ./ydmNNNmmmmmNNNmdy/.
+                                            .+dNNmyo/+shddhs+/oymNNd+.
+                                         .sNMdo-`  .yNMMMMMMNy.  `-odMNs.
+                                       `+NMd/`    hMMMMMMMMMMMh    `/dMN+`
+                                      `yMNo`     `MMMMMMMMMMMMM`     `oNMy`
+                                      yMN/`.:/+/.`yMMMMMMMMMMMy`./+/:.`/NMy
+                                     +MM+/dNMMMMMdosMMMMMMMMmsodMMMMMNd/+MM+
+                                    `NMdoMMMMMMMMMMMy`:hMMh:`yMMMMMMMMMMoMdMN`
+                                    :MMo:NMMMMMMMMMM.  oMMo  .MMMMMMMMMMN:oMM:
+                                     /MM/dMMMMMMMMMMm` oMMo  `mmMMMMMMMMMd/MM/
+                                     :MMo.hMMMMMMMMMh. oMMo  .hMMMMMMMMMh.oMM:
+                                     `NMd `-ohddhssNMNsyMMysNMNsshdddho-` dMN`
+                                      +MM+          .sNMMMMNs.          +MM+
+                                       yMM/          .sNNNNs.          /MMy
+                                         +NMm/`        oMMo         `/mMN+
+                                          .sNMmo-      oMMo       -omMNs.
+                                            +hMMnho/-.++dd+-./ohNMMh+`
+                                                `/sdmNNNNNNNNNmds/`
+                                                   .--:////:--.
+
+   .sdmNNNs-     mNNNNNNNNNNm/    /ymNNNm+          mM+NNNmy:-.    .sdmNNNs-     .NNN``:smNNd     dddmNNNhh:
+ .yMMMhsohNNs.   NMMhssssssdMMd  .dMMyssdMMmo     ///yyMMyyyy-   yMMMhsoyNNNy     /MMMymMNh      yNNNhsoyNMNs-
+ oMMd     +mMMo  MMo:       hhss  dMMs    /MNN-    .ymmMM        oMMd     mMMo    MMMNNMMMM     /MMN-`   .hMMh
+ .MMMy     dMMo  dMMdmo-          NMM+    /MMM:      /ymMMmy:    yMM      hMMo     hmMMMm+       +MMm     .oMMh
+  -mMMm+--`dMMo  dNMmNMMdo-        +NNNy/--`MMM/        +yNMMMm   smMMm+---`hMM    hmMMMMMN+     .dMMdo:--`oMNh
+   . smMMMNsdMMo    `odNMMdo-        :hmMMMM/MMM:   MMMMMMMMMM     s.smMMMMMyhMMo  s---`:smMNN     dmNMMMMdoMMho
+       -////:://-      .:////:.        .:////://:. .:////////-         ./////:://- ///     ////      ::////-//:/-
+
+INITIALIZING CONSENSUS WAR ROOM
+[################################################------------] 80%
+[LOAD] Executive clearance grid....................OK
+[LOAD] Counterintelligence route...................OK
+[LOAD] Tribunal interface..........................OK
