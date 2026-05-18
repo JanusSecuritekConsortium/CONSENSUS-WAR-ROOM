@@ -1,0 +1,35 @@
+{
+  "theme": "eva",
+  "backend": "msty-local",
+  "sequential": false,
+  "minimum_confidence": 0.6,
+  "quorum": 2,
+  "majority": 2,
+  "high_risk_review": true,
+  "ollama_base_url": "http://127.0.0.1:11434",
+  "msty_base_url": "http://localhost:11964",
+  "msty_llama_cpp_base_url": "",
+  "mock_fallback_enabled": true,
+  "strict_provider_mode": false,
+  "use_available_model_fallback": false,
+  "msty_live_context_default_theme": "eva",
+  "api_host": "127.0.0.1",
+  "api_port": 8888,
+  "node_overrides": {
+    "RATIONALIS": {
+      "model": "deepseek-coder-33b-instruct.Q4_K_S:latest"
+    },
+    "AETERNUM": {
+      "model": "yi-34b-chat.Q4_K_S:latest"
+    },
+    "BELLATOR": {
+      "model": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/mixtral-8x7b-instruct-v0.1.Q5_K_M.gguf"
+    }
+  },
+  "agent_model_overrides": {
+    "ARBITER": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf",
+    "RATIONALIS": "deepseek-coder-33b-instruct.Q4_K_S:latest",
+    "AETERNUM": "yi-34b-chat.Q4_K_S:latest",
+    "BELLATOR": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/mixtral-8x7b-instruct-v0.1.Q5_K_M.gguf"
+  }
+}

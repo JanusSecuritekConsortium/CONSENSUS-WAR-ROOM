@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local tooling
+.venv/
+venv/
+env/
+rvc_env/
+node_modules/
+
+# Local/runtime state
+*.log
+*.err.log
+*.tmp
+*.bak
+*.swp
+.env
+.env.*
+!.env.example
+
+# Consensus runtime artifacts
+_ARBITER/backups/
+_ARBITER/Bot/Ext/
+_ARBITER/Bot/Voice/
+_ARBITER/exports/
+_ARBITER/logs/
+_ARBITER/memory/
+_ARBITER/tmp_votes/
+_ARBITER/tts_audio/
+_ARBITER/decision_history*.json
+_ARBITER/provider_model_cache.json
+_ARBITER/proposal.json
+
+# Heavy/generated historical backups
+archive/pre_modular_backups/
+archive/old_experiments/tts_audio/
+
+# Nested repositories and model/artifact blobs
+**/.git/
+*.7z
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.pth
+*.pt
+*.safetensors
+*.onnx
+*.npz
+*.flac
+*.jsonl
+*.bin
+*.dll
+*.lib
+*.parquet
+*.mp3
+*.wav

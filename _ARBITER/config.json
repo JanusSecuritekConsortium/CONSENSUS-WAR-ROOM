@@ -1,0 +1,133 @@
+{
+  "system": {
+    "theme": "military",
+    "current_view": "main",
+    "system_mode": "READY",
+    "debug_mode": false,
+    "max_log_entries": 1000,
+    "max_decisions": 100,
+    "auto_escalation_enabled": true,
+    "human_oversight_threshold": 0.5,
+    "enable_bias_detection": true,
+    "enable_sentiment_analysis": true,
+    "command_history_size": 50,
+    "auto_refresh": true,
+    "refresh_interval": 5,
+    "animations_enabled": true,
+    "max_history": 20
+  },
+  "llm": {
+    "provider": "ollama",
+    "api_timeout": 30,
+    "vote_timeout": 45,
+    "max_retries": 3,
+    "base_url": "http://localhost:11434",
+    "enable_parallel_processing": true,
+    "response_validation": true
+  },
+  "monoliths": {
+    "RATIONALIS": {
+      "model": "deepseek-coder:33b",
+      "prompt": "You are RATIONALIS, the logic engine of the CONSENSUS Tribunal. Analyze the query with pure logical reasoning and structured analysis. Provide your verdict with detailed logical justification.",
+      "temperature": 0.1,
+      "top_p": 0.9,
+      "max_tokens": 1024,
+      "specialty": "logical_analysis"
+    },
+    "AETERNUM": {
+      "model": "llama3:70b",
+      "prompt": "You are AETERNUM, the temporal analyst and market sage of the CONSENSUS Tribunal. Analyze patterns, historical precedents, and market implications with your vast temporal knowledge.",
+      "temperature": 0.3,
+      "top_p": 0.95,
+      "max_tokens": 1024,
+      "specialty": "pattern_analysis"
+    },
+    "BELLATOR": {
+      "model": "mixtral:8x7b",
+      "prompt": "You are BELLATOR, the tactical strategist and risk assessor of the CONSENSUS Tribunal. Evaluate security implications, tactical risks, and strategic outcomes with military precision.",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "max_tokens": 1024,
+      "specialty": "risk_assessment"
+    }
+  },
+  "consensus": {
+    "algorithm": "probabilistic_weighted",
+    "minimum_confidence": 0.6,
+    "human_oversight_triggers": [
+      "high_disagreement",
+      "low_confidence",
+      "bias_detected"
+    ],
+    "precedent_matching_enabled": true,
+    "bias_threshold": 0.7
+  },
+  "tts": {
+    "enabled": false,
+    "engine": "pyttsx3",
+    "voice_rate": 150,
+    "voice_volume": 0.9,
+    "announce_decisions": true,
+    "announce_bias_alerts": true,
+    "emotional_modulation": true
+  },
+  "health": {
+    "enabled": true,
+    "check_interval": 5,
+    "api_timeout": 3,
+    "alert_thresholds": {
+      "cpu": 90.0,
+      "memory": 85.0,
+      "response_time": 10.0
+    }
+  },
+  "ui": {
+    "refresh_rate": 10,
+    "animation_speed": 50,
+    "show_debug": false,
+    "color_scheme": "default"
+  },
+  "export": {
+    "auto_backup": true,
+    "backup_interval": 3600,
+    "formats": [
+      "json",
+      "csv",
+      "txt"
+    ]
+  },
+  "analytics": {
+    "enable_real_time": true,
+    "performance_tracking": true,
+    "bias_monitoring": true,
+    "decision_pattern_analysis": true
+  },
+  "market_data": {
+    "symbols": [
+      "SPY",
+      "QQQ",
+      "AAPL",
+      "MSFT",
+      "GOOGL",
+      "AMZN",
+      "TSLA",
+      "BTC-USD",
+      "ETH-USD"
+    ],
+    "update_interval": 60,
+    "history_length": 24,
+    "volatility_threshold": 2.0
+  },
+  "security": {
+    "defcon_level": 3,
+    "threat_categories": [
+      "cyber",
+      "economic",
+      "geopolitical",
+      "military",
+      "environmental"
+    ],
+    "alert_threshold": 0.7,
+    "max_alerts": 10
+  }
+}

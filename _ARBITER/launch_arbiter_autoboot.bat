@@ -1,0 +1,1 @@
+# Simulated content for launch_arbiter_autoboot.bat

@@ -1,0 +1,662 @@
+#!/usr/bin/env python3
+"""
+CONSENSUS War Room - Fixed Critical Issues
+
+This file contains fixes for the main syntax and logic errors found in the original codebase.
+"""
+
+import curses
+import time
+import json
+import os
+import datetime
+import threading
+import random
+import requests
+import signal
+import sys
+from pathlib import Path
+from collections import deque
+from typing import Dict, List, Tuple, Optional, Any, Union
+import shutil
+import csv
+import subprocess
+
+# Optional imports with fallbacks
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
+try:
+    from ib_insync import *
+    ibi = True
+except ImportError:
+    ibi = None
+
+# Version information
+VERSION = "1.0.4"
+BUILD_DATE = "2025-05-19"
+
+# System configuration
+SYSTEM_ROOT = Path("./CONSENSUS_SYSTEM")
+ARBITER_DIR = SYSTEM_ROOT / "_ARBITER"
+VOTE_DIR = ARBITER_DIR / "tmp_votes"
+LOG_DIR = ARBITER_DIR / "logs"
+CONFIG_PATH = ARBITER_DIR / "config.json"
+
+# Define monoliths with correct structure
+MONOLITHS = {
+    "AETERNUM": {
+        "id": 1,
+        "desc": "Pattern recognition and historical context",
+        "vote_path": VOTE_DIR / "aeternum_vote.json",
+        "color": 5,  # Magenta/Cyan
+        "thinking_phrases": [
+            "Correlating historical patterns...",
+            "Accessing pattern database...",
+            "Calculating similarity indices...",
+            "Projecting trend trajectories...",
+            "Analyzing cyclical behaviors..."
+        ],
+        "status": "offline"
+    },
+    "BELLATOR": {
+        "id": 2,
+        "desc": "Tactical assessment and execution planning",
+        "vote_path": VOTE_DIR / "bellator_vote.json",
+        "color": 2,  # Green
+        "thinking_phrases": [
+            "Mapping strategic terrain...",
+            "Evaluating tactical options...",
+            "Projecting adversarial responses...",
+            "Calculating risk-reward ratios...",
+            "Simulating execution pathways..."
+        ],
+        "status": "offline"
+    },
+    "RATIONALIS": {
+        "id": 3,
+        "desc": "Logical analysis and rationality assessment",
+        "vote_path": VOTE_DIR / "rationalis_vote.json",
+        "color": 4,  # Blue
+        "thinking_phrases": [
+            "Evaluating logical consistency...",
+            "Analyzing decision tree branches...",
+            "Calculating expected utility...",
+            "Assessing probabilistic outcomes...",
+            "Verifying axioms and premises..."
+        ],
+        "status": "offline"
+    }
+}
+
+# LLM Provider settings
+LLM_PROVIDER = "ollama"  # Default provider
+
+# Provider endpoints
+PROVIDER_ENDPOINTS = {
+    "ollama": {
+        "api_url": "http://localhost:11434/api/generate",
+        "status_endpoint": "http://localhost:11434/api/tags"
+    },
+    "lmstudio": {
+        "api_url": "http://localhost:1234/v1/completions",
+        "status_endpoint": "http://localhost:1234/v1/models"
+    }
+}
+
+# Model configuration for each monolith
+MODEL_CONFIG = {
+    "AETERNUM": {
+        "model": "llama3:70b",
+        "engine": LLM_PROVIDER, 
+        "api_url": PROVIDER_ENDPOINTS[LLM_PROVIDER]["api_url"],
+        "system_prompt": "You are AETERNUM, a financial analysis AI focused on Interactive Brokers operations, market analysis, and portfolio management.",
+        "parameters": {
+            "temperature": 0.3,
+            "top_p": 0.95,
+            "max_tokens": 1024
+        },
+        "status_endpoint": PROVIDER_ENDPOINTS[LLM_PROVIDER]["status_endpoint"]
+    },
+    "BELLATOR": {
+        "model": "mixtral:8x7b",
+        "engine": LLM_PROVIDER,
+        "api_url": PROVIDER_ENDPOINTS[LLM_PROVIDER]["api_url"],
+        "system_prompt": "You are BELLATOR, a tactical and strategic analyst focused on identifying geopolitical risks and security concerns.",
+        "parameters": {
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 1024
+        },
+        "status_endpoint": PROVIDER_ENDPOINTS[LLM_PROVIDER]["status_endpoint"]
+    },
+    "RATIONALIS": {
+        "model": "deepseek-coder:33b",
+        "engine": LLM_PROVIDER,
+        "api_url": PROVIDER_ENDPOINTS[LLM_PROVIDER]["api_url"],
+        "system_prompt": "You are RATIONALIS, a logical reasoning assistant focused on organization and rational analysis.",
+        "parameters": {
+            "temperature": 0.1,
+            "top_p": 0.9,
+            "max_tokens": 1024
+        },
+        "status_endpoint": PROVIDER_ENDPOINTS[LLM_PROVIDER]["status_endpoint"]
+    }
+}
+
+# Global state tracking
+MODEL_STATUS = {
+    "RATIONALIS": {"status": "unknown", "memory_usage": 0, "loading": False},
+    "AETERNUM": {"status": "unknown", "memory_usage": 0, "loading": False},
+    "BELLATOR": {"status": "unknown", "memory_usage": 0, "loading": False}
+}
+
+# Monolith-specific data structures
+MONOLITH_DATA = {
+    "BELLATOR": {
+        "defcon_level": 4,
+        "threat_alerts": [],
+        "strategic_analysis": [],
+        "security_news": [],
+        "last_updated": None
+    },
+    "AETERNUM": {
+        "market_indices": {},
+        "crypto_prices": {},
+        "portfolio_performance": {},
+        "economic_indicators": {},
+        "last_updated": None
+    },
+    "RATIONALIS": {
+        "system_logs": [],
+        "logic_patterns": {},
+        "analysis_metrics": {},
+        "efficiency_rating": 0.0,
+        "last_updated": None
+    },
+    "ARBITER": {
+        "agenda": [],
+        "pending_decisions": [],
+        "system_status": {},
+        "balance_metrics": {},
+        "last_updated": None
+    }
+}
+
+# System health metrics
+SYSTEM_HEALTH = {
+    "cpu": 0.0,
+    "memory": 0.0,
+    "disk": 0.0,
+    "network": 0.0,
+    "temperature": 0.0,
+    "start_time": time.time(),
+    "response_times": deque(maxlen=50),
+    "avg_response_time": 0
+}
+
+# System modes
+SYSTEM_MODES = {
+    "STANDBY": {"color": 3, "desc": "System idle, awaiting commands"},
+    "VOTING": {"color": 6, "desc": "Monoliths deliberating on proposal"},
+    "CONSENSUS": {"color": 2, "desc": "Agreement reached, executing commands"},
+    "DEADLOCK": {"color": 1, "desc": "No consensus reached, requiring override"},
+    "ERROR": {"color": 1, "desc": "System error detected, manual intervention required"},
+    "MAINTENANCE": {"color": 5, "desc": "System undergoing maintenance operations"},
+    "CRITICAL": {"color": 1, "desc": "CRITICAL operations mode, high priority"}
+}
+
+# Global state variables
+CURRENT_VIEW = "main"
+CURRENT_MODE = "STANDBY"
+command_buffer = ""
+command_output = ""
+input_mode = False
+help_page = 1
+
+# Vote colors
+VOTE_COLORS = {
+    "APPROVE": 4,  # Green
+    "DENY": 6,     # Red
+    "PENDING": 7   # White
+}
+
+def safe_addstr(stdscr, y, x, text, attr=0):
+    """Safely add a string to the screen, avoiding errors at screen borders"""
+    height, width = stdscr.getmaxyx()
+    
+    # Check if the position is valid
+    if y < 0 or y >= height or x < 0 or x >= width:
+        return
+    
+    # Truncate the text if it would go beyond the screen width
+    max_len = width - x
+    if max_len <= 0:
+        return
+    
+    # Truncate and display
+    display_text = str(text)[:max_len]
+    try:
+        stdscr.addstr(y, x, display_text, attr)
+    except curses.error:
+        pass
+
+def update_aeternum_data():
+    """Update AETERNUM monolith data with financial information - FIXED VERSION"""
+    try:
+        # Market indices (would come from Yahoo Finance or similar)
+        MONOLITH_DATA["AETERNUM"]["market_indices"] = {
+            "S&P 500": {"value": 5123.45, "change": 0.75, "trend": "up"},
+            "Dow Jones": {"value": 37893.21, "change": -0.12, "trend": "down"},
+            "NASDAQ": {"value": 16789.34, "change": 1.42, "trend": "up"},
+            "Russell 2000": {"value": 2134.56, "change": -0.31, "trend": "down"},
+            "VIX": {"value": 17.25, "change": 2.1, "trend": "up"}
+        }
+        
+        # Cryptocurrency prices
+        MONOLITH_DATA["AETERNUM"]["crypto_prices"] = {
+            "Bitcoin": {"price": 62453.21, "change": 2.3, "market_cap": "1.2T"},
+            "Ethereum": {"price": 3245.67, "change": 1.5, "market_cap": "389B"},
+            "Solana": {"price": 134.92, "change": 3.8, "market_cap": "58B"},
+            "Cardano": {"price": 0.45, "change": -1.2, "market_cap": "16B"},
+            "Polkadot": {"price": 5.78, "change": -0.5, "market_cap": "7.8B"}
+        }
+        
+        # Portfolio performance
+        MONOLITH_DATA["AETERNUM"]["portfolio_performance"] = {
+            "daily_change": 0.42,
+            "weekly_change": 1.87,
+            "monthly_change": -0.53,
+            "yearly_change": 12.76,
+            "top_performers": ["NVDA", "MSFT", "TSLA"],
+            "worst_performers": ["IBM", "GE", "T"]
+        }
+        
+        # Economic indicators
+        MONOLITH_DATA["AETERNUM"]["economic_indicators"] = {
+            "inflation": 3.2,
+            "unemployment": 3.7,
+            "fed_rate": 5.25,
+            "treasury_10y": 4.1,
+            "oil_price": 76.45,
+            "gold_price": 2312.80,
+            "gdp_growth": 2.1,
+            "consumer_confidence": 103.5
+        }
+        
+        MONOLITH_DATA["AETERNUM"]["last_updated"] = datetime.datetime.now()
+        return True
+    except Exception as e:
+        log_entry(f"Error updating Aeternum data: {str(e)}", "ERROR")
+        return False
+
+def update_rationalis_data():
+    """Update RATIONALIS monolith data with system analysis - FIXED VERSION"""
+    try:
+        current_time = datetime.datetime.now()
+        MONOLITH_DATA["RATIONALIS"]["system_logs"] = [
+            {
+                "timestamp": (current_time - datetime.timedelta(minutes=random.randint(0, 60))).strftime("%Y-%m-%d %H:%M:%S"),
+                "level": random.choice(["INFO", "INFO", "INFO", "WARNING", "ERROR"]),
+                "message": random.choice([
+                    "System optimization complete",
+                    "Query processing successfully",
+                    "Neural pathway calibration adjusted",
+                    "Resource allocation optimized",
+                    "Multiple parallel inference threads running",
+                    "Detected anomaly in reasoning pattern",
+                    "Critical error in logic circuit",
+                    "Decision tree pruning complete"
+                ])
+            } for _ in range(8)
+        ]
+        
+        # Logic patterns
+        MONOLITH_DATA["RATIONALIS"]["logic_patterns"] = {
+            "deductive_accuracy": round(random.uniform(0.85, 0.98), 2),
+            "inductive_strength": round(random.uniform(0.8, 0.95), 2),
+            "abductive_agility": round(random.uniform(0.75, 0.9), 2),
+            "reasoning_cycles": int(random.uniform(1200, 5000)),
+            "logical_fallacies_detected": int(random.uniform(0, 10)),
+            "concept_refinement": round(random.uniform(0.7, 0.95), 2)
+        }
+        
+        # Analysis metrics
+        MONOLITH_DATA["RATIONALIS"]["analysis_metrics"] = {
+            "inference_speed": round(random.uniform(0.8, 0.99), 2),
+            "memory_utilization": round(random.uniform(0.6, 0.85), 2),
+            "latency_response": round(random.uniform(0.8, 0.95), 2),
+            "pattern_recognition": round(random.uniform(0.75, 0.92), 2),
+            "concept_relation": round(random.uniform(0.7, 0.9), 2)
+        }
+        
+        # Efficiency rating
+        MONOLITH_DATA["RATIONALIS"]["efficiency_rating"] = round(random.uniform(0.82, 0.96), 2)
+        
+        MONOLITH_DATA["RATIONALIS"]["last_updated"] = datetime.datetime.now()
+        return True
+    except Exception as e:
+        log_entry(f"Error updating Rationalis data: {str(e)}", "ERROR")
+        return False
+
+def render_aeternum_screen(stdscr, theme, height, width):
+    """Draw the Aeternum monolith specialized screen - FIXED VERSION"""
+    # Create a full-screen view
+    for i in range(1, height-3):
+        blank_line = " " * (width-2)
+        safe_addstr(stdscr, i, 1, blank_line)
+    
+    # Update data if needed
+    if not MONOLITH_DATA["AETERNUM"]["last_updated"] or \
+       (datetime.datetime.now() - MONOLITH_DATA["AETERNUM"]["last_updated"]).total_seconds() > 60:
+        update_aeternum_data()
+    
+    # Header based on theme
+    if theme == "military":
+        header = "AETERNUM FINANCIAL OPERATIONS CENTER"
+    elif theme == "wh40k":
+        header = "ADMINISTRATUM AETERNUM"
+    elif theme == "tars":
+        header = "AETERNUM.FINANCE.MODULE"
+    elif theme == "helldivers":
+        header = "SUPER EARTH ECONOMIC COMMAND"
+    else:
+        header = "AETERNUM FINANCIAL INTERFACE"
+        
+    # Draw header with monolith color
+    safe_addstr(stdscr, 1, width//2 - len(header)//2, header, 
+             curses.A_BOLD | curses.color_pair(MONOLITHS["AETERNUM"]["color"]))
+    
+    # Draw market indices
+    y_pos = 3
+    if theme == "military":
+        section_header = "[ MARKET INDICES ]"
+    elif theme == "wh40k":
+        section_header = "[ IMPERIAL TREASURIUM ]"
+    elif theme == "tars":
+        section_header = "[ MARKET.MONITOR ]"
+    elif theme == "helldivers":
+        section_header = "[ DEMOCRATIC ECONOMIC INDICES ]"
+    else:
+        section_header = "[ MARKET INDICES ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    indices = MONOLITH_DATA["AETERNUM"]["market_indices"]
+    col1_x = 4
+    col2_x = width // 2 + 4
+    
+    idx = 0
+    for name, data in indices.items():
+        if y_pos + idx//2 < height-5:
+            x_pos = col1_x if idx % 2 == 0 else col2_x
+            trend_color = 2 if data["trend"] == "up" else 1  # Green or Red
+            value_str = f"{data['value']:,.2f}"
+            change_str = f"{data['change']:+.2f}%"  # FIXED: Added missing f-string prefix
+            
+            market_text = f"{name}: {value_str} ({change_str})"
+            safe_addstr(stdscr, y_pos + idx//2, x_pos, market_text, curses.color_pair(trend_color))
+            idx += 1
+    
+    y_pos += (idx + 1) // 2 + 1
+    
+    # Draw cryptocurrency prices
+    if theme == "military":
+        section_header = "[ CRYPTOCURRENCY MARKET ]"
+    elif theme == "wh40k":
+        section_header = "[ DIGITAL SCRIP EXCHANGE ]"
+    elif theme == "tars":
+        section_header = "[ CRYPTO.ASSETS ]"
+    elif theme == "helldivers":
+        section_header = "[ SUPER EARTH DIGITAL CURRENCY ]"
+    else:
+        section_header = "[ CRYPTO ASSETS ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    crypto = MONOLITH_DATA["AETERNUM"]["crypto_prices"]
+    idx = 0
+    for name, data in crypto.items():
+        if y_pos + idx//2 < height-10:
+            x_pos = col1_x if idx % 2 == 0 else col2_x
+            trend_color = 2 if data["change"] > 0 else 1  # Green or Red
+            price_str = f"${data['price']:,.2f}"
+            change_str = f"{data['change']:+.2f}%"  # FIXED: Added missing f-string prefix
+            
+            crypto_text = f"{name}: {price_str} ({change_str}) Cap: {data['market_cap']}"
+            safe_addstr(stdscr, y_pos + idx//2, x_pos, crypto_text, curses.color_pair(trend_color))
+            idx += 1
+    
+    y_pos += (idx + 1) // 2 + 1
+    
+    # Portfolio performance
+    if theme == "military":
+        section_header = "[ PORTFOLIO PERFORMANCE ]"
+    elif theme == "wh40k":
+        section_header = "[ IMPERIAL HOLDINGS ]"
+    elif theme == "tars":
+        section_header = "[ PORTFOLIO.STATUS ]"
+    elif theme == "helldivers":
+        section_header = "[ PATRIOTIC INVESTMENTS ]"
+    else:
+        section_header = "[ PORTFOLIO PERFORMANCE ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    portfolio = MONOLITH_DATA["AETERNUM"]["portfolio_performance"]
+    
+    # Time-based performance
+    perf_y = y_pos
+    for period, change in [("Daily", portfolio["daily_change"]), 
+                           ("Weekly", portfolio["weekly_change"]), 
+                           ("Monthly", portfolio["monthly_change"]), 
+                           ("Yearly", portfolio["yearly_change"])]:
+        if perf_y < height-10:
+            change_color = 2 if change > 0 else 1  # Green or Red
+            perf_text = f"{period}: {change:+.2f}%"  # FIXED: Added missing variable definition
+            safe_addstr(stdscr, perf_y, col1_x, perf_text, curses.color_pair(change_color))
+            perf_y += 1
+    
+    # Top and worst performers
+    if y_pos < height-10:
+        top_text = f"Top: {', '.join(portfolio['top_performers'])}"
+        worst_text = f"Worst: {', '.join(portfolio['worst_performers'])}"
+        safe_addstr(stdscr, y_pos, col2_x, top_text, curses.color_pair(2))
+        safe_addstr(stdscr, y_pos+1, col2_x, worst_text, curses.color_pair(1))
+    
+    y_pos += 4
+    
+    # Economic indicators
+    if theme == "military":
+        section_header = "[ ECONOMIC INDICATORS ]"
+    elif theme == "wh40k":
+        section_header = "[ IMPERIUM ECONOMIC AUGURIES ]"
+    elif theme == "tars":
+        section_header = "[ ECONOMY.METRICS ]"
+    elif theme == "helldivers":
+        section_header = "[ DEMOCRATIC PROSPERITY INDICES ]"
+    else:
+        section_header = "[ ECONOMIC INDICATORS ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    indicators = MONOLITH_DATA["AETERNUM"]["economic_indicators"]
+    idx = 0
+    for name, value in indicators.items():
+        if y_pos + idx//3 < height-5:
+            column = idx % 3
+            x_pos = col1_x + (column * (width // 3))
+            
+            # Format based on indicator
+            if name in ["inflation", "unemployment", "fed_rate", "treasury_10y"]:
+                value_str = f"{value:.2f}%"  # FIXED: Added proper formatting
+            elif name == "oil_price":
+                value_str = f"${value:.2f}/bbl"
+            else:
+                value_str = str(value)
+            
+            # Format name to be more readable
+            name_formatted = name.replace("_", " ").title()
+            
+            indicator_text = f"{name_formatted}: {value_str}"
+            safe_addstr(stdscr, y_pos + idx//3, x_pos, indicator_text)
+            idx += 1
+    
+    # Footer
+    if MONOLITH_DATA["AETERNUM"]["last_updated"]:
+        update_time = MONOLITH_DATA["AETERNUM"]["last_updated"].strftime("%Y-%m-%d %H:%M:%S")
+        update_text = f"Last updated: {update_time}"
+        safe_addstr(stdscr, height-4, width - len(update_text) - 4, update_text, curses.color_pair(7))
+    
+    # Draw model status
+    if MODEL_STATUS["AETERNUM"]["status"] != "unknown":
+        model_info = MODEL_CONFIG["AETERNUM"]["model"]
+        model_status = MODEL_STATUS["AETERNUM"]["status"].upper()
+        model_memory = MODEL_STATUS["AETERNUM"]["memory_usage"]
+        
+        model_str = f"MODEL: {model_info} | STATUS: {model_status} | MEMORY: {model_memory:.0f}MB"
+        status_color = 2 if model_status == "READY" else 3 if model_status == "LOADING" else 1
+        safe_addstr(stdscr, height-5, 4, model_str, curses.color_pair(status_color))
+    
+    # Return to main view instruction
+    footer = "Press '1' to return to main view"
+    safe_addstr(stdscr, height-3, width//2 - len(footer)//2, footer, curses.A_BOLD)
+
+def render_rationalis_screen(stdscr, theme, height, width):
+    """Draw the Rationalis monolith specialized screen - FIXED VERSION"""
+    # Create a full-screen view
+    for i in range(1, height-3):
+        blank_line = " " * (width-2)
+        safe_addstr(stdscr, i, 1, blank_line)
+    
+    # Update data if needed
+    if not MONOLITH_DATA["RATIONALIS"]["last_updated"] or \
+       (datetime.datetime.now() - MONOLITH_DATA["RATIONALIS"]["last_updated"]).total_seconds() > 60:
+        update_rationalis_data()
+    
+    # Header based on theme
+    if theme == "military":
+        header = "RATIONALIS ANALYTICAL OPERATIONS CENTER"
+    elif theme == "wh40k":
+        header = "MECHANICUS RATIONALIS LOGIC ENGINE"
+    elif theme == "tars":
+        header = "RATIONALIS.CORE.MODULE"
+    elif theme == "helldivers":
+        header = "SUPER EARTH STRATEGIC ANALYSIS"
+    else:
+        header = "RATIONALIS LOGICAL INTERFACE"
+        
+    # Draw header with monolith color
+    safe_addstr(stdscr, 1, width//2 - len(header)//2, header, 
+             curses.A_BOLD | curses.color_pair(MONOLITHS["RATIONALIS"]["color"]))
+    
+    # Draw efficiency rating
+    efficiency = MONOLITH_DATA["RATIONALIS"]["efficiency_rating"] * 100
+    efficiency_color = 2 if efficiency > 90 else 3 if efficiency > 75 else 1
+    
+    # FIXED: Define rating_text properly
+    if theme == "military":
+        rating_text = f"OPERATIONAL EFFICIENCY: {efficiency:.1f}%"
+    elif theme == "wh40k":
+        rating_text = f"MACHINE SPIRIT HARMONY: {efficiency:.1f}%"
+    elif theme == "tars":
+        rating_text = f"EFFICIENCY.RATING: {efficiency:.1f}%"
+    elif theme == "helldivers":
+        rating_text = f"DEMOCRATIC EFFECTIVENESS: {efficiency:.1f}%"
+    else:
+        rating_text = f"EFFICIENCY RATING: {efficiency:.1f}%"
+        
+    safe_addstr(stdscr, 3, width//2 - len(rating_text)//2, rating_text, 
+             curses.A_BOLD | curses.color_pair(efficiency_color))
+    
+    # System logs
+    y_pos = 5
+    if theme == "military":
+        section_header = "[ SYSTEM LOG ENTRIES ]"
+    elif theme == "wh40k":
+        section_header = "[ NOOSPHERE TRANSMISSIONS ]"
+    elif theme == "tars":
+        section_header = "[ SYSTEM.LOGS ]"
+    elif theme == "helldivers":
+        section_header = "[ MISSION INTELLIGENCE ]"
+    else:
+        section_header = "[ SYSTEM LOGS ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    logs = MONOLITH_DATA["RATIONALIS"]["system_logs"]
+    for idx, log in enumerate(logs):
+        if y_pos + idx < height-12:
+            level_color = 2 if log["level"] == "INFO" else 3 if log["level"] == "WARNING" else 1
+            log_text = f"[{log['timestamp']}] {log['level']}: {log['message']}"
+            safe_addstr(stdscr, y_pos + idx, 4, log_text, curses.color_pair(level_color))
+    
+    y_pos += len(logs) + 1
+    
+    # Logic patterns
+    if theme == "military":
+        section_header = "[ REASONING CAPABILITY METRICS ]"
+    elif theme == "wh40k":
+        section_header = "[ COGITATION PARAMETERS ]"
+    elif theme == "tars":
+        section_header = "[ LOGIC.PATTERNS ]"
+    elif theme == "helldivers":
+        section_header = "[ DEMOCRATIC THINKING METRICS ]"
+    else:
+        section_header = "[ REASONING METRICS ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section_header)//2, section_header, curses.A_BOLD)
+    y_pos += 1
+    
+    patterns = MONOLITH_DATA["RATIONALIS"]["logic_patterns"]
+    col1_x = 4
+    col2_x = width // 2 + 4
+    
+    idx = 0
+    for name, value in patterns.items():
+        if y_pos + idx//2 < height-8 and name != "logical_fallacies_detected":
+            x_pos = col1_x if idx % 2 == 0 else col2_x
+            
+            # Format score with color based on value
+            if isinstance(value, float):
+                score_color = 2 if value > 0.8 else 3 if value > 0.6 else 1
+                value_str = f"{value:.2f}"
+            else:
+                score_color = 7
+                value_str = str(value)
+            
+            # Format name to be more readable
+            name_formatted = name.replace("_", " ").title()
+            
+            pattern_text = f"{name_formatted}: {value_str}"
+            safe_addstr(stdscr, y_pos + idx//2, x_pos, pattern_text, curses.color_pair(score_color))
+            idx += 1
+    
+    # Display fallacies separately
+    if "logical_fallacies_detected" in patterns:
+        fallacy_text = f"Logical Fallacies Detected: {patterns['logical_fallacies_detected']}"
+        safe_addstr(stdscr, y_pos + (idx+1)//2, col1_x, fallacy_text, 
+                 curses.color_pair(3 if patterns['logical_fallacies_detected'] < 10 else 1))
+    
+    y_pos += (idx + 3) // 2 + 1
+    
+    # Analysis metrics
+    if theme == "military":
+        section_header = "[ ANALYTICAL PERFORMANCE INDICATORS ]"
+    elif theme == "wh40k":
+        section_header = "[ RATIONALIS EFFICIENCY METRICS ]"
+    elif theme == "tars":
+        section_header = "[ ANALYSIS.METRICS ]"
+    elif theme == "helldivers":
+        section_header = "[ STRATAGEM EFFICIENCY RATINGS ]"
+    else:
+        section_header = "[ ANALYSIS METRICS ]"
+        
+    safe_addstr(stdscr, y_pos, width//2 - len(section

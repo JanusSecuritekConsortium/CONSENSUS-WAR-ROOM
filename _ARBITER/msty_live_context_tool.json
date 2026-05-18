@@ -1,0 +1,22 @@
+{
+  "name": "CONSENSUS War Room Tribunal",
+  "description": "Submits a proposal to the local three-monolith tribunal: RATIONALIS for Logic, AETERNUM for Finance, and BELLATOR for Security.",
+  "method": "POST",
+  "url": "http://127.0.0.1:8888/msty/live-context",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "query": "{query:'Proposal to submit to the tribunal'}",
+    "theme": "eva",
+    "backend": "msty-local",
+    "sequential": false
+  },
+  "response_mapping": {
+    "summary": "$.summary",
+    "verdict": "$.verdict",
+    "votes": "$.votes",
+    "review_triggers": "$.review_triggers",
+    "session_id": "$.session_id"
+  }
+}

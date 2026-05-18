@@ -1,0 +1,126 @@
+
+
+
+
+                    ████████████████████
+                       ██████████████
+                         ██████████
+                         ██████████
+                          ████████
+                          ████████
+                    ████████████████████
+                    ████████████████████
+                    ████████████████████
+                    ████████████████████
+                    ████████████████████
+                    ████████████████████
+                          ████████
+                          ████████
+                          ████████
+                          ████████
+                          ████████
+                          ████████
+                         ██████████
+                         ██████████
+                        ████████████
+                    ████████████████████
+                    ████████████████████
+
+
+
+
+Cogitator Tribunal | canonical=wh40k
+------------------------------------------------------------------------
+THEME METADATA
+aliases: WH40K, WARHAMMER, COGITATOR
+boot_profile: wh40k_boot
+boot_headline: IMPERIAL GOTHIC TERMINAL RITUAL
+loading_animation: cogitator_litany
+panel_style: imperial cogitator
+border_style: gothic double
+font_family: Consolas, Cascadia Mono, monospace
+logo: cogitator -> G:\CONSENSUS_SYSTEM\static\logos\cogitator_logo.txt
+
+MONOLITH LABELS
+RATIONALIS: ADEPTUS MECHANICUS LOGIS | COGITATOR LOGIS CORE
+AETERNUM: ADMINISTRATUM HISTORICUS | IMPERIAL ARCHIVE CORE
+BELLATOR: MUNITORUM TACTICUS | TACTICA SANCTORUM CORE
+
+INTERFACE LABELS
+history: IMPERIAL ARCHIVE SANCTORUM
+analytics: COGITATOR AUGURY
+system_status: MACHINE SPIRIT PURITY
+vote_status: COUNCIL OF TERRA DELIBERATION
+vote_approve: IMPERIAL SANCTION GRANTED
+vote_deny: IMPERIAL SANCTION DENIED
+vote_deadlock: COUNCIL DISCORD - INQUISITORIAL REVIEW
+
+COLORS
+primary: #d9a441
+secondary: #8c1d18
+accent: #e8d8a8
+background: #0c0907
+surface: #1b1510
+text: #f4ead2
+warning: #d9a441
+error: #b82020
+
+THEME BIOS SAMPLE
+COGITATOR TRIBUNAL BIOS SAMPLE
+PROFILE: wh40k_boot
+LOGO ASSET: cogitator
+PANEL: imperial cogitator
+BORDER: gothic double
+------------------------------------------------------------------------
+IMPERIAL COGITATOR BIOS v7.3.0
++++ ADEPTUS MECHANICUS COGITATOR RITE +++
+Adeptus Mechanicus Noospheric Terminal / Machine Spirit Litany
+DATE REF: 0918015.M03
+SERIAL: OMNISSIAH-COG-7851 | DATE REF: 0918015.M03 | THEME: WH40K
+CHRONO-STAMP: 0918015.M03
+
+Memory Test: 008192 MB OK
+Memory Test: 016384 MB OK
+Memory Test: 024576 MB OK
+Memory Test: 032581 MB OK
+
+Detecting devices:
+- Neural Processor
+- Quantum Cryptographic Module
+- Noospheric Cogitator Display Engine
+- Hyperlane Storage
+- Secure Tunnel Port 7851
+- Proposal Watcher
+- Memory Store
+
+                              POST:
+                              [OK] Machine Spirit Litany
+                              [OK] Core Integrity
+                              [OK] Theme Catalog
+                              [OK] Static Logos
+                              [OK] Agent Registry
+                              [OK] Msty Runtime Adapter
+                              [WARN] MSTY PROVIDER DEGRADED
+                              [OK] NOOSPHERIC TIME INDEX: 0918015.M03
+
+                                      Tribunal initialization:
+                                      RATIONALIS....ONLINE
+                                      AETERNUM......ONLINE
+                                      BELLATOR......ONLINE
+                                      ARBITER.......ONLINE
+
+WAR ROOM INIT PROTOCOL COMPLETE
+TRANSFERRING CONTROL TO CONSENSUS LOADER...
+
+THEME LOADING SAMPLE
+[LOAD:cogitator_litany] COGITATOR RITE AND LITANY
+MACHINE-SPIRIT PURITY [▓▓▓▓▓▓▓▓▒▒▒▒]  70%
+[STAGE] MACHINE SPIRIT
+[STAGE] NOOSPHERIC LINK
+[STAGE] DATA-VAULT
+[STAGE] SANCTION PROTOCOL
+[STATUS] DATE REF: 0918015.M03
+[STATUS] MACHINE SPIRIT AWAKENED
+[STATUS] COGITATOR ONLINE
+[STATUS] NOOSPHERIC TIME INDEX: 0918015.M03
+[STATUS] RITE COMPLETE
