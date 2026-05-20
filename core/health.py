@@ -129,12 +129,12 @@ def run_health_check(config_path: Path = CONFIG_PATH, config_override: RuntimeCo
             prompt="health parser",
         )
         vote = parse_vote(
-            "VOTE: APPROVE\nCONFIDENCE: 0.88\nREASONING: parser ok\nRISKS: none\nCONDITIONS: none",
+            "VOTE: APPROVE\nCONFIDENCE: 0.88\nEVIDENCE_QUALITY: 0.77\nCRITICAL_RISK: false\nRATIONALE: parser ok\nRISKS: none\nCONDITIONS: none",
             node,
             0.0,
             "mock",
         )
-        if vote.vote != VoteValue.APPROVE or vote.confidence != 0.88:
+        if vote.vote != VoteValue.APPROVE or vote.confidence != 0.88 or vote.evidence_quality != 0.77:
             raise RuntimeError("Voting parser returned unexpected output.")
         pass_check("voting_parser", {"vote": vote.vote.value, "confidence": vote.confidence})
     except Exception as exc:

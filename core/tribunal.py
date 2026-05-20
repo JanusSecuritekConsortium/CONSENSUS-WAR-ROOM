@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from core.history import record_result
 from core.logging import log_event
@@ -22,6 +22,7 @@ class Tribunal:
         runtime: AgentRuntime,
         rules: Optional[ConsensusRules] = None,
         theme_key: str = "military",
+        voice_announcer: Optional[Callable[[TribunalResult], Any]] = None,
     ):
         self.nodes = nodes
         self.runtime = runtime
@@ -29,6 +30,7 @@ class Tribunal:
         self.theme_key = theme_key if theme_key in THEMES else "military"
         self.orchestrator = VotingOrchestrator(nodes, runtime)
         self.consensus_engine = ConsensusEngine(self.rules, self.theme_key)
+        self.voice_announcer = voice_announcer
 
     def deliberate(self, query: str, sequential: bool = False) -> TribunalResult:
         session_id = uuid.uuid4().hex[:12]
@@ -56,10 +58,24 @@ class Tribunal:
                 "verdict": result.verdict.value,
                 "confidence": result.confidence,
                 "review_triggers": result.review_triggers,
+                "terminal_branch": result.terminal_branch,
                 "elapsed": round(time.perf_counter() - started, 6),
             },
         )
+        self._announce_verdict(result)
         return result
+
+    def _announce_verdict(self, result: TribunalResult) -> None:
+        if self.voice_announcer is None:
+            return
+        try:
+            self.voice_announcer(result)
+        except Exception as exc:
+            log_event(
+                "aurelius_verdict_announcement_failed",
+                {"session_id": result.session_id, "verdict": result.verdict.value, "error": str(exc)},
+                level="WARN",
+            )
 
     def _provider_context(self) -> Dict[str, Any]:
         if not hasattr(self.runtime, "health_check"):
@@ -89,6 +105,10 @@ class Tribunal:
                 agent_id: {
                     "vote": vote.vote.value,
                     "confidence": vote.confidence,
+                    "evidence_quality": vote.evidence_quality,
+                    "critical_risk": vote.critical_risk,
+                    "critical_domain_relevance": vote.critical_domain_relevance,
+                    "validation_errors": vote.validation_errors,
                     "reasoning": vote.reasoning,
                     "model": vote.model,
                     "response_time": vote.response_time,
@@ -98,6 +118,8 @@ class Tribunal:
             "arbiter_verdict": result.verdict.value,
             "verdict": result.verdict.value,
             "synthesis_summary": result.reason,
+            "terminal_branch": result.terminal_branch,
+            "proposal_classification": result.proposal_classification,
             "provider_backend": provider_context.get("active_backend") or provider_context.get("backend"),
             "provider_status": provider_context.get("status"),
             "model_mapping": model_mapping,

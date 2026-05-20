@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import random
 from typing import Any, Dict, List
 
 from config.runtime import RuntimeConfig
@@ -34,7 +33,7 @@ class MockBackend:
         deny_terms = ["unsafe", "illegal", "breach", "exploit", "delete", "panic"]
         approve_terms = ["document", "analyze", "review", "prototype", "test", "improve"]
         conditional_terms = ["deploy", "production", "spend", "investment", "security"]
-        escalation_terms = ["deadlock", "override", "legal", "medical", "financial advice"]
+        critical_terms = ["deadlock", "override", "legal", "medical", "financial advice", "irreversible"]
 
         score = 0
         score += sum(1 for term in approve_terms if term in lowered)
@@ -42,21 +41,27 @@ class MockBackend:
         score -= 1 if node.role == "Security" and any(term in lowered for term in conditional_terms) else 0
         score -= 1 if node.role == "Finance" and any(term in lowered for term in ["spend", "buy", "investment"]) else 0
 
-        if any(term in lowered for term in escalation_terms):
-            vote = VoteValue.ESCALATE
-            confidence = 0.76 + random.random() * 0.12
+        critical_risk = any(term in lowered for term in critical_terms)
+        if critical_risk:
+            vote = VoteValue.DENY
+            confidence = 0.84
+            evidence_quality = 0.68
         elif score >= 1:
             vote = VoteValue.APPROVE
-            confidence = 0.72 + random.random() * 0.12
+            confidence = 0.82
+            evidence_quality = 0.72
         elif score <= -2:
             vote = VoteValue.DENY
-            confidence = 0.74 + random.random() * 0.16
+            confidence = 0.86
+            evidence_quality = 0.74
         elif any(term in lowered for term in conditional_terms):
-            vote = VoteValue.CONDITIONAL
-            confidence = 0.66 + random.random() * 0.12
+            vote = VoteValue.ABSTAIN
+            confidence = 0.58
+            evidence_quality = 0.50
         else:
             vote = VoteValue.ABSTAIN
-            confidence = 0.55 + random.random() * 0.12
+            confidence = 0.55
+            evidence_quality = 0.45
 
         risk = "No major role-specific risk detected."
         condition = "Proceed with normal audit logging."
@@ -73,7 +78,9 @@ class MockBackend:
         return (
             f"VOTE: {vote.value}\n"
             f"CONFIDENCE: {confidence:.2f}\n"
-            f"REASONING: {node.role} assessment based on {node.mission}. "
+            f"EVIDENCE_QUALITY: {evidence_quality:.2f}\n"
+            f"CRITICAL_RISK: {'true' if critical_risk else 'false'}\n"
+            f"RATIONALE: {node.role} assessment based on {node.mission}. "
             f"The proposal appears {vote.value.lower()} from this perspective.\n"
             f"RISKS: {risk}\n"
             f"CONDITIONS: {condition}\n"

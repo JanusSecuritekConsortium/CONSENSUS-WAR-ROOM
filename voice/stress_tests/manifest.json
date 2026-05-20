@@ -1,0 +1,12 @@
+{
+  "AURELIUS": {
+    "assistant_briefing": "AURELIUS/assistant_briefing.txt",
+    "long_documentary_cadence": "AURELIUS/long_documentary_cadence.txt",
+    "calm_warning_notification": "AURELIUS/calm_warning_notification.txt"
+  },
+  "ARBITER_GLADOS": {
+    "tribunal_verdict": "ARBITER_GLADOS/tribunal_verdict.txt",
+    "cold_synthetic_deadlock": "ARBITER_GLADOS/cold_synthetic_deadlock.txt",
+    "portal_style_cadence": "ARBITER_GLADOS/portal_style_cadence.txt"
+  }
+}

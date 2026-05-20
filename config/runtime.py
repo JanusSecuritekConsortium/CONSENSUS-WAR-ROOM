@@ -18,6 +18,32 @@ class RuntimeConfig:
     quorum: int = 2
     majority: int = 2
     high_risk_review: bool = True
+    evidence_threshold: float = 0.4
+    classification_confidence_threshold: float = 0.6
+    tie_break_priority: list[str] = field(default_factory=lambda: ["BELLATOR", "RATIONALIS", "AETERNUM"])
+    proposal_taxonomy: list[str] = field(
+        default_factory=lambda: [
+            "logic",
+            "governance",
+            "ethics",
+            "analysis",
+            "finance",
+            "forecasting",
+            "economics",
+            "historical_patterns",
+            "security",
+            "geopolitics",
+            "risk",
+            "operations",
+        ]
+    )
+    monolith_domain_map: Dict[str, list[str]] = field(
+        default_factory=lambda: {
+            "RATIONALIS": ["logic", "governance", "ethics", "analysis"],
+            "AETERNUM": ["finance", "forecasting", "economics", "historical_patterns"],
+            "BELLATOR": ["security", "geopolitics", "risk", "operations"],
+        }
+    )
     ollama_base_url: str = "http://127.0.0.1:11434"
     msty_base_url: str = "http://127.0.0.1:11964"
     msty_llama_cpp_base_url: str = "http://localhost:11454"
@@ -70,6 +96,8 @@ def apply_cli_overrides(config: RuntimeConfig, args: argparse.Namespace) -> Runt
         "minimum_confidence",
         "quorum",
         "majority",
+        "evidence_threshold",
+        "classification_confidence_threshold",
         "api_host",
         "api_port",
         "ollama_base_url",

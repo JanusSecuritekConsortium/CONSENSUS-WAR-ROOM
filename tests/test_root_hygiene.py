@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ALLOWED_ROOT_PY = {"main.py", "consensus_war_room_genesis.py"}
+ALLOWED_ROOT_PY = {"__init__.py", "main.py", "consensus_war_room_genesis.py"}
 
 
 def test_root_contains_only_allowed_python_launchers() -> None:

@@ -1,0 +1,112 @@
+{
+  "default_backend": "windows_sapi",
+  "profiles": {
+    "AURELIUS": {
+      "backend": "rvc",
+      "voice": "aurelius",
+      "display_name": "AURELIUS",
+      "base_tts": "windows_sapi",
+      "base_voice_name": [
+        "Microsoft George",
+        "Microsoft Ryan",
+        "Microsoft David"
+      ],
+      "base_voice_gender": "Male",
+      "base_voice_language": "en-GB",
+      "rvc_model_path": "G:/CONSENSUS_SYSTEM/voice/models/aurelius/DavidAttenborough/weights/DavidAttenborough.pth",
+      "rvc_model_name": "aurelius.pth",
+      "rvc_index_path": "G:/CONSENSUS_SYSTEM/voice/models/aurelius/DavidAttenborough/logs/DavidAttenborough/added_IVF1110_Flat_nprobe_1_DavidAttenborough_v2.index",
+      "rvc_workdir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
+      "rvc_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
+      "rvc_ffmpeg_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/VoiceConversionWebUI",
+      "rvc_env": {
+        "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"
+      },
+      "rvc_command": [
+        "{python}",
+        "tools/infer_cli.py",
+        "--f0up_key",
+        "{transpose}",
+        "--input_path",
+        "{input}",
+        "--index_path",
+        "{index}",
+        "--f0method",
+        "rmvpe",
+        "--opt_path",
+        "{output}",
+        "--model_name",
+        "{model_name}",
+        "--index_rate",
+        "{index_rate}",
+        "--device",
+        "cpu",
+        "--filter_radius",
+        "{filter_radius}",
+        "--protect",
+        "{protect}"
+      ],
+      "transpose": 2,
+      "index_rate": 0.78,
+      "protect": 0.4,
+      "filter_radius": 3,
+      "output_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio",
+      "fallback": "windows_sapi",
+      "rate": 145,
+      "volume": 0.9
+    },
+    "ARBITER_GLADOS": {
+      "backend": "rvc",
+      "voice": "glados",
+      "display_name": "ARBITER",
+      "base_tts": "windows_sapi",
+      "base_voice_name": [
+        "Microsoft Zira",
+        "Microsoft Hazel"
+      ],
+      "base_voice_gender": "Female",
+      "base_voice_language": "en-US,en-GB",
+      "rvc_model_path": "G:/CONSENSUS_SYSTEM/voice/models/arbiter_glados/glados/glados2333333.pth",
+      "rvc_model_name": "arbiter_glados.pth",
+      "rvc_index_path": "G:/CONSENSUS_SYSTEM/voice/models/arbiter_glados/glados/added_IVF2170_Flat_nprobe_1.index",
+      "rvc_workdir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
+      "rvc_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
+      "rvc_ffmpeg_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/VoiceConversionWebUI",
+      "rvc_env": {
+        "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"
+      },
+      "rvc_command": [
+        "{python}",
+        "tools/infer_cli.py",
+        "--f0up_key",
+        "{transpose}",
+        "--input_path",
+        "{input}",
+        "--index_path",
+        "{index}",
+        "--f0method",
+        "rmvpe",
+        "--opt_path",
+        "{output}",
+        "--model_name",
+        "{model_name}",
+        "--index_rate",
+        "{index_rate}",
+        "--device",
+        "cpu",
+        "--filter_radius",
+        "{filter_radius}",
+        "--protect",
+        "{protect}"
+      ],
+      "transpose": -3,
+      "index_rate": 0.9,
+      "protect": 0.05,
+      "filter_radius": 7,
+      "output_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio",
+      "fallback": "windows_sapi",
+      "rate": 135,
+      "volume": 0.95
+    }
+  }
+}

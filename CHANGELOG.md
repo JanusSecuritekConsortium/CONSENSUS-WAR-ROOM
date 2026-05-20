@@ -1,5 +1,36 @@
 # Changelog
 
+## 7.10.0 - Deterministic Arbiter Consensus
+
+- Added spec-shaped voting fields for evidence quality, critical risk, Arbiter-assigned domain relevance, and validation errors.
+- Reworked consensus resolution around deterministic majority, CAUTION, NO_CONSENSUS, and priority tie-break branches.
+- Updated monolith prompts, vote parsing, mock runtime output, UI status colors, TTS mappings, runtime config, and focused consensus tests.
+- Routed Bellator feed packet versions through the canonical system version.
+
+## 7.9.5 - ACLED OAuth Auth Fix
+
+- Migrated ACLED feed authentication to OAuth/access-token resolution with legacy API key compatibility gated behind explicit opt-in.
+
+## 7.9.4 - Bellator Geospatial Relevance
+
+- Added Bellator geospatial filtering, strategic region presets, and strategic relevance scoring for feed intelligence.
+
+## 7.9.3 - Active Tree Compile Hygiene
+
+- Added active-tree compile hygiene script excluding archive/runtime directories.
+
+## 7.9.2 - Bellator Feed Health Diagnostics
+
+- Added Bellator feed API key health validation and PowerShell setup diagnostics.
+
+## 7.9.1 - Bellator Intelligence Diagnostics
+
+- Added Bellator Intelligence diagnostics UI summary and anti-fabrication feed handling guard.
+
+## 7.9.0 - Bellator Feed Intelligence Layer
+
+- Added Bellator Feed Intelligence Layer with ACLED, NASA FIRMS, Cloudflare Radar, and URLHaus Phase 1 clients.
+
 ## 7.7.7 - War Room Refresh Cadence and Boot Phrase Variation
 
 - Reduced automatic GUI page rebuild cadence so footer controls and the theme selector are no longer interrupted by aggressive background refresh.
