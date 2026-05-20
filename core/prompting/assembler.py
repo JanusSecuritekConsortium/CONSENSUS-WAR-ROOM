@@ -27,6 +27,13 @@ def assemble_monolith_prompt(node: NodeIdentity, proposal: str, context: Dict[st
     context_summary = memory_context.get("summary", "No prior decisions retrieved.") if isinstance(memory_context, dict) else "No prior decisions retrieved."
     selected_model = context.get("model", node.model) if isinstance(context, dict) else node.model
     shared_context = json.dumps(context, indent=2, ensure_ascii=True) if context else "{}"
+    bellator_packet = context.get("bellator_context_packet") if isinstance(context, dict) else None
+    bellator_feed_rules = ""
+    if isinstance(bellator_packet, dict) and bellator_packet.get("anti_fabrication_instruction"):
+        bellator_feed_rules = (
+            "\n\nBELLATOR FEED HANDLING RULES:\n"
+            f"{bellator_packet['anti_fabrication_instruction']}"
+        )
 
     return f"""
 {node.prompt}
@@ -54,11 +61,14 @@ RELEVANT MEMORY CONTEXT:
 
 Shared machine context:
 {shared_context}
+{bellator_feed_rules}
 
 Return exactly this parseable schema:
-VOTE: APPROVE | DENY | CONDITIONAL | ABSTAIN | ESCALATE
+VOTE: APPROVE | DENY | ABSTAIN
 CONFIDENCE: 0.00 to 1.00
-REASONING: concise but specific reasoning grounded in doctrine and retrieved context
+EVIDENCE_QUALITY: 0.00 to 1.00
+CRITICAL_RISK: true | false
+RATIONALE: concise but specific reasoning grounded in doctrine and retrieved context
 RISKS: comma-separated risks
 CONDITIONS: comma-separated conditions, if any
 """.strip()

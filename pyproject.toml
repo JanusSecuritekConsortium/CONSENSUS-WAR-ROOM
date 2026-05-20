@@ -1,6 +1,6 @@
 [project]
 name = "consensus-war-room"
-version = "7.7.7"
+version = "7.10.0"
 description = "Local multi-agent tribunal for proposal review and auditable consensus decisions."
 requires-python = ">=3.10"
 readme = "README.md"

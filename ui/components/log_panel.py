@@ -5,6 +5,7 @@ from typing import Iterable
 import flet as ft
 
 from core.models import Theme
+from ui.components.bellator_intelligence_panel import build_bellator_intelligence_panel
 
 
 def log_level_color_category(line: str) -> str:
@@ -61,11 +62,11 @@ def _log_rows(theme: Theme, logs: Iterable[str]) -> ft.Control:
 
 def _decision_color(theme: Theme, line: str) -> str:
     verdict = line.split("|", 1)[0].strip().upper()
-    if verdict == "APPROVED":
+    if verdict in {"APPROVE", "APPROVED"}:
         return theme.primary_color
-    if verdict in {"DENIED", "ERROR"}:
+    if verdict in {"DENY", "DENIED", "ERROR"}:
         return theme.error_color
-    if verdict in {"DEADLOCK", "HUMAN_REVIEW_REQUIRED", "CONDITIONAL_APPROVAL"}:
+    if verdict in {"NO_CONSENSUS", "CAUTION", "ESCALATE", "DEADLOCK", "HUMAN_REVIEW_REQUIRED", "CONDITIONAL_APPROVAL"}:
         return theme.warning_color
     return theme.text_color
 
@@ -91,6 +92,8 @@ def build_log_panel(
     logs: Iterable[str],
     decisions: Iterable[str],
     timeline_events: Iterable[str] | None = None,
+    bellator_intelligence: dict | None = None,
+    refresh_bellator_intelligence=None,
 ) -> ft.Control:
     return ft.Container(
         content=ft.Column(
@@ -106,6 +109,8 @@ def build_log_panel(
                 ft.Divider(color=theme.secondary_color),
                 ft.Text("RECENT DECISIONS", color=theme.accent_color, weight=ft.FontWeight.BOLD),
                 _decision_rows(theme, decisions),
+                ft.Divider(color=theme.secondary_color),
+                build_bellator_intelligence_panel(theme, bellator_intelligence, refresh_bellator_intelligence),
                 ft.Divider(color=theme.secondary_color),
                 ft.Text("TRIBUNAL TIMELINE", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
                 _timeline_rows(theme, timeline_events or []),

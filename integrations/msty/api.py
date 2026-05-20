@@ -1255,6 +1255,11 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             quorum=config.quorum,
             majority=config.majority,
             high_risk_review=config.high_risk_review,
+            evidence_threshold=config.evidence_threshold,
+            classification_confidence_threshold=config.classification_confidence_threshold,
+            tie_break_priority=config.tie_break_priority,
+            proposal_taxonomy=config.proposal_taxonomy,
+            monolith_domain_map=config.monolith_domain_map,
         )
         tribunal = Tribunal(nodes, MstyRuntime(runtime_config), rules=rules, theme_key=theme_key)
         return tribunal.deliberate(
@@ -1317,7 +1322,7 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             None,
         )
         vote_lines = [
-            f"{key}: {vote.vote.value} ({vote.confidence:.0%})"
+            f"{key}: {vote.vote.value} confidence={vote.confidence:.0%} evidence={vote.evidence_quality:.0%} critical_risk={vote.critical_risk}"
             for key, vote in result.votes.items()
         ]
         return {
@@ -1343,8 +1348,8 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
                 "Use the CONSENSUS War Room Live Context when the user asks for a "
                 "proposal review, go/no-go decision, risk assessment, budget/security "
                 "tradeoff, or tribunal vote. Send the user's proposal as query. Treat "
-                "the returned verdict as an advisory decision: APPROVED, DENIED, "
-                "CONDITIONAL_APPROVAL, HUMAN_REVIEW_REQUIRED, DEADLOCK, or ERROR. "
+                "the returned verdict as an advisory decision: APPROVE, DENY, ABSTAIN, "
+                "NO_CONSENSUS, CAUTION, or ESCALATE. "
                 "Report each monolith vote: RATIONALIS for Logic, AETERNUM for Finance, "
                 "and BELLATOR for Security."
             ),

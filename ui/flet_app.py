@@ -13,11 +13,15 @@ from typing import Callable, Dict, List, Literal
 import flet as ft
 
 from assistant.aurelius_runtime import AureliusRuntime, get_aurelius_runtime
-from config.names import ARBITER, TRIBUNAL_AGENT_IDS
+from config.names import ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.history import record_result
 from core.health import run_health_check
+from core.intelligence.bellator_context_builder import (
+    build_bellator_context_packet,
+    build_bellator_diagnostics_payload,
+)
 from core.llm.prompts import build_node_prompt
 from core.logging import log_error, log_event
 from core.memory.context import build_context_packet, context_status
@@ -119,6 +123,7 @@ class GuiState:
     monolith_latencies_ms: Dict[str, int] = field(default_factory=default_latencies)
     proposal_file_mtime: float | None = None
     ui_interaction_hold_until: float = 0.0
+    bellator_intelligence_diagnostics: Dict[str, object] = field(default_factory=dict)
 
     @property
     def theme(self):
@@ -150,6 +155,7 @@ def create_gui_state(
     state.timeline_events = [
         append_timeline([], "SYSTEM", f"{state.theme.display_name} interface online")[0]
     ]
+    refresh_bellator_intelligence_status(state)
     log_war_room_runtime("gui_state_created", {"theme": state.theme_key, "window_mode": window_mode})
     return state
 
@@ -221,6 +227,29 @@ def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) ->
     state.provider_warning = _fallback_warning(state, runtime)
     state.logs = read_recent_log_events()
     state.recent_decisions = read_recent_decisions()
+    refresh_bellator_intelligence_status(state)
+
+
+def refresh_bellator_intelligence_status(state: GuiState) -> Dict[str, object]:
+    state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload()
+    return state.bellator_intelligence_diagnostics
+
+
+def refresh_bellator_intelligence_for_gui(state: GuiState) -> Dict[str, object]:
+    packet = build_bellator_context_packet("GUI manual Bellator intelligence diagnostics refresh")
+    state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
+    log_event(
+        "gui_bellator_intelligence_refresh",
+        {
+            "mode": packet.get("mode"),
+            "sources": {
+                source: payload.get("status")
+                for source, payload in packet.get("sources", {}).items()
+                if isinstance(payload, dict)
+            },
+        },
+    )
+    return state.bellator_intelligence_diagnostics
 
 
 def recheck_provider_for_gui(state: GuiState) -> Dict[str, object]:
@@ -268,6 +297,10 @@ def _vote_detail(vote: Vote) -> Dict[str, object]:
     return {
         "vote": vote.vote.value,
         "confidence": vote.confidence,
+        "evidence_quality": vote.evidence_quality,
+        "critical_risk": vote.critical_risk,
+        "critical_domain_relevance": vote.critical_domain_relevance,
+        "validation_errors": list(vote.validation_errors),
         "reasoning": vote.reasoning,
         "response_time": vote.response_time,
     }
@@ -326,6 +359,11 @@ def submit_proposal_live_for_gui(
         quorum=state.config.quorum,
         majority=state.config.majority,
         high_risk_review=state.config.high_risk_review,
+        evidence_threshold=state.config.evidence_threshold,
+        classification_confidence_threshold=state.config.classification_confidence_threshold,
+        tie_break_priority=state.config.tie_break_priority,
+        proposal_taxonomy=state.config.proposal_taxonomy,
+        monolith_domain_map=state.config.monolith_domain_map,
     )
     session_id = uuid.uuid4().hex[:12]
     started = time.perf_counter()
@@ -370,7 +408,13 @@ def submit_proposal_live_for_gui(
                 "theme": state.theme_key,
                 "memory_context": memory_context,
             }
+            if agent_id == BELLATOR:
+                runtime_context = dict(runtime_context)
             runtime_context["model"] = node.model
+            if agent_id == BELLATOR:
+                packet = build_bellator_context_packet(clean_proposal)
+                runtime_context["bellator_context_packet"] = packet
+                state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
             prompt = build_node_prompt(node, clean_proposal, runtime_context)
             vote_started = time.perf_counter()
             try:
@@ -391,16 +435,19 @@ def submit_proposal_live_for_gui(
                 vote = Vote(
                     node_key=agent_id,
                     role=node.role,
-                    vote=VoteValue.ERROR,
+                    vote=VoteValue.ABSTAIN,
                     confidence=0.0,
                     reasoning=f"Runtime failure: {exc}",
+                    evidence_quality=0.0,
+                    critical_risk=False,
+                    validation_errors=[f"runtime_failure:{exc.__class__.__name__}"],
                     model=node.model,
                     response_time=elapsed,
                 )
             votes[agent_id] = vote
             state.monolith_statuses[agent_id] = vote.vote.value
             state.monolith_vote_details[agent_id] = _vote_detail(vote)
-            state.monolith_activity_states[agent_id] = "ERROR" if vote.vote == VoteValue.ERROR else "IDLE"
+            state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
             append_timeline(state.timeline_events, agent_id, f"vote {vote.vote.value.lower()} confidence {vote.confidence:.0%}")
             log_event(
                 "vote",
@@ -409,10 +456,13 @@ def submit_proposal_live_for_gui(
                     "agent_id": agent_id,
                     "vote": vote.vote.value,
                     "confidence": vote.confidence,
+                    "evidence_quality": vote.evidence_quality,
+                    "critical_risk": vote.critical_risk,
+                    "validation_errors": vote.validation_errors,
                     "model": vote.model,
                     "response_time": vote.response_time,
                 },
-                level="ERROR" if vote.vote == VoteValue.ERROR else "INFO",
+                level="ERROR" if vote.validation_errors else "INFO",
             )
             if state.config.sequential:
                 context[agent_id] = {
@@ -470,6 +520,10 @@ def submit_proposal_live_for_gui(
                         agent_id: {
                             "vote": vote.vote.value,
                             "confidence": vote.confidence,
+                            "evidence_quality": vote.evidence_quality,
+                            "critical_risk": vote.critical_risk,
+                            "critical_domain_relevance": vote.critical_domain_relevance,
+                            "validation_errors": vote.validation_errors,
                             "reasoning": vote.reasoning,
                             "model": vote.model,
                             "response_time": vote.response_time,
@@ -479,6 +533,8 @@ def submit_proposal_live_for_gui(
                     "arbiter_verdict": result.verdict.value,
                     "verdict": result.verdict.value,
                     "synthesis_summary": result.reason,
+                    "terminal_branch": result.terminal_branch,
+                    "proposal_classification": result.proposal_classification,
                     "provider_backend": provider_payload.get("active_backend") if isinstance(provider_payload, dict) else None,
                     "provider_status": provider_payload.get("status") if isinstance(provider_payload, dict) else None,
                     "model_mapping": {agent_id: vote.model for agent_id, vote in result.votes.items()},
@@ -500,9 +556,28 @@ def submit_proposal_live_for_gui(
                 "verdict": result.verdict.value,
                 "confidence": result.confidence,
                 "review_triggers": result.review_triggers,
+                "terminal_branch": result.terminal_branch,
                 "elapsed": round(time.perf_counter() - started, 6),
             },
         )
+        if state.aurelius_voice_loop_enabled and state.aurelius_runtime is not None:
+            try:
+                speech_result = state.aurelius_runtime.announce_consensus_verdict(result)
+                log_event(
+                    "gui_aurelius_verdict_spoken",
+                    {
+                        "session_id": result.session_id,
+                        "verdict": result.verdict.value,
+                        "spoken": speech_result.spoken,
+                        "audio_path": speech_result.audio_path,
+                    },
+                )
+            except Exception as exc:
+                log_event(
+                    "gui_aurelius_verdict_speech_failed",
+                    {"session_id": result.session_id, "verdict": result.verdict.value, "error": str(exc)},
+                    level="WARN",
+                )
         _set_lifecycle(state, LIFECYCLE_VERDICT_ISSUED, on_update)
         state.logs = read_recent_log_events()
         state.recent_decisions = read_recent_decisions()
@@ -630,6 +705,7 @@ def build_gui_layout(
     close_gui,
     recheck_provider=None,
     toggle_aurelius_voice=None,
+    refresh_bellator_intelligence=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -736,7 +812,14 @@ def build_gui_layout(
                     prior_decisions_used=state.prior_decisions_used,
                     current_session_id=state.current_result.session_id if state.current_result else "--",
                 ),
-                build_log_panel(theme, state.logs, state.recent_decisions, timeline_events=state.timeline_events),
+                build_log_panel(
+                    theme,
+                    state.logs,
+                    state.recent_decisions,
+                    timeline_events=state.timeline_events,
+                    bellator_intelligence=state.bellator_intelligence_diagnostics,
+                    refresh_bellator_intelligence=refresh_bellator_intelligence,
+                ),
             ],
             spacing=12,
             expand=True,
@@ -816,6 +899,10 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
         recheck_provider_for_gui(state)
         _render_page(page, state)
 
+    def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
+        refresh_bellator_intelligence_for_gui(state)
+        _render_page(page, state)
+
     def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
         set_aurelius_voice_loop(state, bool(event.control.value))
         _render_page(page, state)
@@ -836,6 +923,7 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             lambda _: page.close(),
             recheck_provider=recheck_provider,
             toggle_aurelius_voice=toggle_aurelius_voice,
+            refresh_bellator_intelligence=refresh_bellator_intelligence,
         )
     )
     page.update()
@@ -884,6 +972,8 @@ __all__ = [
     "submit_proposal_for_gui",
     "set_aurelius_voice_loop",
     "refresh_gui_status",
+    "refresh_bellator_intelligence_status",
+    "refresh_bellator_intelligence_for_gui",
     "run_flet_gui",
     "build_gui_layout",
     "apply_gui_window_mode",

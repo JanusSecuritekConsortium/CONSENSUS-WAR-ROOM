@@ -351,6 +351,10 @@ def main() -> None:
         raise SystemExit(f"Unknown configured backend: {config.backend}")
     if not 0.0 <= config.minimum_confidence <= 1.0:
         raise SystemExit("minimum_confidence must be between 0.0 and 1.0")
+    if not 0.0 <= config.evidence_threshold <= 1.0:
+        raise SystemExit("evidence_threshold must be between 0.0 and 1.0")
+    if not 0.0 <= config.classification_confidence_threshold <= 1.0:
+        raise SystemExit("classification_confidence_threshold must be between 0.0 and 1.0")
     if config.quorum < 1 or config.majority < 1:
         raise SystemExit("quorum and majority must be positive integers")
 
@@ -491,6 +495,11 @@ def main() -> None:
         quorum=config.quorum,
         majority=config.majority,
         high_risk_review=config.high_risk_review,
+        evidence_threshold=config.evidence_threshold,
+        classification_confidence_threshold=config.classification_confidence_threshold,
+        tie_break_priority=config.tie_break_priority,
+        proposal_taxonomy=config.proposal_taxonomy,
+        monolith_domain_map=config.monolith_domain_map,
     )
     tribunal = Tribunal(nodes, runtime, rules=rules, theme_key=theme.key)
     result = tribunal.deliberate(query, sequential=config.sequential)

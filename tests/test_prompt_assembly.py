@@ -30,8 +30,10 @@ def test_prompt_assembler_includes_doctrine_context_and_vote_schema() -> None:
     assert "canonical_id: RATIONALIS" in prompt
     assert "RELEVANT MEMORY CONTEXT:" in prompt
     assert "prior-1 | APPROVED" in prompt
-    assert "VOTE: APPROVE | DENY | CONDITIONAL | ABSTAIN | ESCALATE" in prompt
+    assert "VOTE: APPROVE | DENY | ABSTAIN" in prompt
     assert "CONFIDENCE: 0.00 to 1.00" in prompt
+    assert "EVIDENCE_QUALITY: 0.00 to 1.00" in prompt
+    assert "CRITICAL_RISK: true | false" in prompt
 
 
 if __name__ == "__main__":
