@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.10.16 - Proposal Lifecycle UX
+
+- Added canonical proposal templates for geopolitical, market/finance, technical, operational-risk, and general tribunal queries with validation and non-mutating rendering helpers.
+- Added JSONL proposal history storage with corrupt-line tolerance, draft/submitted/resubmitted/archive lifecycle states, resend, duplicate/edit, and archive operations.
+- Added proposal template selection and proposal history overlays to the WAR ROOM operator flow while preserving the 2:6:2 body layout and existing theme colors/logos.
+- Added latest verdict export to Markdown and JSON, plus command-palette and diagnostics access for proposal history and verdict export status.
+- Integrated proposal history and latest verdict exports into runtime snapshots and runtime bundles.
+- Added compact footer shortcut guidance for Ctrl+K, Ctrl+D, Ctrl+T, Ctrl+H, and Ctrl+E without changing the footer contract.
+- Added regression coverage for proposal templates, rendering, history storage, resend/duplicate/archive behavior, verdict exports, GUI empty states, footer shortcuts, runtime snapshots, and runtime bundles.
+
 ## 7.10.14 - Manual Header Refinement
 
 - Moved theme-specific GUI logo/header placement into `ui.assets.registry` as explicit header layout metadata for font size, top/bottom padding, alignment, and scroll behavior.

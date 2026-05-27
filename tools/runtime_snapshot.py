@@ -14,8 +14,10 @@ from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import load_runtime_config
 from config.version import SYSTEM_VERSION
 from core.decision_trace import read_latest_trace
+from core.export.verdict import latest_verdict_export_status
 from core.manual_visual_review import manual_visual_review_summary
 from core.paths import CONFIG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
+from core.proposals.store import proposal_history_status
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
@@ -87,6 +89,8 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "visual_review": visual_review,
         "dependency_status": dependency_status,
         "telemetry": telemetry,
+        "proposal_history_status": proposal_history_status(),
+        "latest_verdict_export": latest_verdict_export_status(),
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
