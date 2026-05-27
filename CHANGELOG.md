@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.11.4 - WAR ROOM Layout Correction
+
+- Rebalanced GUI header metadata and replaced the WH40K, HELLDIVERS, and EVA compact ASCII headers with fit-safe tactical text assets that remain fully visible in the fixed WAR ROOM header.
+- Centered footer shortcut guidance between fixed left theme selection and right operator controls without changing the 2:6:2 body layout.
+- Increased proposal-to-verdict spacing, normalized proposal panel padding, and reduced proposal input height to prevent visual collision with the Arbiter Verdict panel.
+- Redesigned telemetry into fixed-height, no-scroll text metrics with compact bars and theme-specific telemetry style labels for all core CPU/RAM/DISK/GPU/VRAM/TEMP values.
+- Added layout metadata for proposal spacing, telemetry height, footer alignment, and WH40K-specific compaction permissions.
+- Added regression coverage for WH40K visibility, footer centering, proposal/verdict separation, telemetry visibility, and EVA/HELLDIVERS ASCII quality.
+
 ## 7.11.3 - Randomized BIOS Boot Phrase System
 
 - Added modular boot phrase registries under `ui.boot` for rotating device detection, POST checks, cosmetic sync/warn states, and monolith initialization phrases.

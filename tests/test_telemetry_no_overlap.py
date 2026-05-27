@@ -26,7 +26,8 @@ def test_telemetry_panel_has_fixed_height_and_line_limit() -> None:
 
     assert panel.height == TELEMETRY_PANEL_HEIGHT
     assert panel.expand is False
-    assert text_count <= 1 + TELEMETRY_MAX_SUMMARY_LINES + 2
+    assert panel.content.scroll is None
+    assert text_count <= 1 + TELEMETRY_MAX_SUMMARY_LINES + 3
 
 
 if __name__ == "__main__":

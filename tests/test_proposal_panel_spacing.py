@@ -14,7 +14,7 @@ from ui.themes.catalog import THEMES
 def test_proposal_panel_uses_tight_spacing_and_balanced_padding() -> None:
     panel = build_proposal_panel(THEMES["eva"], lambda _proposal: None)
 
-    assert panel.content.spacing <= 7
+    assert panel.content.spacing <= 8
     assert panel.content.tight is True
     assert panel.padding.top <= panel.padding.bottom
 

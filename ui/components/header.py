@@ -8,7 +8,7 @@ from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import HeaderLogoLayout, THEME_GRAPHIC_ASSETS, get_theme_graphic_asset
 
 GUI_HEADER_HEIGHT = 170
-COMPACT_LOGO_MAX_LINES = 8
+COMPACT_LOGO_MAX_LINES = 12
 GUI_LOGO_BOX_HEIGHT = GUI_HEADER_HEIGHT - 28
 GUI_LOGO_BOX_MAX_WIDTH = 1120
 LOGO_FONT_FAMILY = "Consolas"
@@ -28,6 +28,14 @@ def _logo_box_width(logo: str, layout: HeaderLogoLayout) -> int:
     if layout.logo_box_max_width is not None:
         return min(layout.logo_box_max_width, calculated)
     return calculated
+
+
+def _logo_box_height(layout: HeaderLogoLayout) -> int:
+    return layout.logo_box_height or GUI_LOGO_BOX_HEIGHT
+
+
+def theme_header_height(theme: Theme) -> int:
+    return header_logo_layout(theme).header_height or GUI_HEADER_HEIGHT
 
 
 def header_logo_layout(theme: Theme) -> HeaderLogoLayout:
@@ -158,13 +166,15 @@ def build_header(
         ("SESSION", session_id),
     ]
     logo_layout = header_logo_layout(theme)
+    logo_box_height = _logo_box_height(logo_layout)
+    header_height = theme_header_height(theme)
     return ft.Container(
         content=ft.Row(
             [
                 ft.Container(
                     content=_build_scrollable_logo_content(logo, theme),
                     width=_logo_box_width(logo, logo_layout),
-                    height=GUI_LOGO_BOX_HEIGHT,
+                    height=logo_box_height,
                     padding=ft.padding.only(
                         left=logo_layout.logo_side_padding,
                         right=logo_layout.logo_side_padding,
@@ -225,7 +235,7 @@ def build_header(
                     ),
                     padding=12,
                     expand=True,
-                    height=GUI_LOGO_BOX_HEIGHT,
+                    height=logo_box_height,
                     border=ft.border.all(1, theme.primary_color),
                     bgcolor=theme.surface_color,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -237,7 +247,7 @@ def build_header(
             wrap=False,
         ),
         padding=8,
-        height=GUI_HEADER_HEIGHT,
+        height=header_height,
         border=ft.border.all(1, theme.primary_color),
         bgcolor=theme.background_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -255,6 +265,7 @@ __all__ = [
     "build_header",
     "compact_logo_text",
     "header_logo_layout",
+    "theme_header_height",
     "has_dedicated_gui_compact_logo",
     "logo_text_control_from_box",
     "system_status_label_color",

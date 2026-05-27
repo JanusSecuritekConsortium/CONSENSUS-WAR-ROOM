@@ -11,26 +11,26 @@ from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import THEME_GRAPHIC_ASSETS, validate_theme_graphic_asset
 
 
-def test_wh40k_header_asset_is_restored_v71013_gothic_asset() -> None:
+def test_wh40k_header_asset_is_fit_safe_mechanicus_asset() -> None:
     asset = THEME_GRAPHIC_ASSETS["wh40k"]
     logo = read_normalized_logo(asset.logo_path)
 
     assert validate_theme_graphic_asset(asset) == []
-    assert 50 <= logo.height <= 60
-    assert 80 <= logo.width <= 96
-    for token in ("@@@@@@@@", "@@@@@@@#", "#@@"):
+    assert 8 <= logo.height <= 12
+    assert 48 <= logo.width <= 96
+    for token in ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"):
         assert token in logo.text
 
 
-def test_wh40k_header_asset_rejects_v71014_compact_skull_replacement() -> None:
+def test_wh40k_header_asset_rejects_dense_unfittable_gothic_banner() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["wh40k"].logo_path)
 
-    assert logo.height > 30
-    assert "COGITATOR" not in logo.text
+    assert logo.height < 20
+    assert logo.text.count("@") < 10
     assert "ADEPTUS MECHANICUS :: IMPERIAL COGITATOR TRIBUNAL" not in logo.text
 
 
 if __name__ == "__main__":
-    test_wh40k_header_asset_is_restored_v71013_gothic_asset()
-    test_wh40k_header_asset_rejects_v71014_compact_skull_replacement()
+    test_wh40k_header_asset_is_fit_safe_mechanicus_asset()
+    test_wh40k_header_asset_rejects_dense_unfittable_gothic_banner()
     print("test_wh40k_compact_logo_asset PASS")
