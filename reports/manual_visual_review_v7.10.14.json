@@ -1,0 +1,49 @@
+{
+  "version": "7.10.14",
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "updated_at": "2026-05-27T14:34:30+00:00",
+  "themes": [
+    {
+      "theme": "eva",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\eva_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "arasaka",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\arasaka_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "v7.10.14 header spacing changed; manual screenshot review required",
+      "reviewed_at": null
+    },
+    {
+      "theme": "janus",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\janus_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "v7.10.14 Janus header lowered via layout metadata only; asset and colors unchanged; manual screenshot review required",
+      "reviewed_at": null
+    },
+    {
+      "theme": "wh40k",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\wh40k_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "v7.10.14 WH40K header asset replaced with compact fit; manual screenshot review required",
+      "reviewed_at": null
+    },
+    {
+      "theme": "helldivers",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\helldivers_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "v7.10.14 header fit reduced for full Super Earth logo visibility; manual screenshot review required",
+      "reviewed_at": null
+    },
+    {
+      "theme": "military",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\military_v7.10.14.png",
+      "status": "PENDING",
+      "reviewer_notes": "v7.10.14 military header alignment and spacing rebalanced; manual screenshot review required",
+      "reviewed_at": null
+    }
+  ]
+}

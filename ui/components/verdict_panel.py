@@ -14,6 +14,17 @@ def _confidence_color(theme: Theme, value: float) -> str:
     return theme.error_color
 
 
+def _verdict_color(theme: Theme, verdict: str, confidence: float) -> str:
+    normalized = verdict.upper()
+    if normalized in {"APPROVE", "APPROVED"}:
+        return theme.primary_color
+    if normalized in {"DENY", "DENIED", "CAUTION", "ESCALATE", "ERROR"}:
+        return theme.error_color
+    if normalized in {"NO_CONSENSUS", "ABSTAIN", "DEADLOCK", "HUMAN_REVIEW_REQUIRED", "CONDITIONAL_APPROVAL"}:
+        return theme.warning_color
+    return _confidence_color(theme, confidence)
+
+
 def _vote_breakdown(theme: Theme, result: TribunalResult) -> ft.Control:
     rows = []
     for key, vote in result.votes.items():
@@ -58,7 +69,8 @@ def build_verdict_panel(
     lock_text = "[CONSENSUS LOCKED]" if consensus_locked else "CONSENSUS LINK ACTIVE"
     banner = lifecycle_banner_label(lifecycle_state, consensus_locked=consensus_locked)
     confidence_color = _confidence_color(theme, confidence_value)
-    banner_color = confidence_color if result is not None else theme.primary_color
+    verdict_color = _verdict_color(theme, result.verdict.value, confidence_value) if result is not None else theme.primary_color
+    banner_color = verdict_color if result is not None else theme.primary_color
     return ft.Container(
         content=ft.Column(
             [
@@ -77,7 +89,7 @@ def build_verdict_panel(
                 ),
                 ft.Text(f"LIFECYCLE: {lifecycle_state}", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
                 ft.Text(f"CURRENT: {current_proposal or '--'}", color=theme.text_color, size=12),
-                ft.Text(verdict, color=theme.accent_color, weight=ft.FontWeight.BOLD, size=32),
+                ft.Text(verdict, color=verdict_color, weight=ft.FontWeight.BOLD, size=32),
                 ft.Text(lock_text, color=theme.primary_color if consensus_locked else theme.secondary_color, size=11, font_family=theme.font_family),
                 ft.Row(
                     [

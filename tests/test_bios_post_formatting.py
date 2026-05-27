@@ -98,10 +98,11 @@ def test_logo_block_has_two_blank_lines_before_bios_header() -> None:
     for theme_key, theme in THEMES.items():
         lines = "\n".join(_boot_lines_with_logo(theme_key)).splitlines()
         logo_line_count = len(Path(theme.logo_path).read_text(encoding="utf-8").rstrip("\n").splitlines())
+        header_index = logo_line_count + (4 if theme_key == "arasaka" else 2)
 
         assert lines[logo_line_count] == "", theme_key
         assert lines[logo_line_count + 1] == "", theme_key
-        assert "BIOS" in lines[logo_line_count + 2], theme_key
+        assert "BIOS" in lines[header_index], theme_key
 
 
 def test_provider_details_remain_available_in_gui_provider_panel() -> None:

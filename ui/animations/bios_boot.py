@@ -284,6 +284,8 @@ def generate_bios_boot_lines(
     if include_logo:
         logo = _theme_logo_text(theme_id)
         lines.extend([_center_block(logo) if center_logo else logo, "", ""])
+        if theme_key == "arasaka":
+            lines.extend(["", ""])
     header_lines = _bios_header_lines(theme_id, version)
     lines.extend([*(_center_lines_block(header_lines) if center_logo else header_lines), ""])
     memory_steps, memory_fallback = _memory_steps_mb(total_memory_mb)

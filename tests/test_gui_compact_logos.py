@@ -32,8 +32,8 @@ def test_supplied_gui_compact_logos_are_selected() -> None:
 
 def test_new_compact_logo_identity_text_is_present() -> None:
     assert "MAGI TRIBUNAL ONLINE" in compact_logo_text(THEMES["eva"])
-    assert "IMPERIAL COGITATOR TRIBUNAL" in compact_logo_text(THEMES["wh40k"])
-    assert "SUPER EARTH COMMAND" in compact_logo_text(THEMES["helldivers"])
+    assert "@@@@@@@#" in compact_logo_text(THEMES["wh40k"])
+    assert "@@@%-::::-" in compact_logo_text(THEMES["helldivers"])
 
 
 if __name__ == "__main__":

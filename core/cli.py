@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+from dataclasses import replace
 from pathlib import Path
 
 from config.agents import AGENT_PROFILES
@@ -95,7 +96,7 @@ def _write_model_override(config_path: Path, agent_id: str, model_name: str) -> 
 def _warn_if_model_unavailable(config, model_name: str) -> None:
     from integrations.msty.api import list_models
 
-    payload = list_models(config)
+    payload = list_models(replace(config, refresh_model_cache=True))
     status = str(payload.get("status", "offline")).lower()
     if status == "offline":
         print("WARNING: provider offline; unable to verify model availability.")
@@ -351,6 +352,10 @@ def main() -> None:
         raise SystemExit(f"Unknown configured backend: {config.backend}")
     if not 0.0 <= config.minimum_confidence <= 1.0:
         raise SystemExit("minimum_confidence must be between 0.0 and 1.0")
+    if not 0.0 <= config.evidence_threshold <= 1.0:
+        raise SystemExit("evidence_threshold must be between 0.0 and 1.0")
+    if not 0.0 <= config.classification_confidence_threshold <= 1.0:
+        raise SystemExit("classification_confidence_threshold must be between 0.0 and 1.0")
     if config.quorum < 1 or config.majority < 1:
         raise SystemExit("quorum and majority must be positive integers")
 
@@ -411,7 +416,8 @@ def main() -> None:
                 print(f"- {model}")
             return
 
-        status = resolve_runtime_provider_status(config, nodes)
+        provider_config = replace(config, refresh_model_cache=True) if args.check_models else config
+        status = resolve_runtime_provider_status(provider_config, nodes)
         print(f"PROVIDER STATUS: {str(status.get('status', 'unknown')).upper()}")
         _print_provider_resolution(status, verbose=args.verbose)
         active_backend = status.get("active_backend") or status.get("backend")
@@ -491,6 +497,11 @@ def main() -> None:
         quorum=config.quorum,
         majority=config.majority,
         high_risk_review=config.high_risk_review,
+        evidence_threshold=config.evidence_threshold,
+        classification_confidence_threshold=config.classification_confidence_threshold,
+        tie_break_priority=config.tie_break_priority,
+        proposal_taxonomy=config.proposal_taxonomy,
+        monolith_domain_map=config.monolith_domain_map,
     )
     tribunal = Tribunal(nodes, runtime, rules=rules, theme_key=theme.key)
     result = tribunal.deliberate(query, sequential=config.sequential)

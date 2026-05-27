@@ -23,6 +23,10 @@ COLOR_FIELDS = {
     "text",
     "warning",
     "error",
+    "muted_text",
+    "secondary_text",
+    "panel_label",
+    "panel_value",
 }
 INTERFACE_FIELDS = {
     "history",

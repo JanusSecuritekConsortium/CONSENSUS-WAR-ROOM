@@ -4,19 +4,29 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Protocol
+from typing import Any, Dict, List, Optional, Protocol
 
 
 class VoteValue(str, Enum):
     APPROVE = "APPROVE"
     DENY = "DENY"
-    CONDITIONAL = "CONDITIONAL"
     ABSTAIN = "ABSTAIN"
+    NO_CONSENSUS = "NO_CONSENSUS"
+    CAUTION = "CAUTION"
     ESCALATE = "ESCALATE"
+    # Legacy/runtime-only values kept for history migration and defensive UI handling.
+    CONDITIONAL = "CONDITIONAL"
     ERROR = "ERROR"
 
 
 class FinalVerdict(str, Enum):
+    APPROVE = "APPROVE"
+    DENY = "DENY"
+    ABSTAIN = "ABSTAIN"
+    NO_CONSENSUS = "NO_CONSENSUS"
+    CAUTION = "CAUTION"
+    ESCALATE = "ESCALATE"
+    # Legacy verdicts kept so older history and integrations can still deserialize.
     APPROVED = "APPROVED"
     DENIED = "DENIED"
     CONDITIONAL_APPROVAL = "CONDITIONAL_APPROVAL"
@@ -104,6 +114,10 @@ class Vote:
     vote: VoteValue
     confidence: float
     reasoning: str
+    evidence_quality: float = 0.0
+    critical_risk: bool = False
+    critical_domain_relevance: Optional[bool] = None
+    validation_errors: List[str] = field(default_factory=list)
     risks: List[str] = field(default_factory=list)
     conditions: List[str] = field(default_factory=list)
     model: str = "mock"
@@ -124,6 +138,8 @@ class TribunalResult:
     review_triggers: List[str]
     session_id: str
     theme: str
+    terminal_branch: str = ""
+    proposal_classification: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
 

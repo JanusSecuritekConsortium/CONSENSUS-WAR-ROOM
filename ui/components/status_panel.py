@@ -4,6 +4,7 @@ from typing import Dict
 
 import flet as ft
 
+from config.version import SYSTEM_VERSION
 from core.models import Theme
 
 
@@ -38,6 +39,22 @@ def build_status_panel(
     strict_mode = bool(provider.get("strict_provider_mode", provider_payload.get("strict_provider_mode", False)))
     fallback_text = "STRICT" if strict_mode else ("ACTIVE" if fallback_enabled and provider_status != "READY" else "INACTIVE")
     remap_model = provider_payload.get("model_remap_model")
+    availability_report = provider_payload.get("model_availability_report", []) or []
+    resolved_required = provider_payload.get("resolved_required_models", {}) or {}
+    required_models = provider_payload.get("required_models", {}) or {}
+    active_model_rows = []
+    if isinstance(availability_report, list) and availability_report:
+        for item in availability_report[:4]:
+            if not isinstance(item, dict):
+                continue
+            agent_id = str(item.get("agent_id", "--"))
+            model_name = str(item.get("resolved_model") or item.get("required_model") or "--")
+            status = str(item.get("status", "unknown")).upper()
+            active_model_rows.append((agent_id, f"{model_name} [{status}]"))
+    elif isinstance(resolved_required, dict) and resolved_required:
+        active_model_rows = [(str(agent_id), str(model_name)) for agent_id, model_name in resolved_required.items()]
+    elif isinstance(required_models, dict) and required_models:
+        active_model_rows = [(str(agent_id), f"{model_name} [UNRESOLVED]") for agent_id, model_name in required_models.items()]
     warning_controls = []
     if provider_warning:
         warning_controls.append(ft.Text(provider_warning, color=theme.warning_color, weight=ft.FontWeight.BOLD, size=12))
@@ -78,6 +95,12 @@ def build_status_panel(
                 row("MISSING", missing_text, theme.warning_color if missing_models else muted_color),
                 row("FALLBACK", fallback_text, theme.warning_color if fallback_text == "ACTIVE" else value_color),
                 *warning_controls,
+                section("ACTIVE MODELS"),
+                *[row(agent_id, model_name, theme.warning_color if "[MISSING]" in model_name else value_color) for agent_id, model_name in active_model_rows],
+                section("CODEX / DEV"),
+                row("VERSION", SYSTEM_VERSION),
+                row("ACTIVE COMPILE", "TEST REGISTERED"),
+                row("RUNTIME LOGS", "JSONL"),
                 section("MEMORY"),
                 row("SYSTEM", memory_status),
                 row("SESSION MEMORY", session_memory_status),

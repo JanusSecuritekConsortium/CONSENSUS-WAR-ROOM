@@ -40,11 +40,27 @@ def test_provider_base_url_prefers_runtime_config_before_msty_env() -> None:
             os.environ["OLLAMA_BASE_URL"] = original_ollama
 
 
+def test_single_provider_resolver_keeps_msty_default_priority() -> None:
+    resolution = api_module.resolve_provider(RuntimeConfig(backend="msty-local"))
+
+    assert resolution["provider"] == "msty"
+    assert resolution["requested_backend"] == "msty-llama-cpp"
+    assert resolution["default_backend"] == "msty-llama-cpp"
+    assert resolution["candidate_priority"][0]["backend"] == "msty-llama-cpp"
+    assert all(candidate["backend"] != "msty-claw" for candidate in resolution["candidate_priority"])
+
+
 def test_provider_discovery_reports_latency_and_models() -> None:
     original_backend = api_module.OllamaBackend
     try:
         api_module.OllamaBackend = FakeBackend
-        payload = api_module.list_models(RuntimeConfig(backend="msty-llama-cpp", msty_llama_cpp_base_url="http://provider.local"))
+        payload = api_module.list_models(
+            RuntimeConfig(
+                backend="msty-llama-cpp",
+                msty_llama_cpp_base_url="http://provider.local",
+                refresh_model_cache=True,
+            )
+        )
 
         assert payload["backend"] == "msty-llama-cpp"
         assert payload["base_url"] == "http://provider.local"
@@ -54,7 +70,20 @@ def test_provider_discovery_reports_latency_and_models() -> None:
         api_module.OllamaBackend = original_backend
 
 
+def test_model_availability_report_marks_ready_and_missing_models() -> None:
+    report = api_module.model_availability_report(
+        {"RATIONALIS": "deepseek-coder:33b", "BELLATOR": "mixtral:8x7b"},
+        ["deepseek-coder:33b"],
+    )
+    by_agent = {item["agent_id"]: item for item in report}
+
+    assert by_agent["RATIONALIS"]["status"] == "ready"
+    assert by_agent["BELLATOR"]["status"] == "missing"
+
+
 if __name__ == "__main__":
     test_provider_base_url_prefers_runtime_config_before_msty_env()
+    test_single_provider_resolver_keeps_msty_default_priority()
     test_provider_discovery_reports_latency_and_models()
+    test_model_availability_report_marks_ready_and_missing_models()
     print("test_provider_discovery PASS")

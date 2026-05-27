@@ -1,5 +1,151 @@
 # Changelog
 
+## 7.10.14 - Manual Header Refinement
+
+- Moved theme-specific GUI logo/header placement into `ui.assets.registry` as explicit header layout metadata for font size, top/bottom padding, alignment, and scroll behavior.
+- Replaced only the WH40K GUI header asset with a compact cogitator/eagle mark that preserves canonical WH40K tokens while fitting the header box at readable size.
+- Adjusted ARASAKA, HELLDIVERS/Super Earth, MILITARY, and JANUS header presentation through layout metadata only; canonical non-WH40K assets and all theme colors remain unchanged.
+- Preserved extra ARASAKA boot spacing between the logo block and the executive security BIOS text.
+- Added regression coverage for header layout metadata, WH40K compact asset dimensions/tokens, boot logo spacing, header vertical offsets, and unchanged theme colors.
+- Kept screenshot automation disabled for this review path and marked affected themes for manual visual review.
+
+## 7.10.13 - Slow-Budget Cleanup and Header Presentation
+
+- Isolated Msty runtime provider tests from live backend latency by mocking provider health/send paths while preserving provider-branch runtime coverage under PROVIDER and ALL test runs.
+- Added a FAST-only Msty mock runtime path and runner category safeguards so routine FAST verification excludes live/provider-heavy runtime checks.
+- Reworked the hidden GUI launch smoke path to render a deterministic WAR ROOM state inside a real hidden Flet app and return immediately after readiness is confirmed.
+- Added readiness regression coverage for the GUI smoke marker and provider category selection.
+- Adjusted header logo presentation only: ARASAKA and JANUS are centered/lowered in the header box, tall WH40K/Super Earth/MILITARY headers use theme-specific font sizing, and ARASAKA boot output has clearer separation between logo and BIOS text.
+- Preserved canonical logo asset contents, WAR ROOM 2:6:2 body layout, screenshot-loop constraints, JANUS asset content, Msty local defaults, and integrity tooling.
+
+## 7.10.12 - GUI Heavy-Test Optimization
+
+- Added a shared GUI/Flet test harness that builds deterministic `GuiState` fixtures without live provider, telemetry, memory, or runtime refresh work.
+- Refactored the heaviest GUI regression tests to inspect components and window-mode behavior through the harness while preserving checks for compact header logos, window modes, canonical logo rendering, and the 2:6:2 body layout contract.
+- Added harness regression coverage so future GUI tests can reuse the fast state setup without weakening overlay or layout assertions.
+- Extended verification manifests with optional before/after duration comparison data when a previous manifest is available.
+- Preserved canonical ASCII assets, JANUS visuals, Msty local defaults, integrity tooling, and the manual-screenshot review workflow.
+
+## 7.10.11 - Verification Runtime Optimization
+
+- Added category-aware script test execution to `tools/run_tests.py` with FAST, GUI, SLOW, PROVIDER, and INTEGRATION filters.
+- Added `--fast`, `--gui`, `--slow`, `--provider`, `--integration`, `--all`, `--list`, and `--json` runner modes while preserving full-suite default behavior.
+- Added duration reporting with slowest-test output, slow-test budget warnings, strict budget mode, and GUI launch-heavy test reporting.
+- Extended verification manifests and runtime bundles with duration report data for follow-up test consolidation work.
+- Added regression tests for category selection, duration reports, budget warnings, and verification manifest duration fields.
+
+## 7.10.10 - Telemetry Dependency Hardening
+
+- Added `tools/check_dependencies.py` for JSON and human-readable dependency diagnostics across required runtime modules and optional GPU telemetry backends.
+- Made telemetry psutil failures explicit with `DEGRADED` status, `psutil missing` degraded reason, and install hints for local remediation.
+- Updated GUI telemetry text to show CPU/RAM/DISK unavailable states and degraded reasons instead of silent blanks.
+- Added dependency status to runtime snapshots and runtime bundles, including required/optional dependency availability.
+- Added regression coverage for dependency checks, psutil-missing telemetry degradation, runtime snapshot dependencies, and GUI degraded telemetry messaging.
+
+## 7.10.9 - Manual Visual Review and Telemetry Layer
+
+- Added a manual visual review registry and `tools/record_visual_review.py` so operator-provided screenshots can be tracked without restarting screenshot automation loops.
+- Added diagnostics and command palette access for visual review status, including pending and needs-fix/rejected counts, while preserving the WAR ROOM 2:6:2 body layout.
+- Added failure-safe system telemetry collection for CPU, RAM, disk, and optional GPU/VRAM/temperature data with bounded 60-sample history.
+- Added a theme-specific telemetry panel and command palette telemetry snapshot overlay with text-readable metrics and lightweight sparklines.
+- Included manual visual review and telemetry summaries in runtime snapshots and runtime export bundles.
+- Added regression coverage for manual review registry updates, telemetry collection/history/no-GPU behavior, GUI telemetry, GUI visual review status, and runtime snapshot telemetry.
+
+## 7.10.8 - Canonical Theme Identity Stabilization
+
+- Added canonical token and dimension enforcement for every active WAR ROOM header logo asset.
+- Preserved canonical ARASAKA and EXCOMM/MILITARY full ASCII assets while extending validation to EVA/NERV, WH40K, HELLDIVERS, and JANUS.
+- Forced active GUI logo rendering through a single fixed-width `Consolas` family with explicit no-wrap text styling to prevent crooked ASCII fallback rendering.
+- Replaced interim WH40K and HELLDIVERS banners with the user-provided canonical gothic/eagle and Super Earth skull-style ASCII assets; JANUS was left unchanged.
+- Preserved the WAR ROOM 2:6:2 body layout with no layout mutation; tall header ASCII is handled inside the logo box rather than by resizing the page structure.
+- Added regression tests for canonical tokens, panel labels, ASCII dimensions, header rendering guarantees, and placeholder-logo prevention.
+- Kept canonical token tests active and marked visual screenshot review as `MANUAL_REVIEW_REQUIRED` for this pass.
+
+## 7.10.7 - Logo Rendering Audit and Repair
+
+- Added theme graphic asset registry validation for active WAR ROOM logo assets.
+- Added logo normalization utilities for BOM stripping, line-ending normalization, width/height measurement, and optional line padding.
+- Repaired ARASAKA and EXCOMM/MILITARY header rendering around canonical full-size assets.
+- Hardened header logo rendering with a fixed monospace font stack, no wrapping, preserved whitespace, and selectable text.
+- Added theme and logo screenshot gallery export tooling for visual audit artifacts.
+- Added visual regression coverage for logo registry validation, logo normalization, theme logo rendering, scrambled ASCII detection, and gallery paths.
+
+## 7.10.6 - Integrity and Self-Audit Layer
+
+- Added active tree manifest tooling with SHA256 hashes, file sizes, and modification timestamps while excluding archive, legacy, runtime, generated, cache, and log roots.
+- Added active manifest verification with CLEAN, DRIFT, and UNKNOWN reporting plus approval mode for writing a new baseline.
+- Integrated active manifest and integrity verification output into runtime bundles.
+- Added GUI diagnostics integrity status and a command palette action for integrity verification.
+- Added regression coverage for active manifests, integrity drift detection, runtime bundle integrity artifacts, and GUI integrity status.
+
+## 7.10.5 - Operator Workflow Layer
+
+- Added a Ctrl+K command palette overlay for runtime snapshots, provider status, latest verdict, diagnostics, runtime bundle export, verification, theme toggling, and decision trace viewing.
+- Added runtime bundle export tooling with snapshot, provider report, latest trace, verification manifest, GUI screenshots, runtime log tails, and changelog excerpt.
+- Added a decision trace viewer overlay with recent trace listing and proposal_id filtering.
+- Added a header health badge sourced from the runtime snapshot health contract.
+- Added operator workflow regression coverage for the command palette, runtime bundle export, decision trace viewer, and health badge.
+
+## 7.10.4 - GUI Visual Runtime Verification
+
+- Added hidden Flet GUI smoke tooling for startup validation.
+- Added GUI screenshot capture tooling for initial WAR ROOM and diagnostics drawer states, with explicit MOCK mode for unit-only checks.
+- Added visual invariant checks for the 2:6:2 layout, diagnostics overlay behavior, provider status block, active model list, and duplicate panel guards.
+- Added GUI launch, screenshot export, and visual invariant regression tests.
+
+## 7.10.3 - Operational Observability Layer
+
+- Added runtime snapshot tooling with provider status, model state, render/layout guards, latest decision trace, latest runtime log, and verification manifest path.
+- Added a decision trace reader that tolerates missing files and corrupt JSONL lines.
+- Added a GUI diagnostics drawer exposed as an overlay so the main WAR ROOM layout proportions remain unchanged.
+- Added observability regression tests for runtime snapshots, decision trace reads, and the diagnostics drawer.
+
+## 7.10.2 - Local Verification Tooling
+
+- Added `tools/run_tests.py` for pytest-free script test discovery, execution, PASS/FAIL summaries, and verification manifest export.
+- Added optional pytest dev extra without adding pytest to runtime dependencies.
+- Added `reports/verification_v7.10.2.json` manifest output with version, timestamp, Python executable, tests run, pass/fail, and durations.
+- Added `tools/provider_status_report.py` for local provider/backend/endpoint/model/degraded-state reporting.
+
+## 7.10.1 - Provider and Voting Hardening
+
+- Consolidated provider resolution around a single Msty-first resolver, added endpoint validation metadata, and exposed model availability reports.
+- Enforced closed proposal taxonomy, confidence thresholds, quorum filtering, and deterministic NO_CONSENSUS/ESCALATE classifier failure behavior.
+- Added JSONL decision trace logging with proposal_id, taxonomy, votes, and final verdict.
+- Extended the WAR ROOM status panel with provider models and Codex/dev runtime status while keeping the existing layout proportions.
+- Added provider resolver, classifier failure, GUI repaint regression, and active compile coverage.
+
+## 7.10.0 - Deterministic Arbiter Consensus
+
+- Added spec-shaped voting fields for evidence quality, critical risk, Arbiter-assigned domain relevance, and validation errors.
+- Reworked consensus resolution around deterministic majority, CAUTION, NO_CONSENSUS, and priority tie-break branches.
+- Updated monolith prompts, vote parsing, mock runtime output, UI status colors, TTS mappings, runtime config, and focused consensus tests.
+- Routed Bellator feed packet versions through the canonical system version.
+
+## 7.9.5 - ACLED OAuth Auth Fix
+
+- Migrated ACLED feed authentication to OAuth/access-token resolution with legacy API key compatibility gated behind explicit opt-in.
+
+## 7.9.4 - Bellator Geospatial Relevance
+
+- Added Bellator geospatial filtering, strategic region presets, and strategic relevance scoring for feed intelligence.
+
+## 7.9.3 - Active Tree Compile Hygiene
+
+- Added active-tree compile hygiene script excluding archive/runtime directories.
+
+## 7.9.2 - Bellator Feed Health Diagnostics
+
+- Added Bellator feed API key health validation and PowerShell setup diagnostics.
+
+## 7.9.1 - Bellator Intelligence Diagnostics
+
+- Added Bellator Intelligence diagnostics UI summary and anti-fabrication feed handling guard.
+
+## 7.9.0 - Bellator Feed Intelligence Layer
+
+- Added Bellator Feed Intelligence Layer with ACLED, NASA FIRMS, Cloudflare Radar, and URLHaus Phase 1 clients.
+
 ## 7.7.7 - War Room Refresh Cadence and Boot Phrase Variation
 
 - Reduced automatic GUI page rebuild cadence so footer controls and the theme selector are no longer interrupted by aggressive background refresh.
