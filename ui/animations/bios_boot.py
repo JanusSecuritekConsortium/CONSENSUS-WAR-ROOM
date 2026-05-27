@@ -11,7 +11,8 @@ from typing import Any, Dict, Iterable, List
 
 from config.version import SYSTEM_VERSION
 from core.paths import SYSTEM_ROOT
-from ui.animations.boot_phrases import node_boot_lines
+from ui.boot.phrases import node_boot_lines
+from ui.boot.registry import select_detected_devices, select_post_checks
 from ui.animations.loading import format_loading_bar, get_loading_style, render_loading_console
 from ui.themes.catalog import THEMES, resolve_theme_key
 
@@ -26,21 +27,6 @@ SPEED_DELAYS = {
 RANDOM_DELAY_RANGE = (0.025, 0.075)
 
 DEFAULT_BOOT_WIDTH = 100
-BASE_DETECTED_DEVICES = (
-    "Neural Processor",
-    "Quantum Cryptographic Module",
-    "Hyperlane Storage",
-    "Secure Tunnel Port 7851",
-    "Proposal Watcher",
-    "Memory Store",
-)
-POST_LINES = (
-    "[OK] Core Integrity",
-    "[OK] Theme Catalog",
-    "[OK] Static Logos",
-    "[OK] Agent Registry",
-    "[OK] Msty Runtime Adapter",
-)
 TRIBUNAL_PHRASE_SEED = 0
 
 
@@ -235,33 +221,30 @@ def _theme_runtime_label(theme_id: str) -> str:
     return labels.get(theme_key, "Provider Runtime")
 
 
-def _post_lines(theme_id: str, provider_status: Dict[str, Any] | None = None) -> List[str]:
+def _post_lines(
+    theme_id: str,
+    provider_status: Dict[str, Any] | None = None,
+    rng: random.Random | None = None,
+    include_rare: bool = False,
+) -> List[str]:
     theme_key = resolve_theme_key(theme_id)
-    lines = list(POST_LINES)
+    active_rng = rng or random.Random(TRIBUNAL_PHRASE_SEED)
+    lines = list(select_post_checks(theme_id, active_rng, include_rare=include_rare))
     provider_line = _provider_post_line(provider_status)
     if provider_line == "[OK] Provider Runtime":
         provider_line = f"[OK] {_theme_runtime_label(theme_id)}"
-    lines.append(provider_line)
+    if provider_line not in lines:
+        lines.append(provider_line)
     if theme_key == "wh40k":
-        lines.insert(0, "[OK] Machine Spirit Litany")
-        lines.append("[OK] NOOSPHERIC TIME INDEX: 0918015.M03")
-    return lines
+        for wh40k_line in ("[OK] Machine Spirit Litany", "[OK] NOOSPHERIC TIME INDEX: 0918015.M03"):
+            if wh40k_line not in lines:
+                lines.append(wh40k_line)
+    return list(dict.fromkeys(lines))
 
 
-def _detected_devices(theme_id: str) -> List[str]:
-    theme_key = resolve_theme_key(theme_id)
-    devices = list(BASE_DETECTED_DEVICES)
-    display_engines = {
-        "military": "EXCOMM Tactical Display Engine",
-        "eva": "MAGI Pattern Analysis Accelerator",
-        "nerv": "NERV ARX-7 GPU",
-        "wh40k": "Noospheric Cogitator Display Engine",
-        "helldivers": "Super Earth Tactical Display Engine",
-        "arasaka": "Arasaka Black/Red Security Display Engine",
-        "janus": "Janus Mirror Channel Display Engine",
-    }
-    devices.insert(2, display_engines.get(theme_key, "EXCOMM Tactical Display Engine"))
-    return devices
+def _detected_devices(theme_id: str, rng: random.Random | None = None) -> List[str]:
+    active_rng = rng or random.Random(TRIBUNAL_PHRASE_SEED)
+    return list(select_detected_devices(theme_id, active_rng))
 
 
 def _loading_label(theme_id: str) -> str:
@@ -293,10 +276,10 @@ def generate_bios_boot_lines(
         lines.append(f"Memory Test: {amount:06d} MB OK")
     if memory_fallback:
         lines.append("Memory Source: FALLBACK CONFIGURATION")
-    lines.extend(["", "Detecting devices:"])
-    lines.extend(f"- {device}" for device in _detected_devices(theme_id))
-    lines.extend(["", *_center_lines_block(["POST:", *_post_lines(theme_id, provider_status)])])
     phrase_rng = random.Random(seed if randomize_phrases else TRIBUNAL_PHRASE_SEED)
+    lines.extend(["", "Detecting devices:"])
+    lines.extend(f"- {device}" for device in _detected_devices(theme_id, phrase_rng))
+    lines.extend(["", *_center_lines_block(["POST:", *_post_lines(theme_id, provider_status, phrase_rng, randomize_phrases)])])
     lines.extend(["", *_center_lines_block(["Tribunal initialization:", *node_boot_lines(theme_id, phrase_rng)])])
     lines.extend(
         [

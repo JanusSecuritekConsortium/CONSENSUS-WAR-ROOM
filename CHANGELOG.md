@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.11.3 - Randomized BIOS Boot Phrase System
+
+- Added modular boot phrase registries under `ui.boot` for rotating device detection, POST checks, cosmetic sync/warn states, and monolith initialization phrases.
+- Adapted legacy CLAUDSENSUS/NERV boot material into active BIOS atmosphere without modifying archive roots or pasting legacy boot code into UI startup.
+- Expanded theme-aware boot vocabulary for MAGI/NERV, ARASAKA, EXCOMM/MILITARY, WH40K, HELLDIVERS/Super Earth, and JANUS while preserving the stable boot structure.
+- Added deterministic fallback and seeded randomization support so tests remain reproducible while live boots avoid repetitive device/POST/tribunal sequences.
+- Added regression coverage for boot phrase registry completeness, randomization, theme vocabulary selection, structured boot output, and duplicate-line prevention.
+
 ## 7.11.2 - Application Icon Identity
 
 - Added dedicated CONSENSUS War Room application icon assets in PNG and ICO formats using a compact tribunal triad and central verdict-node mark.
