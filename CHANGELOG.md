@@ -4,6 +4,7 @@
 
 - Moved theme-specific GUI logo/header placement into `ui.assets.registry` as explicit header layout metadata for font size, top/bottom padding, alignment, and scroll behavior.
 - Replaced only the WH40K GUI header asset with a compact cogitator/eagle mark that preserves canonical WH40K tokens while fitting the header box at readable size.
+- Reverted the rejected WH40K compact skull/cogitator mark back to the v7.10.13 gothic ASCII header after manual review.
 - Adjusted ARASAKA, HELLDIVERS/Super Earth, MILITARY, and JANUS header presentation through layout metadata only; canonical non-WH40K assets and all theme colors remain unchanged.
 - Preserved extra ARASAKA boot spacing between the logo block and the executive security BIOS text.
 - Added regression coverage for header layout metadata, WH40K compact asset dimensions/tokens, boot logo spacing, header vertical offsets, and unchanged theme colors.

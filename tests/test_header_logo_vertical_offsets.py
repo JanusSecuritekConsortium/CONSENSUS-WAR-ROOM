@@ -33,7 +33,7 @@ def test_manual_reviewed_themes_have_balanced_vertical_padding() -> None:
 
 
 def test_tall_logos_use_reduced_font_sizes_for_full_visibility() -> None:
-    assert header_logo_layout(THEMES["wh40k"]).logo_font_size >= 7
+    assert header_logo_layout(THEMES["wh40k"]).logo_font_size == 3
     assert header_logo_layout(THEMES["helldivers"]).logo_font_size <= 5
     assert header_logo_layout(THEMES["military"]).logo_font_size <= 9
 
