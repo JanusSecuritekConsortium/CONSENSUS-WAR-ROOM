@@ -4,6 +4,8 @@ CONSENSUS War Room is a local multi-agent tribunal for proposal review. Three
 specialized monoliths analyze a proposal from different perspectives, then an
 arbiter combines their votes into an auditable verdict.
 
+Author: Erhardt Von Grupten Mundt, Janus Securitek Consortium.
+
 ## Current System
 
 - `RATIONALIS`: logic, consistency, and acceptance criteria
