@@ -7,20 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config.runtime import RuntimeConfig
+from tests.helpers.gui_harness import header_logo_control_for
 from ui.components.header import GUI_COMPACT_LOGO_FILES, compact_logo_text
-from ui.flet_app import build_gui_layout, create_gui_state
 from ui.themes.catalog import THEMES, resolve_theme_key
 
 
-def _noop(*_args, **_kwargs) -> None:
-    return None
-
-
 def _header_logo_for(alias: str) -> str:
-    state = create_gui_state(alias, RuntimeConfig(theme=alias, backend="mock"))
-    layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
-    return layout.content.controls[0].content.controls[0].content.value
+    return header_logo_control_for(alias).value
 
 
 def test_eva_aliases_use_eva_compact_logo() -> None:

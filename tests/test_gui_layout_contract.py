@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.runtime import RuntimeConfig
-from ui.components.header import COMPACT_LOGO_MAX_LINES, GUI_HEADER_HEIGHT, compact_logo_text
+from ui.components.header import COMPACT_LOGO_MAX_LINES, GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box
 from ui.flet_app import _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -36,7 +36,7 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"))
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     header = layout.content.controls[0]
-    logo_text = header.content.controls[0].content.value
+    logo_text = logo_text_control_from_box(header.content.controls[0]).value
 
     assert 120 <= GUI_HEADER_HEIGHT <= 180
     assert header.height == GUI_HEADER_HEIGHT

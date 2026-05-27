@@ -36,6 +36,12 @@ def vote(agent_id: str, value: VoteValue, evidence: float = 0.9, risk: bool = Fa
     )
 
 
+def low_confidence_vote(agent_id: str, value: VoteValue) -> Vote:
+    item = vote(agent_id, value)
+    item.confidence = 0.4
+    return item
+
+
 def resolve(votes: dict[str, Vote], query: str = "security breach threat exploit vulnerability intrusion"):
     return ConsensusEngine(RULES, "military").calculate_result(query, votes, "spec-test")
 
@@ -120,6 +126,37 @@ def test_classification_failure_blocks_clean_majority() -> None:
     assert result.terminal_branch == "classification_failure"
 
 
+def test_low_confidence_votes_do_not_satisfy_quorum() -> None:
+    result = resolve(
+        {
+            RATIONALIS: low_confidence_vote(RATIONALIS, VoteValue.APPROVE),
+            AETERNUM: low_confidence_vote(AETERNUM, VoteValue.APPROVE),
+            BELLATOR: vote(BELLATOR, VoteValue.ABSTAIN),
+        }
+    )
+
+    assert result.verdict == FinalVerdict.NO_CONSENSUS
+    assert result.quorum_met is False
+    assert result.terminal_branch == "confidence_threshold_no_quorum"
+
+
+def test_closed_taxonomy_rejects_unknown_classifier_class() -> None:
+    rules = ConsensusRules(proposal_taxonomy=["analysis", "unknown_class"])
+    result = ConsensusEngine(rules, "military").calculate_result(
+        "analysis review validation proposal",
+        {
+            RATIONALIS: vote(RATIONALIS, VoteValue.APPROVE),
+            AETERNUM: vote(AETERNUM, VoteValue.APPROVE),
+            BELLATOR: vote(BELLATOR, VoteValue.APPROVE),
+        },
+        "closed-taxonomy-test",
+    )
+
+    assert result.verdict == FinalVerdict.NO_CONSENSUS
+    assert result.terminal_branch == "classification_failure"
+    assert "taxonomy_outside_closed_set" in result.proposal_classification["reason"]
+
+
 if __name__ == "__main__":
     test_parser_rejects_arbiter_only_monolith_result()
     test_majority_short_circuits_tie_break_even_with_low_evidence()
@@ -127,4 +164,6 @@ if __name__ == "__main__":
     test_unresolved_domain_critical_low_evidence_returns_no_consensus()
     test_unresolved_high_evidence_uses_priority()
     test_classification_failure_blocks_clean_majority()
+    test_low_confidence_votes_do_not_satisfy_quorum()
+    test_closed_taxonomy_rejects_unknown_classifier_class()
     print("test_consensus_spec_engine PASS")

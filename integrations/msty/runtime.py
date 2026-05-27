@@ -131,6 +131,17 @@ class MstyRuntime:
             )
             if self.config.strict_provider_mode or not self.fallback_enabled:
                 raise
+            log_event(
+                "provider_degraded_fallback",
+                {
+                    "agent_id": session.agent_id,
+                    "session_id": session.session_id,
+                    "backend": self.config.backend,
+                    "fallback": "mock",
+                    "error": str(exc),
+                },
+                level="WARNING",
+            )
             response = self._fallback_response(session.agent_id, prompt, context, exc)
             self._record_telemetry(session, prompt, response, started, "mock-fallback", "degraded")
             return response

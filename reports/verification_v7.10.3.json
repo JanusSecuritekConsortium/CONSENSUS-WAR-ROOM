@@ -1,0 +1,763 @@
+{
+  "version": "7.10.3",
+  "timestamp": "2026-05-24T15:29:44+00:00",
+  "python_executable": "C:\\Users\\JMaje\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+  "test_files_run": 94,
+  "passed": 94,
+  "failed": 0,
+  "duration_seconds": 189.2319,
+  "tests": [
+    {
+      "file": "tests\\test_acled_oauth_resolution.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2756,
+      "stdout": "test_acled_oauth_resolution PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_active_compile.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2154,
+      "stdout": "test_active_compile PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_agent_profiles.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1004,
+      "stdout": "test_agent_profiles PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_ascii_logo_whitespace_preservation.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.136,
+      "stdout": "test_ascii_logo_whitespace_preservation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_aurelius_runtime.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1067,
+      "stdout": "test_aurelius_runtime PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_aurelius_voice_events.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1234,
+      "stdout": "test_aurelius_voice_events PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_override_priority.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.36,
+      "stdout": "test_backend_override_priority PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_readiness_retry.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4449,
+      "stdout": "test_backend_readiness_retry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_retry_before_fallback.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4131,
+      "stdout": "test_backend_retry_before_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bellator_feed_intelligence.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3574,
+      "stdout": "test_bellator_feed_intelligence PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bellator_geospatial_filters.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1532,
+      "stdout": "test_bellator_geospatial_filters PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_boot.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3032,
+      "stdout": "test_bios_boot PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_post_formatting.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.5631,
+      "stdout": "test_bios_post_formatting PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_provider_status_dynamic.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1144,
+      "stdout": "test_bios_provider_status_dynamic PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_phrase_variations.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0997,
+      "stdout": "test_boot_phrase_variations PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_provider_resolution_consistency.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2769,
+      "stdout": "test_boot_provider_resolution_consistency PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_consensus_spec_engine.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1891,
+      "stdout": "test_consensus_spec_engine PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_context_retrieval.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.256,
+      "stdout": "test_context_retrieval PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_decision_trace_reader.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.091,
+      "stdout": "test_decision_trace_reader PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_explicit_reachable_backend_no_silent_fallback.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.6399,
+      "stdout": "test_explicit_reachable_backend_no_silent_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_fallback_resolution_chain.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4756,
+      "stdout": "test_fallback_resolution_chain PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_feed_health.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1527,
+      "stdout": "test_feed_health PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_final_logo_mapping.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1056,
+      "stdout": "test_final_logo_mapping PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_flet_app_import.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.6197,
+      "stdout": "test_flet_app_import PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_aurelius_toggle.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.311,
+      "stdout": "test_gui_aurelius_toggle PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_bellator_intelligence_diagnostics.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.6063,
+      "stdout": "test_gui_bellator_intelligence_diagnostics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logo_aliases.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.9525,
+      "stdout": "test_gui_compact_logo_aliases PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logo_fit.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.6161,
+      "stdout": "test_gui_compact_logo_fit PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logos.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.514,
+      "stdout": "test_gui_compact_logos PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_deliberation_states.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.5649,
+      "stdout": "test_gui_deliberation_states PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_diagnostic_drawer.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.229,
+      "stdout": "test_gui_diagnostic_drawer PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_header_uses_compact_not_boot_logo.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.3677,
+      "stdout": "test_gui_header_uses_compact_not_boot_logo PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_heartbeat.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.9678,
+      "stdout": "test_gui_heartbeat PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_layout_contract.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.022,
+      "stdout": "test_gui_layout_contract PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_memory_indicators.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.437,
+      "stdout": "test_gui_memory_indicators PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_monolith_naming.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.5492,
+      "stdout": "test_gui_monolith_naming PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_provider_recheck.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.5647,
+      "stdout": "test_gui_provider_recheck PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_provider_status_panel.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.5151,
+      "stdout": "test_gui_provider_status_panel PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_readiness_containment.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4493,
+      "stdout": "test_gui_readiness_containment PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_refresh_cadence.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7579,
+      "stdout": "test_gui_refresh_cadence PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_repaint_regression.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.84,
+      "stdout": "test_gui_repaint_regression PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_responsive_layout.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.532,
+      "stdout": "test_gui_responsive_layout PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_status_colors.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4124,
+      "stdout": "test_gui_status_colors PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_submission_flow.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.5484,
+      "stdout": "test_gui_submission_flow PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_theme_binding.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.1022,
+      "stdout": "test_gui_theme_binding PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_theme_selector.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.8979,
+      "stdout": "test_gui_theme_selector PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_window_modes.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.6079,
+      "stdout": "test_gui_window_modes PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_health_uses_model_cache.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3303,
+      "stdout": "test_health_uses_model_cache PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_legacy_visual_identity.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0819,
+      "stdout": "test_legacy_visual_identity PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_lifecycle_audio_hooks.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0801,
+      "stdout": "test_lifecycle_audio_hooks PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_memory_cli.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4393,
+      "stdout": "test_memory_cli PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_assignment_cli.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4145,
+      "stdout": "test_model_assignment_cli PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_availability.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2558,
+      "stdout": "test_model_availability PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_remap_fallback.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3125,
+      "stdout": "test_model_remap_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_identity_enhancement.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4391,
+      "stdout": "test_monolith_identity_enhancement PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_idle_pulses.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0808,
+      "stdout": "test_monolith_idle_pulses PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_profiles.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2122,
+      "stdout": "test_monolith_profiles PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_claw_not_default_inference_backend.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3238,
+      "stdout": "test_msty_claw_not_default_inference_backend PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_inference_preferred.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4085,
+      "stdout": "test_msty_llama_cpp_inference_preferred PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_preferred_over_ollama.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3865,
+      "stdout": "test_msty_llama_cpp_preferred_over_ollama PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_warmup_state.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3272,
+      "stdout": "test_msty_llama_cpp_warmup_state PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_does_not_silently_become_llama_cpp.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.8004,
+      "stdout": "test_msty_local_does_not_silently_become_llama_cpp PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_network_url_fallback.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4623,
+      "stdout": "test_msty_local_network_url_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_primary_endpoint.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2599,
+      "stdout": "test_msty_local_primary_endpoint PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_runtime.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 32.7644,
+      "stdout": "test_msty_runtime PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_service_role_classification.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3007,
+      "stdout": "test_msty_service_role_classification PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_ollama_direct_backend.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 6.8047,
+      "stdout": "test_ollama_direct_backend PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_preview_theme_samples.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1231,
+      "stdout": "test_preview_theme_samples PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_prompt_assembly.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1022,
+      "stdout": "test_prompt_assembly PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_lifecycle_flow.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.7649,
+      "stdout": "test_proposal_lifecycle_flow PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_panel_ergonomics.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4497,
+      "stdout": "test_proposal_panel_ergonomics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_cache_not_used_as_online_if_backend_warming.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4352,
+      "stdout": "test_provider_cache_not_used_as_online_if_backend_warming PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_cli_offline.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 12.7678,
+      "stdout": "test_provider_cli_offline PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_diagnostics.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3575,
+      "stdout": "test_provider_diagnostics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_discovery.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4305,
+      "stdout": "test_provider_discovery PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_fallback_policy.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3917,
+      "stdout": "test_provider_fallback_policy PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3697,
+      "stdout": "test_provider_model_cache PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache_does_not_mask_backend_failure.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.4479,
+      "stdout": "test_provider_model_cache_does_not_mask_backend_failure PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache_refresh.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3396,
+      "stdout": "test_provider_model_cache_refresh PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_resolution_consistency_v761.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 1.8639,
+      "stdout": "test_provider_resolution_consistency_v761 PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_root_hygiene.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0724,
+      "stdout": "test_root_hygiene PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3428,
+      "stdout": "test_runtime_snapshot PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_session_memory.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.251,
+      "stdout": "test_session_memory PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_static_assets.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0955,
+      "stdout": "test_static_assets PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_status_panel_cleanup.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.5847,
+      "stdout": "test_status_panel_cleanup PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_ambient_messages.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.106,
+      "stdout": "test_theme_ambient_messages PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_completeness.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1143,
+      "stdout": "test_theme_completeness PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_contrast_tokens.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.5664,
+      "stdout": "test_theme_contrast_tokens PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_loading_bars.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1563,
+      "stdout": "test_theme_loading_bars PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_typewriter_animation.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1794,
+      "stdout": "test_typewriter_animation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_verdict_typing_animation.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1406,
+      "stdout": "test_verdict_typing_animation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_voting_runtime_integration.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.8566,
+      "stdout": "test_voting_runtime_integration PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_war_room_state_machine.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.0405,
+      "stdout": "test_war_room_state_machine PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_war_room_visual_hierarchy.py",
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4585,
+      "stdout": "test_war_room_visual_hierarchy PASS\n",
+      "stderr": ""
+    }
+  ]
+}

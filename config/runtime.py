@@ -12,7 +12,7 @@ from core.paths import CONFIG_PATH
 @dataclass
 class RuntimeConfig:
     theme: str = "military"
-    backend: str = "mock"
+    backend: str = "msty-local"
     sequential: bool = False
     minimum_confidence: float = 0.6
     quorum: int = 2

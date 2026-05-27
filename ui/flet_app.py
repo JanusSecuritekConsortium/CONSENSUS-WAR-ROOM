@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
+import sys
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Literal
+from typing import Any, Callable, Dict, List, Literal
 
 import flet as ft
 
@@ -16,32 +18,41 @@ from assistant.aurelius_runtime import AureliusRuntime, get_aurelius_runtime
 from config.names import ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
+from config.version import SYSTEM_VERSION
 from core.history import record_result
+from core.decision_trace import list_recent_traces, read_latest_trace
 from core.health import run_health_check
 from core.intelligence.bellator_context_builder import (
     build_bellator_context_packet,
     build_bellator_diagnostics_payload,
 )
 from core.llm.prompts import build_node_prompt
-from core.logging import log_error, log_event
+from core.logging import log_decision_trace, log_error, log_event
+from core.manual_visual_review import manual_visual_review_summary
 from core.memory.context import build_context_packet, context_status
 from core.memory.session import upsert_session_record
 from core.models import NodeIdentity, TribunalResult, Vote, VoteValue
-from core.paths import EXPORT_DIR, HISTORY_PATH, SYSTEM_LOG_PATH
+from core.paths import EXPORT_DIR, HISTORY_PATH, SYSTEM_LOG_PATH, SYSTEM_ROOT
+from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
 from core.voting.engine import ConsensusEngine
 from core.voting.parser import parse_vote
 from core.voting.rules import ConsensusRules
 from integrations.msty.runtime import MstyRuntime
+from tools.export_runtime_bundle import export_runtime_bundle
+from tools.provider_status_report import build_provider_status_report
+from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_snapshot
+from tools.verify_active_manifest import verify_active_manifest
 from ui.animations.typewriter import reveal_text_with_cursor_sync
 from ui.components.header import build_header
 from ui.components.log_panel import build_log_panel
 from ui.components.monolith_panel import build_monolith_panel
 from ui.components.proposal_panel import build_proposal_panel
 from ui.components.status_panel import build_status_panel
+from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph_lines, telemetry_summary_lines
 from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
-from ui.themes.catalog import THEMES, resolve_theme_key
+from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
 from ui.war_room_runtime import (
     append_timeline,
     ambient_message,
@@ -86,6 +97,19 @@ HEARTBEAT_MESSAGES = (
     "PROVIDER CHECK PENDING",
     "TRIBUNAL IDLE",
 )
+COMMAND_PALETTE_ACTIONS = (
+    "Runtime Snapshot",
+    "Provider Status",
+    "Latest Verdict",
+    "Open Diagnostics",
+    "Export Runtime Bundle",
+    "Run Verification",
+    "Verify Integrity",
+    "Visual Review Status",
+    "Telemetry Snapshot",
+    "Toggle Theme",
+    "Open Decision Trace Viewer",
+)
 
 
 @dataclass
@@ -124,6 +148,16 @@ class GuiState:
     proposal_file_mtime: float | None = None
     ui_interaction_hold_until: float = 0.0
     bellator_intelligence_diagnostics: Dict[str, object] = field(default_factory=dict)
+    render_in_progress: bool = False
+    diagnostics_drawer_open: bool = False
+    command_palette_open: bool = False
+    trace_viewer_open: bool = False
+    visual_review_viewer_open: bool = False
+    telemetry_viewer_open: bool = False
+    trace_filter: str = ""
+    operator_status: str = "OPERATOR READY"
+    runtime_snapshot_cache: Dict[str, Any] = field(default_factory=dict)
+    telemetry_snapshot: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def theme(self):
@@ -151,6 +185,7 @@ def create_gui_state(
         aurelius_runtime=get_aurelius_runtime(),
     )
     refresh_gui_status(state)
+    refresh_telemetry_for_gui(state)
     state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
     state.timeline_events = [
         append_timeline([], "SYSTEM", f"{state.theme.display_name} interface online")[0]
@@ -181,6 +216,45 @@ def _fallback_warning(state: GuiState, runtime: MstyRuntime) -> str:
     if isinstance(policy, dict) and policy.get("mode") in {"degraded", "offline"} and policy.get("fallback_enabled"):
         return "PROVIDER DEGRADED - MOCK FALLBACK ACTIVE"
     return ""
+
+
+def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
+    provider_payload = state.provider_status.get("provider", state.provider_status) if isinstance(state.provider_status, dict) else {}
+    if not isinstance(provider_payload, dict):
+        provider_payload = {}
+    visual_review = manual_visual_review_summary()
+    snapshot = {
+        "version": SYSTEM_VERSION,
+        "backend": state.config.backend,
+        "provider_status": provider_payload.get("status") or state.provider_status.get("status", "unknown"),
+        "active_models": provider_payload.get("models", []),
+        "missing_models": provider_payload.get("missing_required_models", {}),
+        "degraded_reason": provider_payload.get("degraded_reason") or state.provider_status.get("error"),
+        "war_room_layout_guard": {
+            "main_column_expand": [2, 6, 2],
+            "footer_fixed": True,
+            "diagnostics_overlay": True,
+        },
+        "render_guard_status": {
+            "enabled": True,
+            "state_field": "render_in_progress",
+            "reentrant_event": "ui_render_skipped_reentrant",
+        },
+        "latest_decision_trace": read_latest_trace(),
+        "latest_runtime_log": None,
+        "test_manifest_path": str(latest_test_manifest_path()),
+        "integrity_status": verify_active_manifest(),
+        "screenshot_status": visual_review.get("screenshot_status", "MANUAL_REVIEW_REQUIRED"),
+        "visual_review": visual_review,
+        "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
+    }
+    snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
+    return snapshot
+
+
+def refresh_telemetry_for_gui(state: GuiState) -> Dict[str, Any]:
+    state.telemetry_snapshot = sample_telemetry(TELEMETRY_HISTORY)
+    return state.telemetry_snapshot
 
 
 def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) -> None:
@@ -225,6 +299,7 @@ def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) ->
                 "reasoning": f"Required model unavailable: {model}",
             }
     state.provider_warning = _fallback_warning(state, runtime)
+    state.runtime_snapshot_cache = runtime_snapshot_from_gui_state(state)
     state.logs = read_recent_log_events()
     state.recent_decisions = read_recent_decisions()
     refresh_bellator_intelligence_status(state)
@@ -509,6 +584,7 @@ def submit_proposal_live_for_gui(
         state.monolith_activity_states[ARBITER] = "IDLE"
         append_timeline(state.timeline_events, ARBITER, "consensus locked")
         record_result(result)
+        log_decision_trace(result)
         provider_payload = state.provider_status.get("provider", state.provider_status)
         try:
             upsert_session_record(
@@ -658,6 +734,86 @@ def open_theme_preview_folder() -> Path:
     return path
 
 
+def latest_test_manifest_path() -> Path:
+    return Path("reports") / f"verification_v{SYSTEM_VERSION}.json"
+
+
+def filter_decision_traces(traces: List[Dict[str, Any]], proposal_id: str = "") -> List[Dict[str, Any]]:
+    needle = proposal_id.strip().lower()
+    if not needle:
+        return traces
+    return [trace for trace in traces if needle in str(trace.get("proposal_id", "")).lower()]
+
+
+def latest_verdict_text(state: GuiState) -> str:
+    if state.current_result is not None:
+        return state.current_result.verdict.value
+    trace = read_latest_trace()
+    if isinstance(trace, dict):
+        return str(trace.get("final_verdict") or trace.get("verdict") or "--")
+    return "--"
+
+
+def execute_command_palette_action(state: GuiState, action: str) -> str:
+    if action not in COMMAND_PALETTE_ACTIONS:
+        raise ValueError(f"Unknown command palette action: {action}")
+    try:
+        if action == "Runtime Snapshot":
+            state.runtime_snapshot_cache = build_runtime_snapshot()
+            message = "Runtime snapshot refreshed"
+        elif action == "Provider Status":
+            state.runtime_snapshot_cache["provider_status_report"] = build_provider_status_report()
+            message = "Provider status report refreshed"
+        elif action == "Latest Verdict":
+            message = f"Latest verdict: {latest_verdict_text(state)}"
+        elif action == "Open Diagnostics":
+            state.diagnostics_drawer_open = True
+            message = "Diagnostics opened"
+        elif action == "Export Runtime Bundle":
+            target = export_runtime_bundle()
+            message = f"Runtime bundle exported: {target}"
+        elif action == "Run Verification":
+            completed = subprocess.run(
+                [sys.executable, str(SYSTEM_ROOT / "tools" / "run_tests.py")],
+                cwd=SYSTEM_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=300,
+                check=False,
+            )
+            message = f"Verification {'passed' if completed.returncode == 0 else 'failed'}: {latest_test_manifest_path()}"
+        elif action == "Verify Integrity":
+            result = verify_active_manifest()
+            state.runtime_snapshot_cache["integrity_status"] = result
+            message = f"Integrity {result.get('status', 'UNKNOWN')}"
+        elif action == "Visual Review Status":
+            state.runtime_snapshot_cache["visual_review"] = manual_visual_review_summary()
+            state.visual_review_viewer_open = True
+            message = "Visual review status opened"
+        elif action == "Telemetry Snapshot":
+            state.telemetry_snapshot = sample_telemetry(TELEMETRY_HISTORY)
+            state.runtime_snapshot_cache["telemetry"] = state.telemetry_snapshot
+            state.telemetry_viewer_open = True
+            message = "Telemetry snapshot opened"
+        elif action == "Toggle Theme":
+            options = [theme.key for theme in get_gui_theme_options()]
+            index = options.index(state.theme_key) if state.theme_key in options else -1
+            state.theme_key = options[(index + 1) % len(options)]
+            state.config.theme = state.theme_key
+            state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
+            message = f"Theme toggled: {state.theme_key}"
+        else:
+            state.trace_viewer_open = True
+            message = "Decision trace viewer opened"
+        state.operator_status = message
+        log_event("gui_command_palette_action", {"action": action, "status": message, "theme": state.theme_key})
+        return message
+    except Exception as exc:
+        log_error("gui_command_palette_action_error", exc, {"action": action, "theme": state.theme_key})
+        state.operator_status = f"{action} failed: {exc}"
+        raise
+
+
 def _memory_status_text() -> str:
     try:
         import psutil  # type: ignore
@@ -696,6 +852,245 @@ def apply_gui_window_mode(page: ft.Page, mode: GuiWindowMode = "maximized") -> N
             setattr(page, attr, value)
 
 
+def build_command_palette(state: GuiState, on_action: Callable[[str], None] | None = None) -> ft.Control:
+    theme = state.theme
+
+    def run_action(action: str):
+        return (lambda _: on_action(action)) if on_action is not None else None
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Text("COMMAND PALETTE", color=theme.accent_color, size=14, weight=ft.FontWeight.BOLD),
+                        ft.Text("CTRL+K", color=theme.secondary_color, size=11),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                *[
+                    ft.TextButton(
+                        action,
+                        on_click=run_action(action),
+                        style=ft.ButtonStyle(
+                            color=theme.text_color,
+                            bgcolor=theme.background_color,
+                            side=ft.BorderSide(1, theme.secondary_color),
+                            shape=ft.RoundedRectangleBorder(radius=0),
+                            padding=ft.padding.symmetric(horizontal=10, vertical=8),
+                            text_style=ft.TextStyle(size=12, font_family=theme.font_family),
+                        ),
+                        height=38,
+                    )
+                    for action in COMMAND_PALETTE_ACTIONS
+                ],
+                ft.Text(state.operator_status, color=theme.panel_value or theme.text_color, size=10, max_lines=2),
+            ],
+            spacing=7,
+            tight=True,
+        ),
+        width=460,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
+def build_decision_trace_viewer(
+    state: GuiState,
+    on_filter: Callable[[str], None] | None = None,
+    traces: List[Dict[str, Any]] | None = None,
+) -> ft.Control:
+    theme = state.theme
+    recent = traces if traces is not None else list_recent_traces(limit=25)
+    visible_traces = list(reversed(filter_decision_traces(recent, state.trace_filter)))[:12]
+
+    def update_filter(event: ft.ControlEvent) -> None:
+        state.trace_filter = str(event.control.value or "")
+        if on_filter is not None:
+            on_filter(state.trace_filter)
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    rows: list[ft.Control] = []
+    for trace in visible_traces:
+        proposal_id = str(trace.get("proposal_id") or "--")
+        verdict = str(trace.get("final_verdict") or trace.get("verdict") or "--")
+        taxonomy = str(trace.get("taxonomy") or trace.get("proposal_taxonomy") or "--")
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(f"PROPOSAL {proposal_id}", theme.accent_color, bold=True),
+                        text(f"VERDICT {verdict} | TAXONOMY {taxonomy}", theme.panel_value or theme.text_color),
+                    ],
+                    spacing=2,
+                ),
+                padding=6,
+                border=ft.border.all(1, theme.secondary_color),
+                bgcolor=theme.background_color,
+            )
+        )
+    if not rows:
+        rows.append(text("NO DECISION TRACES FOUND", theme.warning_color, bold=True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("DECISION TRACE VIEWER", theme.accent_color, size=14, bold=True),
+                        text("RECENT TRACES", theme.secondary_color, size=10),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.TextField(
+                    label="proposal_id filter",
+                    value=state.trace_filter,
+                    on_change=update_filter,
+                    border_color=theme.secondary_color,
+                    focused_border_color=theme.accent_color,
+                    color=theme.text_color,
+                    label_style=ft.TextStyle(color=theme.secondary_color, size=11),
+                    text_style=ft.TextStyle(color=theme.text_color, size=12, font_family=theme.font_family),
+                    height=48,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=520,
+        height=560,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
+def build_visual_review_status_viewer(state: GuiState) -> ft.Control:
+    theme = state.theme
+    summary = state.runtime_snapshot_cache.get("visual_review")
+    if not isinstance(summary, dict):
+        summary = manual_visual_review_summary()
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=3,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    rows: list[ft.Control] = []
+    for entry in summary.get("themes", []):
+        if not isinstance(entry, dict):
+            continue
+        status = str(entry.get("status", "PENDING"))
+        color = {
+            "APPROVED": theme.primary_color,
+            "PENDING": theme.warning_color,
+            "REJECTED": theme.error_color,
+            "NEEDS_FIX": theme.warning_color,
+        }.get(status, theme.secondary_color)
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(f"{str(entry.get('theme', '--')).upper()} | {status}", color, bold=True),
+                        text(f"SHOT: {entry.get('screenshot_path', '--')}", theme.secondary_text or theme.secondary_color),
+                        text(f"NOTES: {entry.get('reviewer_notes') or '--'}", theme.panel_value or theme.text_color),
+                    ],
+                    spacing=2,
+                ),
+                padding=6,
+                border=ft.border.all(1, color),
+                bgcolor=theme.background_color,
+            )
+        )
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("VISUAL REVIEW STATUS", theme.accent_color, size=14, bold=True),
+                        text(str(summary.get("screenshot_status", "MANUAL_REVIEW_REQUIRED")), theme.warning_color, size=10),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                text(f"FILE: {summary.get('path', '--')}", theme.secondary_color),
+                text(
+                    f"PENDING: {summary.get('pending_count', 0)} | NEEDS FIX/REJECTED: {summary.get('action_required_count', 0)}",
+                    theme.warning_color if summary.get("action_required_count", 0) else theme.primary_color,
+                    bold=True,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=560,
+        height=560,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
+def build_telemetry_snapshot_viewer(state: GuiState) -> ft.Control:
+    theme = state.theme
+    telemetry = state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY)
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            selectable=True,
+        )
+
+    latest = telemetry.get("latest", {}) if isinstance(telemetry, dict) else {}
+    timestamp = latest.get("timestamp", "--") if isinstance(latest, dict) else "--"
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("TELEMETRY SNAPSHOT", theme.accent_color, size=14, bold=True),
+                        text(str(timestamp), theme.secondary_color, size=10),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                *[text(line, theme.panel_value or theme.text_color, size=12) for line in telemetry_summary_lines(theme.key, telemetry)],
+                text("HISTORY", theme.accent_color, bold=True),
+                *[text(line, theme.secondary_text or theme.secondary_color, size=11) for line in telemetry_graph_lines(theme.key, telemetry)],
+            ],
+            spacing=8,
+            tight=True,
+        ),
+        width=520,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
 def build_gui_layout(
     state: GuiState,
     submit,
@@ -706,6 +1101,8 @@ def build_gui_layout(
     recheck_provider=None,
     toggle_aurelius_voice=None,
     refresh_bellator_intelligence=None,
+    toggle_diagnostics=None,
+    open_trace_viewer=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -741,6 +1138,7 @@ def build_gui_layout(
             terminal_button("OPEN PREVIEWS", lambda _: open_theme_preview_folder()),
             terminal_button("REFRESH STATUS", refresh),
             terminal_button("RECHECK PROVIDER", recheck_provider or refresh),
+            terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
             terminal_button("HEALTH CHECK", run_health),
             terminal_button("SHUTDOWN GUI", close_gui),
         ],
@@ -800,17 +1198,27 @@ def build_gui_layout(
     right = ft.Container(
         ft.Column(
             [
-                build_status_panel(
-                    theme,
-                    state.provider_status,
-                    state.memory_status,
-                    lifecycle_state=state.lifecycle_state,
-                    provider_warning=state.provider_warning,
-                    ambient_status=state.heartbeat_text,
-                    session_memory_status=state.session_memory_status,
-                    context_retrieval_status=state.context_retrieval_status,
-                    prior_decisions_used=state.prior_decisions_used,
-                    current_session_id=state.current_result.session_id if state.current_result else "--",
+                ft.Container(
+                    ft.Column(
+                        [
+                            build_status_panel(
+                                theme,
+                                state.provider_status,
+                                state.memory_status,
+                                lifecycle_state=state.lifecycle_state,
+                                provider_warning=state.provider_warning,
+                                ambient_status=state.heartbeat_text,
+                                session_memory_status=state.session_memory_status,
+                                context_retrieval_status=state.context_retrieval_status,
+                                prior_decisions_used=state.prior_decisions_used,
+                                current_session_id=state.current_result.session_id if state.current_result else "--",
+                            ),
+                            build_telemetry_panel(theme, state.telemetry_snapshot),
+                        ],
+                        spacing=8,
+                        tight=True,
+                    ),
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 ),
                 build_log_panel(
                     theme,
@@ -841,7 +1249,7 @@ def build_gui_layout(
         bgcolor=theme.surface_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
-    return ft.Container(
+    shell = ft.Container(
         content=ft.Column(
             [
                 build_header(
@@ -851,6 +1259,7 @@ def build_gui_layout(
                     state.current_result.session_id if state.current_result else "--",
                     compact=state.compact_header,
                     ambient_status=state.heartbeat_text,
+                    health_badge=state.runtime_snapshot_cache.get("health_badge"),
                 ),
                 ft.Container(body, expand=True, padding=8, clip_behavior=ft.ClipBehavior.HARD_EDGE),
                 footer,
@@ -861,60 +1270,205 @@ def build_gui_layout(
         expand=True,
         bgcolor=theme.background_color,
     )
+    shell.diagnostics_drawer = build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer)  # type: ignore[attr-defined]
+    shell.command_palette = build_command_palette(state)  # type: ignore[attr-defined]
+    shell.decision_trace_viewer = build_decision_trace_viewer(state)  # type: ignore[attr-defined]
+    shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
+    shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
+    return shell
+
+
+def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Control:
+    theme = state.theme
+    provider_payload = state.provider_status.get("provider", state.provider_status)
+    if not isinstance(provider_payload, dict):
+        provider_payload = {}
+    endpoint_validity = provider_payload.get("health_endpoint", {}) or {}
+    if not isinstance(endpoint_validity, dict):
+        endpoint_validity = {}
+    model_report = provider_payload.get("model_availability_report", []) or []
+    active_model_lines: list[str] = []
+    if isinstance(model_report, list):
+        for item in model_report[:5]:
+            if isinstance(item, dict):
+                active_model_lines.append(
+                    f"{item.get('agent_id', '--')}: {item.get('resolved_model') or item.get('required_model') or '--'}"
+                )
+    if not active_model_lines:
+        active_model_lines = [str(model) for model in (provider_payload.get("models", []) or [])[:5]]
+    last_verdict = state.current_result.verdict.value if state.current_result else "--"
+    degraded_reason = str(provider_payload.get("degraded_reason") or "--")
+    endpoint_status = str(endpoint_validity.get("reason") or provider_payload.get("base_url") or "--")
+    integrity = state.runtime_snapshot_cache.get("integrity_status", {})
+    integrity_status = str(integrity.get("status", "UNKNOWN")) if isinstance(integrity, dict) else "UNKNOWN"
+    integrity_color = {
+        "CLEAN": theme.primary_color,
+        "DRIFT": theme.warning_color,
+        "UNKNOWN": theme.muted_text or theme.secondary_color,
+    }.get(integrity_status, theme.error_color)
+    visual_review = state.runtime_snapshot_cache.get("visual_review")
+    if not isinstance(visual_review, dict):
+        visual_review = manual_visual_review_summary()
+    telemetry = state.telemetry_snapshot or state.runtime_snapshot_cache.get("telemetry") or {}
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    return ft.Column(
+        [
+            ft.Row(
+                [
+                    text("DIAGNOSTICS", theme.accent_color, size=13, bold=True),
+                    text("DRAWER", theme.panel_label or theme.secondary_color, size=10),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            ),
+            text(f"PROVIDER BACKEND: {provider_payload.get('active_backend') or provider_payload.get('backend') or '--'}"),
+            text(f"ENDPOINT STATUS: {endpoint_status}", theme.warning_color if degraded_reason != "--" else theme.text_color),
+            text("ACTIVE MODELS", theme.accent_color, bold=True),
+            *[text(line, theme.panel_value or theme.text_color) for line in active_model_lines[:5]],
+            text(f"LAST VERDICT: {last_verdict}", theme.accent_color, bold=True),
+            ft.TextButton(
+                "OPEN LATEST TRACE",
+                on_click=open_trace_viewer,
+                style=ft.ButtonStyle(
+                    color=theme.text_color,
+                    bgcolor=theme.background_color,
+                    side=ft.BorderSide(1, theme.secondary_color),
+                    shape=ft.RoundedRectangleBorder(radius=0),
+                    padding=ft.padding.symmetric(horizontal=10, vertical=6),
+                    text_style=ft.TextStyle(size=11, font_family=theme.font_family),
+                ),
+                height=34,
+            ),
+            text(f"LAST TEST MANIFEST: {latest_test_manifest_path()}"),
+            text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
+            text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
+            text(
+                f"VISUAL REVIEW PENDING: {visual_review.get('pending_count', 0)} | NEEDS FIX/REJECTED: {visual_review.get('action_required_count', 0)}",
+                theme.warning_color if visual_review.get("action_required_count", 0) else theme.primary_color,
+                bold=True,
+            ),
+            text("TELEMETRY", theme.accent_color, bold=True),
+            *[text(line, theme.panel_value or theme.text_color) for line in telemetry_summary_lines(theme.key, telemetry)[:5]],
+            text(f"DEGRADED REASON: {degraded_reason}", theme.warning_color if degraded_reason != "--" else theme.muted_text or theme.secondary_color),
+        ],
+        spacing=8,
+        scroll=ft.ScrollMode.AUTO,
+    )
 
 
 def _render_page(page: ft.Page, state: GuiState) -> None:
-    _apply_page_theme(page, state)
-    apply_gui_window_mode(page, state.window_mode)
+    if state.render_in_progress:
+        log_war_room_runtime("ui_render_skipped_reentrant", {"theme": state.theme_key}, level="WARN")
+        return
+    state.render_in_progress = True
+    try:
+        _apply_page_theme(page, state)
+        apply_gui_window_mode(page, state.window_mode)
 
-    def submit(proposal: str) -> None:
-        def worker() -> None:
-            def update() -> None:
+        def submit(proposal: str) -> None:
+            def worker() -> None:
+                def update() -> None:
+                    _render_page(page, state)
+
+                try:
+                    submit_proposal_live_for_gui(state, proposal, on_update=update)
+                except Exception as exc:
+                    log_error("gui_submission_error", exc, {"theme": state.theme_key})
+                    state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
                 _render_page(page, state)
 
-            try:
-                submit_proposal_live_for_gui(state, proposal, on_update=update)
-            except Exception as exc:
-                log_error("gui_submission_error", exc, {"theme": state.theme_key})
-                state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
-            _render_page(page, state)
+            page.run_thread(worker)
 
-        page.run_thread(worker)
+        def switch_theme(next_theme: str) -> None:
+            resolved = resolve_theme_key(next_theme)
+            if resolved in THEMES:
+                state.theme_key = resolved
+                state.config.theme = resolved
+                state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
+                append_timeline(state.timeline_events, "SYSTEM", f"theme switched to {state.theme.display_name}")
+                refresh_gui_status(state)
+                _render_page(page, state)
 
-    def switch_theme(next_theme: str) -> None:
-        resolved = resolve_theme_key(next_theme)
-        if resolved in THEMES:
-            state.theme_key = resolved
-            state.config.theme = resolved
-            state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
-            append_timeline(state.timeline_events, "SYSTEM", f"theme switched to {state.theme.display_name}")
+        def refresh(_: ft.ControlEvent | None = None) -> None:
             refresh_gui_status(state)
             _render_page(page, state)
 
-    def refresh(_: ft.ControlEvent | None = None) -> None:
-        refresh_gui_status(state)
-        _render_page(page, state)
+        def recheck_provider(_: ft.ControlEvent | None = None) -> None:
+            recheck_provider_for_gui(state)
+            _render_page(page, state)
 
-    def recheck_provider(_: ft.ControlEvent | None = None) -> None:
-        recheck_provider_for_gui(state)
-        _render_page(page, state)
+        def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
+            refresh_bellator_intelligence_for_gui(state)
+            _render_page(page, state)
 
-    def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
-        refresh_bellator_intelligence_for_gui(state)
-        _render_page(page, state)
+        def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
+            set_aurelius_voice_loop(state, bool(event.control.value))
+            _render_page(page, state)
 
-    def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
-        set_aurelius_voice_loop(state, bool(event.control.value))
-        _render_page(page, state)
+        def run_health(_: ft.ControlEvent | None = None) -> None:
+            report = run_health_check()
+            state.logs = [f"HEALTH {report['status'].upper()}", *state.logs[:10]]
+            _render_page(page, state)
 
-    def run_health(_: ft.ControlEvent | None = None) -> None:
-        report = run_health_check()
-        state.logs = [f"HEALTH {report['status'].upper()}", *state.logs[:10]]
-        _render_page(page, state)
+        def toggle_diagnostics(_: ft.ControlEvent | None = None) -> None:
+            state.diagnostics_drawer_open = not state.diagnostics_drawer_open
+            log_event(
+                "gui_diagnostics_drawer",
+                {"open": state.diagnostics_drawer_open, "theme": state.theme_key},
+            )
+            _render_page(page, state)
 
-    page.controls.clear()
-    page.add(
-        build_gui_layout(
+        def open_trace_viewer(_: ft.ControlEvent | None = None) -> None:
+            state.trace_viewer_open = True
+            log_event("gui_decision_trace_viewer", {"open": True, "theme": state.theme_key})
+            _render_page(page, state)
+
+        def handle_command_action(action: str) -> None:
+            state.command_palette_open = False
+            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity"}:
+                state.operator_status = f"{action} running"
+                _render_page(page, state)
+
+                def worker() -> None:
+                    try:
+                        execute_command_palette_action(state, action)
+                    except Exception:
+                        pass
+                    _render_page(page, state)
+
+                page.run_thread(worker)
+                return
+            execute_command_palette_action(state, action)
+            _render_page(page, state)
+
+        def handle_trace_filter(value: str) -> None:
+            state.trace_filter = value
+            _render_page(page, state)
+
+        def on_keyboard_event(event) -> None:
+            key = str(getattr(event, "key", "") or "").upper()
+            ctrl = bool(getattr(event, "ctrl", False) or getattr(event, "meta", False))
+            if ctrl and key == "K":
+                state.command_palette_open = not state.command_palette_open
+                log_event(
+                    "gui_command_palette",
+                    {"open": state.command_palette_open, "theme": state.theme_key},
+                )
+                _render_page(page, state)
+
+        if hasattr(page, "on_keyboard_event"):
+            page.on_keyboard_event = on_keyboard_event
+
+        layout = build_gui_layout(
             state,
             submit,
             switch_theme,
@@ -924,9 +1478,72 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             recheck_provider=recheck_provider,
             toggle_aurelius_voice=toggle_aurelius_voice,
             refresh_bellator_intelligence=refresh_bellator_intelligence,
+            toggle_diagnostics=toggle_diagnostics,
+            open_trace_viewer=open_trace_viewer,
         )
-    )
-    page.update()
+        page.controls.clear()
+        page.add(layout)
+        overlay = getattr(page, "overlay", None)
+        if isinstance(overlay, list):
+            operator_overlays = {
+                "diagnostics_drawer",
+                "command_palette",
+                "decision_trace_viewer",
+                "visual_review_status",
+                "telemetry_snapshot",
+            }
+            overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
+            if state.diagnostics_drawer_open:
+                overlay.append(
+                    ft.Container(
+                        content=ft.Container(
+                            build_diagnostics_drawer(state),
+                            width=380,
+                            padding=10,
+                            border=ft.border.all(1, state.theme.accent_color),
+                            bgcolor=state.theme.surface_color,
+                            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                        ),
+                        alignment=ft.alignment.center_right,
+                        data="diagnostics_drawer",
+                    )
+                )
+            if state.command_palette_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_command_palette(state, on_action=handle_command_action),
+                        alignment=ft.alignment.center,
+                        data="command_palette",
+                    )
+                )
+            if state.trace_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_decision_trace_viewer(state, on_filter=handle_trace_filter),
+                        alignment=ft.alignment.center_left,
+                        padding=ft.padding.only(left=24),
+                        data="decision_trace_viewer",
+                    )
+                )
+            if state.visual_review_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_visual_review_status_viewer(state),
+                        alignment=ft.alignment.center,
+                        data="visual_review_status",
+                    )
+                )
+            if state.telemetry_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_telemetry_snapshot_viewer(state),
+                        alignment=ft.alignment.center,
+                        data="telemetry_snapshot",
+                    )
+                )
+        page.update()
+    finally:
+        state.render_in_progress = False
 
 
 def _start_status_polling(page: ft.Page, state: GuiState, interval: float = GUI_ACTIVITY_REFRESH_INTERVAL_SECONDS) -> None:
@@ -942,6 +1559,7 @@ def _start_status_polling(page: ft.Page, state: GuiState, interval: float = GUI_
                 if now - last_status_refresh >= GUI_PROVIDER_REFRESH_INTERVAL_SECONDS:
                     refresh_gui_status(state)
                     last_status_refresh = now
+                refresh_telemetry_for_gui(state)
                 _render_page(page, state)
             except Exception as exc:
                 log_error("gui_status_poll_error", exc)
@@ -976,8 +1594,16 @@ __all__ = [
     "refresh_bellator_intelligence_for_gui",
     "run_flet_gui",
     "build_gui_layout",
+    "build_diagnostics_drawer",
+    "build_command_palette",
+    "build_decision_trace_viewer",
+    "execute_command_palette_action",
+    "filter_decision_traces",
+    "runtime_snapshot_from_gui_state",
+    "latest_verdict_text",
     "apply_gui_window_mode",
     "GUI_WINDOW_MODES",
+    "COMMAND_PALETTE_ACTIONS",
     "GUI_ACTIVITY_REFRESH_INTERVAL_SECONDS",
     "GUI_PROVIDER_REFRESH_INTERVAL_SECONDS",
     "GUI_INTERACTION_HOLD_SECONDS",

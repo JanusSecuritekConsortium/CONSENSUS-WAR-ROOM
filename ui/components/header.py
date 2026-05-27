@@ -4,38 +4,106 @@ import flet as ft
 
 from config.version import SYSTEM_VERSION
 from core.models import Theme
-from core.paths import SYSTEM_ROOT
+from ui.assets.logo_normalizer import read_normalized_logo
+from ui.assets.registry import HeaderLogoLayout, THEME_GRAPHIC_ASSETS, get_theme_graphic_asset
 
-GUI_HEADER_HEIGHT = 144
+GUI_HEADER_HEIGHT = 170
 COMPACT_LOGO_MAX_LINES = 8
 GUI_LOGO_BOX_HEIGHT = GUI_HEADER_HEIGHT - 28
-GUI_LOGO_BOX_MAX_WIDTH = 640
-GUI_LOGO_DIR = SYSTEM_ROOT / "static" / "logos" / "gui"
-GUI_COMPACT_LOGO_FILES = {
-    "eva": GUI_LOGO_DIR / "eva_header.txt",
-    "nerv": GUI_LOGO_DIR / "eva_header.txt",
-    "wh40k": GUI_LOGO_DIR / "wh40k_header.txt",
-    "helldivers": GUI_LOGO_DIR / "helldivers_header.txt",
-    "arasaka": GUI_LOGO_DIR / "arasaka_header.txt",
-    "military": GUI_LOGO_DIR / "military_header.txt",
-    "janus": GUI_LOGO_DIR / "janus_header.txt",
-}
+GUI_LOGO_BOX_MAX_WIDTH = 1120
+LOGO_FONT_FAMILY = "Consolas"
+LOGO_FONT_SIZE = 12
+GUI_COMPACT_LOGO_FILES = {key: asset.logo_path for key, asset in THEME_GRAPHIC_ASSETS.items()}
 
 
 def _logo_width(logo: str) -> int:
     longest = max((len(line) for line in logo.splitlines()), default=64)
-    return max(320, min(GUI_LOGO_BOX_MAX_WIDTH, int(longest * 6.2) + 24))
+    return max(360, min(GUI_LOGO_BOX_MAX_WIDTH, int(longest * 7.5) + 32))
 
 
-def _logo_font_size(logo: str) -> int:
-    longest = max((len(line) for line in logo.splitlines()), default=64)
-    return 8 if longest > 100 else 9
+def header_logo_layout(theme: Theme) -> HeaderLogoLayout:
+    try:
+        return get_theme_graphic_asset(theme.key).header_layout
+    except KeyError:
+        return HeaderLogoLayout(logo_font_size=LOGO_FONT_SIZE)
+
+
+def _alignment(layout: HeaderLogoLayout):
+    if layout.logo_vertical_align == "top":
+        return ft.alignment.top_center
+    if layout.logo_vertical_align == "bottom":
+        return ft.alignment.bottom_center
+    return ft.alignment.center
+
+
+def _horizontal_alignment(layout: HeaderLogoLayout):
+    if layout.logo_horizontal_align == "left":
+        return ft.CrossAxisAlignment.START
+    if layout.logo_horizontal_align == "right":
+        return ft.CrossAxisAlignment.END
+    return ft.CrossAxisAlignment.CENTER
+
+
+def _scroll_mode(layout: HeaderLogoLayout):
+    return ft.ScrollMode.AUTO if layout.logo_box_scroll_enabled else None
+
+
+def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
+    font_size = header_logo_layout(theme).logo_font_size
+    return ft.Text(
+        logo,
+        font_family=LOGO_FONT_FAMILY,
+        color=theme.primary_color,
+        selectable=True,
+        no_wrap=True,
+        overflow=ft.TextOverflow.VISIBLE,
+        style=ft.TextStyle(
+            font_family=LOGO_FONT_FAMILY,
+            size=font_size,
+            height=1.0,
+            letter_spacing=0,
+            word_spacing=0,
+            overflow=ft.TextOverflow.VISIBLE,
+        ),
+        size=font_size,
+        data={"role": "theme_logo_text"},
+    )
+
+
+def _build_scrollable_logo_content(logo: str, theme: Theme) -> ft.Column:
+    layout = header_logo_layout(theme)
+    return ft.Column(
+        [
+            ft.Row(
+                [_build_logo_text(logo, theme)],
+                spacing=0,
+                tight=True,
+                wrap=False,
+                scroll=_scroll_mode(layout),
+                alignment=ft.MainAxisAlignment.CENTER,
+            )
+        ],
+        spacing=0,
+        tight=True,
+        scroll=_scroll_mode(layout),
+        horizontal_alignment=_horizontal_alignment(layout),
+    )
+
+
+def logo_text_control_from_box(logo_box: ft.Container) -> ft.Text:
+    content = logo_box.content
+    if isinstance(content, ft.Text):
+        return content
+    return content.controls[0].controls[0]
 
 
 def compact_logo_text(theme: Theme, max_lines: int = COMPACT_LOGO_MAX_LINES) -> str:
-    dedicated = GUI_COMPACT_LOGO_FILES.get(theme.key)
+    try:
+        dedicated = get_theme_graphic_asset(theme.key).logo_path
+    except KeyError:
+        dedicated = GUI_COMPACT_LOGO_FILES.get(theme.key)
     if dedicated and dedicated.exists():
-        return dedicated.read_text(encoding="utf-8").rstrip("\n")
+        return read_normalized_logo(dedicated).text
     lines = theme.logo.rstrip("\n").splitlines()
     first_visible = next((index for index, line in enumerate(lines) if line.strip()), 0)
     return "\n".join(lines[first_visible : first_visible + max_lines])
@@ -53,10 +121,19 @@ def build_header(
     session_id: str = "--",
     compact: bool = True,
     ambient_status: str = "MONOLITH LINK STABLE",
+    health_badge: dict[str, str] | None = None,
 ) -> ft.Control:
     logo = compact_logo_text(theme) if compact else theme.logo.rstrip("\n")
     provider = provider_status.upper()
     provider_color = theme.primary_color if provider == "READY" else theme.warning_color
+    badge = health_badge or {"label": provider if provider in {"READY", "DEGRADED", "ERROR"} else "DEGRADED", "color_role": "warning"}
+    badge_label = str(badge.get("label", "DEGRADED")).upper()
+    badge_role = str(badge.get("color_role", "warning"))
+    badge_color = {
+        "primary": theme.primary_color,
+        "warning": theme.warning_color,
+        "error": theme.error_color,
+    }.get(badge_role, theme.warning_color)
     telemetry = [
         ("BUILD", SYSTEM_VERSION),
         ("ACTIVE MODE", "GUI WAR ROOM"),
@@ -65,22 +142,21 @@ def build_header(
         ("MEMORY", memory_status),
         ("SESSION", session_id),
     ]
+    logo_layout = header_logo_layout(theme)
     return ft.Container(
         content=ft.Row(
             [
                 ft.Container(
-                    content=ft.Text(
-                        logo,
-                        font_family=theme.font_family,
-                        color=theme.primary_color,
-                        selectable=False,
-                        no_wrap=True,
-                        size=_logo_font_size(logo),
-                    ),
+                    content=_build_scrollable_logo_content(logo, theme),
                     width=_logo_width(logo),
                     height=GUI_LOGO_BOX_HEIGHT,
-                    padding=4,
-                    alignment=ft.alignment.center,
+                    padding=ft.padding.only(
+                        left=logo_layout.logo_side_padding,
+                        right=logo_layout.logo_side_padding,
+                        top=logo_layout.logo_top_padding,
+                        bottom=logo_layout.logo_bottom_padding,
+                    ),
+                    alignment=_alignment(logo_layout),
                     border=ft.border.all(1, theme.secondary_color),
                     bgcolor=theme.background_color,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -88,7 +164,24 @@ def build_header(
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text("SYSTEM STATUS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=15),
+                            ft.Row(
+                                [
+                                    ft.Text("SYSTEM STATUS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=15),
+                                    ft.Container(
+                                        content=ft.Text(
+                                            f"HEALTH {badge_label}",
+                                            color=badge_color,
+                                            font_family=theme.font_family,
+                                            size=12,
+                                            weight=ft.FontWeight.BOLD,
+                                        ),
+                                        border=ft.border.all(1, badge_color),
+                                        bgcolor=theme.background_color,
+                                        padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                                    ),
+                                ],
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            ),
                             *[
                                 ft.Row(
                                     [
@@ -141,8 +234,12 @@ __all__ = [
     "GUI_HEADER_HEIGHT",
     "GUI_LOGO_BOX_HEIGHT",
     "GUI_LOGO_BOX_MAX_WIDTH",
+    "LOGO_FONT_FAMILY",
+    "LOGO_FONT_SIZE",
     "COMPACT_LOGO_MAX_LINES",
     "build_header",
     "compact_logo_text",
+    "header_logo_layout",
     "has_dedicated_gui_compact_logo",
+    "logo_text_control_from_box",
 ]
