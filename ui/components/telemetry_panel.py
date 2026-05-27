@@ -7,6 +7,8 @@ import flet as ft
 from core.models import Theme
 from core.telemetry import sparkline
 
+TELEMETRY_PANEL_HEIGHT = 146
+TELEMETRY_MAX_SUMMARY_LINES = 6
 
 TELEMETRY_LABELS = {
     "military": {
@@ -119,7 +121,7 @@ def telemetry_graph_lines(theme_key: str, telemetry: Dict[str, Any] | None) -> l
 
 
 def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.Control:
-    lines = telemetry_summary_lines(theme.key, telemetry)
+    lines = telemetry_summary_lines(theme.key, telemetry)[:TELEMETRY_MAX_SUMMARY_LINES]
     graph = telemetry_graph_lines(theme.key, telemetry)
     return ft.Container(
         content=ft.Column(
@@ -136,7 +138,10 @@ def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.
             ],
             spacing=2,
             tight=True,
+            scroll=ft.ScrollMode.AUTO,
         ),
+        height=TELEMETRY_PANEL_HEIGHT,
+        expand=False,
         padding=8,
         border=ft.border.all(1, theme.secondary_color),
         bgcolor=theme.surface_color,
@@ -144,4 +149,11 @@ def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.
     )
 
 
-__all__ = ["build_telemetry_panel", "telemetry_graph_lines", "telemetry_labels", "telemetry_summary_lines"]
+__all__ = [
+    "TELEMETRY_MAX_SUMMARY_LINES",
+    "TELEMETRY_PANEL_HEIGHT",
+    "build_telemetry_panel",
+    "telemetry_graph_lines",
+    "telemetry_labels",
+    "telemetry_summary_lines",
+]

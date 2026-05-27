@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.11.1 - WAR ROOM Visual Refinement Pass
+
+- Refined header logo layout metadata with deterministic box widths, centered alignment, balanced padding, and fixed header constraints across all GUI themes.
+- Replaced the HELLDIVERS GUI header with a sparse ASCII Super Earth-style emblem while preserving the text-only terminal identity system and existing color palette.
+- Increased WH40K header readability through metadata sizing without changing its canonical gothic ASCII asset.
+- Constrained telemetry panel height and line flow so telemetry cannot collide with lower UI boundaries.
+- Tightened proposal panel spacing and padding while preserving template and lifecycle behavior.
+- Added visual structure regression coverage for header alignment, header constraints, telemetry containment, proposal spacing, HELLDIVERS logo quality, theme consistency, and vertical logo budget.
+
 ## 7.11.0 - Simulation Layer Foundation
 
 - Added deterministic simulation architecture under `core.simulation` with scenario models, branch models, registry definitions, branch probability/risk scaffolding, and JSONL simulation history.
