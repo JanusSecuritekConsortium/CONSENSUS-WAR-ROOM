@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.10.17 - Proposal Verdict Lifecycle
+
+- Linked proposal records to finalized decision traces with append-only JSONL revisions, terminal decision status, decision timestamps, and linked verdict export paths.
+- Added proposal lifecycle helpers for trace linking, status transitions, verdict export attachment, and proposal decision summaries.
+- Added dossier export tooling for combined proposal and verdict briefing packages in Markdown and JSON.
+- Enhanced the Proposal History overlay with decision-status badges, linked-verdict availability, Open Verdict, Export Dossier, and Reopen Draft actions without changing the 2:6:2 WAR ROOM layout.
+- Added proposal lifecycle counts and latest dossier export metadata to runtime snapshots and runtime bundles.
+- Added regression coverage for automatic linking, corrupt JSONL tolerance, status mapping, dossier exports, GUI verdict status, reopen-as-draft immutability, lifecycle counts, and bundle dossier artifacts.
+
 ## 7.10.16 - Proposal Lifecycle UX
 
 - Added canonical proposal templates for geopolitical, market/finance, technical, operational-risk, and general tribunal queries with validation and non-mutating rendering helpers.

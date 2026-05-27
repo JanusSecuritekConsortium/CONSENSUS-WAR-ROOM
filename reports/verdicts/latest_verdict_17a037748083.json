@@ -1,0 +1,39 @@
+{
+  "version": "7.10.17",
+  "proposal_id": "17a037748083",
+  "timestamp": "2026-05-27T19:00:43.112127",
+  "taxonomy": {
+    "status": "FAILED",
+    "reason": "no_taxonomy_class_matched"
+  },
+  "votes": {
+    "RATIONALIS": {
+      "vote": "APPROVE",
+      "confidence": 0.9,
+      "evidence_quality": 0.82,
+      "critical_risk": false,
+      "model": "deepseek-coder:33b"
+    },
+    "AETERNUM": {
+      "vote": "APPROVE",
+      "confidence": 0.84,
+      "evidence_quality": 0.78,
+      "critical_risk": false,
+      "model": "llama3.3:70b"
+    },
+    "BELLATOR": {
+      "vote": "ABSTAIN",
+      "confidence": 0.76,
+      "evidence_quality": 0.68,
+      "critical_risk": false,
+      "model": "mixtral:8x7b"
+    }
+  },
+  "confidence": 0.8333,
+  "final_verdict": "NO_CONSENSUS",
+  "terminal_branch": "classification_failure",
+  "review_triggers": [
+    "classification_failure"
+  ],
+  "source_trace_path": "G:\\CONSENSUS_SYSTEM\\_ARBITER\\logs\\system.jsonl"
+}

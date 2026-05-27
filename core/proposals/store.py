@@ -11,6 +11,7 @@ from core.paths import SYSTEM_ROOT
 
 PROPOSAL_HISTORY_PATH = SYSTEM_ROOT / "reports" / "proposal_history.jsonl"
 VALID_STATUSES = {"DRAFT", "SUBMITTED", "RESUBMITTED", "ARCHIVED"}
+VALID_DECISION_STATUSES = {"DRAFT", "SUBMITTED", "DECIDED", "NO_CONSENSUS", "ESCALATED", "ERROR", "ARCHIVED"}
 VALID_SOURCES = {"manual", "template", "history_resend"}
 
 
@@ -22,7 +23,7 @@ def _new_proposal_id() -> str:
     return f"prop_{uuid.uuid4().hex[:12]}"
 
 
-def _read_records(path: Path = PROPOSAL_HISTORY_PATH) -> List[Dict[str, Any]]:
+def _read_record_lines(path: Path = PROPOSAL_HISTORY_PATH) -> List[Dict[str, Any]]:
     if not path.exists():
         return []
     records: List[Dict[str, Any]] = []
@@ -36,14 +37,16 @@ def _read_records(path: Path = PROPOSAL_HISTORY_PATH) -> List[Dict[str, Any]]:
     return records
 
 
-def _write_records(records: Iterable[Dict[str, Any]], path: Path = PROPOSAL_HISTORY_PATH) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(
-        "".join(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n" for record in records),
-        encoding="utf-8",
-    )
-    tmp.replace(path)
+def _read_records(path: Path = PROPOSAL_HISTORY_PATH) -> List[Dict[str, Any]]:
+    by_id: Dict[str, Dict[str, Any]] = {}
+    for record in _read_record_lines(path):
+        proposal_id = str(record.get("proposal_id") or "")
+        if not proposal_id:
+            continue
+        previous = by_id.get(proposal_id, {})
+        merged = {**previous, **record}
+        by_id[proposal_id] = merged
+    return list(by_id.values())
 
 
 def _append_record(record: Dict[str, Any], path: Path = PROPOSAL_HISTORY_PATH) -> None:
@@ -56,6 +59,13 @@ def _normalize_status(status: str) -> str:
     normalized = status.upper()
     if normalized not in VALID_STATUSES:
         raise ValueError(f"Invalid proposal status: {status}")
+    return normalized
+
+
+def _normalize_decision_status(status: str) -> str:
+    normalized = status.upper()
+    if normalized not in VALID_DECISION_STATUSES:
+        raise ValueError(f"Invalid proposal decision status: {status}")
     return normalized
 
 
@@ -102,7 +112,12 @@ def create_proposal(
         "body": clean_body,
         "taxonomy_hint": taxonomy_hint.strip(),
         "status": _normalize_status(status),
+        "decision_status": "SUBMITTED" if _normalize_status(status) in {"SUBMITTED", "RESUBMITTED"} else _normalize_status(status),
         "linked_decision_trace_id": linked_decision_trace_id,
+        "linked_verdict_path": None,
+        "linked_verdict_export_json": None,
+        "linked_verdict_export_md": None,
+        "decision_timestamp": None,
         "parent_proposal_id": parent_proposal_id,
     }
     _append_record(record, path)
@@ -135,22 +150,40 @@ def update_proposal(
     path: Path = PROPOSAL_HISTORY_PATH,
     **updates: Any,
 ) -> Dict[str, Any]:
-    records = _read_records(path)
-    allowed = {"title", "body", "taxonomy_hint", "status", "linked_decision_trace_id", "template_id"}
+    allowed = {
+        "title",
+        "body",
+        "taxonomy_hint",
+        "status",
+        "decision_status",
+        "linked_decision_trace_id",
+        "linked_verdict_path",
+        "linked_verdict_export_json",
+        "linked_verdict_export_md",
+        "decision_timestamp",
+        "template_id",
+    }
     updated_record: Dict[str, Any] | None = None
-    for record in records:
-        if record.get("proposal_id") != proposal_id:
-            continue
+    current = get_proposal(proposal_id, path=path)
+    if current is not None:
+        record = dict(current)
         for key, value in updates.items():
             if key not in allowed:
                 continue
-            record[key] = _normalize_status(value) if key == "status" else value
+            if key == "status":
+                record[key] = _normalize_status(str(value))
+                if record[key] == "ARCHIVED":
+                    record["decision_status"] = "ARCHIVED"
+            elif key == "decision_status":
+                record[key] = _normalize_decision_status(str(value))
+            else:
+                record[key] = value
         record["updated_at"] = _utc_now()
+        record["revision_event"] = "proposal_update"
         updated_record = dict(record)
-        break
     if updated_record is None:
         raise KeyError(f"Proposal not found: {proposal_id}")
-    _write_records(records, path)
+    _append_record(updated_record, path)
     return updated_record
 
 
@@ -192,19 +225,33 @@ def duplicate_proposal(proposal_id: str, *, path: Path = PROPOSAL_HISTORY_PATH) 
 
 def proposal_history_status(path: Path = PROPOSAL_HISTORY_PATH) -> Dict[str, Any]:
     recent = list_recent_proposals(limit=20, path=path)
+    counts = lifecycle_counts(path)
     return {
         "history_path": str(path),
         "recent_count": len(recent),
         "last_proposal_id": recent[0]["proposal_id"] if recent else None,
+        "lifecycle_counts": counts,
     }
+
+
+def lifecycle_counts(path: Path = PROPOSAL_HISTORY_PATH) -> Dict[str, int]:
+    counts = {status: 0 for status in sorted(VALID_DECISION_STATUSES)}
+    for record in _read_records(path):
+        status = str(record.get("decision_status") or record.get("status") or "DRAFT").upper()
+        if status not in counts:
+            status = "ERROR"
+        counts[status] += 1
+    return counts
 
 
 __all__ = [
     "PROPOSAL_HISTORY_PATH",
+    "VALID_DECISION_STATUSES",
     "archive_proposal",
     "create_proposal",
     "duplicate_proposal",
     "get_proposal",
+    "lifecycle_counts",
     "list_recent_proposals",
     "proposal_history_status",
     "resend_proposal",

@@ -14,9 +14,11 @@ if str(ROOT) not in sys.path:
 
 from config.version import SYSTEM_VERSION
 from core.decision_trace import read_latest_trace
+from core.export.dossier import DOSSIER_DIR, latest_dossier_export_status
 from core.export.verdict import VERDICT_DIR, latest_verdict_export_status
 from core.manual_visual_review import manual_visual_review_path, manual_visual_review_summary
 from core.paths import SYSTEM_LOG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
+from core.proposals.lifecycle import proposal_lifecycle_summary
 from core.proposals.store import PROPOSAL_HISTORY_PATH, proposal_history_status
 from tools.check_dependencies import build_dependency_report
 from tools.provider_status_report import build_provider_status_report
@@ -73,6 +75,18 @@ def _latest_verdict_exports() -> list[Path]:
     return paths
 
 
+def _latest_dossier_exports() -> list[Path]:
+    status = latest_dossier_export_status(DOSSIER_DIR)
+    paths: list[Path] = []
+    for key in ("latest_json", "latest_markdown"):
+        value = status.get(key)
+        if value:
+            path = Path(str(value))
+            if path.exists():
+                paths.append(path)
+    return paths
+
+
 def _tail_text(path: Path, line_count: int) -> str:
     if not path.exists():
         return ""
@@ -102,7 +116,9 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
     integrity_result = verify_active_manifest(active_manifest)
     dependency_report = build_dependency_report()
     proposal_status = proposal_history_status()
+    proposal_lifecycle = proposal_lifecycle_summary()
     verdict_exports = _latest_verdict_exports()
+    dossier_exports = _latest_dossier_exports()
 
     with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         bundle.writestr("runtime_snapshot.json", _safe_json(snapshot))
@@ -113,12 +129,15 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
         bundle.writestr("telemetry_summary.json", _safe_json(snapshot.get("telemetry", {})))
         bundle.writestr("dependency_status.json", _safe_json(dependency_report))
         bundle.writestr("proposal_history_status.json", _safe_json(proposal_status))
+        bundle.writestr("proposal_lifecycle_summary.json", _safe_json(proposal_lifecycle))
         if PROPOSAL_HISTORY_PATH.exists():
             bundle.write(PROPOSAL_HISTORY_PATH, "reports/proposal_history.jsonl")
         else:
             bundle.writestr("reports/proposal_history.jsonl", "")
         for verdict_path in verdict_exports:
             bundle.write(verdict_path, f"reports/verdicts/{verdict_path.name}")
+        for dossier_path in dossier_exports:
+            bundle.write(dossier_path, f"reports/dossiers/{dossier_path.name}")
         if manifest is not None:
             bundle.write(manifest, f"reports/{manifest.name}")
             try:
@@ -149,8 +168,10 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
                     "telemetry_summary": "telemetry_summary.json",
                     "dependency_status": "dependency_status.json",
                     "proposal_history_status": "proposal_history_status.json",
+                    "proposal_lifecycle_summary": "proposal_lifecycle_summary.json",
                     "proposal_history": "reports/proposal_history.jsonl",
                     "latest_verdict_exports": [f"reports/verdicts/{path.name}" for path in verdict_exports],
+                    "latest_dossier_exports": [f"reports/dossiers/{path.name}" for path in dossier_exports],
                     "test_duration_report": "test_duration_report.json",
                     "screenshot_status": snapshot.get("screenshot_status")
                     or snapshot.get("visual_review", {}).get("screenshot_status")

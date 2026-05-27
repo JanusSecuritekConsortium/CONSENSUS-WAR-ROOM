@@ -40,8 +40,8 @@ from core.proposals.store import (
     list_recent_proposals,
     proposal_history_status,
     resend_proposal,
-    update_proposal,
 )
+from core.proposals.lifecycle import link_decision_trace_to_proposal, proposal_lifecycle_summary
 from core.proposals.templates import get_template, list_templates, render_template_draft
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
@@ -49,6 +49,7 @@ from core.voting.engine import ConsensusEngine
 from core.voting.parser import parse_vote
 from core.voting.rules import ConsensusRules
 from integrations.msty.runtime import MstyRuntime
+from core.export.dossier import export_dossier, latest_dossier_export_status
 from core.export.verdict import export_latest_verdict, latest_verdict_export_status
 from tools.export_runtime_bundle import export_runtime_bundle
 from tools.provider_status_report import build_provider_status_report
@@ -266,6 +267,8 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
         "proposal_history_status": proposal_history_status(),
         "latest_verdict_export": latest_verdict_export_status(),
+        "proposal_lifecycle_summary": proposal_lifecycle_summary(),
+        "latest_dossier_export": latest_dossier_export_status(),
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
@@ -626,10 +629,34 @@ def submit_proposal_live_for_gui(
         record_result(result)
         log_decision_trace(result)
         try:
-            update_proposal(
-                state.last_proposal_record_id,
-                linked_decision_trace_id=result.session_id,
+            trace = read_latest_trace()
+            link_result = link_decision_trace_to_proposal(
+                trace if isinstance(trace, dict) else {
+                    "proposal_id": result.session_id,
+                    "session_id": result.session_id,
+                    "taxonomy": result.proposal_classification,
+                    "votes": {
+                        agent_id: {
+                            "vote": vote.vote.value,
+                            "confidence": vote.confidence,
+                            "evidence_quality": vote.evidence_quality,
+                            "critical_risk": vote.critical_risk,
+                            "model": vote.model,
+                        }
+                        for agent_id, vote in result.votes.items()
+                    },
+                    "final_verdict": result.verdict.value,
+                    "confidence": result.confidence,
+                    "terminal_branch": result.terminal_branch,
+                    "review_triggers": result.review_triggers,
+                    "timestamp": result.timestamp,
+                },
+                proposal_id=state.last_proposal_record_id,
             )
+            state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
+            state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
+            state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+            append_timeline(state.timeline_events, "PROPOSAL", f"linked {link_result.get('decision_status', 'decision')}")
         except Exception as exc:
             log_event(
                 "gui_proposal_history_update_failed",
@@ -1071,24 +1098,60 @@ def build_proposal_history_viewer(
             height=30,
         )
 
+    def status_color(status: str) -> str:
+        return {
+            "DECIDED": theme.primary_color,
+            "NO_CONSENSUS": theme.warning_color,
+            "ESCALATED": theme.warning_color,
+            "ERROR": theme.error_color,
+            "ARCHIVED": theme.muted_text or theme.secondary_color,
+            "SUBMITTED": theme.accent_color,
+            "DRAFT": theme.secondary_color,
+        }.get(status.upper(), theme.secondary_color)
+
+    def status_badge(status: str) -> ft.Control:
+        color = status_color(status)
+        return ft.Container(
+            content=text(status.upper(), color, size=9, bold=True),
+            padding=ft.padding.symmetric(horizontal=6, vertical=2),
+            border=ft.border.all(1, color),
+            bgcolor=theme.background_color,
+            tooltip=f"Proposal decision status: {status.upper()}",
+        )
+
     rows: list[ft.Control] = []
     for proposal in recent:
         proposal_id = str(proposal.get("proposal_id") or "--")
         status = str(proposal.get("status") or "--")
+        decision_status = str(proposal.get("decision_status") or status)
+        verdict_available = bool(proposal.get("linked_verdict_export_json") or proposal.get("linked_verdict_export_md"))
+        verdict_text = "Verdict linked" if verdict_available else "Awaiting tribunal resolution."
         rows.append(
             ft.Container(
                 content=ft.Column(
                     [
-                        text(f"{proposal.get('created_at', '--')} | {status}", theme.secondary_color),
+                        ft.Row(
+                            [
+                                text(str(proposal.get("created_at", "--")), theme.secondary_color),
+                                status_badge(status),
+                                status_badge(decision_status),
+                            ],
+                            spacing=6,
+                        ),
                         text(str(proposal.get("title") or "Untitled Proposal"), theme.accent_color, bold=True),
                         text(f"{proposal.get('template_id') or 'manual'} | {proposal_id}", theme.panel_value or theme.text_color),
+                        text(f"{proposal.get('decision_timestamp') or '--'} | {verdict_text}", status_color(decision_status)),
                         ft.Row(
                             [
                                 action_button("RESEND", "resend", proposal_id),
                                 action_button("DUPLICATE/EDIT", "duplicate", proposal_id),
+                                action_button("REOPEN DRAFT", "reopen", proposal_id),
+                                action_button("OPEN VERDICT", "open_verdict", proposal_id),
+                                action_button("EXPORT DOSSIER", "export_dossier", proposal_id),
                                 action_button("ARCHIVE", "archive", proposal_id),
                             ],
                             spacing=6,
+                            wrap=True,
                         ),
                     ],
                     spacing=3,
@@ -1484,6 +1547,12 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     verdict_export = state.runtime_snapshot_cache.get("latest_verdict_export")
     if not isinstance(verdict_export, dict):
         verdict_export = latest_verdict_export_status()
+    lifecycle = state.runtime_snapshot_cache.get("proposal_lifecycle_summary")
+    if not isinstance(lifecycle, dict):
+        lifecycle = proposal_lifecycle_summary()
+    dossier_export = state.runtime_snapshot_cache.get("latest_dossier_export")
+    if not isinstance(dossier_export, dict):
+        dossier_export = latest_dossier_export_status()
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1524,7 +1593,12 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
             ),
             text(f"LAST TEST MANIFEST: {latest_test_manifest_path()}"),
             text(f"PROPOSAL HISTORY: {proposal_status.get('recent_count', 0)} recent | {proposal_status.get('last_proposal_id') or '--'}"),
+            text(
+                f"LIFECYCLE: DECIDED {lifecycle.get('decided_total', 0)} | NO_CONSENSUS {lifecycle.get('no_consensus_total', 0)} | ESCALATED {lifecycle.get('escalated_total', 0)} | ERROR {lifecycle.get('error_total', 0)}",
+                theme.panel_value or theme.text_color,
+            ),
             text(f"LATEST VERDICT EXPORT: {verdict_export.get('latest_json') or '--'}"),
+            text(f"LATEST DOSSIER EXPORT: {dossier_export.get('latest_json') or '--'}"),
             text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
             text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
             text(
@@ -1624,16 +1698,25 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                     record = resend_proposal(proposal_id)
                     state.last_proposal_record_id = str(record.get("proposal_id") or "")
                     state.operator_status = f"Proposal resent: {state.last_proposal_record_id}"
-                elif action == "duplicate":
+                elif action in {"duplicate", "reopen"}:
                     record = duplicate_proposal(proposal_id)
                     state.proposal_input_text = str(record.get("body") or "")
                     state.proposal_template_id = str(record.get("template_id") or "")
                     state.last_proposal_record_id = str(record.get("proposal_id") or "")
-                    state.operator_status = f"Draft duplicated: {state.last_proposal_record_id}"
+                    state.operator_status = f"Draft reopened: {state.last_proposal_record_id}" if action == "reopen" else f"Draft duplicated: {state.last_proposal_record_id}"
+                elif action == "open_verdict":
+                    proposal = next((item for item in list_recent_proposals(5000, include_archived=True) if item.get("proposal_id") == proposal_id), None)
+                    verdict_path = str((proposal or {}).get("linked_verdict_export_md") or (proposal or {}).get("linked_verdict_export_json") or "")
+                    state.operator_status = f"Verdict: {verdict_path or 'Awaiting tribunal resolution.'}"
+                elif action == "export_dossier":
+                    result = export_dossier(proposal_id)
+                    state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+                    state.operator_status = f"Dossier exported: {result['markdown_path']}"
                 elif action == "archive":
                     archive_proposal(proposal_id)
                     state.operator_status = f"Proposal archived: {proposal_id}"
                 state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+                state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
             except Exception as exc:
                 state.operator_status = f"Proposal history action failed: {exc}"
                 log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
