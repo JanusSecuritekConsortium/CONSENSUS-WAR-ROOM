@@ -57,6 +57,7 @@ from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_snapshot
 from tools.verify_active_manifest import verify_active_manifest
 from ui.animations.typewriter import reveal_text_with_cursor_sync
+from ui.assets.app_icon import apply_app_icon_to_page
 from ui.components.header import build_header
 from ui.components.log_panel import build_log_panel
 from ui.components.monolith_panel import build_monolith_panel
@@ -939,6 +940,7 @@ def _memory_status_text() -> str:
 def _apply_page_theme(page: ft.Page, state: GuiState) -> None:
     theme = state.theme
     page.title = "CONSENSUS War Room"
+    apply_app_icon_to_page(page)
     page.bgcolor = theme.background_color
     page.theme = ft.Theme(font_family=theme.font_family)
     page.scroll = None

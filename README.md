@@ -69,6 +69,9 @@ GUI:
 python consensus_war_room_genesis.py --gui
 ```
 
+The desktop GUI uses a dedicated CONSENSUS War Room tribunal icon from
+`static/icons/`, separate from the individual theme ASCII logos.
+
 API:
 
 ```powershell
