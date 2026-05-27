@@ -7,8 +7,8 @@ import flet as ft
 from core.models import Theme
 from core.telemetry import sparkline
 
-TELEMETRY_PANEL_HEIGHT = 146
-TELEMETRY_MAX_SUMMARY_LINES = 6
+TELEMETRY_PANEL_HEIGHT = 192
+TELEMETRY_MAX_SUMMARY_LINES = 7
 
 TELEMETRY_LABELS = {
     "military": {
@@ -62,6 +62,16 @@ TELEMETRY_LABELS = {
     },
 }
 
+TELEMETRY_STYLE_NAMES = {
+    "military": "TACTICAL SPIKE GRAPH",
+    "eva": "MAGI/LCL SYNC BARS",
+    "nerv": "MAGI/LCL SYNC BARS",
+    "wh40k": "COGITATOR PURITY BARS",
+    "helldivers": "DEMOCRATIC AUTHORIZATION BARS",
+    "arasaka": "ASSET UTILIZATION BARS",
+    "janus": "DUAL-FRONT MIRROR BARS",
+}
+
 
 def telemetry_labels(theme_key: str) -> Dict[str, str]:
     return TELEMETRY_LABELS.get(theme_key, TELEMETRY_LABELS["military"])
@@ -99,13 +109,10 @@ def telemetry_summary_lines(theme_key: str, telemetry: Dict[str, Any] | None) ->
         f"DISK: {_percent((latest.get('disk') or {}).get('percent') if isinstance(latest.get('disk'), dict) else None)}",
         f"{labels['gpu']}: {_percent(gpu.get('usage_percent'))}",
         f"{labels['vram']}: {_percent(gpu.get('vram_percent'))}",
+        f"{labels['temp']}: {_temperature(gpu.get('temperature_c'))}",
     ]
     if degraded_reason:
         lines.append(f"Reason: {degraded_reason}")
-    if gpu.get("temperature_c") is not None:
-        lines.append(f"{labels['temp']}: {_temperature(gpu.get('temperature_c'))}")
-    elif gpu.get("status") == "unavailable":
-        lines.append(f"{labels['gpu']}: UNAVAILABLE")
     return lines
 
 
@@ -115,8 +122,9 @@ def telemetry_graph_lines(theme_key: str, telemetry: Dict[str, Any] | None) -> l
     if not isinstance(history, dict):
         history = {}
     return [
-        f"{labels['cpu']} {sparkline(history.get('cpu', []), width=18)}",
-        f"{labels['gpu']} {sparkline(history.get('gpu', []), width=18)}",
+        f"{TELEMETRY_STYLE_NAMES.get(theme_key, TELEMETRY_STYLE_NAMES['military'])}",
+        f"{labels['cpu']} {sparkline(history.get('cpu', []), width=16)}",
+        f"{labels['gpu']} {sparkline(history.get('gpu', []), width=16)}",
     ]
 
 
@@ -136,9 +144,9 @@ def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.
                     for line in graph
                 ],
             ],
-            spacing=2,
+            spacing=1,
             tight=True,
-            scroll=ft.ScrollMode.AUTO,
+            scroll=None,
         ),
         height=TELEMETRY_PANEL_HEIGHT,
         expand=False,
@@ -153,6 +161,7 @@ __all__ = [
     "TELEMETRY_MAX_SUMMARY_LINES",
     "TELEMETRY_PANEL_HEIGHT",
     "build_telemetry_panel",
+    "TELEMETRY_STYLE_NAMES",
     "telemetry_graph_lines",
     "telemetry_labels",
     "telemetry_summary_lines",

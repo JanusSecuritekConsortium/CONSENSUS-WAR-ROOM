@@ -11,8 +11,8 @@ from config.runtime import RuntimeConfig
 from ui.components.header import (
     GUI_LOGO_BOX_HEIGHT,
     GUI_LOGO_BOX_MAX_WIDTH,
-    LOGO_FONT_SIZE,
     compact_logo_text,
+    header_logo_layout,
     logo_text_control_from_box,
 )
 from ui.flet_app import build_gui_layout, create_gui_state
@@ -26,10 +26,11 @@ def _noop(*_args, **_kwargs) -> None:
 def test_dedicated_compact_logo_line_counts_fit_header_height() -> None:
     for theme_key in ("eva", "nerv", "wh40k", "helldivers", "arasaka", "military", "janus"):
         lines = compact_logo_text(THEMES[theme_key]).splitlines()
+        logo_layout = header_logo_layout(THEMES[theme_key])
+        budget = logo_layout.logo_box_height or GUI_LOGO_BOX_HEIGHT
 
         assert 1 <= len(lines)
-        if len(lines) * LOGO_FONT_SIZE > GUI_LOGO_BOX_HEIGHT:
-            assert theme_key in {"wh40k", "helldivers"}
+        assert len(lines) * logo_layout.logo_font_size <= budget
 
 
 def test_compact_logo_widths_fit_declared_header_constraints() -> None:
@@ -42,9 +43,9 @@ def test_compact_logo_widths_fit_declared_header_constraints() -> None:
 
         assert logo_box.width <= GUI_LOGO_BOX_MAX_WIDTH
         assert longest <= 130
-        assert logo_box.height == GUI_LOGO_BOX_HEIGHT
+        assert logo_box.height == (header_logo_layout(THEMES[theme_key]).logo_box_height or GUI_LOGO_BOX_HEIGHT)
         assert logo_box.clip_behavior is not None
-        assert logo_box.content.scroll is not None
+        assert logo_box.content.scroll is not None or header_logo_layout(THEMES[theme_key]).logo_box_scroll_enabled is False
 
 
 if __name__ == "__main__":

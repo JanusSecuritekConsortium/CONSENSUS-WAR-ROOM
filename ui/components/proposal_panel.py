@@ -36,14 +36,14 @@ def build_proposal_panel(
         hint_text="Enter tribunal proposal...",
         helper_text="CTRL+ENTER = Submit to Tribunal",
         multiline=True,
-        min_lines=5,
-        max_lines=8,
+        min_lines=4,
+        max_lines=5,
         border_color=theme.primary_color,
         focused_border_color=theme.accent_color,
         cursor_color=theme.accent_color,
         color=theme.text_color,
         bgcolor=theme.background_color,
-        content_padding=ft.padding.symmetric(horizontal=12, vertical=10),
+        content_padding=ft.padding.symmetric(horizontal=12, vertical=8),
         text_style=ft.TextStyle(font_family=theme.font_family, size=13),
         hint_style=ft.TextStyle(color=theme.muted_text or theme.secondary_color, font_family=theme.font_family),
         helper_style=ft.TextStyle(color=theme.secondary_text or theme.secondary_color, font_family=theme.font_family, size=10),
@@ -100,12 +100,13 @@ def build_proposal_panel(
     return ft.Container(
         content=ft.Column(
             controls,
-            spacing=7,
+            spacing=8,
             tight=True,
         ),
-        padding=ft.padding.only(left=8, right=8, top=7, bottom=10),
+        padding=ft.padding.only(left=10, right=10, top=8, bottom=12),
         border=ft.border.all(1, theme.secondary_color),
         bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
 
 

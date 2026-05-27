@@ -58,6 +58,7 @@ from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_sna
 from tools.verify_active_manifest import verify_active_manifest
 from ui.animations.typewriter import reveal_text_with_cursor_sync
 from ui.assets.app_icon import apply_app_icon_to_page
+from ui.assets.registry import get_theme_layout_metadata
 from ui.components.header import build_header
 from ui.components.log_panel import build_log_panel
 from ui.components.monolith_panel import build_monolith_panel
@@ -1432,37 +1433,62 @@ def build_gui_layout(
     def hold_footer_interaction() -> None:
         state.ui_interaction_hold_until = time.monotonic() + GUI_INTERACTION_HOLD_SECONDS
 
+    shortcut_text = "Ctrl+K Command   Ctrl+D Diagnostics   Ctrl+T Theme   Ctrl+H History   Ctrl+E Export"
+    footer_shortcuts = ft.Container(
+        content=ft.Text(
+            shortcut_text,
+            color=theme.secondary_text or theme.secondary_color,
+            size=10,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+            text_align=ft.TextAlign.CENTER,
+            data="footer_shortcuts_text",
+        ),
+        alignment=ft.alignment.center,
+        expand=True,
+        data={
+            "role": "footer_shortcuts",
+            "alignment": get_theme_layout_metadata(theme.key).footer_shortcut_alignment,
+        },
+    )
     footer_controls = ft.Row(
         [
-            build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
-            ft.Text(
-                "Ctrl+K Command | Ctrl+D Diagnostics | Ctrl+T Theme | Ctrl+H History | Ctrl+E Export",
-                color=theme.secondary_text or theme.secondary_color,
-                size=9,
-                max_lines=2,
+            ft.Container(
+                build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
+                width=230,
+                alignment=ft.alignment.center_left,
             ),
-            ft.Switch(
-                label="AURELIUS Voice Loop",
-                value=state.aurelius_voice_loop_enabled,
-                on_change=toggle_aurelius_voice,
-                active_color=theme.accent_color,
+            footer_shortcuts,
+            ft.Container(
+                content=ft.Row(
+                    [
+                        ft.Switch(
+                            label="AURELIUS Voice Loop",
+                            value=state.aurelius_voice_loop_enabled,
+                            on_change=toggle_aurelius_voice,
+                            active_color=theme.accent_color,
+                        ),
+                        terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
+                    ],
+                    alignment=ft.MainAxisAlignment.END,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=6,
+                    tight=True,
+                ),
+                width=230,
+                alignment=ft.alignment.center_right,
             ),
-            terminal_button("EXPORT HISTORY", lambda _: export_decision_history()),
-            terminal_button("EXPORT LOGS", lambda _: export_session_logs()),
-            terminal_button("OPEN PREVIEWS", lambda _: open_theme_preview_folder()),
-            terminal_button("REFRESH STATUS", refresh),
-            terminal_button("RECHECK PROVIDER", recheck_provider or refresh),
-            terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
-            terminal_button("HEALTH CHECK", run_health),
-            terminal_button("SHUTDOWN GUI", close_gui),
         ],
-        wrap=True,
-        spacing=8,
+        wrap=False,
+        spacing=0,
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        data={"role": "footer_controls"},
     )
 
     last_verdict = state.current_result.verdict.value if state.current_result else "--"
     session_id = state.current_result.session_id if state.current_result else "--"
+    layout_meta = get_theme_layout_metadata(theme.key)
     left = ft.Container(
             build_monolith_panel(
                 theme,
@@ -1496,8 +1522,10 @@ def build_gui_layout(
                         on_template_select=on_template_select,
                         on_change=on_proposal_change,
                     ),
-                    expand=3,
+                    expand=4,
+                    height=layout_meta.proposal_panel_min_height,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "proposal_panel_region"},
                 ),
                 ft.Container(
                     build_verdict_panel(
@@ -1512,11 +1540,12 @@ def build_gui_layout(
                         cursor_visible=state.cursor_visible,
                         consensus_locked=state.consensus_locked,
                     ),
-                    expand=7,
+                    expand=6,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "verdict_panel_region"},
                 ),
             ],
-            spacing=12,
+            spacing=layout_meta.proposal_verdict_gap,
             expand=True,
         ),
         expand=6,

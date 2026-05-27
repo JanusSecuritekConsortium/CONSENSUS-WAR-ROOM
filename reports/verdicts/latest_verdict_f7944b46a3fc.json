@@ -1,0 +1,42 @@
+{
+  "version": "7.11.4",
+  "proposal_id": "f7944b46a3fc",
+  "timestamp": "2026-05-27T23:47:58.747501",
+  "taxonomy": {
+    "proposal_classes": [
+      "analysis"
+    ],
+    "primary_class": "analysis",
+    "classifier_confidence": 1.0,
+    "classifier_version": "1.0.0",
+    "classified_at": "2026-05-27T21:47:58+00:00"
+  },
+  "votes": {
+    "RATIONALIS": {
+      "vote": "APPROVE",
+      "confidence": 0.82,
+      "evidence_quality": 0.72,
+      "critical_risk": false,
+      "model": "deepseek-coder:33b"
+    },
+    "AETERNUM": {
+      "vote": "APPROVE",
+      "confidence": 0.82,
+      "evidence_quality": 0.72,
+      "critical_risk": false,
+      "model": "llama3.3:70b"
+    },
+    "BELLATOR": {
+      "vote": "APPROVE",
+      "confidence": 0.82,
+      "evidence_quality": 0.72,
+      "critical_risk": false,
+      "model": "mixtral:8x7b"
+    }
+  },
+  "confidence": 0.9,
+  "final_verdict": "APPROVE",
+  "terminal_branch": "majority",
+  "review_triggers": [],
+  "source_trace_path": "G:\\CONSENSUS_SYSTEM\\_ARBITER\\logs\\system.jsonl"
+}

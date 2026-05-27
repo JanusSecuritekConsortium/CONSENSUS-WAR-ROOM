@@ -25,6 +25,19 @@ class HeaderLogoLayout:
     logo_box_scroll_enabled: bool = True
     logo_box_width: int | None = None
     logo_box_max_width: int | None = None
+    logo_box_height: int | None = None
+    header_height: int | None = None
+
+
+@dataclass(frozen=True)
+class WarRoomLayoutMetadata:
+    header_logo_width_ratio: float = 0.35
+    header_logo_height: int | None = None
+    proposal_panel_min_height: int = 250
+    proposal_verdict_gap: int = 16
+    telemetry_panel_height: int = 192
+    footer_shortcut_alignment: str = "center"
+    left_panel_compaction_allowed: bool = False
 
 
 @dataclass(frozen=True)
@@ -40,6 +53,7 @@ class ThemeGraphicAsset:
     expected_min_width: int = 24
     max_width: int = LOGO_SAFE_MAX_WIDTH
     header_layout: HeaderLogoLayout = HeaderLogoLayout()
+    layout_metadata: WarRoomLayoutMetadata = WarRoomLayoutMetadata()
 
 
 THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
@@ -49,10 +63,11 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "MAGI/NERV diagnostic styling",
         ("CASPER", "BALTHASAR", "MELCHIOR"),
         "eva_boot",
-        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "MAGI TRIBUNAL ONLINE"),
-        expected_min_lines=7,
-        expected_min_width=55,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=10, logo_bottom_padding=10, logo_box_width=565),
+        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "CENTRAL DOGMA"),
+        expected_min_lines=9,
+        expected_max_lines=12,
+        expected_min_width=50,
+        header_layout=HeaderLogoLayout(logo_font_size=8, logo_top_padding=13, logo_bottom_padding=13, logo_box_width=540, logo_box_scroll_enabled=False),
     ),
     "nerv": ThemeGraphicAsset(
         "nerv",
@@ -60,34 +75,36 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "NERV diagnostic styling",
         ("CASPER", "BALTHASAR", "MELCHIOR"),
         "nerv_boot",
-        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "MAGI TRIBUNAL ONLINE"),
-        expected_min_lines=7,
-        expected_min_width=55,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=10, logo_bottom_padding=10, logo_box_width=565),
+        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "CENTRAL DOGMA"),
+        expected_min_lines=9,
+        expected_max_lines=12,
+        expected_min_width=50,
+        header_layout=HeaderLogoLayout(logo_font_size=8, logo_top_padding=13, logo_bottom_padding=13, logo_box_width=540, logo_box_scroll_enabled=False),
     ),
     "wh40k": ThemeGraphicAsset(
         "wh40k",
         GUI_LOGO_DIR / "wh40k_header.txt",
         "Cogitator gothic terminal styling",
-        ("@@@@@@@@", "@@@@@@@#", "#@@"),
+        ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"),
         "wh40k_boot",
-        ("@@@@@@@@", "@@@@@@@#", "#@@"),
-        expected_min_lines=50,
-        expected_max_lines=60,
-        expected_min_width=80,
-        header_layout=HeaderLogoLayout(logo_font_size=4, logo_top_padding=6, logo_bottom_padding=6, logo_box_width=500),
+        ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"),
+        expected_min_lines=8,
+        expected_max_lines=12,
+        expected_min_width=48,
+        header_layout=HeaderLogoLayout(logo_font_size=8, logo_top_padding=8, logo_bottom_padding=8, logo_box_width=610, logo_box_scroll_enabled=False),
+        layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.33, proposal_verdict_gap=18, telemetry_panel_height=198, left_panel_compaction_allowed=True),
     ),
     "helldivers": ThemeGraphicAsset(
         "helldivers",
         GUI_LOGO_DIR / "helldivers_header.txt",
         "Command-democracy tactical styling",
-        ("SUPER EARTH", "MANAGED DEMOCRACY", "TACTICAL AUTHORIZATION"),
+        ("SUPER EARTH COMMAND", "MANAGED DEMOCRACY ONLINE", "PATRIOTIC OVERSIGHT"),
         "helldivers_boot",
-        ("SUPER EARTH", "MANAGED DEMOCRACY", "TACTICAL AUTHORIZATION"),
-        expected_min_lines=11,
-        expected_max_lines=15,
-        expected_min_width=52,
-        header_layout=HeaderLogoLayout(logo_font_size=8, logo_top_padding=7, logo_bottom_padding=7, logo_box_width=640),
+        ("SUPER EARTH COMMAND", "MANAGED DEMOCRACY ONLINE", "PATRIOTIC OVERSIGHT"),
+        expected_min_lines=8,
+        expected_max_lines=12,
+        expected_min_width=50,
+        header_layout=HeaderLogoLayout(logo_font_size=9, logo_top_padding=11, logo_bottom_padding=11, logo_box_width=690, logo_box_scroll_enabled=False),
     ),
     "arasaka": ThemeGraphicAsset(
         "arasaka",
@@ -132,6 +149,10 @@ def get_theme_graphic_asset(theme_key: str) -> ThemeGraphicAsset:
     if normalized not in THEME_GRAPHIC_ASSETS:
         raise KeyError(f"No graphic asset registered for theme {theme_key!r}")
     return THEME_GRAPHIC_ASSETS[normalized]
+
+
+def get_theme_layout_metadata(theme_key: str) -> WarRoomLayoutMetadata:
+    return get_theme_graphic_asset(theme_key).layout_metadata
 
 
 def validate_theme_graphic_asset(asset: ThemeGraphicAsset) -> List[str]:
