@@ -102,6 +102,14 @@ Export the latest verdict outside the GUI:
 python tools\export_latest_verdict.py
 ```
 
+Proposal records are linked to finalized decision traces when the tribunal
+returns a verdict. Linked records carry decision status, decision timestamp, and
+verdict export paths. Export a combined proposal/verdict dossier:
+
+```powershell
+python tools\export_dossier.py <proposal_id>
+```
+
 ## Configuration
 
 The default runtime config is written to `_ARBITER/genesis_config.json` when the
