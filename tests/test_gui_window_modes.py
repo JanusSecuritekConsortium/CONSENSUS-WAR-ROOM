@@ -7,32 +7,19 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config.runtime import RuntimeConfig
 from core.cli import resolve_gui_window_mode, resolve_selected_gui_theme
-from ui.flet_app import apply_gui_window_mode, create_gui_state
+from tests.helpers.gui_harness import FakePage, make_gui_state
+from ui.flet_app import apply_gui_window_mode
 
 
 GUI_THEME_INPUTS = ["EVA", "ARASAKA", "WH40K", "HELLDIVERS", "JANUS", "MILITARY"]
-
-
-class FakeWindow:
-    full_screen = False
-    maximized = False
-    resizable = False
-
-
-class FakePage:
-    def __init__(self) -> None:
-        self.window = FakeWindow()
-        self.window_full_screen = False
-        self.window_maximized = False
 
 
 def test_default_gui_mode_is_maximized_for_all_themes() -> None:
     for theme in GUI_THEME_INPUTS:
         selected = resolve_selected_gui_theme(theme)
         mode = resolve_gui_window_mode()
-        state = create_gui_state(selected, RuntimeConfig(theme=selected, backend="mock"), window_mode=mode)
+        state = make_gui_state(selected, window_mode=mode)
         page = FakePage()
 
         apply_gui_window_mode(page, state.window_mode)
@@ -46,7 +33,7 @@ def test_fullscreen_mode_applies_for_all_themes() -> None:
     for theme in GUI_THEME_INPUTS:
         selected = resolve_selected_gui_theme(theme)
         mode = resolve_gui_window_mode(fullscreen=True)
-        state = create_gui_state(selected, RuntimeConfig(theme=selected, backend="mock"), window_mode=mode)
+        state = make_gui_state(selected, window_mode=mode)
         page = FakePage()
 
         apply_gui_window_mode(page, state.window_mode)
@@ -60,7 +47,7 @@ def test_windowed_mode_applies_for_all_themes() -> None:
     for theme in GUI_THEME_INPUTS:
         selected = resolve_selected_gui_theme(theme)
         mode = resolve_gui_window_mode(windowed=True)
-        state = create_gui_state(selected, RuntimeConfig(theme=selected, backend="mock"), window_mode=mode)
+        state = make_gui_state(selected, window_mode=mode)
         page = FakePage()
 
         apply_gui_window_mode(page, state.window_mode)
@@ -71,7 +58,7 @@ def test_windowed_mode_applies_for_all_themes() -> None:
 
 
 def test_theme_switching_does_not_change_window_mode() -> None:
-    state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"), window_mode="fullscreen")
+    state = make_gui_state("EVA", window_mode="fullscreen")
 
     state.theme_key = resolve_selected_gui_theme("ARASAKA")
     state.config.theme = state.theme_key

@@ -19,7 +19,7 @@ def status_color_category(status: str) -> str:
         return "success"
     if normalized in {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING"}:
         return "thinking"
-    if normalized in {"DEGRADED", "CONDITIONAL", "ABSTAIN", "ESCALATE", "HUMAN_REVIEW_REQUIRED", "DEADLOCK"}:
+    if normalized in {"DEGRADED", "CONDITIONAL", "ABSTAIN", "NO_CONSENSUS", "CAUTION", "ESCALATE", "HUMAN_REVIEW_REQUIRED", "DEADLOCK"}:
         return "warning"
     if normalized in {"OFFLINE", "ERROR", "DENY", "DENIED"}:
         return "error"
@@ -191,12 +191,20 @@ def build_monolith_panel(
             )
         if details:
             confidence = details.get("confidence")
+            evidence_quality = details.get("evidence_quality")
+            critical_risk = bool(details.get("critical_risk"))
             response_time = details.get("response_time")
             reasoning = str(details.get("reasoning", "") or "")
             if confidence is not None:
                 detail_lines.append(
                     ft.Text(f"confidence {float(confidence):.0%}", color=theme.text_color, size=10)
                 )
+            if evidence_quality is not None:
+                detail_lines.append(
+                    ft.Text(f"evidence {float(evidence_quality):.0%}", color=theme.text_color, size=10)
+                )
+            if critical_risk:
+                detail_lines.append(ft.Text("critical risk flagged", color=theme.error_color, size=10))
             if response_time is not None:
                 detail_lines.append(
                     ft.Text(f"response {float(response_time):.2f}s", color=theme.text_color, size=10)

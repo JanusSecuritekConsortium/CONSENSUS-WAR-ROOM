@@ -145,13 +145,24 @@ def _endpoint_reachable(base_url: str, timeout: float = 1.25) -> tuple[bool, str
     if backends.requests is None:
         return True, "requests_unavailable"
     normalized = base_url.rstrip("/")
-    for path in ("/health", "/", "/v1/models", "/models", "/api/tags"):
+    for path in ("/health", "/v1/models", "/api/tags", "/models", "/props", "/slots", "/"):
         try:
             response = backends.requests.get(f"{normalized}{path}", timeout=timeout)
-            return True, f"{path}:{response.status_code}"
+            if 200 <= response.status_code < 500 and response.status_code != 404:
+                return True, f"{path}:{response.status_code}"
+            last_error = f"{path}:{response.status_code}"
         except _provider_exceptions() as exc:
             last_error = str(exc)
     return False, last_error if "last_error" in locals() else "endpoint unreachable"
+
+
+def validate_health_endpoint(base_url: str, timeout: float = 0.35) -> Dict[str, Any]:
+    reachable, reason = _endpoint_reachable(base_url, timeout=timeout)
+    return {
+        "valid": reachable,
+        "reason": reason,
+        "checked_paths": ["/health", "/v1/models", "/api/tags", "/models", "/props", "/slots", "/"],
+    }
 
 
 def _retry_endpoint_reachability(candidate: Dict[str, str]) -> tuple[bool, str, Dict[str, Any]]:
@@ -342,10 +353,25 @@ def _provider_candidates(config: Optional[RuntimeConfig] = None) -> list[Dict[st
     return candidates
 
 
+def resolve_provider(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
+    runtime_config = config or RuntimeConfig()
+    candidates = _provider_candidates(runtime_config)
+    concrete_candidates = [candidate for candidate in candidates if candidate.get("base_url")]
+    requested_backend = _canonical_backend(runtime_config.backend)
+    requested_endpoint = concrete_candidates[0]["base_url"] if concrete_candidates else DEFAULT_MSTY_BASE_URL
+    return {
+        "provider": "msty",
+        "requested_backend": requested_backend,
+        "requested_endpoint": requested_endpoint,
+        "candidate_priority": candidates,
+        "default_backend": _canonical_backend(RuntimeConfig().backend),
+        "mock_selected": runtime_config.backend == "mock",
+    }
+
+
 def resolve_provider_base_url(config: Optional[RuntimeConfig] = None) -> str:
-    candidates = _provider_candidates(config)
-    candidates = [candidate for candidate in candidates if candidate.get("base_url")]
-    return candidates[0]["base_url"] if candidates else DEFAULT_MSTY_BASE_URL
+    resolution = resolve_provider(config)
+    return str(resolution.get("requested_endpoint") or DEFAULT_MSTY_BASE_URL)
 
 
 def required_model_map(
@@ -455,6 +481,36 @@ def resolve_required_model_aliases(
     return missing, resolved, alias_matches
 
 
+def model_availability_report(
+    required: Dict[str, str],
+    available_models: Iterable[str],
+    resolved_required: Optional[Dict[str, str]] = None,
+    remapped_model: Optional[str] = None,
+) -> list[Dict[str, Any]]:
+    models = list(available_models)
+    resolved = dict(resolved_required or {})
+    report: list[Dict[str, Any]] = []
+    for agent_id, configured_model in required.items():
+        resolved_model = resolved.get(agent_id)
+        if resolved_model:
+            status = "remapped" if remapped_model and resolved_model == remapped_model and configured_model != remapped_model else "ready"
+            match_type = "resolved"
+        else:
+            matched_model, match_type = match_model_alias(configured_model, models)
+            resolved_model = matched_model
+            status = "ready" if matched_model else "missing"
+        report.append(
+            {
+                "agent_id": agent_id,
+                "required_model": configured_model,
+                "resolved_model": resolved_model,
+                "status": status,
+                "match_type": match_type,
+            }
+        )
+    return report
+
+
 def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
     runtime_config = config or RuntimeConfig()
     requested_backend = _canonical_backend(runtime_config.backend)
@@ -479,8 +535,9 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
             "from_cache": False,
         }
 
-    candidates = [candidate for candidate in _provider_candidates(runtime_config) if candidate.get("base_url")]
-    first_endpoint = candidates[0]["base_url"] if candidates else resolve_provider_base_url(runtime_config)
+    resolution = resolve_provider(runtime_config)
+    candidates = [candidate for candidate in resolution["candidate_priority"] if candidate.get("base_url")]
+    first_endpoint = str(resolution["requested_endpoint"])
     last_error = ""
     probe_chain: list[Dict[str, Any]] = []
     requested_probe: Dict[str, Any] | None = None
@@ -507,6 +564,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                         "latency_ms": elapsed_ms,
                         "model_count": len(cached.get("models", []) or []),
                         "error": None,
+                        "health_endpoint": {"valid": True, "reason": reachability_reason},
                         "readiness_retry": _readiness_summary_from_probe_chain(probe_chain, readiness_meta),
                     }
                     probe_chain.append(probe_entry)
@@ -561,6 +619,15 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
         try:
             readiness_meta = _readiness_meta(candidate)
             base_url, models, api_shape, probe_shape = _enumerate_candidate_models(candidate)
+            health_endpoint = (
+                {
+                    "valid": True,
+                    "reason": f"{api_shape}:models_enumerated",
+                    "checked_paths": ["/v1/models", "/api/tags", "/models", "/props", "/slots"],
+                }
+                if models
+                else validate_health_endpoint(base_url)
+            )
             elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
             if not models and probe_shape and probe_shape.get("reachable"):
                 probe_entry = {
@@ -571,6 +638,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                     "latency_ms": elapsed_ms,
                     "model_count": 0,
                     "error": "models_not_enumerated",
+                    "health_endpoint": health_endpoint,
                     "readiness_retry": _readiness_summary_from_probe_chain(probe_chain, readiness_meta),
                 }
                 probe_chain.append(probe_entry)
@@ -596,6 +664,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                     "model_source": candidate["backend"],
                     "degraded_reason": "models_not_enumerated",
                     "raw_routes": probe_shape.get("raw_routes", []),
+                    "health_endpoint": health_endpoint,
                     "model_cache": {
                         "status": "miss",
                         "reason": "forced_refresh" if runtime_config.refresh_model_cache else "models_not_enumerated",
@@ -612,6 +681,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                 "latency_ms": elapsed_ms,
                 "model_count": len(models),
                 "error": None,
+                "health_endpoint": health_endpoint,
                 "readiness_retry": _readiness_summary_from_probe_chain(probe_chain, readiness_meta),
             }
             probe_chain.append(probe_entry)
@@ -649,6 +719,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                 "api_shape": api_shape,
                 "model_source": candidate["backend"],
                 "raw_routes": probe_shape.get("raw_routes", []) if probe_shape else [],
+                "health_endpoint": health_endpoint,
                 "model_cache": {
                     "status": "refresh" if runtime_config.refresh_model_cache else "miss",
                     "reason": "forced_refresh" if runtime_config.refresh_model_cache else "absent_or_expired",
@@ -678,6 +749,15 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                 retry_ready, retry_base_url, retry_models, retry_api_shape, retry_probe_shape, readiness_meta = _retry_model_enumeration(candidate)
                 elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
                 if retry_ready:
+                    retry_health_endpoint = (
+                        {
+                            "valid": True,
+                            "reason": f"{retry_api_shape}:models_enumerated",
+                            "checked_paths": ["/v1/models", "/api/tags", "/models", "/props", "/slots"],
+                        }
+                        if retry_models
+                        else validate_health_endpoint(retry_base_url)
+                    )
                     if not retry_models and retry_probe_shape and retry_probe_shape.get("reachable"):
                         probe_entry = {
                             "backend": candidate["backend"],
@@ -687,6 +767,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                             "latency_ms": elapsed_ms,
                             "model_count": 0,
                             "error": "models_not_enumerated",
+                            "health_endpoint": retry_health_endpoint,
                             "readiness_retry": readiness_meta,
                         }
                         probe_chain.append(probe_entry)
@@ -712,6 +793,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                             "model_source": candidate["backend"],
                             "degraded_reason": "models_not_enumerated",
                             "raw_routes": retry_probe_shape.get("raw_routes", []),
+                            "health_endpoint": retry_health_endpoint,
                             "model_cache": {
                                 "status": "miss",
                                 "reason": "forced_refresh" if runtime_config.refresh_model_cache else "models_not_enumerated",
@@ -728,6 +810,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                         "latency_ms": elapsed_ms,
                         "model_count": len(retry_models),
                         "error": None,
+                        "health_endpoint": retry_health_endpoint,
                         "readiness_retry": _readiness_summary_from_probe_chain(probe_chain, readiness_meta),
                     }
                     probe_chain.append(probe_entry)
@@ -753,6 +836,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
                         "api_shape": retry_api_shape,
                         "model_source": candidate["backend"],
                         "raw_routes": retry_probe_shape.get("raw_routes", []) if retry_probe_shape else [],
+                        "health_endpoint": retry_health_endpoint,
                         "model_cache": {
                             "status": "refresh" if runtime_config.refresh_model_cache else "miss",
                             "reason": "forced_refresh" if runtime_config.refresh_model_cache else "absent_or_expired",
@@ -953,7 +1037,7 @@ def provider_diagnostics(config: Optional[RuntimeConfig] = None) -> Dict[str, An
         shape = _probe_api_shape(endpoint["base_url"])
         classification = _classify_service(endpoint["backend"], shape)
         diagnostics.append({**endpoint, **shape, **classification})
-    return {"endpoints": diagnostics, "candidate_priority": _provider_candidates(runtime_config)}
+    return {"endpoints": diagnostics, "candidate_priority": resolve_provider(runtime_config)["candidate_priority"]}
 
 
 def _classify_service(backend: str, shape: Dict[str, Any]) -> Dict[str, str]:
@@ -1028,6 +1112,7 @@ def health_check(
             "required_models": required,
             "missing_required_models": {},
             "model_status": {agent_id: "mock" for agent_id in required},
+            "model_availability_report": model_availability_report(required, ["mock"], required),
             "mode": "READY",
             "degraded_reason": None,
             "model_remap_active": False,
@@ -1062,6 +1147,7 @@ def health_check(
                 "required_models": required,
                 "missing_required_models": required,
                 "model_status": {agent_id: "offline" for agent_id in required},
+                "model_availability_report": model_availability_report(required, []),
                 "mode": "OFFLINE",
                 "degraded_reason": model_payload.get("degraded_reason"),
                 "model_remap_active": False,
@@ -1073,6 +1159,7 @@ def health_check(
                 "probe_chain": model_payload.get("probe_chain", []),
                 "api_shape": model_payload.get("api_shape", "unknown"),
                 "model_source": model_payload.get("model_source"),
+                "health_endpoint": model_payload.get("health_endpoint", {}),
                 "model_cache": model_payload.get("model_cache", {}),
                 "readiness_retry": model_payload.get("readiness_retry", {}),
                 "from_cache": bool(model_payload.get("from_cache")),
@@ -1087,6 +1174,12 @@ def health_check(
         if remap_model:
             for agent_id in missing:
                 effective_required_models[agent_id] = remap_model
+        availability_report = model_availability_report(
+            required,
+            models,
+            effective_required_models,
+            remapped_model=remap_model,
+        )
         _update_model_cache_alias_matches(
             str(model_payload.get("active_backend") or model_payload.get("backend")),
             str(model_payload.get("base_url") or ""),
@@ -1125,6 +1218,7 @@ def health_check(
                 agent_id: "remapped" if remap_model and agent_id in missing else ("missing" if agent_id in missing else "ready")
                 for agent_id in required
             },
+            "model_availability_report": availability_report,
             "mode": mode,
             "degraded_reason": model_payload.get("degraded_reason") or ("models_missing" if missing else None),
             "model_remap_active": bool(remap_model),
@@ -1134,6 +1228,7 @@ def health_check(
             "probe_chain": model_payload.get("probe_chain", []),
             "api_shape": model_payload.get("api_shape", "ollama_compatible"),
             "model_source": model_payload.get("model_source") or model_payload.get("active_backend"),
+            "health_endpoint": model_payload.get("health_endpoint", {}),
             "raw_routes": model_payload.get("raw_routes", []),
             "model_cache": model_payload.get("model_cache", {}),
             "readiness_retry": model_payload.get("readiness_retry", {}),
@@ -1161,6 +1256,7 @@ def health_check(
             "required_models": required,
             "missing_required_models": required,
             "model_status": {agent_id: "offline" for agent_id in required},
+            "model_availability_report": model_availability_report(required, []),
             "mode": "OFFLINE",
             "degraded_reason": "provider_exception",
             "model_remap_active": False,
@@ -1172,6 +1268,7 @@ def health_check(
             "probe_chain": [],
             "api_shape": "unknown",
             "model_source": None,
+            "health_endpoint": {"valid": False, "reason": "provider_exception"},
             "model_cache": {"status": "miss", "reason": "provider_exception", "ttl_seconds": _model_cache_ttl(runtime_config)},
             "readiness_retry": {"enabled": False, "attempts": 0, "delay_seconds": 0.0, "result": "NOT_NEEDED", "warmup_retries": 0},
             "from_cache": False,
@@ -1255,6 +1352,11 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             quorum=config.quorum,
             majority=config.majority,
             high_risk_review=config.high_risk_review,
+            evidence_threshold=config.evidence_threshold,
+            classification_confidence_threshold=config.classification_confidence_threshold,
+            tie_break_priority=config.tie_break_priority,
+            proposal_taxonomy=config.proposal_taxonomy,
+            monolith_domain_map=config.monolith_domain_map,
         )
         tribunal = Tribunal(nodes, MstyRuntime(runtime_config), rules=rules, theme_key=theme_key)
         return tribunal.deliberate(
@@ -1317,7 +1419,7 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             None,
         )
         vote_lines = [
-            f"{key}: {vote.vote.value} ({vote.confidence:.0%})"
+            f"{key}: {vote.vote.value} confidence={vote.confidence:.0%} evidence={vote.evidence_quality:.0%} critical_risk={vote.critical_risk}"
             for key, vote in result.votes.items()
         ]
         return {
@@ -1343,8 +1445,8 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
                 "Use the CONSENSUS War Room Live Context when the user asks for a "
                 "proposal review, go/no-go decision, risk assessment, budget/security "
                 "tradeoff, or tribunal vote. Send the user's proposal as query. Treat "
-                "the returned verdict as an advisory decision: APPROVED, DENIED, "
-                "CONDITIONAL_APPROVAL, HUMAN_REVIEW_REQUIRED, DEADLOCK, or ERROR. "
+                "the returned verdict as an advisory decision: APPROVE, DENY, ABSTAIN, "
+                "NO_CONSENSUS, CAUTION, or ESCALATE. "
                 "Report each monolith vote: RATIONALIS for Logic, AETERNUM for Finance, "
                 "and BELLATOR for Security."
             ),

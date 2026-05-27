@@ -3,7 +3,9 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, Optional, Protocol
 
-from config.names import TRIBUNAL_AGENT_IDS
+from config.version import SYSTEM_VERSION
+from config.names import BELLATOR, TRIBUNAL_AGENT_IDS
+from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION, build_bellator_context_packet
 from core.llm.prompts import build_node_prompt
 from core.logging import log_error, log_event
 from core.models import NodeIdentity, Vote, VoteValue
@@ -47,7 +49,11 @@ class VotingOrchestrator:
                 "theme": theme_key,
                 "memory_context": context["memory_context"],
             }
+            if agent_id == BELLATOR:
+                runtime_context = dict(runtime_context)
             runtime_context["model"] = node.model
+            if agent_id == BELLATOR:
+                runtime_context["bellator_context_packet"] = self._build_bellator_context_packet(query)
             prompt = build_node_prompt(node, query, runtime_context)
             started = time.perf_counter()
             try:
@@ -70,9 +76,12 @@ class VotingOrchestrator:
                 vote = Vote(
                     node_key=agent_id,
                     role=node.role,
-                    vote=VoteValue.ERROR,
+                    vote=VoteValue.ABSTAIN,
                     confidence=0.0,
                     reasoning=f"Runtime failure: {exc}",
+                    evidence_quality=0.0,
+                    critical_risk=False,
+                    validation_errors=[f"runtime_failure:{exc.__class__.__name__}"],
                     model=node.model,
                     response_time=elapsed,
                 )
@@ -85,10 +94,13 @@ class VotingOrchestrator:
                     "agent_id": agent_id,
                     "vote": vote.vote.value,
                     "confidence": vote.confidence,
+                    "evidence_quality": vote.evidence_quality,
+                    "critical_risk": vote.critical_risk,
+                    "validation_errors": vote.validation_errors,
                     "model": vote.model,
                     "response_time": vote.response_time,
                 },
-                level="ERROR" if vote.vote == VoteValue.ERROR else "INFO",
+                level="ERROR" if vote.validation_errors else "INFO",
             )
             if sequential:
                 context[agent_id] = {
@@ -98,3 +110,19 @@ class VotingOrchestrator:
                 }
 
         return votes
+
+    def _build_bellator_context_packet(self, query: str) -> Dict[str, Any]:
+        try:
+            return build_bellator_context_packet(query)
+        except Exception as exc:
+            log_error("bellator_context_packet_error", exc, {"query": query[:160]})
+            return {
+                "label": "BELLATOR CONTEXT PACKET",
+                "version": SYSTEM_VERSION,
+                "mode": "error",
+                "events": [],
+                "risk": {"risk_level": "UNKNOWN", "risk_score": 0.0},
+                "sources": {},
+                "anti_fabrication_instruction": ANTI_FABRICATION_INSTRUCTION,
+                "operator_note": f"Bellator feed context unavailable: {exc}",
+            }

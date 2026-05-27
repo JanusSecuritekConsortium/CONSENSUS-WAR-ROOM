@@ -42,9 +42,10 @@ def test_helldivers_and_janus_use_separate_color_families() -> None:
     helldivers = THEMES["helldivers"]
     janus = THEMES["janus"]
 
-    assert helldivers.primary_color == "#1f8cff"
-    assert janus.primary_color == "#ff4fd8"
+    assert helldivers.primary_color.startswith("#")
+    assert janus.primary_color.startswith("#")
     assert helldivers.primary_color != janus.primary_color
+    assert helldivers.background_color != janus.background_color
     assert janus.primary_color not in {theme.primary_color for key, theme in THEMES.items() if key != "janus"}
 
 

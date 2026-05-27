@@ -27,7 +27,7 @@ def main() -> int:
     result = tribunal.deliberate("Smoke test proposal: validate runtime coherence.")
     payload = result_to_dict(result)
 
-    assert result.verdict.value == "APPROVED", payload
+    assert result.verdict.value == "APPROVE", payload
     assert len(result.votes) == 3, payload
     assert HISTORY_PATH.name == "decision_history.json", str(HISTORY_PATH)
     assert HISTORY_PATH.exists(), str(HISTORY_PATH)

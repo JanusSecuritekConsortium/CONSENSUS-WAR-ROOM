@@ -61,7 +61,9 @@ def test_monoliths_think_then_receive_vote_details() -> None:
     assert set(TRIBUNAL_AGENT_IDS) <= set(state.monolith_vote_details)
     for agent in TRIBUNAL_AGENT_IDS:
         detail = state.monolith_vote_details[agent]
-        assert detail["vote"] in {"APPROVE", "DENY", "CONDITIONAL", "ABSTAIN", "ESCALATE", "ERROR"}
+        assert detail["vote"] in {"APPROVE", "DENY", "ABSTAIN"}
+        assert "evidence_quality" in detail
+        assert "critical_risk" in detail
         assert isinstance(detail["reasoning"], str)
         assert float(detail["response_time"]) >= 0.0
 

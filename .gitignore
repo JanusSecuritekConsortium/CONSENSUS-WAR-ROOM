@@ -31,6 +31,7 @@ node_modules/
 _ARBITER/backups/
 _ARBITER/Bot/Ext/
 _ARBITER/Bot/Voice/
+_ARBITER/cache/
 _ARBITER/exports/
 _ARBITER/logs/
 _ARBITER/memory/
@@ -56,6 +57,8 @@ archive/old_experiments/tts_audio/
 *.safetensors
 *.onnx
 *.npz
+*.npy
+*.index
 *.flac
 *.jsonl
 *.bin

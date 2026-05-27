@@ -6,6 +6,47 @@
   "quorum": 2,
   "majority": 2,
   "high_risk_review": true,
+  "evidence_threshold": 0.4,
+  "classification_confidence_threshold": 0.6,
+  "tie_break_priority": [
+    "BELLATOR",
+    "RATIONALIS",
+    "AETERNUM"
+  ],
+  "proposal_taxonomy": [
+    "logic",
+    "governance",
+    "ethics",
+    "analysis",
+    "finance",
+    "forecasting",
+    "economics",
+    "historical_patterns",
+    "security",
+    "geopolitics",
+    "risk",
+    "operations"
+  ],
+  "monolith_domain_map": {
+    "RATIONALIS": [
+      "logic",
+      "governance",
+      "ethics",
+      "analysis"
+    ],
+    "AETERNUM": [
+      "finance",
+      "forecasting",
+      "economics",
+      "historical_patterns"
+    ],
+    "BELLATOR": [
+      "security",
+      "geopolitics",
+      "risk",
+      "operations"
+    ]
+  },
   "ollama_base_url": "http://127.0.0.1:11434",
   "msty_base_url": "http://localhost:11964",
   "msty_llama_cpp_base_url": "",

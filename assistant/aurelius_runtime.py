@@ -7,6 +7,8 @@ from typing import Any, Callable, Dict, Optional, Protocol
 from config.version import SYSTEM_VERSION
 from core.logging import log_event
 from core.paths import ARBITER_DIR
+from voice.aurelius_voice import AureliusVoice, build_consensus_speech_event
+from voice.speech_events import SpeechEvent
 
 
 class TTSAdapter(Protocol):
@@ -119,6 +121,47 @@ class AureliusRuntime:
             },
         )
         return result
+
+    def announce(self, event: SpeechEvent) -> AureliusResult:
+        if self.tts_adapter is None:
+            formatted = AureliusVoice(enabled=False).speak(event)
+            return AureliusResult(
+                text=formatted.text,
+                spoken=False,
+                metadata={"tts": "unavailable", "event_type": event.event_type.value},
+            )
+        rendered = AureliusVoice(enabled=True, tts_adapter=self.tts_adapter).speak(event)
+        result = AureliusResult(
+            text=rendered.text,
+            spoken=rendered.ok,
+            audio_path=rendered.audio_path,
+            metadata={
+                "tts": "rendered" if rendered.ok else "failed",
+                "event_type": event.event_type.value,
+                "mode": rendered.mode,
+                **rendered.metadata,
+            },
+        )
+        log_event(
+            "aurelius_speech_event",
+            {
+                "event_type": event.event_type.value,
+                "source": event.source,
+                "spoken": result.spoken,
+                "mode": result.metadata.get("mode"),
+            },
+        )
+        return result
+
+    def announce_consensus_verdict(self, result: Any) -> AureliusResult:
+        confidence = float(getattr(result, "confidence", 0.0) or 0.0)
+        verdict = getattr(result, "verdict", "ERROR")
+        event = build_consensus_speech_event(
+            verdict,
+            confidence,
+            f"Confidence level: {confidence:.0%}.",
+        )
+        return self.announce(event)
 
     def poll_voice_once(self, speak: bool = True, route_to_consensus: bool = False) -> AureliusResult:
         if self.voice_adapter is None:

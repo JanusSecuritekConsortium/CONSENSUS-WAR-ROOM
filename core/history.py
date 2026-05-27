@@ -32,19 +32,46 @@ def serialize_vote(vote: Vote) -> Dict[str, Any]:
 
 def record_result(result: TribunalResult, history_path: Path = HISTORY_PATH) -> None:
     ARBITER_DIR.mkdir(parents=True, exist_ok=True)
-    history: List[Dict[str, Any]] = []
-    if history_path.exists():
-        try:
-            loaded = json.loads(history_path.read_text(encoding="utf-8"))
-            if isinstance(loaded, list):
-                history = loaded
-        except json.JSONDecodeError as exc:
-            log_error("history_load_error", exc, {"path": str(history_path)})
-            raise RuntimeError(f"Decision history is corrupt: {history_path}") from exc
+    lock_path = history_path.with_name(f"{history_path.name}.lock")
+    lock_fd = _acquire_lock(lock_path)
+    try:
+        history: List[Dict[str, Any]] = []
+        if history_path.exists():
+            try:
+                loaded = json.loads(history_path.read_text(encoding="utf-8"))
+                if isinstance(loaded, list):
+                    history = loaded
+            except json.JSONDecodeError as exc:
+                log_error("history_load_error", exc, {"path": str(history_path)})
+                raise RuntimeError(f"Decision history is corrupt: {history_path}") from exc
 
-    history.append(result_to_dict(result))
-    _atomic_write_json(history_path, history[-1000:])
-    log_event("decision_history_write", {"path": str(history_path), "session_id": result.session_id})
+        history.append(result_to_dict(result))
+        _atomic_write_json(history_path, history[-1000:])
+        log_event("decision_history_write", {"path": str(history_path), "session_id": result.session_id})
+    finally:
+        _release_lock(lock_fd, lock_path)
+
+
+def _acquire_lock(lock_path: Path, timeout_seconds: float = 10.0) -> int:
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        try:
+            return os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"Timed out waiting for decision history lock: {lock_path}")
+            time.sleep(0.05)
+
+
+def _release_lock(lock_fd: int, lock_path: Path) -> None:
+    try:
+        os.close(lock_fd)
+    finally:
+        try:
+            lock_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def migrate_legacy_history(
