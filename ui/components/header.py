@@ -70,6 +70,12 @@ def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
     )
 
 
+def system_status_label_color(theme: Theme) -> str:
+    if theme.key == "arasaka":
+        return theme.secondary_text or "#ff8a8f"
+    return theme.secondary_color
+
+
 def _build_scrollable_logo_content(logo: str, theme: Theme) -> ft.Column:
     layout = header_logo_layout(theme)
     return ft.Column(
@@ -187,7 +193,7 @@ def build_header(
                                     [
                                         ft.Text(
                                             label,
-                                            color=theme.secondary_color,
+                                            color=system_status_label_color(theme),
                                             width=120,
                                             font_family=theme.font_family,
                                             size=12,
@@ -242,4 +248,5 @@ __all__ = [
     "header_logo_layout",
     "has_dedicated_gui_compact_logo",
     "logo_text_control_from_box",
+    "system_status_label_color",
 ]

@@ -110,6 +110,19 @@ verdict export paths. Export a combined proposal/verdict dossier:
 python tools\export_dossier.py <proposal_id>
 ```
 
+## Simulation Layer
+
+The simulation layer is deterministic scaffolding for future geopolitical,
+economic, cyber, and security branch analysis. It defines scenario and branch
+records, a simulation type registry, bounded probability/risk scoring helpers,
+and append-only local JSONL history. This pass does not generate autonomous
+forecasts or invented geopolitical predictions.
+
+GUI command palette actions:
+
+- `Create Simulation`: creates a deterministic scaffold linked to the current proposal context when available.
+- `View Simulations`: opens the simulation registry overlay.
+
 ## Configuration
 
 The default runtime config is written to `_ARBITER/genesis_config.json` when the

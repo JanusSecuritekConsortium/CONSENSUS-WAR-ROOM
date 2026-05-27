@@ -20,6 +20,7 @@ from core.manual_visual_review import manual_visual_review_summary
 from core.paths import CONFIG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
 from core.proposals.lifecycle import proposal_lifecycle_summary
 from core.proposals.store import proposal_history_status
+from core.simulation.store import get_simulation_status
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
@@ -95,6 +96,7 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
         "latest_verdict_export": latest_verdict_export_status(),
         "latest_dossier_export": latest_dossier_export_status(),
+        "simulation_status": get_simulation_status(),
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
