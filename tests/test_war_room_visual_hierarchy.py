@@ -16,6 +16,12 @@ def _noop(*_args, **_kwargs) -> None:
     return None
 
 
+def _padding_total(padding) -> int:
+    if isinstance(padding, int):
+        return padding * 4
+    return int(padding.left + padding.right + padding.top + padding.bottom)
+
+
 def test_verdict_panel_has_stronger_visual_weight_than_proposal() -> None:
     theme = THEMES["eva"]
     verdict = build_verdict_panel(theme, None)
@@ -23,7 +29,7 @@ def test_verdict_panel_has_stronger_visual_weight_than_proposal() -> None:
 
     assert verdict.border.top.width == 2
     assert proposal.border.top.width == 1
-    assert verdict.padding > proposal.padding
+    assert _padding_total(verdict.padding) > _padding_total(proposal.padding)
     verdict_text = verdict.content.controls[4]
     assert verdict_text.size >= 32
 

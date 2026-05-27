@@ -21,6 +21,15 @@ def _logo_width(logo: str) -> int:
     return max(360, min(GUI_LOGO_BOX_MAX_WIDTH, int(longest * 7.5) + 32))
 
 
+def _logo_box_width(logo: str, layout: HeaderLogoLayout) -> int:
+    if layout.logo_box_width is not None:
+        return layout.logo_box_width
+    calculated = _logo_width(logo)
+    if layout.logo_box_max_width is not None:
+        return min(layout.logo_box_max_width, calculated)
+    return calculated
+
+
 def header_logo_layout(theme: Theme) -> HeaderLogoLayout:
     try:
         return get_theme_graphic_asset(theme.key).header_layout
@@ -154,7 +163,7 @@ def build_header(
             [
                 ft.Container(
                     content=_build_scrollable_logo_content(logo, theme),
-                    width=_logo_width(logo),
+                    width=_logo_box_width(logo, logo_layout),
                     height=GUI_LOGO_BOX_HEIGHT,
                     padding=ft.padding.only(
                         left=logo_layout.logo_side_padding,

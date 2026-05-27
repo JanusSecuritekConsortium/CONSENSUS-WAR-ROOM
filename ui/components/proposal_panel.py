@@ -43,7 +43,7 @@ def build_proposal_panel(
         cursor_color=theme.accent_color,
         color=theme.text_color,
         bgcolor=theme.background_color,
-        content_padding=ft.padding.symmetric(horizontal=12, vertical=12),
+        content_padding=ft.padding.symmetric(horizontal=12, vertical=10),
         text_style=ft.TextStyle(font_family=theme.font_family, size=13),
         hint_style=ft.TextStyle(color=theme.muted_text or theme.secondary_color, font_family=theme.font_family),
         helper_style=ft.TextStyle(color=theme.secondary_text or theme.secondary_color, font_family=theme.font_family, size=10),
@@ -100,9 +100,10 @@ def build_proposal_panel(
     return ft.Container(
         content=ft.Column(
             controls,
-            spacing=8,
+            spacing=7,
+            tight=True,
         ),
-        padding=8,
+        padding=ft.padding.only(left=8, right=8, top=7, bottom=10),
         border=ft.border.all(1, theme.secondary_color),
         bgcolor=theme.surface_color,
     )
