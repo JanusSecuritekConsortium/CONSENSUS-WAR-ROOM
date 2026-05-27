@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.11.2 - Application Icon Identity
+
+- Added dedicated CONSENSUS War Room application icon assets in PNG and ICO formats using a compact tribunal triad and central verdict-node mark.
+- Wired the Flet desktop window icon through a guarded app-icon resolver with fallback behavior when icon assets are unavailable.
+- Added app icon validation coverage for asset presence, readable/non-empty files, configured Flet window usage, and replacement of the old default arrow-style icon.
+- Preserved theme logos, theme colors, WAR ROOM 2:6:2 layout, Msty local defaults, and screenshot-loop constraints.
+
 ## 7.11.1 - WAR ROOM Visual Refinement Pass
 
 - Refined header logo layout metadata with deterministic box widths, centered alignment, balanced padding, and fixed header constraints across all GUI themes.
