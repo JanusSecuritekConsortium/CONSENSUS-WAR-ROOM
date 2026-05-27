@@ -43,6 +43,7 @@ from core.proposals.store import (
 )
 from core.proposals.lifecycle import link_decision_trace_to_proposal, proposal_lifecycle_summary
 from core.proposals.templates import get_template, list_templates, render_template_draft
+from core.simulation.store import create_stored_scenario, get_simulation_status, list_recent_scenarios
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
 from core.voting.engine import ConsensusEngine
@@ -121,6 +122,8 @@ COMMAND_PALETTE_ACTIONS = (
     "Telemetry Snapshot",
     "Proposal History",
     "Export Latest Verdict",
+    "Create Simulation",
+    "View Simulations",
     "Toggle Theme",
     "Open Decision Trace Viewer",
 )
@@ -172,6 +175,7 @@ class GuiState:
     proposal_history_open: bool = False
     visual_review_viewer_open: bool = False
     telemetry_viewer_open: bool = False
+    simulation_viewer_open: bool = False
     trace_filter: str = ""
     operator_status: str = "OPERATOR READY"
     runtime_snapshot_cache: Dict[str, Any] = field(default_factory=dict)
@@ -269,6 +273,7 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "latest_verdict_export": latest_verdict_export_status(),
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
         "latest_dossier_export": latest_dossier_export_status(),
+        "simulation_status": get_simulation_status(),
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
@@ -881,6 +886,27 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
             result = export_latest_verdict()
             state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
             message = f"Latest verdict exported: {result['json_path']}"
+        elif action == "Create Simulation":
+            title = state.current_proposal.splitlines()[0][:80] if state.current_proposal else "Operator Simulation Scaffold"
+            scenario = create_stored_scenario(
+                title=title,
+                description=state.current_proposal or "Deterministic simulation scaffold awaiting proposal context.",
+                scenario_type="strategic_forecast",
+                proposal_id=state.last_proposal_record_id or None,
+                assumptions={},
+                actors=[],
+                triggers=[],
+                timeline_horizon="operator_defined",
+                branch_depth=1,
+                status="DRAFT",
+            )
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.simulation_viewer_open = True
+            message = f"Simulation created: {scenario.scenario_id}"
+        elif action == "View Simulations":
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.simulation_viewer_open = True
+            message = "Simulation registry opened"
         elif action == "Toggle Theme":
             options = [theme.key for theme in get_gui_theme_options()]
             index = options.index(state.theme_key) if state.theme_key in options else -1
@@ -1301,6 +1327,74 @@ def build_telemetry_snapshot_viewer(state: GuiState) -> ft.Control:
     )
 
 
+def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | None = None) -> ft.Control:
+    theme = state.theme
+    recent = scenarios if scenarios is not None else list_recent_scenarios(limit=20)
+    status = state.runtime_snapshot_cache.get("simulation_status")
+    if not isinstance(status, dict):
+        status = get_simulation_status()
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    rows: list[ft.Control] = []
+    for scenario in recent:
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(str(scenario.get("scenario_id", "--")), theme.accent_color, bold=True),
+                        text(str(scenario.get("title", "Untitled Simulation")), theme.panel_value or theme.text_color),
+                        text(
+                            f"{scenario.get('scenario_type', '--')} | {scenario.get('status', '--')} | proposal {scenario.get('proposal_id') or '--'}",
+                            theme.secondary_text or theme.secondary_color,
+                        ),
+                    ],
+                    spacing=2,
+                ),
+                padding=6,
+                border=ft.border.all(1, theme.secondary_color),
+                bgcolor=theme.background_color,
+            )
+        )
+    if not rows:
+        rows.append(text("NO SIMULATIONS RECORDED", theme.warning_color, bold=True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("SIMULATION REGISTRY", theme.accent_color, size=14, bold=True),
+                        text(str(status.get("engine_status", "READY")), theme.primary_color, size=10, bold=True),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                text(
+                    f"SCENARIOS {status.get('scenario_count', 0)} | BRANCHES {status.get('branch_count', 0)} | LATEST {status.get('latest_simulation_id') or '--'}",
+                    theme.panel_value or theme.text_color,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=600,
+        height=560,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
 def build_gui_layout(
     state: GuiState,
     submit,
@@ -1506,6 +1600,7 @@ def build_gui_layout(
     shell.proposal_history_viewer = build_proposal_history_viewer(state)  # type: ignore[attr-defined]
     shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
     shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
+    shell.simulation_viewer = build_simulation_viewer(state)  # type: ignore[attr-defined]
     return shell
 
 
@@ -1798,6 +1893,7 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                 "proposal_history_viewer",
                 "visual_review_status",
                 "telemetry_snapshot",
+                "simulation_viewer",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
             if state.diagnostics_drawer_open:
@@ -1854,6 +1950,14 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                         content=build_telemetry_snapshot_viewer(state),
                         alignment=ft.alignment.center,
                         data="telemetry_snapshot",
+                    )
+                )
+            if state.simulation_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_simulation_viewer(state),
+                        alignment=ft.alignment.center,
+                        data="simulation_viewer",
                     )
                 )
         page.update()
@@ -1913,6 +2017,7 @@ __all__ = [
     "build_command_palette",
     "build_decision_trace_viewer",
     "build_proposal_history_viewer",
+    "build_simulation_viewer",
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",

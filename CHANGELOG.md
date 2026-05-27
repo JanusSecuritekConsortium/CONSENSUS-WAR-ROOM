@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.11.0 - Simulation Layer Foundation
+
+- Added deterministic simulation architecture under `core.simulation` with scenario models, branch models, registry definitions, branch probability/risk scaffolding, and JSONL simulation history.
+- Added command palette actions and overlay plumbing for creating and viewing simulation scaffolds without mutating the WAR ROOM 2:6:2 layout.
+- Added simulation status to runtime snapshots and runtime bundles.
+- Improved ARASAKA SYSTEM STATUS readability by using readable secondary text for low-emphasis header labels while preserving the black/red aesthetic and accent red.
+- Added architecture regression coverage for simulation models, branch generation/scoring, simulation store/registry, GUI simulation actions, runtime snapshot simulation status, and ARASAKA readability.
+
 ## 7.10.17 - Proposal Verdict Lifecycle
 
 - Linked proposal records to finalized decision traces with append-only JSONL revisions, terminal decision status, decision timestamps, and linked verdict export paths.

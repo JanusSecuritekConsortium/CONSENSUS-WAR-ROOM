@@ -20,6 +20,7 @@ from core.manual_visual_review import manual_visual_review_path, manual_visual_r
 from core.paths import SYSTEM_LOG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
 from core.proposals.lifecycle import proposal_lifecycle_summary
 from core.proposals.store import PROPOSAL_HISTORY_PATH, proposal_history_status
+from core.simulation.store import SIMULATION_HISTORY_PATH, get_simulation_status
 from tools.check_dependencies import build_dependency_report
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot
@@ -117,6 +118,7 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
     dependency_report = build_dependency_report()
     proposal_status = proposal_history_status()
     proposal_lifecycle = proposal_lifecycle_summary()
+    simulation_status = get_simulation_status()
     verdict_exports = _latest_verdict_exports()
     dossier_exports = _latest_dossier_exports()
 
@@ -130,10 +132,15 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
         bundle.writestr("dependency_status.json", _safe_json(dependency_report))
         bundle.writestr("proposal_history_status.json", _safe_json(proposal_status))
         bundle.writestr("proposal_lifecycle_summary.json", _safe_json(proposal_lifecycle))
+        bundle.writestr("simulation_status.json", _safe_json(simulation_status))
         if PROPOSAL_HISTORY_PATH.exists():
             bundle.write(PROPOSAL_HISTORY_PATH, "reports/proposal_history.jsonl")
         else:
             bundle.writestr("reports/proposal_history.jsonl", "")
+        if SIMULATION_HISTORY_PATH.exists():
+            bundle.write(SIMULATION_HISTORY_PATH, "reports/simulation_history.jsonl")
+        else:
+            bundle.writestr("reports/simulation_history.jsonl", "")
         for verdict_path in verdict_exports:
             bundle.write(verdict_path, f"reports/verdicts/{verdict_path.name}")
         for dossier_path in dossier_exports:
@@ -169,7 +176,9 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
                     "dependency_status": "dependency_status.json",
                     "proposal_history_status": "proposal_history_status.json",
                     "proposal_lifecycle_summary": "proposal_lifecycle_summary.json",
+                    "simulation_status": "simulation_status.json",
                     "proposal_history": "reports/proposal_history.jsonl",
+                    "simulation_history": "reports/simulation_history.jsonl",
                     "latest_verdict_exports": [f"reports/verdicts/{path.name}" for path in verdict_exports],
                     "latest_dossier_exports": [f"reports/dossiers/{path.name}" for path in dossier_exports],
                     "test_duration_report": "test_duration_report.json",
