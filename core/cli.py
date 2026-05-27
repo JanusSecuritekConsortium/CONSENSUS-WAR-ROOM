@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+from dataclasses import replace
 from pathlib import Path
 
 from config.agents import AGENT_PROFILES
@@ -95,7 +96,7 @@ def _write_model_override(config_path: Path, agent_id: str, model_name: str) -> 
 def _warn_if_model_unavailable(config, model_name: str) -> None:
     from integrations.msty.api import list_models
 
-    payload = list_models(config)
+    payload = list_models(replace(config, refresh_model_cache=True))
     status = str(payload.get("status", "offline")).lower()
     if status == "offline":
         print("WARNING: provider offline; unable to verify model availability.")
@@ -415,7 +416,8 @@ def main() -> None:
                 print(f"- {model}")
             return
 
-        status = resolve_runtime_provider_status(config, nodes)
+        provider_config = replace(config, refresh_model_cache=True) if args.check_models else config
+        status = resolve_runtime_provider_status(provider_config, nodes)
         print(f"PROVIDER STATUS: {str(status.get('status', 'unknown')).upper()}")
         _print_provider_resolution(status, verbose=args.verbose)
         active_backend = status.get("active_backend") or status.get("backend")

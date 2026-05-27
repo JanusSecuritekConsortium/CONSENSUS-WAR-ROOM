@@ -42,6 +42,14 @@ python consensus_war_room_genesis.py --health
 Run tests:
 
 ```powershell
+python tools\run_tests.py
+```
+
+`pytest` is optional for developer workflows and is not required by runtime dependencies.
+If you install the development extra, you can also run:
+
+```powershell
+python -m pip install -e .[dev]
 python -m pytest
 ```
 

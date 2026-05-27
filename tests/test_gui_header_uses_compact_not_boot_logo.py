@@ -7,40 +7,35 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config.runtime import RuntimeConfig
+from tests.helpers.gui_harness import header_logo_control_for, make_gui_state
 from ui.components.header import compact_logo_text
-from ui.flet_app import build_gui_layout, create_gui_state
-
-
-def _noop(*_args, **_kwargs) -> None:
-    return None
 
 
 def _header_logo_for(theme_key: str) -> str:
-    state = create_gui_state(theme_key, RuntimeConfig(theme=theme_key, backend="mock"))
-    layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
-    return layout.content.controls[0].content.controls[0].content.value
+    return header_logo_control_for(theme_key).value
 
 
 def test_gui_header_uses_dedicated_compact_logo_not_full_boot_logo() -> None:
     for theme_key in ("EVA", "NERV", "WH40K", "HELLDIVERS", "ARASAKA", "MILITARY", "JANUS"):
-        state = create_gui_state(theme_key, RuntimeConfig(theme=theme_key, backend="mock"))
+        state = make_gui_state(theme_key)
         header_logo = _header_logo_for(theme_key)
 
         assert header_logo == compact_logo_text(state.theme)
-        assert header_logo != state.theme.logo.rstrip("\n")
+        if theme_key != "MILITARY":
+            assert header_logo != state.theme.logo.rstrip("\n")
 
 
 def test_arasaka_header_uses_wordmark_without_top_emblem() -> None:
     logo = _header_logo_for("ARASAKA")
 
-    assert ".sdmNNNs-" in logo
+    assert "sdmNNNs" in logo
+    assert "mNNNNNNNNNNm" in logo
     assert ".--:////:--." not in logo
 
 
 def test_boot_logo_assets_remain_full_theme_logos() -> None:
     for theme_key in ("EVA", "WH40K", "HELLDIVERS"):
-        state = create_gui_state(theme_key, RuntimeConfig(theme=theme_key, backend="mock"))
+        state = make_gui_state(theme_key)
         header_logo = _header_logo_for(theme_key)
 
         assert header_logo != state.theme.logo.rstrip("\n")

@@ -31,7 +31,32 @@ def log_error(event_type: str, error: Exception, payload: Optional[Dict[str, Any
     log_event(event_type, error_payload, level="ERROR")
 
 
+def log_decision_trace(result: Any) -> None:
+    votes = {
+        agent_id: {
+            "vote": vote.vote.value,
+            "confidence": vote.confidence,
+            "evidence_quality": vote.evidence_quality,
+            "critical_risk": vote.critical_risk,
+            "model": vote.model,
+        }
+        for agent_id, vote in result.votes.items()
+    }
+    log_event(
+        "decision_trace",
+        {
+            "proposal_id": result.session_id,
+            "session_id": result.session_id,
+            "taxonomy": result.proposal_classification,
+            "votes": votes,
+            "final_verdict": result.verdict.value,
+            "confidence": result.confidence,
+            "terminal_branch": result.terminal_branch,
+            "review_triggers": result.review_triggers,
+        },
+    )
+
+
 def fsync_file(handle: Any) -> None:
     handle.flush()
     os.fsync(handle.fileno())
-

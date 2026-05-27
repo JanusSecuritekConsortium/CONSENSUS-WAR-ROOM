@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Callable, Dict, Optional
 
 from core.history import record_result
-from core.logging import log_event
+from core.logging import log_decision_trace, log_event
 from core.memory.context import build_context_packet
 from core.memory.session import upsert_session_record
 from core.models import NodeIdentity, TribunalResult
@@ -50,6 +50,7 @@ class Tribunal:
         votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
         record_result(result)
+        log_decision_trace(result)
         self._record_session_memory(result, memory_context, provider_context)
         log_event(
             "verdict",

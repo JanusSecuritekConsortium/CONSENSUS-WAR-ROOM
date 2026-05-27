@@ -85,6 +85,14 @@ def majority_result(votes: Sequence[Vote]) -> Optional[VoteValue]:
     return None
 
 
+def confidence_qualified_votes(votes: Sequence[Vote], minimum_confidence: float) -> List[Vote]:
+    return [
+        vote
+        for vote in votes
+        if not vote.validation_errors and vote.confidence >= minimum_confidence
+    ]
+
+
 def priority_ordered_votes(votes: Sequence[Vote], priority: Sequence[str]) -> List[Vote]:
     by_name = {vote.node_key: vote for vote in votes}
     ordered: List[Vote] = []

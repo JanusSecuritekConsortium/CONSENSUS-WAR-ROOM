@@ -46,6 +46,33 @@ def test_gui_provider_status_panel_shows_discovery_metadata() -> None:
     assert "FALLBACK: ACTIVE" in text
 
 
+def test_gui_provider_status_panel_shows_active_models_and_dev_status() -> None:
+    provider = {
+        "status": "ready",
+        "provider": {
+            "status": "ready",
+            "base_url": "http://localhost:11454",
+            "model_availability_report": [
+                {
+                    "agent_id": "RATIONALIS",
+                    "required_model": "deepseek-coder:33b",
+                    "resolved_model": "deepseek-coder:33b",
+                    "status": "ready",
+                }
+            ],
+        },
+    }
+
+    panel = build_status_panel(THEMES["eva"], provider, "AVAILABLE")
+    text = "\n".join(_flatten_text(panel))
+
+    assert "ACTIVE MODELS" in text
+    assert "RATIONALIS: deepseek-coder:33b [READY]" in text
+    assert "CODEX / DEV" in text
+    assert "RUNTIME LOGS: JSONL" in text
+
+
 if __name__ == "__main__":
     test_gui_provider_status_panel_shows_discovery_metadata()
+    test_gui_provider_status_panel_shows_active_models_and_dev_status()
     print("test_gui_provider_status_panel PASS")

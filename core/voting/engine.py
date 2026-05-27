@@ -9,6 +9,7 @@ from core.voting.classifier import assign_critical_domain_relevance, classify_pr
 from core.voting.rules import (
     ConsensusRules,
     average_confidence,
+    confidence_qualified_votes,
     consensus_confidence,
     majority_result,
     priority_ordered_votes,
@@ -25,6 +26,12 @@ class ConsensusEngine:
         review_triggers: List[str] = []
         voting_votes = list(votes.values())
         distribution = Counter(v.vote.value for v in voting_votes)
+        for vote in voting_votes:
+            if vote.validation_errors:
+                review_triggers.append(f"vote_validation_failed:{vote.node_key}")
+            elif vote.confidence < self.rules.minimum_confidence:
+                review_triggers.append(f"confidence_below_threshold:{vote.node_key}")
+
         classification_result = classify_proposal(
             query,
             taxonomy=self.rules.proposal_taxonomy,
@@ -57,14 +64,50 @@ class ConsensusEngine:
             self.rules.monolith_domain_map,
         )
 
-        decided = majority_result(voting_votes)
+        qualified_votes = confidence_qualified_votes(voting_votes, self.rules.minimum_confidence)
+        if len(qualified_votes) < self.rules.quorum:
+            review_triggers.append("quorum_not_met_after_confidence_filter")
+            return self._terminal_result(
+                query,
+                FinalVerdict.NO_CONSENSUS,
+                (
+                    "NO_CONSENSUS: qualified vote quorum was not met after confidence "
+                    f"threshold enforcement ({len(qualified_votes)}/{self.rules.quorum})."
+                ),
+                votes,
+                distribution,
+                review_triggers,
+                session_id,
+                "confidence_threshold_no_quorum",
+                classification_payload,
+                quorum_met=False,
+            )
+
+        decided = majority_result(qualified_votes)
         if decided is not None:
             verdict = FinalVerdict.APPROVE if decided == VoteValue.APPROVE else FinalVerdict.DENY
-            matching_count = sum(1 for vote in voting_votes if vote.vote == decided)
+            matching_count = sum(1 for vote in qualified_votes if vote.vote == decided)
+            final_confidence = consensus_confidence(decided, qualified_votes)
+            if final_confidence < self.rules.minimum_confidence:
+                review_triggers.append("final_confidence_below_threshold")
+                return self._terminal_result(
+                    query,
+                    FinalVerdict.NO_CONSENSUS,
+                    (
+                        "NO_CONSENSUS: majority confidence fell below the configured "
+                        f"threshold ({final_confidence:.2f}/{self.rules.minimum_confidence:.2f})."
+                    ),
+                    votes,
+                    distribution,
+                    review_triggers,
+                    session_id,
+                    "confidence_threshold_final",
+                    classification_payload,
+                )
             return TribunalResult(
                 query=query,
                 verdict=verdict,
-                confidence=consensus_confidence(decided, voting_votes),
+                confidence=final_confidence,
                 reason=summarize_reason(decided, matching_count, votes, review_triggers),
                 votes=votes,
                 vote_distribution=dict(distribution),
@@ -90,10 +133,10 @@ class ConsensusEngine:
                 classification_payload,
             )
 
-        mean_evidence = mean(vote.evidence_quality for vote in voting_votes) if voting_votes else 0.0
+        mean_evidence = mean(vote.evidence_quality for vote in qualified_votes) if qualified_votes else 0.0
         domain_critical_starved = any(
             vote.critical_domain_relevance and vote.evidence_quality < self.rules.evidence_threshold
-            for vote in voting_votes
+            for vote in qualified_votes
         )
         if mean_evidence < self.rules.evidence_threshold or domain_critical_starved:
             review_triggers.append("insufficient_evidence")
@@ -111,7 +154,7 @@ class ConsensusEngine:
                 classification_payload,
             )
 
-        for vote in priority_ordered_votes(voting_votes, self.rules.tie_break_priority):
+        for vote in priority_ordered_votes(qualified_votes, self.rules.tie_break_priority):
             if vote.vote in {VoteValue.APPROVE, VoteValue.DENY}:
                 verdict = FinalVerdict.APPROVE if vote.vote == VoteValue.APPROVE else FinalVerdict.DENY
                 review_triggers.append(f"priority_tie_break:{vote.node_key}")
@@ -151,6 +194,7 @@ class ConsensusEngine:
         session_id: str,
         branch: str,
         classification_payload: Dict[str, object],
+        quorum_met: bool = True,
     ) -> TribunalResult:
         return TribunalResult(
             query=query,
@@ -159,7 +203,7 @@ class ConsensusEngine:
             reason=reason,
             votes=votes,
             vote_distribution=dict(distribution),
-            quorum_met=True,
+            quorum_met=quorum_met,
             review_triggers=review_triggers,
             session_id=session_id,
             theme=self.theme_key,

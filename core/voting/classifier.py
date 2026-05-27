@@ -23,6 +23,8 @@ DEFAULT_KEYWORD_MAP: Dict[str, tuple[str, ...]] = {
     "operations": ("operation", "logistic", "deploy", "execution", "ops", "rollout", "runtime"),
 }
 
+CLOSED_PROPOSAL_TAXONOMY: tuple[str, ...] = tuple(DEFAULT_KEYWORD_MAP)
+
 
 @dataclass(frozen=True)
 class ProposalClassification:
@@ -78,6 +80,13 @@ def classify_proposal(
         return ClassificationResult(False, failure_reason="empty_or_non_text_proposal")
 
     ordered_taxonomy = tuple(taxonomy)
+    outside_closed_set = sorted(set(ordered_taxonomy) - set(CLOSED_PROPOSAL_TAXONOMY))
+    if outside_closed_set:
+        return ClassificationResult(
+            False,
+            failure_reason=f"taxonomy_outside_closed_set:{','.join(outside_closed_set)}",
+        )
+
     hits = _keyword_hits(text, ordered_taxonomy, keyword_map or DEFAULT_KEYWORD_MAP)
     matched = [proposal_class for proposal_class in ordered_taxonomy if proposal_class in hits]
     if not matched:

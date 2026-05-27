@@ -1,1 +1,1 @@
-﻿"""BELLATOR intelligence context pipeline."""
+"""BELLATOR intelligence context pipeline."""
