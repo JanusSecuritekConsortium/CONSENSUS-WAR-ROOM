@@ -82,6 +82,26 @@ python consensus_war_room_genesis.py --provider-status --verbose
 python consensus_war_room_genesis.py --list-models
 ```
 
+## Operator Workflow
+
+The GUI command palette opens with `Ctrl+K`. Current operator shortcuts:
+
+- `Ctrl+D`: diagnostics drawer
+- `Ctrl+T`: cycle theme
+- `Ctrl+H`: proposal history
+- `Ctrl+E`: export latest verdict
+
+Proposal templates are available from the proposal panel for geopolitical,
+market/finance, technical, operational-risk, and general tribunal queries.
+Proposal history is stored locally as JSONL and can be resent, duplicated for
+editing, or archived from the Proposal History overlay.
+
+Export the latest verdict outside the GUI:
+
+```powershell
+python tools\export_latest_verdict.py
+```
+
 ## Configuration
 
 The default runtime config is written to `_ARBITER/genesis_config.json` when the

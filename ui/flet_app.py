@@ -33,12 +33,23 @@ from core.memory.context import build_context_packet, context_status
 from core.memory.session import upsert_session_record
 from core.models import NodeIdentity, TribunalResult, Vote, VoteValue
 from core.paths import EXPORT_DIR, HISTORY_PATH, SYSTEM_LOG_PATH, SYSTEM_ROOT
+from core.proposals.store import (
+    archive_proposal,
+    create_proposal,
+    duplicate_proposal,
+    list_recent_proposals,
+    proposal_history_status,
+    resend_proposal,
+    update_proposal,
+)
+from core.proposals.templates import get_template, list_templates, render_template_draft
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
 from core.voting.engine import ConsensusEngine
 from core.voting.parser import parse_vote
 from core.voting.rules import ConsensusRules
 from integrations.msty.runtime import MstyRuntime
+from core.export.verdict import export_latest_verdict, latest_verdict_export_status
 from tools.export_runtime_bundle import export_runtime_bundle
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_snapshot
@@ -107,6 +118,8 @@ COMMAND_PALETTE_ACTIONS = (
     "Verify Integrity",
     "Visual Review Status",
     "Telemetry Snapshot",
+    "Proposal History",
+    "Export Latest Verdict",
     "Toggle Theme",
     "Open Decision Trace Viewer",
 )
@@ -124,6 +137,9 @@ class GuiState:
     logs: List[str] = field(default_factory=list)
     recent_decisions: List[str] = field(default_factory=list)
     current_proposal: str = ""
+    proposal_input_text: str = ""
+    proposal_template_id: str = ""
+    last_proposal_record_id: str = ""
     current_result: TribunalResult | None = None
     window_mode: GuiWindowMode = "maximized"
     lifecycle_state: str = LIFECYCLE_IDLE
@@ -152,6 +168,7 @@ class GuiState:
     diagnostics_drawer_open: bool = False
     command_palette_open: bool = False
     trace_viewer_open: bool = False
+    proposal_history_open: bool = False
     visual_review_viewer_open: bool = False
     telemetry_viewer_open: bool = False
     trace_filter: str = ""
@@ -247,6 +264,8 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "screenshot_status": visual_review.get("screenshot_status", "MANUAL_REVIEW_REQUIRED"),
         "visual_review": visual_review,
         "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
+        "proposal_history_status": proposal_history_status(),
+        "latest_verdict_export": latest_verdict_export_status(),
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
@@ -415,6 +434,7 @@ def submit_proposal_live_for_gui(
     if not clean_proposal:
         raise ValueError("Proposal is empty.")
     state.current_proposal = clean_proposal
+    state.proposal_input_text = clean_proposal
     state.current_result = None
     state.monolith_vote_details = {}
     state.displayed_synthesis = ""
@@ -427,6 +447,26 @@ def submit_proposal_live_for_gui(
     append_timeline(state.timeline_events, "PROPOSAL", "received vote package")
     log_event("gui_proposal_submitted", {"theme": state.theme_key, "query": clean_proposal})
     log_war_room_runtime("proposal_received", {"theme": state.theme_key, "query": clean_proposal})
+    taxonomy_hint = ""
+    source = "manual"
+    title = None
+    if state.proposal_template_id:
+        try:
+            template = get_template(state.proposal_template_id)
+            taxonomy_hint = str(template.get("default_taxonomy_hint", ""))
+            title = str(template.get("title", ""))
+            source = "template"
+        except KeyError:
+            taxonomy_hint = ""
+    proposal_record = create_proposal(
+        title=title,
+        body=clean_proposal,
+        taxonomy_hint=taxonomy_hint,
+        source=source,
+        template_id=state.proposal_template_id or None,
+        status="SUBMITTED",
+    )
+    state.last_proposal_record_id = str(proposal_record["proposal_id"])
     runtime = MstyRuntime(state.config)
     state.provider_warning = _fallback_warning(state, runtime)
     rules = ConsensusRules(
@@ -585,6 +625,17 @@ def submit_proposal_live_for_gui(
         append_timeline(state.timeline_events, ARBITER, "consensus locked")
         record_result(result)
         log_decision_trace(result)
+        try:
+            update_proposal(
+                state.last_proposal_record_id,
+                linked_decision_trace_id=result.session_id,
+            )
+        except Exception as exc:
+            log_event(
+                "gui_proposal_history_update_failed",
+                {"proposal_id": state.last_proposal_record_id, "error": str(exc)},
+                level="WARN",
+            )
         provider_payload = state.provider_status.get("provider", state.provider_status)
         try:
             upsert_session_record(
@@ -795,6 +846,14 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
             state.runtime_snapshot_cache["telemetry"] = state.telemetry_snapshot
             state.telemetry_viewer_open = True
             message = "Telemetry snapshot opened"
+        elif action == "Proposal History":
+            state.proposal_history_open = True
+            state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+            message = "Proposal history opened"
+        elif action == "Export Latest Verdict":
+            result = export_latest_verdict()
+            state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
+            message = f"Latest verdict exported: {result['json_path']}"
         elif action == "Toggle Theme":
             options = [theme.key for theme in get_gui_theme_options()]
             index = options.index(state.theme_key) if state.theme_key in options else -1
@@ -978,6 +1037,94 @@ def build_decision_trace_viewer(
     )
 
 
+def build_proposal_history_viewer(
+    state: GuiState,
+    on_action: Callable[[str, str], None] | None = None,
+    proposals: List[Dict[str, Any]] | None = None,
+) -> ft.Control:
+    theme = state.theme
+    recent = proposals if proposals is not None else list_recent_proposals(limit=20)
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    def action_button(label: str, action: str, proposal_id: str) -> ft.Control:
+        handler = (lambda _: on_action(action, proposal_id)) if on_action is not None else None
+        return ft.TextButton(
+            label,
+            on_click=handler,
+            style=ft.ButtonStyle(
+                color=theme.primary_color,
+                bgcolor=theme.background_color,
+                side=ft.BorderSide(1, theme.secondary_color),
+                shape=ft.RoundedRectangleBorder(radius=0),
+                padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                text_style=ft.TextStyle(size=10, font_family=theme.font_family),
+            ),
+            height=30,
+        )
+
+    rows: list[ft.Control] = []
+    for proposal in recent:
+        proposal_id = str(proposal.get("proposal_id") or "--")
+        status = str(proposal.get("status") or "--")
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(f"{proposal.get('created_at', '--')} | {status}", theme.secondary_color),
+                        text(str(proposal.get("title") or "Untitled Proposal"), theme.accent_color, bold=True),
+                        text(f"{proposal.get('template_id') or 'manual'} | {proposal_id}", theme.panel_value or theme.text_color),
+                        ft.Row(
+                            [
+                                action_button("RESEND", "resend", proposal_id),
+                                action_button("DUPLICATE/EDIT", "duplicate", proposal_id),
+                                action_button("ARCHIVE", "archive", proposal_id),
+                            ],
+                            spacing=6,
+                        ),
+                    ],
+                    spacing=3,
+                ),
+                padding=7,
+                border=ft.border.all(1, theme.secondary_color),
+                bgcolor=theme.background_color,
+            )
+        )
+    if not rows:
+        rows.append(text("NO PROPOSAL HISTORY FOUND", theme.warning_color, bold=True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("PROPOSAL HISTORY", theme.accent_color, size=14, bold=True),
+                        text("CTRL+H", theme.secondary_color, size=10),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=620,
+        height=600,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
 def build_visual_review_status_viewer(state: GuiState) -> ft.Control:
     theme = state.theme
     summary = state.runtime_snapshot_cache.get("visual_review")
@@ -1103,6 +1250,8 @@ def build_gui_layout(
     refresh_bellator_intelligence=None,
     toggle_diagnostics=None,
     open_trace_viewer=None,
+    on_template_select=None,
+    on_proposal_change=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -1127,6 +1276,12 @@ def build_gui_layout(
     footer_controls = ft.Row(
         [
             build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
+            ft.Text(
+                "Ctrl+K Command | Ctrl+D Diagnostics | Ctrl+T Theme | Ctrl+H History | Ctrl+E Export",
+                color=theme.secondary_text or theme.secondary_color,
+                size=9,
+                max_lines=2,
+            ),
             ft.Switch(
                 label="AURELIUS Voice Loop",
                 value=state.aurelius_voice_loop_enabled,
@@ -1172,7 +1327,19 @@ def build_gui_layout(
     center = ft.Container(
         ft.Column(
             [
-                ft.Container(build_proposal_panel(theme, submit), expand=3, clip_behavior=ft.ClipBehavior.HARD_EDGE),
+                ft.Container(
+                    build_proposal_panel(
+                        theme,
+                        submit,
+                        initial_value=state.proposal_input_text,
+                        templates=list_templates(),
+                        selected_template_id=state.proposal_template_id,
+                        on_template_select=on_template_select,
+                        on_change=on_proposal_change,
+                    ),
+                    expand=3,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                ),
                 ft.Container(
                     build_verdict_panel(
                         theme,
@@ -1273,6 +1440,7 @@ def build_gui_layout(
     shell.diagnostics_drawer = build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer)  # type: ignore[attr-defined]
     shell.command_palette = build_command_palette(state)  # type: ignore[attr-defined]
     shell.decision_trace_viewer = build_decision_trace_viewer(state)  # type: ignore[attr-defined]
+    shell.proposal_history_viewer = build_proposal_history_viewer(state)  # type: ignore[attr-defined]
     shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
     shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
     return shell
@@ -1310,6 +1478,12 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     if not isinstance(visual_review, dict):
         visual_review = manual_visual_review_summary()
     telemetry = state.telemetry_snapshot or state.runtime_snapshot_cache.get("telemetry") or {}
+    proposal_status = state.runtime_snapshot_cache.get("proposal_history_status")
+    if not isinstance(proposal_status, dict):
+        proposal_status = proposal_history_status()
+    verdict_export = state.runtime_snapshot_cache.get("latest_verdict_export")
+    if not isinstance(verdict_export, dict):
+        verdict_export = latest_verdict_export_status()
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1349,6 +1523,8 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
                 height=34,
             ),
             text(f"LAST TEST MANIFEST: {latest_test_manifest_path()}"),
+            text(f"PROPOSAL HISTORY: {proposal_status.get('recent_count', 0)} recent | {proposal_status.get('last_proposal_id') or '--'}"),
+            text(f"LATEST VERDICT EXPORT: {verdict_export.get('latest_json') or '--'}"),
             text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
             text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
             text(
@@ -1432,9 +1608,40 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             log_event("gui_decision_trace_viewer", {"open": True, "theme": state.theme_key})
             _render_page(page, state)
 
+        def handle_template_select(template_id: str) -> None:
+            state.proposal_template_id = template_id
+            if template_id:
+                state.proposal_input_text = render_template_draft(template_id)
+            state.operator_status = f"Template loaded: {template_id or 'manual'}"
+            _render_page(page, state)
+
+        def handle_proposal_change(value: str) -> None:
+            state.proposal_input_text = value
+
+        def handle_proposal_history_action(action: str, proposal_id: str) -> None:
+            try:
+                if action == "resend":
+                    record = resend_proposal(proposal_id)
+                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                    state.operator_status = f"Proposal resent: {state.last_proposal_record_id}"
+                elif action == "duplicate":
+                    record = duplicate_proposal(proposal_id)
+                    state.proposal_input_text = str(record.get("body") or "")
+                    state.proposal_template_id = str(record.get("template_id") or "")
+                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                    state.operator_status = f"Draft duplicated: {state.last_proposal_record_id}"
+                elif action == "archive":
+                    archive_proposal(proposal_id)
+                    state.operator_status = f"Proposal archived: {proposal_id}"
+                state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+            except Exception as exc:
+                state.operator_status = f"Proposal history action failed: {exc}"
+                log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
+            _render_page(page, state)
+
         def handle_command_action(action: str) -> None:
             state.command_palette_open = False
-            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity"}:
+            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict"}:
                 state.operator_status = f"{action} running"
                 _render_page(page, state)
 
@@ -1464,6 +1671,20 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                     {"open": state.command_palette_open, "theme": state.theme_key},
                 )
                 _render_page(page, state)
+            elif ctrl and key == "D":
+                toggle_diagnostics(None)
+            elif ctrl and key == "T":
+                execute_command_palette_action(state, "Toggle Theme")
+                _render_page(page, state)
+            elif ctrl and key == "H":
+                state.proposal_history_open = not state.proposal_history_open
+                _render_page(page, state)
+            elif ctrl and key == "E":
+                try:
+                    execute_command_palette_action(state, "Export Latest Verdict")
+                except Exception:
+                    pass
+                _render_page(page, state)
 
         if hasattr(page, "on_keyboard_event"):
             page.on_keyboard_event = on_keyboard_event
@@ -1480,6 +1701,8 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             refresh_bellator_intelligence=refresh_bellator_intelligence,
             toggle_diagnostics=toggle_diagnostics,
             open_trace_viewer=open_trace_viewer,
+            on_template_select=handle_template_select,
+            on_proposal_change=handle_proposal_change,
         )
         page.controls.clear()
         page.add(layout)
@@ -1489,6 +1712,7 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                 "diagnostics_drawer",
                 "command_palette",
                 "decision_trace_viewer",
+                "proposal_history_viewer",
                 "visual_review_status",
                 "telemetry_snapshot",
             }
@@ -1523,6 +1747,14 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                         alignment=ft.alignment.center_left,
                         padding=ft.padding.only(left=24),
                         data="decision_trace_viewer",
+                    )
+                )
+            if state.proposal_history_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_proposal_history_viewer(state, on_action=handle_proposal_history_action),
+                        alignment=ft.alignment.center,
+                        data="proposal_history_viewer",
                     )
                 )
             if state.visual_review_viewer_open:
@@ -1597,6 +1829,7 @@ __all__ = [
     "build_diagnostics_drawer",
     "build_command_palette",
     "build_decision_trace_viewer",
+    "build_proposal_history_viewer",
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",
