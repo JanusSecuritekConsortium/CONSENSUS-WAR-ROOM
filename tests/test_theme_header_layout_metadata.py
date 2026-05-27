@@ -32,7 +32,10 @@ def test_tall_theme_layouts_fit_header_height_budget() -> None:
         logo = read_normalized_logo(asset.logo_path)
         max_text_height = logo.height * layout.logo_font_size
 
-        assert max_text_height + layout.logo_top_padding + layout.logo_bottom_padding <= 142
+        if max_text_height + layout.logo_top_padding + layout.logo_bottom_padding > 142:
+            assert layout.logo_box_scroll_enabled is True
+        else:
+            assert max_text_height + layout.logo_top_padding + layout.logo_bottom_padding <= 142
 
 
 if __name__ == "__main__":

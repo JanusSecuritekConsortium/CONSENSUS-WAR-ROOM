@@ -1,7 +1,7 @@
 {
   "version": "7.10.14",
   "screenshot_status": "MANUAL_REVIEW_REQUIRED",
-  "updated_at": "2026-05-27T14:34:30+00:00",
+  "updated_at": "2026-05-27T14:55:36+00:00",
   "themes": [
     {
       "theme": "eva",
@@ -28,7 +28,7 @@
       "theme": "wh40k",
       "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\wh40k_v7.10.14.png",
       "status": "PENDING",
-      "reviewer_notes": "v7.10.14 WH40K header asset replaced with compact fit; manual screenshot review required",
+      "reviewer_notes": "Compact v7.10.14 WH40K skull rejected; reverted to v7.10.13 gothic header for manual review.",
       "reviewed_at": null
     },
     {
