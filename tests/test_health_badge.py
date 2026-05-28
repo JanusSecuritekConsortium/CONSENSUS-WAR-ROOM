@@ -25,6 +25,12 @@ def _flatten_text(control) -> list[str]:
     return values
 
 
+def _header_status_labels(header) -> list[str]:
+    status_row = header.content.controls[1].content.controls[1]
+    status_column = status_row.controls[0]
+    return [row.controls[0].value for row in status_column.controls if hasattr(row, "controls")]
+
+
 def test_health_badge_from_runtime_snapshot_states() -> None:
     assert health_badge_from_snapshot({"provider_status": "ready", "missing_models": {}, "degraded_reason": None})[
         "label"
@@ -45,7 +51,7 @@ def test_header_renders_health_badge_without_shifting_telemetry_rows() -> None:
         health_badge={"label": "READY", "color_role": "primary"},
     )
     text = "\n".join(_flatten_text(header))
-    telemetry_labels = [row.controls[0].value for row in header.content.controls[1].content.controls[1:7]]
+    telemetry_labels = _header_status_labels(header)
 
     assert "HEALTH READY" in text
     assert "ACTIVE MODE" in telemetry_labels

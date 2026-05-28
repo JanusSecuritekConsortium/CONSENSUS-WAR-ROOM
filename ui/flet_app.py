@@ -1002,6 +1002,29 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
         raise
 
 
+def set_diagnostics_drawer_open(state: GuiState, open_state: bool | None = None) -> bool:
+    next_state = (not state.diagnostics_drawer_open) if open_state is None else bool(open_state)
+    if state.diagnostics_drawer_open == next_state:
+        return state.diagnostics_drawer_open
+    state.diagnostics_drawer_open = next_state
+    state.ui_interaction_hold_until = time.monotonic() + GUI_INTERACTION_HOLD_SECONDS
+    if "telemetry" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["telemetry"] = state.telemetry_snapshot
+    if "proposal_history_status" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+    if "proposal_lifecycle_summary" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
+    if "latest_verdict_export" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
+    if "latest_dossier_export" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+    log_event(
+        "gui_diagnostics_drawer",
+        {"open": state.diagnostics_drawer_open, "theme": state.theme_key, "snapshot_source": "cached"},
+    )
+    return state.diagnostics_drawer_open
+
+
 def _memory_status_text() -> str:
     try:
         import psutil  # type: ignore
@@ -1642,7 +1665,6 @@ def build_gui_layout(
                                 prior_decisions_used=state.prior_decisions_used,
                                 current_session_id=state.current_result.session_id if state.current_result else "--",
                             ),
-                            build_telemetry_panel(theme, state.telemetry_snapshot),
                         ],
                         spacing=8,
                         tight=True,
@@ -1691,6 +1713,7 @@ def build_gui_layout(
                     compact=state.compact_header,
                     ambient_status=state.heartbeat_text,
                     health_badge=state.runtime_snapshot_cache.get("health_badge"),
+                    telemetry=state.telemetry_snapshot,
                 ),
                 ft.Container(body, expand=True, padding=8, clip_behavior=ft.ClipBehavior.HARD_EDGE),
                 footer,
@@ -1741,20 +1764,20 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     }.get(integrity_status, theme.error_color)
     visual_review = state.runtime_snapshot_cache.get("visual_review")
     if not isinstance(visual_review, dict):
-        visual_review = manual_visual_review_summary()
+        visual_review = {"path": "--", "pending_count": 0, "action_required_count": 0}
     telemetry = state.telemetry_snapshot or state.runtime_snapshot_cache.get("telemetry") or {}
     proposal_status = state.runtime_snapshot_cache.get("proposal_history_status")
     if not isinstance(proposal_status, dict):
-        proposal_status = proposal_history_status()
+        proposal_status = {"recent_count": 0, "last_proposal_id": "--"}
     verdict_export = state.runtime_snapshot_cache.get("latest_verdict_export")
     if not isinstance(verdict_export, dict):
-        verdict_export = latest_verdict_export_status()
+        verdict_export = {"latest_json": "--"}
     lifecycle = state.runtime_snapshot_cache.get("proposal_lifecycle_summary")
     if not isinstance(lifecycle, dict):
-        lifecycle = proposal_lifecycle_summary()
+        lifecycle = {"decided_total": 0, "no_consensus_total": 0, "escalated_total": 0, "error_total": 0}
     dossier_export = state.runtime_snapshot_cache.get("latest_dossier_export")
     if not isinstance(dossier_export, dict):
-        dossier_export = latest_dossier_export_status()
+        dossier_export = {"latest_json": "--"}
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1872,11 +1895,7 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             _render_page(page, state)
 
         def toggle_diagnostics(_: ft.ControlEvent | None = None) -> None:
-            state.diagnostics_drawer_open = not state.diagnostics_drawer_open
-            log_event(
-                "gui_diagnostics_drawer",
-                {"open": state.diagnostics_drawer_open, "theme": state.theme_key},
-            )
+            set_diagnostics_drawer_open(state)
             _render_page(page, state)
 
         def open_trace_viewer(_: ft.ControlEvent | None = None) -> None:
@@ -2130,6 +2149,7 @@ __all__ = [
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",
+    "set_diagnostics_drawer_open",
     "latest_verdict_text",
     "apply_gui_window_mode",
     "GUI_WINDOW_MODES",
