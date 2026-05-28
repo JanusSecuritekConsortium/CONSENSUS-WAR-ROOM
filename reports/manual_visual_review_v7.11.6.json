@@ -1,0 +1,49 @@
+{
+  "version": "7.11.6",
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "updated_at": "2026-05-28T05:20:00+00:00",
+  "themes": [
+    {
+      "theme": "eva",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\eva_v7.11.6.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "NERV-reference-derived ASCII header replaced current EVA/MAGI header.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "helldivers",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\helldivers_v7.11.6.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "Super Earth skull/wings ASCII header replaced current header.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "wh40k",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\wh40k_v7.11.6.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "v7.10.13 gothic ASCII preserved with tighter WH40K-only header box.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "arasaka",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\arasaka_v7.11.6.png",
+      "status": "PENDING",
+      "reviewer_notes": "Boot spacing corrected to exactly one blank line after logo.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "janus",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\janus_v7.11.6.png",
+      "status": "PENDING",
+      "reviewer_notes": "JANUS asset untouched.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "military",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\military_v7.11.6.png",
+      "status": "PENDING",
+      "reviewer_notes": "Canonical EXCOMM asset unchanged.",
+      "reviewed_at": null
+    }
+  ]
+}

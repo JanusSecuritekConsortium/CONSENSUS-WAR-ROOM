@@ -1,5 +1,14 @@
 # Changelog
 
+## 7.11.6 - WAR ROOM UI Correction
+
+- Tightened the Arbiter Verdict panel with fixed padding, fixed section spacing, bounded timeline/vector/reasoning regions, synthesis line limits, and hard clipping to prevent overlap or floating controls.
+- Removed the visible Aurelius voice-loop switch from the footer command bar so Diagnostics remains visible in the right-side auxiliary control region.
+- Replaced the EVA/NERV GUI header with a NERV-reference-derived ASCII mark and replaced the HELLDIVERS header with a tighter skull/wings ASCII mark based on the provided emblem reference.
+- Tightened WH40K header presentation by reducing the WH40K-only logo box width while preserving the restored v7.10.13 gothic ASCII asset and colors.
+- Enforced exactly one deterministic blank line between the ARASAKA logo and `ARASAKA EXECUTIVE SECURITY BIOS...` boot text.
+- Added regression coverage for footer diagnostics visibility, absence of footer controls in the Arbiter panel, bounded verdict panel sections, reference-derived ASCII headers, and exact BIOS spacing.
+
 ## 7.11.5 - Active Tribunal Flow
 
 - Added explicit tribunal processing phases from `IDLE` through classification, dispatch, analysis, deliberation, synthesis, terminal outcome, and export-ready state.

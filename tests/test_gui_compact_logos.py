@@ -32,7 +32,7 @@ def test_supplied_gui_compact_logos_are_selected() -> None:
 
 
 def test_new_compact_logo_identity_text_is_present() -> None:
-    assert "MAGI CUBE ARRAY" in compact_logo_text(THEMES["eva"])
+    assert "NERV GEOMETRIC MAGI MARK" in compact_logo_text(THEMES["eva"])
     assert "@@@@@@@@" in compact_logo_text(THEMES["wh40k"])
     assert "@@@@@@@#" in compact_logo_text(THEMES["wh40k"])
     assert "SUPER EARTH COMMAND" in compact_logo_text(THEMES["helldivers"])

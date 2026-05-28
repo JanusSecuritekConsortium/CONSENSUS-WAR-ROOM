@@ -6,6 +6,13 @@ from core.models import Theme, TribunalResult
 from ui.components.reasoning_stream import build_phase_timeline, build_reasoning_stream, convergence_bar_text
 from ui.war_room_runtime import lifecycle_banner_label
 
+VERDICT_PANEL_PADDING = 14
+VERDICT_PANEL_SPACING = 7
+VERDICT_TIMELINE_HEIGHT = 24
+VERDICT_VECTOR_HEIGHT = 58
+VERDICT_SYNTHESIS_MAX_LINES = 3
+VERDICT_REASONING_HEIGHT = 66
+
 
 def _confidence_color(theme: Theme, value: float) -> str:
     if value >= 0.75:
@@ -96,8 +103,19 @@ def build_verdict_panel(
                     bgcolor=theme.background_color,
                 ),
                 ft.Text(f"LIFECYCLE: {lifecycle_state}", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
-                build_phase_timeline(theme, lifecycle_state, event_stream),
-                ft.Text(f"CURRENT: {current_proposal or '--'}", color=theme.text_color, size=12),
+                ft.Container(
+                    build_phase_timeline(theme, lifecycle_state, event_stream),
+                    height=VERDICT_TIMELINE_HEIGHT,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "verdict_phase_timeline"},
+                ),
+                ft.Text(
+                    f"CURRENT: {current_proposal or '--'}",
+                    color=theme.text_color,
+                    size=12,
+                    max_lines=1,
+                    overflow=ft.TextOverflow.ELLIPSIS,
+                ),
                 ft.Text(verdict, color=verdict_color, weight=ft.FontWeight.BOLD, size=32),
                 ft.Text(lock_text, color=theme.primary_color if consensus_locked else theme.secondary_color, size=11, font_family=theme.font_family),
                 ft.Row(
@@ -115,17 +133,43 @@ def build_verdict_panel(
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 ft.Text("TRIBUNAL VECTOR", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
-                votes,
+                ft.Container(
+                    votes,
+                    height=VERDICT_VECTOR_HEIGHT,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "verdict_vote_vector"},
+                ),
                 ft.Text("ARBITER SYNTHESIS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
-                ft.Text(reason, color=theme.text_color, selectable=True),
+                ft.Text(
+                    reason,
+                    color=theme.text_color,
+                    selectable=True,
+                    max_lines=VERDICT_SYNTHESIS_MAX_LINES,
+                    overflow=ft.TextOverflow.ELLIPSIS,
+                ),
                 ft.Text("REASONING STATE", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
-                build_reasoning_stream(theme, reasoning_stream),
+                ft.Container(
+                    build_reasoning_stream(theme, reasoning_stream, max_lines=4),
+                    height=VERDICT_REASONING_HEIGHT,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "verdict_reasoning_stream"},
+                ),
                 ft.Text(f"Context used: {prior_decisions_used} prior decisions", color=theme.secondary_text or theme.secondary_color, size=11),
-                ft.Text(context_summary or "No retrieved context.", color=theme.muted_text or theme.secondary_color, size=10, selectable=True),
+                ft.Text(
+                    context_summary or "No retrieved context.",
+                    color=theme.muted_text or theme.secondary_color,
+                    size=10,
+                    selectable=True,
+                    max_lines=1,
+                    overflow=ft.TextOverflow.ELLIPSIS,
+                ),
             ],
-            spacing=10,
+            spacing=VERDICT_PANEL_SPACING,
+            tight=True,
         ),
-        padding=14,
+        padding=VERDICT_PANEL_PADDING,
         border=ft.border.all(2, theme.primary_color),
         bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "arbiter_verdict_panel"},
     )
