@@ -3,6 +3,7 @@ from __future__ import annotations
 import flet as ft
 
 from core.models import Theme, TribunalResult
+from ui.components.reasoning_stream import build_phase_timeline, build_reasoning_stream, convergence_bar_text
 from ui.war_room_runtime import lifecycle_banner_label
 
 
@@ -53,6 +54,10 @@ def build_verdict_panel(
     context_summary: str = "",
     cursor_visible: bool = True,
     consensus_locked: bool = False,
+    lifecycle_events: list[dict[str, object]] | None = None,
+    reasoning_events: list[str] | None = None,
+    convergence_percent: float = 0.0,
+    phase_durations: dict[str, float] | None = None,
 ) -> ft.Control:
     if result is None:
         verdict = f"AWAITING PROPOSAL {'_' if cursor_visible else ' '}"
@@ -71,6 +76,9 @@ def build_verdict_panel(
     confidence_color = _confidence_color(theme, confidence_value)
     verdict_color = _verdict_color(theme, result.verdict.value, confidence_value) if result is not None else theme.primary_color
     banner_color = verdict_color if result is not None else theme.primary_color
+    event_stream = lifecycle_events or []
+    reasoning_stream = reasoning_events or []
+    convergence = max(convergence_percent, confidence_value if result is not None else 0.0)
     return ft.Container(
         content=ft.Column(
             [
@@ -88,9 +96,17 @@ def build_verdict_panel(
                     bgcolor=theme.background_color,
                 ),
                 ft.Text(f"LIFECYCLE: {lifecycle_state}", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
+                build_phase_timeline(theme, lifecycle_state, event_stream),
                 ft.Text(f"CURRENT: {current_proposal or '--'}", color=theme.text_color, size=12),
                 ft.Text(verdict, color=verdict_color, weight=ft.FontWeight.BOLD, size=32),
                 ft.Text(lock_text, color=theme.primary_color if consensus_locked else theme.secondary_color, size=11, font_family=theme.font_family),
+                ft.Row(
+                    [
+                        ft.Text("CONVERGENCE", color=theme.primary_color, width=140, size=11, weight=ft.FontWeight.BOLD),
+                        ft.Text(convergence_bar_text(convergence), color=theme.accent_color, font_family=theme.font_family, size=11),
+                    ],
+                    spacing=8,
+                ),
                 ft.Row(
                     [
                         ft.Text(f"CONFIDENCE: {confidence}", color=theme.text_color, width=140),
@@ -102,6 +118,8 @@ def build_verdict_panel(
                 votes,
                 ft.Text("ARBITER SYNTHESIS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
                 ft.Text(reason, color=theme.text_color, selectable=True),
+                ft.Text("REASONING STATE", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
+                build_reasoning_stream(theme, reasoning_stream),
                 ft.Text(f"Context used: {prior_decisions_used} prior decisions", color=theme.secondary_text or theme.secondary_color, size=11),
                 ft.Text(context_summary or "No retrieved context.", color=theme.muted_text or theme.secondary_color, size=10, selectable=True),
             ],

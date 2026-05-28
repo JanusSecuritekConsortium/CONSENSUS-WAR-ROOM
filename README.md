@@ -113,6 +113,12 @@ verdict export paths. Export a combined proposal/verdict dossier:
 python tools\export_dossier.py <proposal_id>
 ```
 
+During live GUI tribunal runs the Arbiter Verdict panel exposes the active
+processing lifecycle: classification, dispatch, analysis, deliberation,
+synthesis, terminal verdict state, and export-ready status. The GUI also shows a
+bounded status-only reasoning stream and convergence meter; these are operator
+state signals, not hidden chain-of-thought.
+
 ## Simulation Layer
 
 The simulation layer is deterministic scaffolding for future geopolitical,
