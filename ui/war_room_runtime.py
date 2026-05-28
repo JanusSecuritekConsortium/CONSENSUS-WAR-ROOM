@@ -206,19 +206,27 @@ def lifecycle_hook_names() -> tuple[str, ...]:
 
 
 def lifecycle_banner_label(lifecycle_state: str, consensus_locked: bool = False) -> str:
-    if consensus_locked:
-        return "[CONSENSUS LOCKED]"
     normalized = lifecycle_state.upper()
-    if "PROPOSAL" in normalized:
-        return "[PROPOSAL RECEIVED]"
+    if consensus_locked and normalized == "EXPORT_READY":
+        return "[CONSENSUS LOCKED]"
+    if "CLASSIFYING" in normalized:
+        return "[CLASSIFYING PROPOSAL]"
+    if "DISPATCHING" in normalized:
+        return "[DISPATCHING MONOLITHS]"
+    if "ANALYZING" in normalized:
+        return "[MONOLITH ANALYSIS]"
     if "DELIBERATING" in normalized:
         return "[MONOLITH DELIBERATION]"
     if "SYNTHESIZING" in normalized:
         return "[CONSENSUS SYNCHRONIZING]"
-    if "VERDICT" in normalized:
+    if "CONSENSUS_REACHED" in normalized:
         return "[CONSENSUS LOCKED]"
-    if "ERROR" in normalized:
-        return "[ERROR / DEGRADED]"
+    if "NO_CONSENSUS" in normalized:
+        return "[NO CONSENSUS]"
+    if "ESCALATION_REQUIRED" in normalized:
+        return "[ESCALATION REQUIRED]"
+    if "EXPORT_READY" in normalized:
+        return "[EXPORT READY]"
     return "[IDLE]"
 
 

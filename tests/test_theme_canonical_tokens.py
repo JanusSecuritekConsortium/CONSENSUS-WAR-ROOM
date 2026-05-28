@@ -33,10 +33,10 @@ def test_wh40k_and_helldivers_headers_are_full_identity_banners() -> None:
 
     for token in ("SUPER EARTH COMMAND", "MANAGED DEMOCRACY ONLINE", "LIBERTY WINGS"):
         assert token in helldivers.text
-    for token in ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"):
+    for token in ("@@@@@@@@", "@@@@@@@#", "#@@"):
         assert token in wh40k.text
-    assert 8 <= wh40k.height <= 12
-    assert wh40k.width >= 48
+    assert 50 <= wh40k.height <= 56
+    assert wh40k.width >= 80
     assert 8 <= helldivers.height <= 12
     assert helldivers.width >= 50
 

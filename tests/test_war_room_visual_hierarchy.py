@@ -30,7 +30,11 @@ def test_verdict_panel_has_stronger_visual_weight_than_proposal() -> None:
     assert verdict.border.top.width == 2
     assert proposal.border.top.width == 1
     assert _padding_total(verdict.padding) > _padding_total(proposal.padding)
-    verdict_text = verdict.content.controls[4]
+    verdict_text = next(
+        control
+        for control in verdict.content.controls
+        if getattr(control, "value", "").startswith("AWAITING PROPOSAL")
+    )
     assert verdict_text.size >= 32
 
 

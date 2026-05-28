@@ -10,7 +10,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.runtime import RuntimeConfig
-from ui.components.header import COMPACT_LOGO_MAX_LINES, GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box
+from ui.assets.registry import THEME_GRAPHIC_ASSETS
+from ui.components.header import GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box
 from ui.flet_app import _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -42,7 +43,7 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     assert header.height == GUI_HEADER_HEIGHT
     assert logo_text == compact_logo_text(state.theme)
     assert logo_text != state.theme.logo.rstrip("\n")
-    assert len(logo_text.splitlines()) <= COMPACT_LOGO_MAX_LINES
+    assert len(logo_text.splitlines()) <= THEME_GRAPHIC_ASSETS[state.theme_key].expected_max_lines
     telemetry_labels = [row.controls[0].value for row in header.content.controls[1].content.controls[1:7]]
     assert "ACTIVE MODE" in telemetry_labels
     assert "SESSION" in telemetry_labels

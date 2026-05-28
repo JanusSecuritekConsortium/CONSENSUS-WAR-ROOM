@@ -1,5 +1,15 @@
 # Changelog
 
+## 7.11.5 - Active Tribunal Flow
+
+- Added explicit tribunal processing phases from `IDLE` through classification, dispatch, analysis, deliberation, synthesis, terminal outcome, and export-ready state.
+- Added bounded tribunal phase events, phase duration tracking, convergence percentage, and status-only reasoning stream metadata to runtime logs, decision traces, runtime snapshots, and GUI state.
+- Expanded the Arbiter Verdict panel with a phase timeline, convergence meter, and compact active reasoning-state stream without exposing hidden reasoning.
+- Restored the WH40K header to the v7.10.13 gothic ASCII asset and made it fit through WH40K-only header metadata rather than global layout changes.
+- Replaced the EVA/MAGI GUI header with a blocky rectangular MAGI cube-style ASCII asset and tightened Super Earth ASCII header symmetry while preserving all theme colors.
+- Preserved telemetry no-scroll behavior, WAR ROOM 2:6:2 structure, canonical ASCII rendering, Msty local defaults, and screenshot-loop constraints.
+- Added regression coverage for tribunal lifecycle ordering, convergence visualization, bounded reasoning stream history, lifecycle runtime snapshots, WH40K full visibility, and updated header identity contracts.
+
 ## 7.11.4 - WAR ROOM Layout Correction
 
 - Rebalanced GUI header metadata and replaced the WH40K, HELLDIVERS, and EVA compact ASCII headers with fit-safe tactical text assets that remain fully visible in the fixed WAR ROOM header.

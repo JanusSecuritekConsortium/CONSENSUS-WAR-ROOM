@@ -46,6 +46,16 @@ from core.proposals.templates import get_template, list_templates, render_templa
 from core.simulation.store import create_stored_scenario, get_simulation_status, list_recent_scenarios
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
+from core.tribunal_events import (
+    TRIBUNAL_PHASES,
+    append_bounded_event,
+    append_reasoning_event,
+    build_phase_event,
+    convergence_percent,
+    monolith_activity_phrase,
+    phase_for_verdict,
+    theme_reasoning_phrase,
+)
 from core.voting.engine import ConsensusEngine
 from core.voting.parser import parse_vote
 from core.voting.rules import ConsensusRules
@@ -89,21 +99,18 @@ GUI_INTERACTION_HOLD_SECONDS = 12.0
 GUI_WINDOW_MODES = ("maximized", "fullscreen", "windowed")
 GuiWindowMode = Literal["maximized", "fullscreen", "windowed"]
 LIFECYCLE_IDLE = "IDLE"
-LIFECYCLE_PROPOSAL_RECEIVED = "PROPOSAL RECEIVED"
-LIFECYCLE_DELIBERATING = "MONOLITHS DELIBERATING"
-LIFECYCLE_VOTES_RECEIVED = "VOTES RECEIVED"
-LIFECYCLE_SYNTHESIZING = "ARBITER SYNTHESIZING"
-LIFECYCLE_VERDICT_ISSUED = "VERDICT ISSUED"
-LIFECYCLE_ERROR_DEGRADED = "ERROR / DEGRADED"
-LIFECYCLE_STATES = (
-    LIFECYCLE_IDLE,
-    LIFECYCLE_PROPOSAL_RECEIVED,
-    LIFECYCLE_DELIBERATING,
-    LIFECYCLE_VOTES_RECEIVED,
-    LIFECYCLE_SYNTHESIZING,
-    LIFECYCLE_VERDICT_ISSUED,
-    LIFECYCLE_ERROR_DEGRADED,
-)
+LIFECYCLE_PROPOSAL_RECEIVED = "CLASSIFYING"
+LIFECYCLE_DISPATCHING = "DISPATCHING"
+LIFECYCLE_ANALYZING = "ANALYZING"
+LIFECYCLE_DELIBERATING = "DELIBERATING"
+LIFECYCLE_VOTES_RECEIVED = "DELIBERATING"
+LIFECYCLE_SYNTHESIZING = "SYNTHESIZING"
+LIFECYCLE_CONSENSUS_REACHED = "CONSENSUS_REACHED"
+LIFECYCLE_NO_CONSENSUS = "NO_CONSENSUS"
+LIFECYCLE_ESCALATION_REQUIRED = "ESCALATION_REQUIRED"
+LIFECYCLE_VERDICT_ISSUED = "EXPORT_READY"
+LIFECYCLE_ERROR_DEGRADED = "ESCALATION_REQUIRED"
+LIFECYCLE_STATES = TRIBUNAL_PHASES
 VOTE_STATUS_VALUES = {value.value for value in VoteValue}
 GuiUpdateCallback = Callable[[], None]
 HEARTBEAT_MESSAGES = (
@@ -165,6 +172,11 @@ class GuiState:
     cursor_visible: bool = True
     consensus_locked: bool = False
     timeline_events: List[str] = field(default_factory=list)
+    lifecycle_events: List[Dict[str, object]] = field(default_factory=list)
+    lifecycle_phase_started_at: float = 0.0
+    phase_durations: Dict[str, float] = field(default_factory=dict)
+    reasoning_stream: List[str] = field(default_factory=list)
+    convergence_percent: float = 0.0
     monolith_activity_states: Dict[str, str] = field(default_factory=default_activity_states)
     monolith_latencies_ms: Dict[str, int] = field(default_factory=default_latencies)
     proposal_file_mtime: float | None = None
@@ -276,6 +288,13 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
         "latest_dossier_export": latest_dossier_export_status(),
         "simulation_status": get_simulation_status(),
+        "tribunal_lifecycle": {
+            "current_phase": state.lifecycle_state,
+            "event_count": len(state.lifecycle_events),
+            "phase_durations": dict(state.phase_durations),
+            "convergence_percent": state.convergence_percent,
+            "reasoning_stream_size": len(state.reasoning_stream),
+        },
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
@@ -411,9 +430,34 @@ def _vote_detail(vote: Vote) -> Dict[str, object]:
 
 
 def _set_lifecycle(state: GuiState, lifecycle_state: str, on_update: GuiUpdateCallback | None = None) -> None:
+    previous = state.lifecycle_state
+    previous_started = state.lifecycle_phase_started_at
+    event = build_phase_event(lifecycle_state, previous_phase=previous, previous_started_at=previous_started)
+    if previous and event.previous_duration_seconds:
+        state.phase_durations[previous] = state.phase_durations.get(previous, 0.0) + event.previous_duration_seconds
     state.lifecycle_state = lifecycle_state
+    state.lifecycle_phase_started_at = float(event.started_at)
+    append_bounded_event(state.lifecycle_events, event)
+    append_reasoning_event(state.reasoning_stream, theme_reasoning_phrase(state.theme_key, lifecycle_state))
     append_timeline(state.timeline_events, "LIFECYCLE", lifecycle_state.lower())
-    log_war_room_runtime("proposal_lifecycle", {"state": lifecycle_state, "theme": state.theme_key})
+    log_war_room_runtime(
+        "tribunal_phase_transition",
+        {
+            "state": lifecycle_state,
+            "previous_state": previous,
+            "previous_duration_seconds": event.previous_duration_seconds,
+            "theme": state.theme_key,
+        },
+    )
+    log_event(
+        "tribunal_phase_transition",
+        {
+            "state": lifecycle_state,
+            "previous_state": previous,
+            "previous_duration_seconds": event.previous_duration_seconds,
+            "theme": state.theme_key,
+        },
+    )
     _notify(on_update)
 
 
@@ -451,6 +495,11 @@ def submit_proposal_live_for_gui(
     state.displayed_confidence = 0.0
     state.provider_warning = ""
     state.consensus_locked = False
+    state.lifecycle_events = []
+    state.lifecycle_phase_started_at = 0.0
+    state.phase_durations = {}
+    state.reasoning_stream = []
+    state.convergence_percent = 0.0
     for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
         state.monolith_activity_states[agent_id] = "IDLE"
     _set_lifecycle(state, LIFECYCLE_PROPOSAL_RECEIVED, on_update)
@@ -493,6 +542,7 @@ def submit_proposal_live_for_gui(
     session_id = uuid.uuid4().hex[:12]
     started = time.perf_counter()
     memory_context = build_context_packet(clean_proposal)
+    _set_lifecycle(state, LIFECYCLE_DISPATCHING, on_update)
     state.prior_decisions_used = int(memory_context.get("prior_decisions_used", 0) or 0)
     state.context_retrieval_status = context_status(memory_context)
     state.context_summary = str(memory_context.get("summary", "No prior decisions retrieved."))
@@ -510,7 +560,7 @@ def submit_proposal_live_for_gui(
             state.timeline_events,
             "loaded vote package",
         )
-    _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
+    _set_lifecycle(state, LIFECYCLE_ANALYZING, on_update)
     log_event(
         "proposal",
         {"session_id": session_id, "theme": state.theme_key, "sequential": state.config.sequential, "query": clean_proposal},
@@ -524,7 +574,7 @@ def submit_proposal_live_for_gui(
                 agent_id,
                 "ANALYZING",
                 state.timeline_events,
-                "analyzing proposal context",
+                monolith_activity_phrase(agent_id, len(votes)),
             )
             _notify(on_update)
             node = state.nodes[agent_id]
@@ -570,6 +620,11 @@ def submit_proposal_live_for_gui(
                     response_time=elapsed,
                 )
             votes[agent_id] = vote
+            state.convergence_percent = convergence_percent(votes)
+            append_reasoning_event(
+                state.reasoning_stream,
+                f"{agent_id} vote registered; convergence {state.convergence_percent:.0%}",
+            )
             state.monolith_statuses[agent_id] = vote.vote.value
             state.monolith_vote_details[agent_id] = _vote_detail(vote)
             state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
@@ -598,7 +653,7 @@ def submit_proposal_live_for_gui(
             state.logs = read_recent_log_events()
             _notify(on_update)
 
-        _set_lifecycle(state, LIFECYCLE_VOTES_RECEIVED, on_update)
+        _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
         state.monolith_statuses[ARBITER] = "THINKING"
         transition_state(
             state.monolith_activity_states,
@@ -609,6 +664,8 @@ def submit_proposal_live_for_gui(
         )
         _set_lifecycle(state, LIFECYCLE_SYNTHESIZING, on_update)
         result = ConsensusEngine(rules, state.theme_key).calculate_result(clean_proposal, votes, session_id)
+        terminal_phase = phase_for_verdict(result.verdict, result.terminal_branch, result.review_triggers)
+        _set_lifecycle(state, terminal_phase, on_update)
         state.current_result = result
         state.monolith_statuses[ARBITER] = result.verdict.value
         _animate_confidence(
@@ -633,6 +690,10 @@ def submit_proposal_live_for_gui(
         state.consensus_locked = True
         state.monolith_activity_states[ARBITER] = "IDLE"
         append_timeline(state.timeline_events, ARBITER, "consensus locked")
+        setattr(result, "lifecycle_events", list(state.lifecycle_events))
+        setattr(result, "phase_durations", dict(state.phase_durations))
+        setattr(result, "reasoning_stream", list(state.reasoning_stream))
+        setattr(result, "convergence_percent", state.convergence_percent)
         record_result(result)
         log_decision_trace(result)
         try:
@@ -745,7 +806,7 @@ def submit_proposal_live_for_gui(
         log_event("gui_verdict_update", {"session_id": result.session_id, "verdict": result.verdict.value})
         return result
     except Exception:
-        state.lifecycle_state = LIFECYCLE_ERROR_DEGRADED
+        _set_lifecycle(state, LIFECYCLE_ERROR_DEGRADED, None)
         for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
             state.monolith_activity_states[agent_id] = "ERROR"
         append_timeline(state.timeline_events, "ERROR", "proposal lifecycle degraded")
@@ -1539,6 +1600,10 @@ def build_gui_layout(
                         context_summary=state.context_summary,
                         cursor_visible=state.cursor_visible,
                         consensus_locked=state.consensus_locked,
+                        lifecycle_events=state.lifecycle_events,
+                        reasoning_events=state.reasoning_stream,
+                        convergence_percent=state.convergence_percent,
+                        phase_durations=state.phase_durations,
                     ),
                     expand=6,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,

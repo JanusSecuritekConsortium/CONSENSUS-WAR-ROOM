@@ -30,8 +30,9 @@ def test_wh40k_rendered_logo_box_contains_full_asset() -> None:
     logo_text = logo_text_control_from_box(logo_box).value
 
     assert logo_text == read_normalized_logo(THEME_GRAPHIC_ASSETS["wh40k"].logo_path).text
-    assert "MACHINE SPIRIT ONLINE" in logo_text
-    assert "OMNISSIAH COGITATOR TRIBUNAL" in logo_text
+    assert "@@@@@@@@" in logo_text
+    assert "@@@@@@@#" in logo_text
+    assert "#@@" in logo_text
     assert logo_box.content.scroll is None
 
 
