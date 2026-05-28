@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.11.12 - Telemetry Relocation and Diagnostics Freeze Fix
+
+- Moved live telemetry into the top-right header system area with compact theme-specific summary lines and widened text graphs.
+- Converted the lower-right telemetry slot into the health/system diagnostics summary area while preserving provider, active model, memory, context, and lifecycle visibility.
+- Made diagnostics drawer toggling use cached GUI snapshot state and avoid fresh runtime snapshot work on the UI thread.
+- Added overlay replacement/reentrant regression coverage so repeated diagnostics opens do not stack drawers or freeze the interface.
+
 ## 7.11.11 - WAR ROOM Layout Consistency Refinement
 
 - Tightened WH40K, EVA/NERV, HELLDIVERS, and ARASAKA header logo containers through theme metadata without changing ASCII assets or color palettes.

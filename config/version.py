@@ -1,4 +1,4 @@
 from __future__ import annotations
 
 
-SYSTEM_VERSION = "7.11.11"
+SYSTEM_VERSION = "7.11.12"
