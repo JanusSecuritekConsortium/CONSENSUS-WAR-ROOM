@@ -15,12 +15,14 @@ def test_helldivers_logo_is_sparse_readable_ascii_emblem() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["helldivers"].logo_path)
     text = logo.text
 
-    assert "SUPER EARTH COMMAND" in text
-    assert "MANAGED DEMOCRACY ONLINE" in text
-    assert "LIBERTY WINGS" in text
+    assert "###########################" in text
+    assert "####     ########    ####" in text
+    assert "#############" in text
     assert "@@@@" not in text
-    assert 8 <= logo.height <= 12
-    assert logo.width <= 70
+    assert "O O" not in text
+    assert "MANAGED DEMOCRACY ONLINE" not in text
+    assert logo.height == 19
+    assert logo.width <= 88
 
 
 if __name__ == "__main__":

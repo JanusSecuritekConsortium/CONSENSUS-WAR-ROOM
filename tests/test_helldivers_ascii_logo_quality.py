@@ -14,11 +14,11 @@ from ui.assets.registry import THEME_GRAPHIC_ASSETS
 def test_helldivers_ascii_is_flat_winged_command_mark() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["helldivers"].logo_path)
 
-    assert "______" in logo.text
-    assert "======" in logo.text
-    assert "SUPER EARTH COMMAND" in logo.text
-    assert "MANAGED DEMOCRACY ONLINE" in logo.text
-    assert 8 <= logo.height <= 12
+    assert "###########################  #######################  ############################" in logo.text
+    assert "####     ########    ####" in logo.text
+    assert "O O" not in logo.text
+    assert "LIBERTY WINGS" not in logo.text
+    assert logo.height == 19
 
 
 if __name__ == "__main__":

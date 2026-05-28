@@ -16,7 +16,9 @@ def test_helldivers_logo_is_not_dense_at_block() -> None:
 
     assert "@" not in logo.text
     assert max(line.count("=") for line in logo.lines) <= 24
-    assert logo.width <= 70
+    assert "O O" not in logo.text
+    assert "MANAGED DEMOCRACY ONLINE" not in logo.text
+    assert logo.width <= 88
 
 
 if __name__ == "__main__":

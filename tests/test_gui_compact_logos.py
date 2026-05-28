@@ -25,18 +25,20 @@ def test_supplied_gui_compact_logo_assets_exist() -> None:
 def test_supplied_gui_compact_logos_are_selected() -> None:
     for theme_key in DEDICATED_THEME_KEYS:
         theme = THEMES[theme_key]
-        expected = read_normalized_logo(GUI_COMPACT_LOGO_FILES[theme_key]).text
+        if theme_key in {"eva", "nerv", "helldivers"}:
+            expected = GUI_COMPACT_LOGO_FILES[theme_key].read_bytes().decode("utf-8")
+        else:
+            expected = read_normalized_logo(GUI_COMPACT_LOGO_FILES[theme_key]).text
 
         assert has_dedicated_gui_compact_logo(theme)
         assert compact_logo_text(theme) == expected
 
 
 def test_new_compact_logo_identity_text_is_present() -> None:
-    assert "NERV GEOMETRIC MAGI MARK" in compact_logo_text(THEMES["eva"])
+    assert "###########################" in compact_logo_text(THEMES["eva"])
     assert "@@@@@@@@" in compact_logo_text(THEMES["wh40k"])
     assert "@@@@@@@#" in compact_logo_text(THEMES["wh40k"])
-    assert "SUPER EARTH COMMAND" in compact_logo_text(THEMES["helldivers"])
-    assert "MANAGED DEMOCRACY ONLINE" in compact_logo_text(THEMES["helldivers"])
+    assert "####     ########    ####" in compact_logo_text(THEMES["helldivers"])
 
 
 if __name__ == "__main__":

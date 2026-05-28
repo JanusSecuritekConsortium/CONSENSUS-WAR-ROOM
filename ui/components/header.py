@@ -16,6 +16,10 @@ LOGO_FONT_SIZE = 12
 GUI_COMPACT_LOGO_FILES = {key: asset.logo_path for key, asset in THEME_GRAPHIC_ASSETS.items()}
 
 
+def _read_logo_text_preserved(path) -> str:
+    return path.read_bytes().decode("utf-8")
+
+
 def _logo_width(logo: str) -> int:
     longest = max((len(line) for line in logo.splitlines()), default=64)
     return max(360, min(GUI_LOGO_BOX_MAX_WIDTH, int(longest * 7.5) + 32))
@@ -71,7 +75,7 @@ def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
         logo,
         font_family=LOGO_FONT_FAMILY,
         color=theme.primary_color,
-        selectable=True,
+        selectable=False,
         no_wrap=True,
         overflow=ft.TextOverflow.VISIBLE,
         style=ft.TextStyle(
@@ -126,6 +130,8 @@ def compact_logo_text(theme: Theme, max_lines: int = COMPACT_LOGO_MAX_LINES) -> 
     except KeyError:
         dedicated = GUI_COMPACT_LOGO_FILES.get(theme.key)
     if dedicated and dedicated.exists():
+        if theme.key in {"eva", "nerv", "helldivers"}:
+            return _read_logo_text_preserved(dedicated)
         return read_normalized_logo(dedicated).text
     lines = theme.logo.rstrip("\n").splitlines()
     first_visible = next((index for index, line in enumerate(lines) if line.strip()), 0)

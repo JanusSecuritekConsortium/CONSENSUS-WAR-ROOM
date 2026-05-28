@@ -14,19 +14,20 @@ from ui.assets.registry import THEME_GRAPHIC_ASSETS
 def test_eva_header_is_nerv_reference_derived_ascii() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["eva"].logo_path)
 
-    assert "NERV GEOMETRIC MAGI MARK" in logo.text
-    assert "#" in logo.text
-    assert logo.width <= 55
-    assert logo.height == 18
+    assert "###########################" in logo.text
+    assert "NERV GEOMETRIC MAGI MARK" not in logo.text
+    assert "CASPER" not in logo.text
+    assert logo.width <= 88
+    assert logo.height == 56
 
 
 def test_helldivers_header_is_skull_wings_reference_ascii() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["helldivers"].logo_path)
 
-    assert "/========/" in logo.text
-    assert "O O" in logo.text
-    assert "SUPER EARTH COMMAND" in logo.text
-    assert logo.width <= 70
+    assert "####     ########    ####" in logo.text
+    assert "O O" not in logo.text
+    assert "MANAGED DEMOCRACY ONLINE" not in logo.text
+    assert logo.width <= 88
 
 
 def test_wh40k_header_box_is_tighter_than_previous_wide_box() -> None:

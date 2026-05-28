@@ -16,7 +16,7 @@ def test_eva_logo_has_rectangular_render_footprint() -> None:
     widths = {len(line) for line in logo.lines}
 
     assert len(widths) == 1
-    assert 40 <= logo.width <= 55
+    assert 80 <= logo.width <= 88
 
 
 if __name__ == "__main__":

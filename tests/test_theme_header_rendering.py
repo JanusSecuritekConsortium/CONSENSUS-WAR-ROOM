@@ -36,7 +36,7 @@ def test_theme_headers_render_canonical_assets_without_wrapping() -> None:
         assert logo_control.style.height == 1.0
         assert logo_control.style.letter_spacing == 0
         assert logo_control._Control__attrs["nowrap"][0] is True
-        assert logo_control.selectable is True
+        assert logo_control.selectable is False
         assert logo_box.content.scroll is not None or header_logo_layout(state.theme).logo_box_scroll_enabled is False
 
 
