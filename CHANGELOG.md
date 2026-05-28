@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.11.10 - Editable Install Packaging Fix
+
+- Added explicit setuptools package discovery for active Python packages so `python -m pip install -e .` no longer treats archive, reports, static assets, or future implementation roots as installable packages.
+- Preserved `psutil`, `requests`, `flet`, and `flet-desktop` runtime dependencies from the v7.11.9 GUI launch fix, with Flet constrained to the supported `0.28.x` desktop API line.
+- Declared Pillow for the existing theme gallery/logo verification path so venv-based release verification does not depend on globally installed packages.
+- Added regression coverage for editable-install package discovery metadata.
+
 ## 7.11.9 - Flet Desktop Runtime Dependency Fix
 
 - Declared `flet`, `flet-desktop`, and `requests` as runtime dependencies so editable installs provision the desktop GUI runtime instead of relying on Flet auto-install behavior.
