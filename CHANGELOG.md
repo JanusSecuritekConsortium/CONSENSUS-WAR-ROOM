@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.11.7 - AURELIUS Msty Provider Migration
+
+- Removed AURELIUS Telegram bot dependency on direct Ollama endpoints and moved provider resolution to a central Msty-only resolver.
+- Added environment-driven AURELIUS Msty endpoint configuration with fallback disabled by default and clear degraded messaging when the endpoint is not configured.
+- Updated scheduled Morning Brief and End-of-Day Shutdown jobs to log provider configuration failures once and avoid repeated Telegram error spam.
+- Updated active AURELIUS config defaults to Msty and removed active port 11434 endpoint configuration from the Telegram/CONSENSUS workflow.
+
 ## 7.11.6 - WAR ROOM UI Correction
 
 - Tightened the Arbiter Verdict panel with fixed padding, fixed section spacing, bounded timeline/vector/reasoning regions, synthesis line limits, and hard clipping to prevent overlap or floating controls.
