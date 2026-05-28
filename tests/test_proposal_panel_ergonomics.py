@@ -24,6 +24,23 @@ def test_proposal_input_has_hint_shortcut_and_focus_color() -> None:
     assert input_control.cursor_color == THEMES["arasaka"].accent_color
 
 
+def test_arasaka_template_dropdown_uses_high_contrast_options() -> None:
+    panel = build_proposal_panel(
+        THEMES["arasaka"],
+        lambda _proposal: None,
+        templates=[{"id": "general_tribunal_query", "title": "General Tribunal Query"}],
+    )
+    dropdown = panel.content.controls[1]
+
+    assert dropdown.data["contrast"] == "arasaka_dark_red"
+    assert dropdown.data["selected_state_color"] == "#260407"
+    assert dropdown.bgcolor == "#070707"
+    assert dropdown.fill_color == "#0f0f0f"
+    assert dropdown.focused_border_color == THEMES["arasaka"].accent_color
+    assert dropdown.options[0].content.color == THEMES["arasaka"].text_color
+
+
 if __name__ == "__main__":
     test_proposal_input_has_hint_shortcut_and_focus_color()
+    test_arasaka_template_dropdown_uses_high_contrast_options()
     print("test_proposal_panel_ergonomics PASS")

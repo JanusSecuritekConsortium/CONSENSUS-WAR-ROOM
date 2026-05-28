@@ -21,6 +21,12 @@ def build_proposal_panel(
     on_change: Callable[[str], None] | None = None,
 ) -> ft.Control:
     template_options = list(templates or [])
+    is_arasaka = theme.key == "arasaka"
+    dropdown_bg = "#070707" if is_arasaka else theme.background_color
+    dropdown_fill = "#0f0f0f" if is_arasaka else theme.background_color
+    dropdown_focus = "#260407" if is_arasaka else theme.surface_color
+    dropdown_text = theme.text_color
+    dropdown_label = theme.panel_label or theme.secondary_color
 
     def handle_template_change(event: ft.ControlEvent) -> None:
         if on_template_select is not None:
@@ -62,16 +68,36 @@ def build_proposal_panel(
                 label="Proposal Template",
                 value=selected_template_id or None,
                 options=[
-                    ft.dropdown.Option(str(item["id"]), str(item["title"]))
+                    ft.dropdown.Option(
+                        str(item["id"]),
+                        str(item["title"]),
+                        content=ft.Text(
+                            str(item["title"]),
+                            color=dropdown_text,
+                            bgcolor=dropdown_bg,
+                            font_family=theme.font_family,
+                            size=11,
+                        ),
+                        text_style=ft.TextStyle(color=dropdown_text, font_family=theme.font_family, size=11),
+                    )
                     for item in template_options
                 ],
                 on_change=handle_template_change if on_template_select is not None else None,
                 border_color=theme.secondary_color,
                 focused_border_color=theme.accent_color,
-                color=theme.text_color,
-                bgcolor=theme.background_color,
-                text_style=ft.TextStyle(font_family=theme.font_family, size=11),
-                label_style=ft.TextStyle(color=theme.secondary_color, font_family=theme.font_family, size=10),
+                color=dropdown_text,
+                focused_color=dropdown_text,
+                bgcolor=dropdown_bg,
+                fill_color=dropdown_fill,
+                focused_bgcolor=dropdown_focus,
+                hover_color=dropdown_focus,
+                text_style=ft.TextStyle(color=dropdown_text, font_family=theme.font_family, size=11),
+                label_style=ft.TextStyle(color=dropdown_label, font_family=theme.font_family, size=10),
+                data={
+                    "role": "proposal_template_dropdown",
+                    "contrast": "arasaka_dark_red" if is_arasaka else "theme_default",
+                    "selected_state_color": dropdown_focus if is_arasaka else theme.surface_color,
+                },
             )
         )
     controls.extend(

@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config.names import TRIBUNAL_AGENT_IDS
+from config.names import AETERNUM, BELLATOR, RATIONALIS, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES
 from ui.components.monolith_panel import build_monolith_panel
 from ui.themes.catalog import THEMES
@@ -32,6 +32,15 @@ def test_monolith_cards_use_theme_specific_primary_titles() -> None:
             assert controls[0].size > controls[1].size
 
 
+def test_global_monolith_display_order_is_bellator_aeternum_rationalis() -> None:
+    assert TRIBUNAL_AGENT_IDS == (BELLATOR, AETERNUM, RATIONALIS)
+
+    panel = build_monolith_panel(THEMES["military"], DEFAULT_NODES, {key: "ONLINE" for key in TRIBUNAL_AGENT_IDS})
+    displayed_ids = [_card_texts(panel, index)[1].value for index in range(3)]
+
+    assert displayed_ids == [BELLATOR, AETERNUM, RATIONALIS]
+
+
 def test_arbiter_falls_back_to_canonical_control_core() -> None:
     panel = build_monolith_panel(THEMES["eva"], DEFAULT_NODES, {"ARBITER": "DEGRADED"})
     controls = _card_texts(panel, 3)
@@ -43,5 +52,6 @@ def test_arbiter_falls_back_to_canonical_control_core() -> None:
 
 if __name__ == "__main__":
     test_monolith_cards_use_theme_specific_primary_titles()
+    test_global_monolith_display_order_is_bellator_aeternum_rationalis()
     test_arbiter_falls_back_to_canonical_control_core()
     print("test_gui_monolith_naming PASS")

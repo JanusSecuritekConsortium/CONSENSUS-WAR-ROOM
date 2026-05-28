@@ -36,8 +36,12 @@ def test_active_monolith_card_has_stronger_border() -> None:
         {"RATIONALIS": "THINKING", "AETERNUM": "ONLINE", "BELLATOR": "ONLINE", "ARBITER": "ONLINE"},
         runtime_details=runtime_details,
     )
-    rationalis_card = panel.controls[1]
-    aeternum_card = panel.controls[2]
+    cards_by_id = {
+        card.content.controls[0].controls[1].value: card
+        for card in panel.controls[1:4]
+    }
+    rationalis_card = cards_by_id["RATIONALIS"]
+    aeternum_card = cards_by_id["AETERNUM"]
 
     assert rationalis_card.border.top.width == 2
     assert aeternum_card.border.top.width == 1

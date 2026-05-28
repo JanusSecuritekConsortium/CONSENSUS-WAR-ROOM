@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.11.11 - WAR ROOM Layout Consistency Refinement
+
+- Tightened WH40K, EVA/NERV, HELLDIVERS, and ARASAKA header logo containers through theme metadata without changing ASCII assets or color palettes.
+- Expanded right-column telemetry presentation by stretching the panel across available width and widening theme-specific text graphs.
+- Removed the Helldivers header `SESSION` status row for consistency with the other system status presentations.
+- Improved ARASAKA proposal template dropdown contrast with black/red option styling while preserving the existing proposal title and theme palette.
+- Reordered displayed and registered tribunal monoliths to `BELLATOR`, `AETERNUM`, `RATIONALIS`, then `ARBITER`, and enforced an explicit console boot gap after the ARASAKA logo.
+
 ## 7.11.10 - Editable Install Packaging Fix
 
 - Added explicit setuptools package discovery for active Python packages so `python -m pip install -e .` no longer treats archive, reports, static assets, or future implementation roots as installable packages.
