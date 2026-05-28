@@ -27,12 +27,12 @@ def _walk(control) -> Iterable[object]:
         yield from _walk(child)
 
 
-def test_gui_footer_exposes_aurelius_voice_loop_toggle() -> None:
+def test_gui_footer_does_not_expose_aurelius_voice_loop_toggle() -> None:
     state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"))
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop, toggle_aurelius_voice=_noop)
     switches = [control for control in _walk(layout) if isinstance(control, ft.Switch)]
     labels = [switch.label for switch in switches]
-    assert "AURELIUS Voice Loop" in labels
+    assert "AURELIUS Voice Loop" not in labels
 
 
 def test_gui_aurelius_toggle_updates_runtime_state() -> None:
@@ -47,6 +47,6 @@ def test_gui_aurelius_toggle_updates_runtime_state() -> None:
 
 
 if __name__ == "__main__":
-    test_gui_footer_exposes_aurelius_voice_loop_toggle()
+    test_gui_footer_does_not_expose_aurelius_voice_loop_toggle()
     test_gui_aurelius_toggle_updates_runtime_state()
     print("test_gui_aurelius_toggle PASS")

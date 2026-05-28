@@ -1523,21 +1523,17 @@ def build_gui_layout(
             ft.Container(
                 content=ft.Row(
                     [
-                        ft.Switch(
-                            label="AURELIUS Voice Loop",
-                            value=state.aurelius_voice_loop_enabled,
-                            on_change=toggle_aurelius_voice,
-                            active_color=theme.accent_color,
-                        ),
                         terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
                     ],
                     alignment=ft.MainAxisAlignment.END,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    spacing=6,
+                    spacing=0,
                     tight=True,
                 ),
                 width=230,
                 alignment=ft.alignment.center_right,
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                data={"role": "footer_aux_controls"},
             ),
         ],
         wrap=False,

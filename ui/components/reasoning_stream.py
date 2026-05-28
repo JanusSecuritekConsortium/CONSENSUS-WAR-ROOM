@@ -47,7 +47,7 @@ def build_phase_timeline(theme: Theme, current_phase: str, lifecycle_events: Ite
                 weight=ft.FontWeight.BOLD if active else None,
             )
         )
-    return ft.Row(controls, spacing=8, wrap=True)
+    return ft.Row(controls, spacing=8, wrap=False, scroll=None)
 
 
 def build_reasoning_stream(theme: Theme, events: Iterable[str], max_lines: int = 5) -> ft.Control:
