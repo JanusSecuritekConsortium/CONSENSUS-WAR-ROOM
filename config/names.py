@@ -11,16 +11,16 @@ AURELIUS = "AURELIUS"
 
 CANONICAL_AGENT_IDS: Tuple[str, ...] = (
     ARBITER,
-    RATIONALIS,
-    AETERNUM,
     BELLATOR,
+    AETERNUM,
+    RATIONALIS,
     AURELIUS,
 )
 
 TRIBUNAL_AGENT_IDS: Tuple[str, ...] = (
-    RATIONALIS,
-    AETERNUM,
     BELLATOR,
+    AETERNUM,
+    RATIONALIS,
 )
 
 LEGACY_ROLE_TO_AGENT_ID: Dict[str, str] = {
@@ -28,4 +28,3 @@ LEGACY_ROLE_TO_AGENT_ID: Dict[str, str] = {
     "FINANCE": AETERNUM,
     "SECURITY": BELLATOR,
 }
-

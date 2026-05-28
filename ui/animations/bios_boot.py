@@ -488,6 +488,7 @@ def render_bios_boot_console(
     )
 
     _print_logo_with_cursor(logo, theme_id, delay)
+    _print_with_cursor("", delay)
     _render_lines(header_and_checks, delay)
     _render_runtime_diagnostics(theme_id, delay, rng)
     _print_with_cursor("", delay)

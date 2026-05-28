@@ -71,6 +71,7 @@ TELEMETRY_STYLE_NAMES = {
     "arasaka": "ASSET UTILIZATION BARS",
     "janus": "DUAL-FRONT MIRROR BARS",
 }
+TELEMETRY_GRAPH_WIDTH = 30
 
 
 def telemetry_labels(theme_key: str) -> Dict[str, str]:
@@ -121,11 +122,44 @@ def telemetry_graph_lines(theme_key: str, telemetry: Dict[str, Any] | None) -> l
     history = telemetry.get("history", {}) if isinstance(telemetry, dict) else {}
     if not isinstance(history, dict):
         history = {}
+    cpu_graph = themed_telemetry_graph(theme_key, history.get("cpu", []), TELEMETRY_GRAPH_WIDTH)
+    gpu_graph = themed_telemetry_graph(theme_key, history.get("gpu", []), TELEMETRY_GRAPH_WIDTH)
     return [
         f"{TELEMETRY_STYLE_NAMES.get(theme_key, TELEMETRY_STYLE_NAMES['military'])}",
-        f"{labels['cpu']} {sparkline(history.get('cpu', []), width=16)}",
-        f"{labels['gpu']} {sparkline(history.get('gpu', []), width=16)}",
+        f"{labels['cpu']} {cpu_graph}",
+        f"{labels['gpu']} {gpu_graph}",
     ]
+
+
+def themed_telemetry_graph(theme_key: str, values: Any, width: int = TELEMETRY_GRAPH_WIDTH) -> str:
+    normalized = theme_key.lower()
+    if normalized == "military":
+        graph = sparkline(values, width=width)
+        return graph + (graph[-1:] or "_") * max(0, width - len(graph))
+    samples = list(values or [])
+    latest = 0.0
+    if samples:
+        try:
+            latest = max(0.0, min(100.0, float(samples[-1])))
+        except (TypeError, ValueError):
+            latest = 0.0
+    filled = int(round((latest / 100.0) * width))
+    empty = max(0, width - filled)
+    if normalized in {"eva", "nerv"}:
+        pattern = ("~^" * ((filled // 2) + 1))[:filled]
+        return f"<{pattern}{'.' * empty}>"
+    if normalized == "wh40k":
+        return f"[{'|' * filled}{'.' * empty}]"
+    if normalized == "helldivers":
+        return f"[{'=' * filled}{'-' * empty}]"
+    if normalized == "arasaka":
+        return f"[{'#' * filled}{'.' * empty}]"
+    if normalized == "janus":
+        left = "|" * (filled // 2)
+        right = "|" * (filled - len(left))
+        gap = "." * empty
+        return f"<{left}{gap}{right}>"
+    return sparkline(samples, width=width)
 
 
 def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.Control:
@@ -149,6 +183,7 @@ def build_telemetry_panel(theme: Theme, telemetry: Dict[str, Any] | None) -> ft.
             scroll=None,
         ),
         height=TELEMETRY_PANEL_HEIGHT,
+        width=None,
         expand=False,
         padding=8,
         border=ft.border.all(1, theme.secondary_color),
@@ -161,8 +196,10 @@ __all__ = [
     "TELEMETRY_MAX_SUMMARY_LINES",
     "TELEMETRY_PANEL_HEIGHT",
     "build_telemetry_panel",
+    "TELEMETRY_GRAPH_WIDTH",
     "TELEMETRY_STYLE_NAMES",
     "telemetry_graph_lines",
     "telemetry_labels",
     "telemetry_summary_lines",
+    "themed_telemetry_graph",
 ]

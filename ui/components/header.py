@@ -169,8 +169,9 @@ def build_header(
         ("ACTIVE THEME", theme.key.upper()),
         ("PROVIDER", provider),
         ("MEMORY", memory_status),
-        ("SESSION", session_id),
     ]
+    if theme.key != "helldivers":
+        telemetry.append(("SESSION", session_id))
     logo_layout = header_logo_layout(theme)
     logo_box_height = _logo_box_height(logo_layout)
     header_height = theme_header_height(theme)

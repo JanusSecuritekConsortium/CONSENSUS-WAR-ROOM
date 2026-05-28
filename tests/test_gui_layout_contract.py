@@ -49,6 +49,20 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     assert "SESSION" in telemetry_labels
 
 
+def test_helldivers_header_omits_session_status_row() -> None:
+    state = create_gui_state("HELLDIVERS", RuntimeConfig(theme="helldivers", backend="mock"))
+    layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
+    header = layout.content.controls[0]
+    telemetry_labels = [
+        row.controls[0].value
+        for row in header.content.controls[1].content.controls[1:]
+        if hasattr(row, "controls") and row.controls
+    ]
+
+    assert "ACTIVE MODE" in telemetry_labels
+    assert "SESSION" not in telemetry_labels
+
+
 def test_main_body_expands_and_footer_is_fixed() -> None:
     layout = _layout_for()
     shell = layout.content
@@ -113,6 +127,7 @@ def test_page_level_scroll_is_disabled_by_default() -> None:
 
 if __name__ == "__main__":
     test_header_has_bounded_height_and_compact_logo()
+    test_helldivers_header_omits_session_status_row()
     test_main_body_expands_and_footer_is_fixed()
     test_log_panel_scrolls_internally()
     test_recent_decisions_have_verdict_colors()

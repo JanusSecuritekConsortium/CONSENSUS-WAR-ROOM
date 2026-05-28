@@ -1646,6 +1646,7 @@ def build_gui_layout(
                         ],
                         spacing=8,
                         tight=True,
+                        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     ),
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 ),
@@ -1660,6 +1661,7 @@ def build_gui_layout(
             ],
             spacing=12,
             expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
         expand=2,
     )

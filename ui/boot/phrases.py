@@ -8,7 +8,7 @@ from config.names import ARBITER, AETERNUM, BELLATOR, RATIONALIS
 from ui.themes.catalog import resolve_theme_key
 
 
-BOOT_NODE_IDS: Tuple[str, ...] = (RATIONALIS, AETERNUM, BELLATOR, ARBITER)
+BOOT_NODE_IDS: Tuple[str, ...] = (BELLATOR, AETERNUM, RATIONALIS, ARBITER)
 
 NODE_ONLINE_PREFIXES: Mapping[str, str] = {
     RATIONALIS: "RATIONALIS....ONLINE",
