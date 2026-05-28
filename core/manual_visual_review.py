@@ -11,7 +11,7 @@ from ui.themes.catalog import get_gui_theme_options, resolve_theme_key
 
 
 REPORTS_DIR = SYSTEM_ROOT / "reports"
-VALID_REVIEW_STATUSES = ("PENDING", "APPROVED", "REJECTED", "NEEDS_FIX")
+VALID_REVIEW_STATUSES = ("PENDING", "APPROVED", "REJECTED", "NEEDS_FIX", "NEEDS_REVIEW")
 
 
 def manual_visual_review_path(version: str = SYSTEM_VERSION) -> Path:
@@ -123,6 +123,7 @@ def manual_visual_review_summary(path: Path | None = None) -> Dict[str, Any]:
     pending = sum(1 for entry in themes if entry.get("status") == "PENDING")
     rejected = sum(1 for entry in themes if entry.get("status") == "REJECTED")
     needs_fix = sum(1 for entry in themes if entry.get("status") == "NEEDS_FIX")
+    needs_review = sum(1 for entry in themes if entry.get("status") == "NEEDS_REVIEW")
     approved = sum(1 for entry in themes if entry.get("status") == "APPROVED")
     return {
         "path": str(target),
@@ -131,7 +132,8 @@ def manual_visual_review_summary(path: Path | None = None) -> Dict[str, Any]:
         "approved_count": approved,
         "rejected_count": rejected,
         "needs_fix_count": needs_fix,
-        "action_required_count": rejected + needs_fix,
+        "needs_review_count": needs_review,
+        "action_required_count": rejected + needs_fix + needs_review,
         "themes": themes,
     }
 

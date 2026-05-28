@@ -14,12 +14,13 @@ from ui.assets.registry import THEME_GRAPHIC_ASSETS
 def test_eva_magi_logo_uses_nerv_reference_geometry() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["eva"].logo_path)
 
-    assert "#######" in logo.text
-    assert "NERV GEOMETRIC MAGI MARK" in logo.text
-    assert "CASPER" in logo.text
-    assert "BALTHASAR" in logo.text
-    assert "MELCHIOR" in logo.text
-    assert logo.height == 18
+    assert "###########################" in logo.text
+    assert "################################" in logo.text
+    assert "NERV GEOMETRIC MAGI MARK" not in logo.text
+    assert "CASPER" not in logo.text
+    assert "BALTHASAR" not in logo.text
+    assert "MELCHIOR" not in logo.text
+    assert logo.height == 56
 
 
 if __name__ == "__main__":

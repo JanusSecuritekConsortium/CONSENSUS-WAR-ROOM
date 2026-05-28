@@ -25,7 +25,7 @@ def test_all_gui_themes_render_registered_logo_text() -> None:
 
         assert logo.value == compact_logo_text(state.theme)
         assert logo._Control__attrs["nowrap"][0] is True
-        assert logo.selectable is True
+        assert logo.selectable is False
         assert logo.font_family == LOGO_FONT_FAMILY
 
 

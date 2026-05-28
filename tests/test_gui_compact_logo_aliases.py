@@ -18,7 +18,7 @@ def _header_logo_for(alias: str) -> str:
 
 
 def test_eva_aliases_use_eva_compact_logo() -> None:
-    expected = read_normalized_logo(GUI_COMPACT_LOGO_FILES["eva"]).text
+    expected = GUI_COMPACT_LOGO_FILES["eva"].read_bytes().decode("utf-8")
 
     for alias in ("EVA", "NERV", "MAGI"):
         resolved = resolve_theme_key(alias)
@@ -36,7 +36,7 @@ def test_wh40k_aliases_use_cogitator_compact_logo() -> None:
 
 
 def test_helldivers_aliases_use_managed_democracy_compact_logo() -> None:
-    expected = read_normalized_logo(GUI_COMPACT_LOGO_FILES["helldivers"]).text
+    expected = GUI_COMPACT_LOGO_FILES["helldivers"].read_bytes().decode("utf-8")
 
     for alias in ("HELLDIVERS", "SUPER_EARTH", "DEMOCRACY"):
         resolved = resolve_theme_key(alias)

@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import THEME_GRAPHIC_ASSETS
+from ui.components.header import GUI_LOGO_BOX_HEIGHT
 
 
 def test_logo_vertical_padding_fits_render_budget() -> None:
@@ -16,8 +17,9 @@ def test_logo_vertical_padding_fits_render_budget() -> None:
         logo = read_normalized_logo(asset.logo_path)
         layout = asset.header_layout
         required = logo.height * layout.logo_font_size + layout.logo_top_padding + layout.logo_bottom_padding
+        budget = layout.logo_box_height or GUI_LOGO_BOX_HEIGHT
 
-        assert required <= 230 if theme_key == "wh40k" else required <= 142
+        assert required <= budget, theme_key
 
 
 if __name__ == "__main__":

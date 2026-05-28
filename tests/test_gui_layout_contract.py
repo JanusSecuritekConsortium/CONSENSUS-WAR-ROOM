@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 
 from config.runtime import RuntimeConfig
 from ui.assets.registry import THEME_GRAPHIC_ASSETS
-from ui.components.header import GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box
+from ui.components.header import GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box, theme_header_height
 from ui.flet_app import _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -40,7 +40,7 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     logo_text = logo_text_control_from_box(header.content.controls[0]).value
 
     assert 120 <= GUI_HEADER_HEIGHT <= 180
-    assert header.height == GUI_HEADER_HEIGHT
+    assert header.height == theme_header_height(state.theme)
     assert logo_text == compact_logo_text(state.theme)
     assert logo_text != state.theme.logo.rstrip("\n")
     assert len(logo_text.splitlines()) <= THEME_GRAPHIC_ASSETS[state.theme_key].expected_max_lines

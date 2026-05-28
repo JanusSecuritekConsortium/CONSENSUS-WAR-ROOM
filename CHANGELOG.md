@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.11.8 - User ASCII Header Assets
+
+- Replaced the EVA/NERV and HELLDIVERS GUI header ASCII assets with the user-provided final framebuffer text files as canonical sources.
+- Preserved exact asset bytes for the new headers, including leading spaces, trailing spaces, and line breaks, and updated header rendering to use non-wrapping non-selectable monospace text.
+- Updated theme header metadata so the taller EVA framebuffer and HELLDIVERS emblem fit their header boxes without changing theme colors or WAR ROOM body proportions.
+- Added regression coverage rejecting the previous generated EVA/HELLDIVERS caption tokens and enforcing byte-level asset hashes, whitespace preservation, and no-wrap rendering.
+
 ## 7.11.7 - AURELIUS Msty Provider Migration
 
 - Removed AURELIUS Telegram bot dependency on direct Ollama endpoints and moved provider resolution to a central Msty-only resolver.
