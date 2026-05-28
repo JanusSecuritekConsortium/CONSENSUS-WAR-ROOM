@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.11.13 - ARBITER Verdict Voice Dispatch
+
+- Added a dedicated ARBITER/GLaDOS verdict voice dispatcher for every terminal tribunal outcome, including NO_CONSENSUS and classification failure.
+- Routed GUI terminal verdict announcements through the ARBITER voice path instead of the AURELIUS operator voice path.
+- Added once-per-proposal dispatch guards, non-blocking GUI dispatch, and success/failure/degraded voice logging.
+- Added runtime snapshot and diagnostics voice status with the latest voice announcement metadata.
+- Added a manual ARBITER voice test script for terminal verdict announcements.
+
 ## 7.11.12 - Telemetry Relocation and Diagnostics Freeze Fix
 
 - Moved live telemetry into the top-right header system area with compact theme-specific summary lines and widened text graphs.

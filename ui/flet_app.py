@@ -67,6 +67,7 @@ from tools.export_runtime_bundle import export_runtime_bundle
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_snapshot
 from tools.verify_active_manifest import verify_active_manifest
+from voice.arbiter_verdict_voice import dispatch_arbiter_verdict_voice, voice_status_snapshot
 from ui.animations.typewriter import reveal_text_with_cursor_sync
 from ui.assets.app_icon import apply_app_icon_to_page
 from ui.assets.registry import get_theme_layout_metadata
@@ -296,6 +297,7 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "screenshot_status": visual_review.get("screenshot_status", "MANUAL_REVIEW_REQUIRED"),
         "visual_review": visual_review,
         "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
+        "voice_status": voice_status_snapshot(),
         "proposal_history_status": proposal_history_status(),
         "latest_verdict_export": latest_verdict_export_status(),
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
@@ -795,24 +797,9 @@ def submit_proposal_live_for_gui(
                 "elapsed": round(time.perf_counter() - started, 6),
             },
         )
-        if state.aurelius_voice_loop_enabled and state.aurelius_runtime is not None:
-            try:
-                speech_result = state.aurelius_runtime.announce_consensus_verdict(result)
-                log_event(
-                    "gui_aurelius_verdict_spoken",
-                    {
-                        "session_id": result.session_id,
-                        "verdict": result.verdict.value,
-                        "spoken": speech_result.spoken,
-                        "audio_path": speech_result.audio_path,
-                    },
-                )
-            except Exception as exc:
-                log_event(
-                    "gui_aurelius_verdict_speech_failed",
-                    {"session_id": result.session_id, "verdict": result.verdict.value, "error": str(exc)},
-                    level="WARN",
-                )
+        if state.config.backend != "mock":
+            dispatch_arbiter_verdict_voice(result, async_dispatch=True, enabled=True)
+            state.runtime_snapshot_cache["voice_status"] = voice_status_snapshot()
         _set_lifecycle(state, LIFECYCLE_VERDICT_ISSUED, on_update)
         state.logs = read_recent_log_events()
         state.recent_decisions = read_recent_decisions()
@@ -1018,6 +1005,8 @@ def set_diagnostics_drawer_open(state: GuiState, open_state: bool | None = None)
         state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
     if "latest_dossier_export" not in state.runtime_snapshot_cache:
         state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+    if "voice_status" not in state.runtime_snapshot_cache:
+        state.runtime_snapshot_cache["voice_status"] = voice_status_snapshot()
     log_event(
         "gui_diagnostics_drawer",
         {"open": state.diagnostics_drawer_open, "theme": state.theme_key, "snapshot_source": "cached"},
@@ -1778,6 +1767,12 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     dossier_export = state.runtime_snapshot_cache.get("latest_dossier_export")
     if not isinstance(dossier_export, dict):
         dossier_export = {"latest_json": "--"}
+    voice_status = state.runtime_snapshot_cache.get("voice_status")
+    if not isinstance(voice_status, dict):
+        voice_status = voice_status_snapshot()
+    last_voice = voice_status.get("last_voice_announcement")
+    if not isinstance(last_voice, dict):
+        last_voice = {}
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1824,6 +1819,11 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
             ),
             text(f"LATEST VERDICT EXPORT: {verdict_export.get('latest_json') or '--'}"),
             text(f"LATEST DOSSIER EXPORT: {dossier_export.get('latest_json') or '--'}"),
+            text(f"ARBITER VOICE: {voice_status.get('status', 'UNKNOWN')} | {voice_status.get('backend', '--')}", theme.accent_color, bold=True),
+            text(
+                f"LAST VOICE: {last_voice.get('proposal_id', '--')} | {last_voice.get('terminal_state', '--')} | {last_voice.get('status', '--')}",
+                theme.panel_value or theme.text_color,
+            ),
             text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
             text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
             text(
