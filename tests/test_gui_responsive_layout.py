@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.runtime import RuntimeConfig
-from ui.components.header import GUI_HEADER_HEIGHT
+from ui.components.header import GUI_HEADER_HEIGHT, theme_header_height
 from ui.flet_app import FOOTER_HEIGHT, _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -44,14 +44,15 @@ def test_body_has_responsive_left_center_right_regions() -> None:
 
 
 def test_fixed_header_footer_and_expanding_body() -> None:
-    layout = _layout()
+    state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"))
+    layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     shell = layout.content
     header = shell.controls[0]
     body = shell.controls[1]
     footer = shell.controls[2]
 
     assert 120 <= GUI_HEADER_HEIGHT <= 180
-    assert header.height == GUI_HEADER_HEIGHT
+    assert header.height == theme_header_height(state.theme)
     assert body.expand is True
     assert footer.height == FOOTER_HEIGHT
     assert 55 <= FOOTER_HEIGHT <= 70

@@ -1,0 +1,3160 @@
+{
+  "version": "7.11.11",
+  "timestamp": "2026-05-28T18:02:26+00:00",
+  "python_executable": "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
+  "selected_categories": [
+    "ALL"
+  ],
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "screenshot_note": "Automated screenshot export is not a release gate for this pass; user-provided manual screenshots drive visual review.",
+  "test_files_run": 216,
+  "passed": 216,
+  "failed": 0,
+  "duration_seconds": 518.4466,
+  "duration_report": {
+    "total_duration_seconds": 518.4466,
+    "slow_threshold_seconds": 30.0,
+    "total_budget_seconds": 900.0,
+    "slowest_10": [
+      {
+        "file": "tests\\test_theme_header_rendering.py",
+        "duration_seconds": 29.2722,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_compact_logo_fit.py",
+        "duration_seconds": 23.4432,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_layout_contract.py",
+        "duration_seconds": 23.0747,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_theme_binding.py",
+        "duration_seconds": 14.6259,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_responsive_layout.py",
+        "duration_seconds": 14.152,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_provider_cli_offline.py",
+        "duration_seconds": 12.747,
+        "categories": [
+          "INTEGRATION",
+          "PROVIDER",
+          "SLOW"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_deliberation_states.py",
+        "duration_seconds": 12.5695,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_tribunal_lifecycle_phases.py",
+        "duration_seconds": 12.5435,
+        "categories": [
+          "FAST",
+          "INTEGRATION"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_provider_recheck.py",
+        "duration_seconds": 12.0082,
+        "categories": [
+          "GUI",
+          "PROVIDER"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_visual_review_status.py",
+        "duration_seconds": 10.2231,
+        "categories": [
+          "GUI"
+        ]
+      }
+    ],
+    "slow_tests": [],
+    "gui_launch_heavy_tests": [
+      {
+        "file": "tests\\test_gui_aurelius_toggle.py",
+        "duration_seconds": 8.0446,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_compact_logo_fit.py",
+        "duration_seconds": 23.4432,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_deliberation_states.py",
+        "duration_seconds": 12.5695,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_diagnostic_drawer.py",
+        "duration_seconds": 7.9719,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_heartbeat.py",
+        "duration_seconds": 4.7738,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_integrity_status.py",
+        "duration_seconds": 8.2342,
+        "categories": [
+          "GUI",
+          "INTEGRATION"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_launch_smoke.py",
+        "duration_seconds": 3.2501,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_launch_smoke_readiness.py",
+        "duration_seconds": 5.9409,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_layout_contract.py",
+        "duration_seconds": 23.0747,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_provider_recheck.py",
+        "duration_seconds": 12.0082,
+        "categories": [
+          "GUI",
+          "PROVIDER"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_refresh_cadence.py",
+        "duration_seconds": 4.8663,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_repaint_regression.py",
+        "duration_seconds": 4.9382,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_responsive_layout.py",
+        "duration_seconds": 14.152,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_screenshot_export.py",
+        "duration_seconds": 8.5452,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_submission_flow.py",
+        "duration_seconds": 6.7244,
+        "categories": [
+          "GUI",
+          "INTEGRATION"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_telemetry_panel.py",
+        "duration_seconds": 7.7314,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_theme_binding.py",
+        "duration_seconds": 14.6259,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_theme_selector.py",
+        "duration_seconds": 7.2392,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_visual_invariants.py",
+        "duration_seconds": 8.4434,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_gui_visual_review_status.py",
+        "duration_seconds": 10.2231,
+        "categories": [
+          "GUI"
+        ]
+      },
+      {
+        "file": "tests\\test_theme_header_rendering.py",
+        "duration_seconds": 29.2722,
+        "categories": [
+          "GUI"
+        ]
+      }
+    ],
+    "warnings": []
+  },
+  "duration_comparison": {
+    "baseline_manifest": "G:\\CONSENSUS_SYSTEM\\reports\\verification_v7.11.10.json",
+    "baseline_version": "7.11.10",
+    "current_total_seconds": 518.4466,
+    "baseline_total_seconds": 525.5642,
+    "delta_total_seconds": -7.1176,
+    "tests_compared": 215,
+    "improved_10": [
+      {
+        "file": "tests\\test_gui_compact_logo_fit.py",
+        "previous_seconds": 24.9058,
+        "current_seconds": 23.4432,
+        "delta_seconds": -1.4626
+      },
+      {
+        "file": "tests\\test_tribunal_lifecycle_phases.py",
+        "previous_seconds": 13.4483,
+        "current_seconds": 12.5435,
+        "delta_seconds": -0.9048
+      },
+      {
+        "file": "tests\\test_proposal_lifecycle_flow.py",
+        "previous_seconds": 7.7396,
+        "current_seconds": 6.874,
+        "delta_seconds": -0.8656
+      },
+      {
+        "file": "tests\\test_gui_visual_review_status.py",
+        "previous_seconds": 10.9624,
+        "current_seconds": 10.2231,
+        "delta_seconds": -0.7393
+      },
+      {
+        "file": "tests\\test_gui_responsive_layout.py",
+        "previous_seconds": 14.8767,
+        "current_seconds": 14.152,
+        "delta_seconds": -0.7247
+      },
+      {
+        "file": "tests\\test_gui_theme_binding.py",
+        "previous_seconds": 15.3464,
+        "current_seconds": 14.6259,
+        "delta_seconds": -0.7205
+      },
+      {
+        "file": "tests\\test_runtime_snapshot_tribunal_lifecycle.py",
+        "previous_seconds": 9.4169,
+        "current_seconds": 8.8429,
+        "delta_seconds": -0.574
+      },
+      {
+        "file": "tests\\test_gui_submission_flow.py",
+        "previous_seconds": 7.2866,
+        "current_seconds": 6.7244,
+        "delta_seconds": -0.5622
+      },
+      {
+        "file": "tests\\test_gui_header_uses_compact_not_boot_logo.py",
+        "previous_seconds": 8.4881,
+        "current_seconds": 7.9544,
+        "delta_seconds": -0.5337
+      },
+      {
+        "file": "tests\\test_gui_telemetry_panel.py",
+        "previous_seconds": 8.2521,
+        "current_seconds": 7.7314,
+        "delta_seconds": -0.5207
+      }
+    ],
+    "regressed_10": [
+      {
+        "file": "tests\\test_theme_header_rendering.py",
+        "previous_seconds": 24.3946,
+        "current_seconds": 29.2722,
+        "delta_seconds": 4.8776
+      },
+      {
+        "file": "tests\\test_gui_layout_contract.py",
+        "previous_seconds": 21.0066,
+        "current_seconds": 23.0747,
+        "delta_seconds": 2.0681
+      },
+      {
+        "file": "tests\\test_deterministic_tribunal_event_order.py",
+        "previous_seconds": 7.3072,
+        "current_seconds": 7.7697,
+        "delta_seconds": 0.4625
+      },
+      {
+        "file": "tests\\test_war_room_state_machine.py",
+        "previous_seconds": 7.4344,
+        "current_seconds": 7.5824,
+        "delta_seconds": 0.148
+      },
+      {
+        "file": "tests\\test_telemetry_collector.py",
+        "previous_seconds": 0.1001,
+        "current_seconds": 0.2266,
+        "delta_seconds": 0.1265
+      },
+      {
+        "file": "tests\\test_runtime_snapshot_dependencies.py",
+        "previous_seconds": 1.8464,
+        "current_seconds": 1.9634,
+        "delta_seconds": 0.117
+      },
+      {
+        "file": "tests\\test_telemetry_no_footer_overlap.py",
+        "previous_seconds": 2.8078,
+        "current_seconds": 2.8934,
+        "delta_seconds": 0.0856
+      },
+      {
+        "file": "tests\\test_footer_shortcuts_centered.py",
+        "previous_seconds": 5.3508,
+        "current_seconds": 5.4295,
+        "delta_seconds": 0.0787
+      },
+      {
+        "file": "tests\\test_app_icon_configured.py",
+        "previous_seconds": 2.289,
+        "current_seconds": 2.3493,
+        "delta_seconds": 0.0603
+      },
+      {
+        "file": "tests\\test_theme_gallery_logos.py",
+        "previous_seconds": 2.3692,
+        "current_seconds": 2.4284,
+        "delta_seconds": 0.0592
+      }
+    ]
+  },
+  "gui_launch_heavy_tests": [
+    {
+      "file": "tests\\test_gui_aurelius_toggle.py",
+      "duration_seconds": 8.0446,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_compact_logo_fit.py",
+      "duration_seconds": 23.4432,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_deliberation_states.py",
+      "duration_seconds": 12.5695,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_diagnostic_drawer.py",
+      "duration_seconds": 7.9719,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_heartbeat.py",
+      "duration_seconds": 4.7738,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_integrity_status.py",
+      "duration_seconds": 8.2342,
+      "categories": [
+        "GUI",
+        "INTEGRATION"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_launch_smoke.py",
+      "duration_seconds": 3.2501,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_launch_smoke_readiness.py",
+      "duration_seconds": 5.9409,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_layout_contract.py",
+      "duration_seconds": 23.0747,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_provider_recheck.py",
+      "duration_seconds": 12.0082,
+      "categories": [
+        "GUI",
+        "PROVIDER"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_refresh_cadence.py",
+      "duration_seconds": 4.8663,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_repaint_regression.py",
+      "duration_seconds": 4.9382,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_responsive_layout.py",
+      "duration_seconds": 14.152,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_screenshot_export.py",
+      "duration_seconds": 8.5452,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_submission_flow.py",
+      "duration_seconds": 6.7244,
+      "categories": [
+        "GUI",
+        "INTEGRATION"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_telemetry_panel.py",
+      "duration_seconds": 7.7314,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_theme_binding.py",
+      "duration_seconds": 14.6259,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_theme_selector.py",
+      "duration_seconds": 7.2392,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_visual_invariants.py",
+      "duration_seconds": 8.4434,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_gui_visual_review_status.py",
+      "duration_seconds": 10.2231,
+      "categories": [
+        "GUI"
+      ]
+    },
+    {
+      "file": "tests\\test_theme_header_rendering.py",
+      "duration_seconds": 29.2722,
+      "categories": [
+        "GUI"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "file": "tests\\test_acled_oauth_resolution.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2242,
+      "stdout": "test_acled_oauth_resolution PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_active_compile.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.23,
+      "stdout": "test_active_compile PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_active_manifest.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1401,
+      "stdout": "test_active_manifest PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_agent_profiles.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0818,
+      "stdout": "test_agent_profiles PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_app_icon_asset_exists.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0789,
+      "stdout": "test_app_icon_asset_exists PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_app_icon_configured.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.3493,
+      "stdout": "test_app_icon_configured PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_app_icon_not_old_default.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0796,
+      "stdout": "test_app_icon_not_old_default PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_arasaka_status_readability.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1807,
+      "stdout": "test_arasaka_status_readability PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_arbiter_panel_bounds.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1496,
+      "stdout": "test_arbiter_panel_bounds PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_ascii_logo_whitespace_preservation.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1334,
+      "stdout": "test_ascii_logo_whitespace_preservation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_aurelius_provider_config.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4016,
+      "stdout": "test_aurelius_provider_config PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_aurelius_runtime.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1058,
+      "stdout": "test_aurelius_runtime PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_aurelius_voice_events.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1175,
+      "stdout": "test_aurelius_voice_events PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_override_priority.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2861,
+      "stdout": "test_backend_override_priority PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_readiness_retry.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3147,
+      "stdout": "test_backend_readiness_retry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_backend_retry_before_fallback.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4257,
+      "stdout": "test_backend_retry_before_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bellator_feed_intelligence.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1681,
+      "stdout": "test_bellator_feed_intelligence PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bellator_geospatial_filters.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1483,
+      "stdout": "test_bellator_geospatial_filters PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_boot.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3247,
+      "stdout": "test_bios_boot PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_post_formatting.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1306,
+      "stdout": "test_bios_post_formatting PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_bios_provider_status_dynamic.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1222,
+      "stdout": "test_bios_provider_status_dynamic PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_logo_text_spacing.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1215,
+      "stdout": "test_boot_logo_text_spacing PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_phrase_randomization.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1184,
+      "stdout": "test_boot_phrase_randomization PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_phrase_registry.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0934,
+      "stdout": "test_boot_phrase_registry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_phrase_variations.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1209,
+      "stdout": "test_boot_phrase_variations PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_boot_provider_resolution_consistency.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3137,
+      "stdout": "test_boot_provider_resolution_consistency PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_branch_generation.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0979,
+      "stdout": "test_branch_generation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_branch_probability_scoring.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0966,
+      "stdout": "test_branch_probability_scoring PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_command_palette.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.2508,
+      "stdout": "test_command_palette PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_consensus_spec_engine.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1641,
+      "stdout": "test_consensus_spec_engine PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_context_retrieval.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1504,
+      "stdout": "test_context_retrieval PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_convergence_visualization.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1124,
+      "stdout": "test_convergence_visualization PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_decision_trace_reader.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.086,
+      "stdout": "test_decision_trace_reader PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_decision_trace_viewer.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.8834,
+      "stdout": "test_decision_trace_viewer PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_dependency_check.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0818,
+      "stdout": "test_dependency_check PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_deterministic_tribunal_event_order.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.7697,
+      "stdout": "test_deterministic_tribunal_event_order PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_dossier_export_json.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.7162,
+      "stdout": "test_dossier_export_json PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_dossier_export_markdown.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.6032,
+      "stdout": "test_dossier_export_markdown PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_editable_install_package_discovery.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0672,
+      "stdout": "test_editable_install_package_discovery PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_eva_logo_centered.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7556,
+      "stdout": "test_eva_logo_centered PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_eva_logo_rectangular_alignment.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0877,
+      "stdout": "test_eva_logo_rectangular_alignment PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_eva_magi_logo_quality.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0843,
+      "stdout": "test_eva_magi_logo_quality PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_eva_uses_user_ascii_asset.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.0846,
+      "stdout": "test_eva_uses_user_ascii_asset PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_explicit_reachable_backend_no_silent_fallback.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.7019,
+      "stdout": "test_explicit_reachable_backend_no_silent_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_fallback_resolution_chain.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4084,
+      "stdout": "test_fallback_resolution_chain PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_feed_health.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1457,
+      "stdout": "test_feed_health PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_final_logo_mapping.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1178,
+      "stdout": "test_final_logo_mapping PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_flet_app_import.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.2717,
+      "stdout": "test_flet_app_import PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_flet_desktop_runtime_dependency.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.2745,
+      "stdout": "test_flet_desktop_runtime_dependency PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_footer_diagnostics_visibility.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.2349,
+      "stdout": "test_footer_diagnostics_visibility PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_footer_shortcuts.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7474,
+      "stdout": "test_footer_shortcuts PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_footer_shortcuts_centered.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.4295,
+      "stdout": "test_footer_shortcuts_centered PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_footer_shortcuts_no_overlap.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.776,
+      "stdout": "test_footer_shortcuts_no_overlap PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_aurelius_toggle.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.0446,
+      "stdout": "test_gui_aurelius_toggle PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_bellator_intelligence_diagnostics.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1107,
+      "stdout": "test_gui_bellator_intelligence_diagnostics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logo_aliases.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 6.6827,
+      "stdout": "test_gui_compact_logo_aliases PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logo_fit.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 23.4432,
+      "stdout": "test_gui_compact_logo_fit PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_compact_logos.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1108,
+      "stdout": "test_gui_compact_logos PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_deliberation_states.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 12.5695,
+      "stdout": "test_gui_deliberation_states PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_diagnostic_drawer.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.9719,
+      "stdout": "test_gui_diagnostic_drawer PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_empty_states.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.3129,
+      "stdout": "test_gui_empty_states PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_harness.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.2561,
+      "stdout": "test_gui_harness PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_header_uses_compact_not_boot_logo.py",
+      "categories": [
+        "GUI",
+        "SLOW"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.9544,
+      "stdout": "test_gui_header_uses_compact_not_boot_logo PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_heartbeat.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.7738,
+      "stdout": "test_gui_heartbeat PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_integrity_status.py",
+      "categories": [
+        "GUI",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.2342,
+      "stdout": "test_gui_integrity_status PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_launch_smoke.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.2501,
+      "stdout": "test_gui_launch_smoke PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_launch_smoke_readiness.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.9409,
+      "stdout": "test_gui_launch_smoke_readiness PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_layout_contract.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 23.0747,
+      "stdout": "test_gui_layout_contract PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_memory_indicators.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1242,
+      "stdout": "test_gui_memory_indicators PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_monolith_naming.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1444,
+      "stdout": "test_gui_monolith_naming PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_proposal_verdict_status.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.3315,
+      "stdout": "test_gui_proposal_verdict_status PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_provider_recheck.py",
+      "categories": [
+        "GUI",
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 12.0082,
+      "stdout": "test_gui_provider_recheck PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_provider_status_panel.py",
+      "categories": [
+        "GUI",
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1024,
+      "stdout": "test_gui_provider_status_panel PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_readiness_containment.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1066,
+      "stdout": "test_gui_readiness_containment PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_refresh_cadence.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.8663,
+      "stdout": "test_gui_refresh_cadence PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_repaint_regression.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.9382,
+      "stdout": "test_gui_repaint_regression PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_responsive_layout.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 14.152,
+      "stdout": "test_gui_responsive_layout PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_screenshot_export.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.5452,
+      "stdout": "test_gui_screenshot_export PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_simulation_actions.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.411,
+      "stdout": "test_gui_simulation_actions PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_status_colors.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1186,
+      "stdout": "test_gui_status_colors PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_submission_flow.py",
+      "categories": [
+        "GUI",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 6.7244,
+      "stdout": "test_gui_submission_flow PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_telemetry_degraded_message.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1265,
+      "stdout": "test_gui_telemetry_degraded_message PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_telemetry_panel.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.7314,
+      "stdout": "test_gui_telemetry_panel PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_theme_binding.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 14.6259,
+      "stdout": "test_gui_theme_binding PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_theme_selector.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.2392,
+      "stdout": "test_gui_theme_selector PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_visual_invariants.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.4434,
+      "stdout": "test_gui_visual_invariants PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_visual_review_status.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 10.2231,
+      "stdout": "test_gui_visual_review_status PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_gui_window_modes.py",
+      "categories": [
+        "GUI",
+        "SLOW"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.2859,
+      "stdout": "test_gui_window_modes PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_header_container_constraints.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.2777,
+      "stdout": "test_header_container_constraints PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_header_logo_alignment.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.3331,
+      "stdout": "test_header_logo_alignment PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_header_logo_vertical_offsets.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.7446,
+      "stdout": "test_header_logo_vertical_offsets PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_header_no_wrap.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 3.2738,
+      "stdout": "test_header_no_wrap PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_health_badge.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.8246,
+      "stdout": "test_health_badge PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_health_uses_model_cache.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3008,
+      "stdout": "test_health_uses_model_cache PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_helldivers_ascii_logo_quality.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0843,
+      "stdout": "test_helldivers_ascii_logo_quality PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_helldivers_logo_centered.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7758,
+      "stdout": "test_helldivers_logo_centered PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_helldivers_logo_not_dense_block.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0814,
+      "stdout": "test_helldivers_logo_not_dense_block PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_helldivers_logo_quality.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0848,
+      "stdout": "test_helldivers_logo_quality PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_helldivers_uses_user_ascii_asset.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1205,
+      "stdout": "test_helldivers_uses_user_ascii_asset PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_integrity_verifier.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1433,
+      "stdout": "test_integrity_verifier PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_legacy_visual_identity.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0892,
+      "stdout": "test_legacy_visual_identity PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_lifecycle_audio_hooks.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0882,
+      "stdout": "test_lifecycle_audio_hooks PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_logo_normalizer.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0772,
+      "stdout": "test_logo_normalizer PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_logo_registry.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0845,
+      "stdout": "test_logo_registry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_logo_vertical_alignment.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1033,
+      "stdout": "test_logo_vertical_alignment PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_logo_whitespace_preserved.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1206,
+      "stdout": "test_logo_whitespace_preserved PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_manual_visual_review_registry.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1111,
+      "stdout": "test_manual_visual_review_registry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_memory_cli.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.5185,
+      "stdout": "test_memory_cli PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_assignment_cli.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3667,
+      "stdout": "test_model_assignment_cli PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_availability.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2982,
+      "stdout": "test_model_availability PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_model_remap_fallback.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4156,
+      "stdout": "test_model_remap_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_identity_enhancement.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.161,
+      "stdout": "test_monolith_identity_enhancement PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_idle_pulses.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0919,
+      "stdout": "test_monolith_idle_pulses PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_order_contract.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0926,
+      "stdout": "test_monolith_order_contract PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_monolith_profiles.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0895,
+      "stdout": "test_monolith_profiles PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_claw_not_default_inference_backend.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2946,
+      "stdout": "test_msty_claw_not_default_inference_backend PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_inference_preferred.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4189,
+      "stdout": "test_msty_llama_cpp_inference_preferred PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_preferred_over_ollama.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3978,
+      "stdout": "test_msty_llama_cpp_preferred_over_ollama PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_llama_cpp_warmup_state.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.285,
+      "stdout": "test_msty_llama_cpp_warmup_state PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_does_not_silently_become_llama_cpp.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3121,
+      "stdout": "test_msty_local_does_not_silently_become_llama_cpp PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_network_url_fallback.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4336,
+      "stdout": "test_msty_local_network_url_fallback PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_local_primary_endpoint.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3253,
+      "stdout": "test_msty_local_primary_endpoint PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_runtime.py",
+      "categories": [
+        "INTEGRATION",
+        "PROVIDER",
+        "SLOW"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3146,
+      "stdout": "test_msty_runtime PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_runtime_fast_path.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4083,
+      "stdout": "test_msty_runtime_fast_path PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_msty_service_role_classification.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2912,
+      "stdout": "test_msty_service_role_classification PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_no_codex_generated_bad_logo_tokens.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1632,
+      "stdout": "test_no_codex_generated_bad_logo_tokens PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_no_duplicate_boot_sequence.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1234,
+      "stdout": "test_no_duplicate_boot_sequence PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_no_placeholder_logos.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0856,
+      "stdout": "test_no_placeholder_logos PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_no_scrambled_ascii_logos.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0851,
+      "stdout": "test_no_scrambled_ascii_logos PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_ollama_direct_backend.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 6.4197,
+      "stdout": "test_ollama_direct_backend PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_preview_theme_samples.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.126,
+      "stdout": "test_preview_theme_samples PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_prompt_assembly.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0916,
+      "stdout": "test_prompt_assembly PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_decision_linking.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1483,
+      "stdout": "test_proposal_decision_linking PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_history_panel.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.2859,
+      "stdout": "test_proposal_history_panel PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_lifecycle_flow.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 6.874,
+      "stdout": "test_proposal_lifecycle_flow PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_panel_ergonomics.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.109,
+      "stdout": "test_proposal_panel_ergonomics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_panel_internal_spacing.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1131,
+      "stdout": "test_proposal_panel_internal_spacing PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_panel_not_overlapping_verdict.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7931,
+      "stdout": "test_proposal_panel_not_overlapping_verdict PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_panel_spacing.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1196,
+      "stdout": "test_proposal_panel_spacing PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_resend_duplicate_archive.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1281,
+      "stdout": "test_proposal_resend_duplicate_archive PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_status_transitions.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0818,
+      "stdout": "test_proposal_status_transitions PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_store.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1254,
+      "stdout": "test_proposal_store PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_template_rendering.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0828,
+      "stdout": "test_proposal_template_rendering PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_proposal_templates.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0837,
+      "stdout": "test_proposal_templates PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_cache_not_used_as_online_if_backend_warming.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4292,
+      "stdout": "test_provider_cache_not_used_as_online_if_backend_warming PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_cli_offline.py",
+      "categories": [
+        "INTEGRATION",
+        "PROVIDER",
+        "SLOW"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 12.747,
+      "stdout": "test_provider_cli_offline PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_diagnostics.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2973,
+      "stdout": "test_provider_diagnostics PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_discovery.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.4127,
+      "stdout": "test_provider_discovery PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_fallback_policy.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3921,
+      "stdout": "test_provider_fallback_policy PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3087,
+      "stdout": "test_provider_model_cache PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache_does_not_mask_backend_failure.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.4267,
+      "stdout": "test_provider_model_cache_does_not_mask_backend_failure PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_model_cache_refresh.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.3112,
+      "stdout": "test_provider_model_cache_refresh PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_provider_resolution_consistency_v761.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 1.8082,
+      "stdout": "test_provider_resolution_consistency_v761 PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_reasoning_stream_bounded.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0956,
+      "stdout": "test_reasoning_stream_bounded PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_record_visual_review.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.247,
+      "stdout": "test_record_visual_review PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_reference_ascii_headers.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0871,
+      "stdout": "test_reference_ascii_headers PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_reopen_as_draft.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1398,
+      "stdout": "test_reopen_as_draft PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_root_hygiene.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0676,
+      "stdout": "test_root_hygiene PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_run_tests_budget_warning.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0836,
+      "stdout": "test_run_tests_budget_warning PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_run_tests_categories.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0817,
+      "stdout": "test_run_tests_categories PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_run_tests_duration_report.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0782,
+      "stdout": "test_run_tests_duration_report PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_run_tests_provider_category.py",
+      "categories": [
+        "PROVIDER"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0866,
+      "stdout": "test_run_tests_provider_category PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_bundle_dossiers.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.107,
+      "stdout": "test_runtime_bundle_dossiers PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_bundle_export.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.0448,
+      "stdout": "test_runtime_bundle_export PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_bundle_integrity.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.5094,
+      "stdout": "test_runtime_bundle_integrity PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_bundle_proposals.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.0426,
+      "stdout": "test_runtime_bundle_proposals PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 1.929,
+      "stdout": "test_runtime_snapshot PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_dependencies.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 1.9634,
+      "stdout": "test_runtime_snapshot_dependencies PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_lifecycle_counts.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1259,
+      "stdout": "test_runtime_snapshot_lifecycle_counts PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_proposal_history.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.2901,
+      "stdout": "test_runtime_snapshot_proposal_history PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_simulations.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.3272,
+      "stdout": "test_runtime_snapshot_simulations PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_telemetry.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 1.8326,
+      "stdout": "test_runtime_snapshot_telemetry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_runtime_snapshot_tribunal_lifecycle.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 8.8429,
+      "stdout": "test_runtime_snapshot_tribunal_lifecycle PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_session_memory.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2962,
+      "stdout": "test_session_memory PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_simulation_models.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0972,
+      "stdout": "test_simulation_models PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_simulation_registry.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1016,
+      "stdout": "test_simulation_registry PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_simulation_store.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1297,
+      "stdout": "test_simulation_store PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_static_assets.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0918,
+      "stdout": "test_static_assets PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_status_panel_cleanup.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1581,
+      "stdout": "test_status_panel_cleanup PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_collector.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.2266,
+      "stdout": "test_telemetry_collector PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_degraded_psutil_missing.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0924,
+      "stdout": "test_telemetry_degraded_psutil_missing PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_full_visibility.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1608,
+      "stdout": "test_telemetry_full_visibility PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_history.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1027,
+      "stdout": "test_telemetry_history PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_no_footer_overlap.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.8934,
+      "stdout": "test_telemetry_no_footer_overlap PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_no_gpu_available.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0959,
+      "stdout": "test_telemetry_no_gpu_available PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_no_overlap.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.139,
+      "stdout": "test_telemetry_no_overlap PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_no_scroll_required.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1323,
+      "stdout": "test_telemetry_no_scroll_required PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_telemetry_theme_styles.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1072,
+      "stdout": "test_telemetry_theme_styles PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_ambient_messages.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1009,
+      "stdout": "test_theme_ambient_messages PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_ascii_dimensions.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1243,
+      "stdout": "test_theme_ascii_dimensions PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_boot_phrase_selection.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1335,
+      "stdout": "test_theme_boot_phrase_selection PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_canonical_tokens.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0926,
+      "stdout": "test_theme_canonical_tokens PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_colors_unchanged.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1021,
+      "stdout": "test_theme_colors_unchanged PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_completeness.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1676,
+      "stdout": "test_theme_completeness PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_contrast_readability.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.1342,
+      "stdout": "test_theme_contrast_readability PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_contrast_tokens.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.128,
+      "stdout": "test_theme_contrast_tokens PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_gallery_logos.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.4284,
+      "stdout": "test_theme_gallery_logos PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_header_layout_metadata.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1013,
+      "stdout": "test_theme_header_layout_metadata PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_header_presentation.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 4.8306,
+      "stdout": "test_theme_header_presentation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_header_rendering.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": true,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 29.2722,
+      "stdout": "test_theme_header_rendering PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_loading_bars.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1228,
+      "stdout": "test_theme_loading_bars PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_logo_rendering.py",
+      "categories": [
+        "GUI",
+        "SLOW"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 5.9961,
+      "stdout": "test_theme_logo_rendering PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_panel_labels.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1117,
+      "stdout": "test_theme_panel_labels PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_theme_visual_consistency.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1011,
+      "stdout": "test_theme_visual_consistency PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_tribunal_lifecycle_phases.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 12.5435,
+      "stdout": "test_tribunal_lifecycle_phases PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_typewriter_animation.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1446,
+      "stdout": "test_typewriter_animation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_verdict_export_json.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1001,
+      "stdout": "test_verdict_export_json PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_verdict_export_markdown.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1137,
+      "stdout": "test_verdict_export_markdown PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_verdict_typing_animation.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1521,
+      "stdout": "test_verdict_typing_animation PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_verification_manifest_durations.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.1079,
+      "stdout": "test_verification_manifest_durations PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_voting_runtime_integration.py",
+      "categories": [
+        "FAST",
+        "INTEGRATION"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.3034,
+      "stdout": "test_voting_runtime_integration PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_war_room_state_machine.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 7.5824,
+      "stdout": "test_war_room_state_machine PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_war_room_visual_hierarchy.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.135,
+      "stdout": "test_war_room_visual_hierarchy PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_wh40k_compact_logo_asset.py",
+      "categories": [
+        "GUI"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0883,
+      "stdout": "test_wh40k_compact_logo_asset PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_wh40k_logo_full_visibility.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 2.7886,
+      "stdout": "test_wh40k_logo_full_visibility PASS\n",
+      "stderr": ""
+    },
+    {
+      "file": "tests\\test_wh40k_theme_specific_layout.py",
+      "categories": [
+        "FAST"
+      ],
+      "gui_launch_heavy": false,
+      "status": "pass",
+      "returncode": 0,
+      "duration_seconds": 0.0865,
+      "stdout": "test_wh40k_theme_specific_layout PASS\n",
+      "stderr": ""
+    }
+  ]
+}

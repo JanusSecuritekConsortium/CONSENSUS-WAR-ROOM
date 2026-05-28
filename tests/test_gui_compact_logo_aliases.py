@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from tests.helpers.gui_harness import header_logo_control_for
 from ui.components.header import GUI_COMPACT_LOGO_FILES, compact_logo_text
+from ui.assets.logo_normalizer import read_normalized_logo
 from ui.themes.catalog import THEMES, resolve_theme_key
 
 
@@ -17,7 +18,7 @@ def _header_logo_for(alias: str) -> str:
 
 
 def test_eva_aliases_use_eva_compact_logo() -> None:
-    expected = GUI_COMPACT_LOGO_FILES["eva"].read_text(encoding="utf-8").rstrip("\n")
+    expected = GUI_COMPACT_LOGO_FILES["eva"].read_bytes().decode("utf-8")
 
     for alias in ("EVA", "NERV", "MAGI"):
         resolved = resolve_theme_key(alias)
@@ -26,7 +27,7 @@ def test_eva_aliases_use_eva_compact_logo() -> None:
 
 
 def test_wh40k_aliases_use_cogitator_compact_logo() -> None:
-    expected = GUI_COMPACT_LOGO_FILES["wh40k"].read_text(encoding="utf-8").rstrip("\n")
+    expected = read_normalized_logo(GUI_COMPACT_LOGO_FILES["wh40k"]).text
 
     for alias in ("WH40K", "WARHAMMER", "COGITATOR"):
         resolved = resolve_theme_key(alias)
@@ -35,7 +36,7 @@ def test_wh40k_aliases_use_cogitator_compact_logo() -> None:
 
 
 def test_helldivers_aliases_use_managed_democracy_compact_logo() -> None:
-    expected = GUI_COMPACT_LOGO_FILES["helldivers"].read_text(encoding="utf-8").rstrip("\n")
+    expected = GUI_COMPACT_LOGO_FILES["helldivers"].read_bytes().decode("utf-8")
 
     for alias in ("HELLDIVERS", "SUPER_EARTH", "DEMOCRACY"):
         resolved = resolve_theme_key(alias)

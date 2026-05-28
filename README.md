@@ -4,6 +4,8 @@ CONSENSUS War Room is a local multi-agent tribunal for proposal review. Three
 specialized monoliths analyze a proposal from different perspectives, then an
 arbiter combines their votes into an auditable verdict.
 
+Author: Erhardt Von Grupten Mundt, Janus Securitek Consortium.
+
 ## Current System
 
 - `RATIONALIS`: logic, consistency, and acceptance criteria
@@ -67,6 +69,9 @@ GUI:
 python consensus_war_room_genesis.py --gui
 ```
 
+The desktop GUI uses a dedicated CONSENSUS War Room tribunal icon from
+`static/icons/`, separate from the individual theme ASCII logos.
+
 API:
 
 ```powershell
@@ -79,6 +84,53 @@ Provider diagnostics:
 python consensus_war_room_genesis.py --provider-status --verbose
 python consensus_war_room_genesis.py --list-models
 ```
+
+## Operator Workflow
+
+The GUI command palette opens with `Ctrl+K`. Current operator shortcuts:
+
+- `Ctrl+D`: diagnostics drawer
+- `Ctrl+T`: cycle theme
+- `Ctrl+H`: proposal history
+- `Ctrl+E`: export latest verdict
+
+Proposal templates are available from the proposal panel for geopolitical,
+market/finance, technical, operational-risk, and general tribunal queries.
+Proposal history is stored locally as JSONL and can be resent, duplicated for
+editing, or archived from the Proposal History overlay.
+
+Export the latest verdict outside the GUI:
+
+```powershell
+python tools\export_latest_verdict.py
+```
+
+Proposal records are linked to finalized decision traces when the tribunal
+returns a verdict. Linked records carry decision status, decision timestamp, and
+verdict export paths. Export a combined proposal/verdict dossier:
+
+```powershell
+python tools\export_dossier.py <proposal_id>
+```
+
+During live GUI tribunal runs the Arbiter Verdict panel exposes the active
+processing lifecycle: classification, dispatch, analysis, deliberation,
+synthesis, terminal verdict state, and export-ready status. The GUI also shows a
+bounded status-only reasoning stream and convergence meter; these are operator
+state signals, not hidden chain-of-thought.
+
+## Simulation Layer
+
+The simulation layer is deterministic scaffolding for future geopolitical,
+economic, cyber, and security branch analysis. It defines scenario and branch
+records, a simulation type registry, bounded probability/risk scoring helpers,
+and append-only local JSONL history. This pass does not generate autonomous
+forecasts or invented geopolitical predictions.
+
+GUI command palette actions:
+
+- `Create Simulation`: creates a deterministic scaffold linked to the current proposal context when available.
+- `View Simulations`: opens the simulation registry overlay.
 
 ## Configuration
 

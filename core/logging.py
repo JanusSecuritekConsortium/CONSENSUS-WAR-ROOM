@@ -53,6 +53,10 @@ def log_decision_trace(result: Any) -> None:
             "confidence": result.confidence,
             "terminal_branch": result.terminal_branch,
             "review_triggers": result.review_triggers,
+            "lifecycle_events": list(getattr(result, "lifecycle_events", [])),
+            "phase_durations": dict(getattr(result, "phase_durations", {})),
+            "reasoning_stream": list(getattr(result, "reasoning_stream", [])),
+            "convergence_percent": getattr(result, "convergence_percent", 0.0),
         },
     )
 

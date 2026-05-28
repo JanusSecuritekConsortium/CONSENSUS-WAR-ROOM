@@ -23,6 +23,21 @@ class HeaderLogoLayout:
     logo_vertical_align: str = "center"
     logo_horizontal_align: str = "center"
     logo_box_scroll_enabled: bool = True
+    logo_box_width: int | None = None
+    logo_box_max_width: int | None = None
+    logo_box_height: int | None = None
+    header_height: int | None = None
+
+
+@dataclass(frozen=True)
+class WarRoomLayoutMetadata:
+    header_logo_width_ratio: float = 0.35
+    header_logo_height: int | None = None
+    proposal_panel_min_height: int = 250
+    proposal_verdict_gap: int = 16
+    telemetry_panel_height: int = 192
+    footer_shortcut_alignment: str = "center"
+    left_panel_compaction_allowed: bool = False
 
 
 @dataclass(frozen=True)
@@ -38,6 +53,7 @@ class ThemeGraphicAsset:
     expected_min_width: int = 24
     max_width: int = LOGO_SAFE_MAX_WIDTH
     header_layout: HeaderLogoLayout = HeaderLogoLayout()
+    layout_metadata: WarRoomLayoutMetadata = WarRoomLayoutMetadata()
 
 
 THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
@@ -45,47 +61,94 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "eva",
         GUI_LOGO_DIR / "eva_header.txt",
         "MAGI/NERV diagnostic styling",
-        ("CASPER", "BALTHASAR", "MELCHIOR"),
+        ("NERV", "MAGI", "GEOMETRY"),
         "eva_boot",
-        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "MAGI TRIBUNAL ONLINE"),
-        expected_min_lines=7,
-        expected_min_width=55,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=8, logo_bottom_padding=8),
+        ("###########################", "################################", "#######"),
+        expected_min_lines=56,
+        expected_max_lines=56,
+        expected_min_width=80,
+        header_layout=HeaderLogoLayout(
+            logo_font_size=4,
+            logo_top_padding=6,
+            logo_bottom_padding=6,
+            logo_side_padding=2,
+            logo_box_width=430,
+            logo_box_height=238,
+            header_height=254,
+            logo_box_scroll_enabled=False,
+        ),
+        layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.28),
     ),
     "nerv": ThemeGraphicAsset(
         "nerv",
         GUI_LOGO_DIR / "eva_header.txt",
         "NERV diagnostic styling",
-        ("CASPER", "BALTHASAR", "MELCHIOR"),
+        ("NERV", "MAGI", "GEOMETRY"),
         "nerv_boot",
-        ("MAGI", "CASPER", "BALTHASAR", "MELCHIOR", "MAGI TRIBUNAL ONLINE"),
-        expected_min_lines=7,
-        expected_min_width=55,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=8, logo_bottom_padding=8),
+        ("###########################", "################################", "#######"),
+        expected_min_lines=56,
+        expected_max_lines=56,
+        expected_min_width=80,
+        header_layout=HeaderLogoLayout(
+            logo_font_size=4,
+            logo_top_padding=6,
+            logo_bottom_padding=6,
+            logo_side_padding=2,
+            logo_box_width=430,
+            logo_box_height=238,
+            header_height=254,
+            logo_box_scroll_enabled=False,
+        ),
+        layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.28),
     ),
     "wh40k": ThemeGraphicAsset(
         "wh40k",
         GUI_LOGO_DIR / "wh40k_header.txt",
         "Cogitator gothic terminal styling",
-        ("@@@@@@@@", "@@@@@@@#", "#@@"),
+        ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"),
         "wh40k_boot",
         ("@@@@@@@@", "@@@@@@@#", "#@@"),
-        expected_min_lines=12,
-        expected_max_lines=16,
-        expected_min_width=55,
-        header_layout=HeaderLogoLayout(logo_font_size=7, logo_top_padding=10, logo_bottom_padding=10),
+        expected_min_lines=50,
+        expected_max_lines=56,
+        expected_min_width=80,
+        header_layout=HeaderLogoLayout(
+            logo_font_size=4,
+            logo_top_padding=8,
+            logo_bottom_padding=8,
+            logo_side_padding=2,
+            logo_box_width=400,
+            logo_box_height=238,
+            header_height=266,
+            logo_box_scroll_enabled=False,
+        ),
+        layout_metadata=WarRoomLayoutMetadata(
+            header_logo_width_ratio=0.33,
+            header_logo_height=238,
+            proposal_verdict_gap=18,
+            telemetry_panel_height=198,
+            left_panel_compaction_allowed=True,
+        ),
     ),
     "helldivers": ThemeGraphicAsset(
         "helldivers",
         GUI_LOGO_DIR / "helldivers_header.txt",
         "Command-democracy tactical styling",
-        ("@@@%-::::-", "@@@@@@@@@@@@", "@@@@@@@"),
+        ("SUPER EARTH", "LIBERTY", "COMMAND"),
         "helldivers_boot",
-        ("@@@%-::::-", "@@@@@@@@@@@@", "@@@@@@@"),
-        expected_min_lines=20,
-        expected_max_lines=30,
-        expected_min_width=35,
-        header_layout=HeaderLogoLayout(logo_font_size=5, logo_top_padding=8, logo_bottom_padding=8),
+        ("###########################", "####     ########    ####", "#############"),
+        expected_min_lines=19,
+        expected_max_lines=19,
+        expected_min_width=80,
+        header_layout=HeaderLogoLayout(
+            logo_font_size=7,
+            logo_top_padding=8,
+            logo_bottom_padding=8,
+            logo_side_padding=2,
+            logo_box_width=450,
+            logo_box_height=154,
+            logo_box_scroll_enabled=False,
+        ),
+        layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.3),
     ),
     "arasaka": ThemeGraphicAsset(
         "arasaka",
@@ -97,7 +160,14 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         expected_min_lines=7,
         expected_min_width=110,
         max_width=ARASAKA_SAFE_MAX_WIDTH,
-        header_layout=HeaderLogoLayout(logo_font_size=11, logo_top_padding=18, logo_bottom_padding=18),
+        header_layout=HeaderLogoLayout(
+            logo_font_size=11,
+            logo_top_padding=22,
+            logo_bottom_padding=20,
+            logo_side_padding=4,
+            logo_box_width=880,
+        ),
+        layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.32),
     ),
     "janus": ThemeGraphicAsset(
         "janus",
@@ -108,7 +178,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         ("88888", "88b 88", "bodP"),
         expected_min_lines=4,
         expected_min_width=40,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=26, logo_bottom_padding=18),
+        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=22, logo_bottom_padding=22, logo_box_width=410),
     ),
     "military": ThemeGraphicAsset(
         "military",
@@ -120,7 +190,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         expected_min_lines=10,
         expected_max_lines=10,
         expected_min_width=80,
-        header_layout=HeaderLogoLayout(logo_font_size=9, logo_top_padding=12, logo_bottom_padding=12),
+        header_layout=HeaderLogoLayout(logo_font_size=9, logo_top_padding=14, logo_bottom_padding=14, logo_box_width=745),
     ),
 }
 
@@ -130,6 +200,10 @@ def get_theme_graphic_asset(theme_key: str) -> ThemeGraphicAsset:
     if normalized not in THEME_GRAPHIC_ASSETS:
         raise KeyError(f"No graphic asset registered for theme {theme_key!r}")
     return THEME_GRAPHIC_ASSETS[normalized]
+
+
+def get_theme_layout_metadata(theme_key: str) -> WarRoomLayoutMetadata:
+    return get_theme_graphic_asset(theme_key).layout_metadata
 
 
 def validate_theme_graphic_asset(asset: ThemeGraphicAsset) -> List[str]:

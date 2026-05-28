@@ -1,9 +1,124 @@
 # Changelog
 
+## 7.11.11 - WAR ROOM Layout Consistency Refinement
+
+- Tightened WH40K, EVA/NERV, HELLDIVERS, and ARASAKA header logo containers through theme metadata without changing ASCII assets or color palettes.
+- Expanded right-column telemetry presentation by stretching the panel across available width and widening theme-specific text graphs.
+- Removed the Helldivers header `SESSION` status row for consistency with the other system status presentations.
+- Improved ARASAKA proposal template dropdown contrast with black/red option styling while preserving the existing proposal title and theme palette.
+- Reordered displayed and registered tribunal monoliths to `BELLATOR`, `AETERNUM`, `RATIONALIS`, then `ARBITER`, and enforced an explicit console boot gap after the ARASAKA logo.
+
+## 7.11.10 - Editable Install Packaging Fix
+
+- Added explicit setuptools package discovery for active Python packages so `python -m pip install -e .` no longer treats archive, reports, static assets, or future implementation roots as installable packages.
+- Preserved `psutil`, `requests`, `flet`, and `flet-desktop` runtime dependencies from the v7.11.9 GUI launch fix, with Flet constrained to the supported `0.28.x` desktop API line.
+- Declared Pillow for the existing theme gallery/logo verification path so venv-based release verification does not depend on globally installed packages.
+- Added regression coverage for editable-install package discovery metadata.
+
+## 7.11.9 - Flet Desktop Runtime Dependency Fix
+
+- Declared `flet`, `flet-desktop`, and `requests` as runtime dependencies so editable installs provision the desktop GUI runtime instead of relying on Flet auto-install behavior.
+- Added a GUI launch preflight that checks for the importable `flet_desktop` module and raises a clear install command before opening the WAR ROOM.
+- Updated dependency diagnostics to include `flet_desktop` as a required runtime dependency.
+
+## 7.11.8 - User ASCII Header Assets
+
+- Replaced the EVA/NERV and HELLDIVERS GUI header ASCII assets with the user-provided final framebuffer text files as canonical sources.
+- Preserved exact asset bytes for the new headers, including leading spaces, trailing spaces, and line breaks, and updated header rendering to use non-wrapping non-selectable monospace text.
+- Updated theme header metadata so the taller EVA framebuffer and HELLDIVERS emblem fit their header boxes without changing theme colors or WAR ROOM body proportions.
+- Added regression coverage rejecting the previous generated EVA/HELLDIVERS caption tokens and enforcing byte-level asset hashes, whitespace preservation, and no-wrap rendering.
+
+## 7.11.7 - AURELIUS Msty Provider Migration
+
+- Removed AURELIUS Telegram bot dependency on direct Ollama endpoints and moved provider resolution to a central Msty-only resolver.
+- Added environment-driven AURELIUS Msty endpoint configuration with fallback disabled by default and clear degraded messaging when the endpoint is not configured.
+- Updated scheduled Morning Brief and End-of-Day Shutdown jobs to log provider configuration failures once and avoid repeated Telegram error spam.
+- Updated active AURELIUS config defaults to Msty and removed active port 11434 endpoint configuration from the Telegram/CONSENSUS workflow.
+
+## 7.11.6 - WAR ROOM UI Correction
+
+- Tightened the Arbiter Verdict panel with fixed padding, fixed section spacing, bounded timeline/vector/reasoning regions, synthesis line limits, and hard clipping to prevent overlap or floating controls.
+- Removed the visible Aurelius voice-loop switch from the footer command bar so Diagnostics remains visible in the right-side auxiliary control region.
+- Replaced the EVA/NERV GUI header with a NERV-reference-derived ASCII mark and replaced the HELLDIVERS header with a tighter skull/wings ASCII mark based on the provided emblem reference.
+- Tightened WH40K header presentation by reducing the WH40K-only logo box width while preserving the restored v7.10.13 gothic ASCII asset and colors.
+- Enforced exactly one deterministic blank line between the ARASAKA logo and `ARASAKA EXECUTIVE SECURITY BIOS...` boot text.
+- Added regression coverage for footer diagnostics visibility, absence of footer controls in the Arbiter panel, bounded verdict panel sections, reference-derived ASCII headers, and exact BIOS spacing.
+
+## 7.11.5 - Active Tribunal Flow
+
+- Added explicit tribunal processing phases from `IDLE` through classification, dispatch, analysis, deliberation, synthesis, terminal outcome, and export-ready state.
+- Added bounded tribunal phase events, phase duration tracking, convergence percentage, and status-only reasoning stream metadata to runtime logs, decision traces, runtime snapshots, and GUI state.
+- Expanded the Arbiter Verdict panel with a phase timeline, convergence meter, and compact active reasoning-state stream without exposing hidden reasoning.
+- Restored the WH40K header to the v7.10.13 gothic ASCII asset and made it fit through WH40K-only header metadata rather than global layout changes.
+- Replaced the EVA/MAGI GUI header with a blocky rectangular MAGI cube-style ASCII asset and tightened Super Earth ASCII header symmetry while preserving all theme colors.
+- Preserved telemetry no-scroll behavior, WAR ROOM 2:6:2 structure, canonical ASCII rendering, Msty local defaults, and screenshot-loop constraints.
+- Added regression coverage for tribunal lifecycle ordering, convergence visualization, bounded reasoning stream history, lifecycle runtime snapshots, WH40K full visibility, and updated header identity contracts.
+
+## 7.11.4 - WAR ROOM Layout Correction
+
+- Rebalanced GUI header metadata and replaced the WH40K, HELLDIVERS, and EVA compact ASCII headers with fit-safe tactical text assets that remain fully visible in the fixed WAR ROOM header.
+- Centered footer shortcut guidance between fixed left theme selection and right operator controls without changing the 2:6:2 body layout.
+- Increased proposal-to-verdict spacing, normalized proposal panel padding, and reduced proposal input height to prevent visual collision with the Arbiter Verdict panel.
+- Redesigned telemetry into fixed-height, no-scroll text metrics with compact bars and theme-specific telemetry style labels for all core CPU/RAM/DISK/GPU/VRAM/TEMP values.
+- Added layout metadata for proposal spacing, telemetry height, footer alignment, and WH40K-specific compaction permissions.
+- Added regression coverage for WH40K visibility, footer centering, proposal/verdict separation, telemetry visibility, and EVA/HELLDIVERS ASCII quality.
+
+## 7.11.3 - Randomized BIOS Boot Phrase System
+
+- Added modular boot phrase registries under `ui.boot` for rotating device detection, POST checks, cosmetic sync/warn states, and monolith initialization phrases.
+- Adapted legacy CLAUDSENSUS/NERV boot material into active BIOS atmosphere without modifying archive roots or pasting legacy boot code into UI startup.
+- Expanded theme-aware boot vocabulary for MAGI/NERV, ARASAKA, EXCOMM/MILITARY, WH40K, HELLDIVERS/Super Earth, and JANUS while preserving the stable boot structure.
+- Added deterministic fallback and seeded randomization support so tests remain reproducible while live boots avoid repetitive device/POST/tribunal sequences.
+- Added regression coverage for boot phrase registry completeness, randomization, theme vocabulary selection, structured boot output, and duplicate-line prevention.
+
+## 7.11.2 - Application Icon Identity
+
+- Added dedicated CONSENSUS War Room application icon assets in PNG and ICO formats using a compact tribunal triad and central verdict-node mark.
+- Wired the Flet desktop window icon through a guarded app-icon resolver with fallback behavior when icon assets are unavailable.
+- Added app icon validation coverage for asset presence, readable/non-empty files, configured Flet window usage, and replacement of the old default arrow-style icon.
+- Preserved theme logos, theme colors, WAR ROOM 2:6:2 layout, Msty local defaults, and screenshot-loop constraints.
+
+## 7.11.1 - WAR ROOM Visual Refinement Pass
+
+- Refined header logo layout metadata with deterministic box widths, centered alignment, balanced padding, and fixed header constraints across all GUI themes.
+- Replaced the HELLDIVERS GUI header with a sparse ASCII Super Earth-style emblem while preserving the text-only terminal identity system and existing color palette.
+- Increased WH40K header readability through metadata sizing without changing its canonical gothic ASCII asset.
+- Constrained telemetry panel height and line flow so telemetry cannot collide with lower UI boundaries.
+- Tightened proposal panel spacing and padding while preserving template and lifecycle behavior.
+- Added visual structure regression coverage for header alignment, header constraints, telemetry containment, proposal spacing, HELLDIVERS logo quality, theme consistency, and vertical logo budget.
+
+## 7.11.0 - Simulation Layer Foundation
+
+- Added deterministic simulation architecture under `core.simulation` with scenario models, branch models, registry definitions, branch probability/risk scaffolding, and JSONL simulation history.
+- Added command palette actions and overlay plumbing for creating and viewing simulation scaffolds without mutating the WAR ROOM 2:6:2 layout.
+- Added simulation status to runtime snapshots and runtime bundles.
+- Improved ARASAKA SYSTEM STATUS readability by using readable secondary text for low-emphasis header labels while preserving the black/red aesthetic and accent red.
+- Added architecture regression coverage for simulation models, branch generation/scoring, simulation store/registry, GUI simulation actions, runtime snapshot simulation status, and ARASAKA readability.
+
+## 7.10.17 - Proposal Verdict Lifecycle
+
+- Linked proposal records to finalized decision traces with append-only JSONL revisions, terminal decision status, decision timestamps, and linked verdict export paths.
+- Added proposal lifecycle helpers for trace linking, status transitions, verdict export attachment, and proposal decision summaries.
+- Added dossier export tooling for combined proposal and verdict briefing packages in Markdown and JSON.
+- Enhanced the Proposal History overlay with decision-status badges, linked-verdict availability, Open Verdict, Export Dossier, and Reopen Draft actions without changing the 2:6:2 WAR ROOM layout.
+- Added proposal lifecycle counts and latest dossier export metadata to runtime snapshots and runtime bundles.
+- Added regression coverage for automatic linking, corrupt JSONL tolerance, status mapping, dossier exports, GUI verdict status, reopen-as-draft immutability, lifecycle counts, and bundle dossier artifacts.
+
+## 7.10.16 - Proposal Lifecycle UX
+
+- Added canonical proposal templates for geopolitical, market/finance, technical, operational-risk, and general tribunal queries with validation and non-mutating rendering helpers.
+- Added JSONL proposal history storage with corrupt-line tolerance, draft/submitted/resubmitted/archive lifecycle states, resend, duplicate/edit, and archive operations.
+- Added proposal template selection and proposal history overlays to the WAR ROOM operator flow while preserving the 2:6:2 body layout and existing theme colors/logos.
+- Added latest verdict export to Markdown and JSON, plus command-palette and diagnostics access for proposal history and verdict export status.
+- Integrated proposal history and latest verdict exports into runtime snapshots and runtime bundles.
+- Added compact footer shortcut guidance for Ctrl+K, Ctrl+D, Ctrl+T, Ctrl+H, and Ctrl+E without changing the footer contract.
+- Added regression coverage for proposal templates, rendering, history storage, resend/duplicate/archive behavior, verdict exports, GUI empty states, footer shortcuts, runtime snapshots, and runtime bundles.
+
 ## 7.10.14 - Manual Header Refinement
 
 - Moved theme-specific GUI logo/header placement into `ui.assets.registry` as explicit header layout metadata for font size, top/bottom padding, alignment, and scroll behavior.
 - Replaced only the WH40K GUI header asset with a compact cogitator/eagle mark that preserves canonical WH40K tokens while fitting the header box at readable size.
+- Reverted the rejected WH40K compact skull/cogitator mark back to the v7.10.13 gothic ASCII header after manual review.
 - Adjusted ARASAKA, HELLDIVERS/Super Earth, MILITARY, and JANUS header presentation through layout metadata only; canonical non-WH40K assets and all theme colors remain unchanged.
 - Preserved extra ARASAKA boot spacing between the logo block and the executive security BIOS text.
 - Added regression coverage for header layout metadata, WH40K compact asset dimensions/tokens, boot logo spacing, header vertical offsets, and unchanged theme colors.

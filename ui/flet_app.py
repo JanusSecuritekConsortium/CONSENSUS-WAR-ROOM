@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import uuid
+import importlib.util
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -33,17 +34,42 @@ from core.memory.context import build_context_packet, context_status
 from core.memory.session import upsert_session_record
 from core.models import NodeIdentity, TribunalResult, Vote, VoteValue
 from core.paths import EXPORT_DIR, HISTORY_PATH, SYSTEM_LOG_PATH, SYSTEM_ROOT
+from core.proposals.store import (
+    archive_proposal,
+    create_proposal,
+    duplicate_proposal,
+    list_recent_proposals,
+    proposal_history_status,
+    resend_proposal,
+)
+from core.proposals.lifecycle import link_decision_trace_to_proposal, proposal_lifecycle_summary
+from core.proposals.templates import get_template, list_templates, render_template_draft
+from core.simulation.store import create_stored_scenario, get_simulation_status, list_recent_scenarios
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
+from core.tribunal_events import (
+    TRIBUNAL_PHASES,
+    append_bounded_event,
+    append_reasoning_event,
+    build_phase_event,
+    convergence_percent,
+    monolith_activity_phrase,
+    phase_for_verdict,
+    theme_reasoning_phrase,
+)
 from core.voting.engine import ConsensusEngine
 from core.voting.parser import parse_vote
 from core.voting.rules import ConsensusRules
 from integrations.msty.runtime import MstyRuntime
+from core.export.dossier import export_dossier, latest_dossier_export_status
+from core.export.verdict import export_latest_verdict, latest_verdict_export_status
 from tools.export_runtime_bundle import export_runtime_bundle
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot, health_badge_from_snapshot
 from tools.verify_active_manifest import verify_active_manifest
 from ui.animations.typewriter import reveal_text_with_cursor_sync
+from ui.assets.app_icon import apply_app_icon_to_page
+from ui.assets.registry import get_theme_layout_metadata
 from ui.components.header import build_header
 from ui.components.log_panel import build_log_panel
 from ui.components.monolith_panel import build_monolith_panel
@@ -74,21 +100,18 @@ GUI_INTERACTION_HOLD_SECONDS = 12.0
 GUI_WINDOW_MODES = ("maximized", "fullscreen", "windowed")
 GuiWindowMode = Literal["maximized", "fullscreen", "windowed"]
 LIFECYCLE_IDLE = "IDLE"
-LIFECYCLE_PROPOSAL_RECEIVED = "PROPOSAL RECEIVED"
-LIFECYCLE_DELIBERATING = "MONOLITHS DELIBERATING"
-LIFECYCLE_VOTES_RECEIVED = "VOTES RECEIVED"
-LIFECYCLE_SYNTHESIZING = "ARBITER SYNTHESIZING"
-LIFECYCLE_VERDICT_ISSUED = "VERDICT ISSUED"
-LIFECYCLE_ERROR_DEGRADED = "ERROR / DEGRADED"
-LIFECYCLE_STATES = (
-    LIFECYCLE_IDLE,
-    LIFECYCLE_PROPOSAL_RECEIVED,
-    LIFECYCLE_DELIBERATING,
-    LIFECYCLE_VOTES_RECEIVED,
-    LIFECYCLE_SYNTHESIZING,
-    LIFECYCLE_VERDICT_ISSUED,
-    LIFECYCLE_ERROR_DEGRADED,
-)
+LIFECYCLE_PROPOSAL_RECEIVED = "CLASSIFYING"
+LIFECYCLE_DISPATCHING = "DISPATCHING"
+LIFECYCLE_ANALYZING = "ANALYZING"
+LIFECYCLE_DELIBERATING = "DELIBERATING"
+LIFECYCLE_VOTES_RECEIVED = "DELIBERATING"
+LIFECYCLE_SYNTHESIZING = "SYNTHESIZING"
+LIFECYCLE_CONSENSUS_REACHED = "CONSENSUS_REACHED"
+LIFECYCLE_NO_CONSENSUS = "NO_CONSENSUS"
+LIFECYCLE_ESCALATION_REQUIRED = "ESCALATION_REQUIRED"
+LIFECYCLE_VERDICT_ISSUED = "EXPORT_READY"
+LIFECYCLE_ERROR_DEGRADED = "ESCALATION_REQUIRED"
+LIFECYCLE_STATES = TRIBUNAL_PHASES
 VOTE_STATUS_VALUES = {value.value for value in VoteValue}
 GuiUpdateCallback = Callable[[], None]
 HEARTBEAT_MESSAGES = (
@@ -107,9 +130,25 @@ COMMAND_PALETTE_ACTIONS = (
     "Verify Integrity",
     "Visual Review Status",
     "Telemetry Snapshot",
+    "Proposal History",
+    "Export Latest Verdict",
+    "Create Simulation",
+    "View Simulations",
     "Toggle Theme",
     "Open Decision Trace Viewer",
 )
+
+
+def ensure_flet_desktop_runtime() -> None:
+    if importlib.util.find_spec("flet_desktop") is not None:
+        return
+    flet_version = getattr(ft, "__version__", None)
+    package = f"flet-desktop=={flet_version}" if flet_version else "flet-desktop"
+    raise RuntimeError(
+        "Flet desktop runtime is not installed in this Python environment. "
+        f"Run `python -m pip install -e .` or `python -m pip install {package}` "
+        "from the active CONSENSUS virtual environment, then restart the app."
+    )
 
 
 @dataclass
@@ -124,6 +163,9 @@ class GuiState:
     logs: List[str] = field(default_factory=list)
     recent_decisions: List[str] = field(default_factory=list)
     current_proposal: str = ""
+    proposal_input_text: str = ""
+    proposal_template_id: str = ""
+    last_proposal_record_id: str = ""
     current_result: TribunalResult | None = None
     window_mode: GuiWindowMode = "maximized"
     lifecycle_state: str = LIFECYCLE_IDLE
@@ -143,6 +185,11 @@ class GuiState:
     cursor_visible: bool = True
     consensus_locked: bool = False
     timeline_events: List[str] = field(default_factory=list)
+    lifecycle_events: List[Dict[str, object]] = field(default_factory=list)
+    lifecycle_phase_started_at: float = 0.0
+    phase_durations: Dict[str, float] = field(default_factory=dict)
+    reasoning_stream: List[str] = field(default_factory=list)
+    convergence_percent: float = 0.0
     monolith_activity_states: Dict[str, str] = field(default_factory=default_activity_states)
     monolith_latencies_ms: Dict[str, int] = field(default_factory=default_latencies)
     proposal_file_mtime: float | None = None
@@ -152,8 +199,10 @@ class GuiState:
     diagnostics_drawer_open: bool = False
     command_palette_open: bool = False
     trace_viewer_open: bool = False
+    proposal_history_open: bool = False
     visual_review_viewer_open: bool = False
     telemetry_viewer_open: bool = False
+    simulation_viewer_open: bool = False
     trace_filter: str = ""
     operator_status: str = "OPERATOR READY"
     runtime_snapshot_cache: Dict[str, Any] = field(default_factory=dict)
@@ -247,6 +296,18 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "screenshot_status": visual_review.get("screenshot_status", "MANUAL_REVIEW_REQUIRED"),
         "visual_review": visual_review,
         "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
+        "proposal_history_status": proposal_history_status(),
+        "latest_verdict_export": latest_verdict_export_status(),
+        "proposal_lifecycle_summary": proposal_lifecycle_summary(),
+        "latest_dossier_export": latest_dossier_export_status(),
+        "simulation_status": get_simulation_status(),
+        "tribunal_lifecycle": {
+            "current_phase": state.lifecycle_state,
+            "event_count": len(state.lifecycle_events),
+            "phase_durations": dict(state.phase_durations),
+            "convergence_percent": state.convergence_percent,
+            "reasoning_stream_size": len(state.reasoning_stream),
+        },
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot
@@ -382,9 +443,34 @@ def _vote_detail(vote: Vote) -> Dict[str, object]:
 
 
 def _set_lifecycle(state: GuiState, lifecycle_state: str, on_update: GuiUpdateCallback | None = None) -> None:
+    previous = state.lifecycle_state
+    previous_started = state.lifecycle_phase_started_at
+    event = build_phase_event(lifecycle_state, previous_phase=previous, previous_started_at=previous_started)
+    if previous and event.previous_duration_seconds:
+        state.phase_durations[previous] = state.phase_durations.get(previous, 0.0) + event.previous_duration_seconds
     state.lifecycle_state = lifecycle_state
+    state.lifecycle_phase_started_at = float(event.started_at)
+    append_bounded_event(state.lifecycle_events, event)
+    append_reasoning_event(state.reasoning_stream, theme_reasoning_phrase(state.theme_key, lifecycle_state))
     append_timeline(state.timeline_events, "LIFECYCLE", lifecycle_state.lower())
-    log_war_room_runtime("proposal_lifecycle", {"state": lifecycle_state, "theme": state.theme_key})
+    log_war_room_runtime(
+        "tribunal_phase_transition",
+        {
+            "state": lifecycle_state,
+            "previous_state": previous,
+            "previous_duration_seconds": event.previous_duration_seconds,
+            "theme": state.theme_key,
+        },
+    )
+    log_event(
+        "tribunal_phase_transition",
+        {
+            "state": lifecycle_state,
+            "previous_state": previous,
+            "previous_duration_seconds": event.previous_duration_seconds,
+            "theme": state.theme_key,
+        },
+    )
     _notify(on_update)
 
 
@@ -415,18 +501,44 @@ def submit_proposal_live_for_gui(
     if not clean_proposal:
         raise ValueError("Proposal is empty.")
     state.current_proposal = clean_proposal
+    state.proposal_input_text = clean_proposal
     state.current_result = None
     state.monolith_vote_details = {}
     state.displayed_synthesis = ""
     state.displayed_confidence = 0.0
     state.provider_warning = ""
     state.consensus_locked = False
+    state.lifecycle_events = []
+    state.lifecycle_phase_started_at = 0.0
+    state.phase_durations = {}
+    state.reasoning_stream = []
+    state.convergence_percent = 0.0
     for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
         state.monolith_activity_states[agent_id] = "IDLE"
     _set_lifecycle(state, LIFECYCLE_PROPOSAL_RECEIVED, on_update)
     append_timeline(state.timeline_events, "PROPOSAL", "received vote package")
     log_event("gui_proposal_submitted", {"theme": state.theme_key, "query": clean_proposal})
     log_war_room_runtime("proposal_received", {"theme": state.theme_key, "query": clean_proposal})
+    taxonomy_hint = ""
+    source = "manual"
+    title = None
+    if state.proposal_template_id:
+        try:
+            template = get_template(state.proposal_template_id)
+            taxonomy_hint = str(template.get("default_taxonomy_hint", ""))
+            title = str(template.get("title", ""))
+            source = "template"
+        except KeyError:
+            taxonomy_hint = ""
+    proposal_record = create_proposal(
+        title=title,
+        body=clean_proposal,
+        taxonomy_hint=taxonomy_hint,
+        source=source,
+        template_id=state.proposal_template_id or None,
+        status="SUBMITTED",
+    )
+    state.last_proposal_record_id = str(proposal_record["proposal_id"])
     runtime = MstyRuntime(state.config)
     state.provider_warning = _fallback_warning(state, runtime)
     rules = ConsensusRules(
@@ -443,6 +555,7 @@ def submit_proposal_live_for_gui(
     session_id = uuid.uuid4().hex[:12]
     started = time.perf_counter()
     memory_context = build_context_packet(clean_proposal)
+    _set_lifecycle(state, LIFECYCLE_DISPATCHING, on_update)
     state.prior_decisions_used = int(memory_context.get("prior_decisions_used", 0) or 0)
     state.context_retrieval_status = context_status(memory_context)
     state.context_summary = str(memory_context.get("summary", "No prior decisions retrieved."))
@@ -460,7 +573,7 @@ def submit_proposal_live_for_gui(
             state.timeline_events,
             "loaded vote package",
         )
-    _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
+    _set_lifecycle(state, LIFECYCLE_ANALYZING, on_update)
     log_event(
         "proposal",
         {"session_id": session_id, "theme": state.theme_key, "sequential": state.config.sequential, "query": clean_proposal},
@@ -474,7 +587,7 @@ def submit_proposal_live_for_gui(
                 agent_id,
                 "ANALYZING",
                 state.timeline_events,
-                "analyzing proposal context",
+                monolith_activity_phrase(agent_id, len(votes)),
             )
             _notify(on_update)
             node = state.nodes[agent_id]
@@ -520,6 +633,11 @@ def submit_proposal_live_for_gui(
                     response_time=elapsed,
                 )
             votes[agent_id] = vote
+            state.convergence_percent = convergence_percent(votes)
+            append_reasoning_event(
+                state.reasoning_stream,
+                f"{agent_id} vote registered; convergence {state.convergence_percent:.0%}",
+            )
             state.monolith_statuses[agent_id] = vote.vote.value
             state.monolith_vote_details[agent_id] = _vote_detail(vote)
             state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
@@ -548,7 +666,7 @@ def submit_proposal_live_for_gui(
             state.logs = read_recent_log_events()
             _notify(on_update)
 
-        _set_lifecycle(state, LIFECYCLE_VOTES_RECEIVED, on_update)
+        _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
         state.monolith_statuses[ARBITER] = "THINKING"
         transition_state(
             state.monolith_activity_states,
@@ -559,6 +677,8 @@ def submit_proposal_live_for_gui(
         )
         _set_lifecycle(state, LIFECYCLE_SYNTHESIZING, on_update)
         result = ConsensusEngine(rules, state.theme_key).calculate_result(clean_proposal, votes, session_id)
+        terminal_phase = phase_for_verdict(result.verdict, result.terminal_branch, result.review_triggers)
+        _set_lifecycle(state, terminal_phase, on_update)
         state.current_result = result
         state.monolith_statuses[ARBITER] = result.verdict.value
         _animate_confidence(
@@ -583,8 +703,47 @@ def submit_proposal_live_for_gui(
         state.consensus_locked = True
         state.monolith_activity_states[ARBITER] = "IDLE"
         append_timeline(state.timeline_events, ARBITER, "consensus locked")
+        setattr(result, "lifecycle_events", list(state.lifecycle_events))
+        setattr(result, "phase_durations", dict(state.phase_durations))
+        setattr(result, "reasoning_stream", list(state.reasoning_stream))
+        setattr(result, "convergence_percent", state.convergence_percent)
         record_result(result)
         log_decision_trace(result)
+        try:
+            trace = read_latest_trace()
+            link_result = link_decision_trace_to_proposal(
+                trace if isinstance(trace, dict) else {
+                    "proposal_id": result.session_id,
+                    "session_id": result.session_id,
+                    "taxonomy": result.proposal_classification,
+                    "votes": {
+                        agent_id: {
+                            "vote": vote.vote.value,
+                            "confidence": vote.confidence,
+                            "evidence_quality": vote.evidence_quality,
+                            "critical_risk": vote.critical_risk,
+                            "model": vote.model,
+                        }
+                        for agent_id, vote in result.votes.items()
+                    },
+                    "final_verdict": result.verdict.value,
+                    "confidence": result.confidence,
+                    "terminal_branch": result.terminal_branch,
+                    "review_triggers": result.review_triggers,
+                    "timestamp": result.timestamp,
+                },
+                proposal_id=state.last_proposal_record_id,
+            )
+            state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
+            state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
+            state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+            append_timeline(state.timeline_events, "PROPOSAL", f"linked {link_result.get('decision_status', 'decision')}")
+        except Exception as exc:
+            log_event(
+                "gui_proposal_history_update_failed",
+                {"proposal_id": state.last_proposal_record_id, "error": str(exc)},
+                level="WARN",
+            )
         provider_payload = state.provider_status.get("provider", state.provider_status)
         try:
             upsert_session_record(
@@ -660,7 +819,7 @@ def submit_proposal_live_for_gui(
         log_event("gui_verdict_update", {"session_id": result.session_id, "verdict": result.verdict.value})
         return result
     except Exception:
-        state.lifecycle_state = LIFECYCLE_ERROR_DEGRADED
+        _set_lifecycle(state, LIFECYCLE_ERROR_DEGRADED, None)
         for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
             state.monolith_activity_states[agent_id] = "ERROR"
         append_timeline(state.timeline_events, "ERROR", "proposal lifecycle degraded")
@@ -795,6 +954,35 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
             state.runtime_snapshot_cache["telemetry"] = state.telemetry_snapshot
             state.telemetry_viewer_open = True
             message = "Telemetry snapshot opened"
+        elif action == "Proposal History":
+            state.proposal_history_open = True
+            state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+            message = "Proposal history opened"
+        elif action == "Export Latest Verdict":
+            result = export_latest_verdict()
+            state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
+            message = f"Latest verdict exported: {result['json_path']}"
+        elif action == "Create Simulation":
+            title = state.current_proposal.splitlines()[0][:80] if state.current_proposal else "Operator Simulation Scaffold"
+            scenario = create_stored_scenario(
+                title=title,
+                description=state.current_proposal or "Deterministic simulation scaffold awaiting proposal context.",
+                scenario_type="strategic_forecast",
+                proposal_id=state.last_proposal_record_id or None,
+                assumptions={},
+                actors=[],
+                triggers=[],
+                timeline_horizon="operator_defined",
+                branch_depth=1,
+                status="DRAFT",
+            )
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.simulation_viewer_open = True
+            message = f"Simulation created: {scenario.scenario_id}"
+        elif action == "View Simulations":
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.simulation_viewer_open = True
+            message = "Simulation registry opened"
         elif action == "Toggle Theme":
             options = [theme.key for theme in get_gui_theme_options()]
             index = options.index(state.theme_key) if state.theme_key in options else -1
@@ -827,6 +1015,7 @@ def _memory_status_text() -> str:
 def _apply_page_theme(page: ft.Page, state: GuiState) -> None:
     theme = state.theme
     page.title = "CONSENSUS War Room"
+    apply_app_icon_to_page(page)
     page.bgcolor = theme.background_color
     page.theme = ft.Theme(font_family=theme.font_family)
     page.scroll = None
@@ -978,6 +1167,130 @@ def build_decision_trace_viewer(
     )
 
 
+def build_proposal_history_viewer(
+    state: GuiState,
+    on_action: Callable[[str, str], None] | None = None,
+    proposals: List[Dict[str, Any]] | None = None,
+) -> ft.Control:
+    theme = state.theme
+    recent = proposals if proposals is not None else list_recent_proposals(limit=20)
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    def action_button(label: str, action: str, proposal_id: str) -> ft.Control:
+        handler = (lambda _: on_action(action, proposal_id)) if on_action is not None else None
+        return ft.TextButton(
+            label,
+            on_click=handler,
+            style=ft.ButtonStyle(
+                color=theme.primary_color,
+                bgcolor=theme.background_color,
+                side=ft.BorderSide(1, theme.secondary_color),
+                shape=ft.RoundedRectangleBorder(radius=0),
+                padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                text_style=ft.TextStyle(size=10, font_family=theme.font_family),
+            ),
+            height=30,
+        )
+
+    def status_color(status: str) -> str:
+        return {
+            "DECIDED": theme.primary_color,
+            "NO_CONSENSUS": theme.warning_color,
+            "ESCALATED": theme.warning_color,
+            "ERROR": theme.error_color,
+            "ARCHIVED": theme.muted_text or theme.secondary_color,
+            "SUBMITTED": theme.accent_color,
+            "DRAFT": theme.secondary_color,
+        }.get(status.upper(), theme.secondary_color)
+
+    def status_badge(status: str) -> ft.Control:
+        color = status_color(status)
+        return ft.Container(
+            content=text(status.upper(), color, size=9, bold=True),
+            padding=ft.padding.symmetric(horizontal=6, vertical=2),
+            border=ft.border.all(1, color),
+            bgcolor=theme.background_color,
+            tooltip=f"Proposal decision status: {status.upper()}",
+        )
+
+    rows: list[ft.Control] = []
+    for proposal in recent:
+        proposal_id = str(proposal.get("proposal_id") or "--")
+        status = str(proposal.get("status") or "--")
+        decision_status = str(proposal.get("decision_status") or status)
+        verdict_available = bool(proposal.get("linked_verdict_export_json") or proposal.get("linked_verdict_export_md"))
+        verdict_text = "Verdict linked" if verdict_available else "Awaiting tribunal resolution."
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Row(
+                            [
+                                text(str(proposal.get("created_at", "--")), theme.secondary_color),
+                                status_badge(status),
+                                status_badge(decision_status),
+                            ],
+                            spacing=6,
+                        ),
+                        text(str(proposal.get("title") or "Untitled Proposal"), theme.accent_color, bold=True),
+                        text(f"{proposal.get('template_id') or 'manual'} | {proposal_id}", theme.panel_value or theme.text_color),
+                        text(f"{proposal.get('decision_timestamp') or '--'} | {verdict_text}", status_color(decision_status)),
+                        ft.Row(
+                            [
+                                action_button("RESEND", "resend", proposal_id),
+                                action_button("DUPLICATE/EDIT", "duplicate", proposal_id),
+                                action_button("REOPEN DRAFT", "reopen", proposal_id),
+                                action_button("OPEN VERDICT", "open_verdict", proposal_id),
+                                action_button("EXPORT DOSSIER", "export_dossier", proposal_id),
+                                action_button("ARCHIVE", "archive", proposal_id),
+                            ],
+                            spacing=6,
+                            wrap=True,
+                        ),
+                    ],
+                    spacing=3,
+                ),
+                padding=7,
+                border=ft.border.all(1, theme.secondary_color),
+                bgcolor=theme.background_color,
+            )
+        )
+    if not rows:
+        rows.append(text("NO PROPOSAL HISTORY FOUND", theme.warning_color, bold=True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("PROPOSAL HISTORY", theme.accent_color, size=14, bold=True),
+                        text("CTRL+H", theme.secondary_color, size=10),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=620,
+        height=600,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
 def build_visual_review_status_viewer(state: GuiState) -> ft.Control:
     theme = state.theme
     summary = state.runtime_snapshot_cache.get("visual_review")
@@ -1091,6 +1404,74 @@ def build_telemetry_snapshot_viewer(state: GuiState) -> ft.Control:
     )
 
 
+def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | None = None) -> ft.Control:
+    theme = state.theme
+    recent = scenarios if scenarios is not None else list_recent_scenarios(limit=20)
+    status = state.runtime_snapshot_cache.get("simulation_status")
+    if not isinstance(status, dict):
+        status = get_simulation_status()
+
+    def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=size,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    rows: list[ft.Control] = []
+    for scenario in recent:
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(str(scenario.get("scenario_id", "--")), theme.accent_color, bold=True),
+                        text(str(scenario.get("title", "Untitled Simulation")), theme.panel_value or theme.text_color),
+                        text(
+                            f"{scenario.get('scenario_type', '--')} | {scenario.get('status', '--')} | proposal {scenario.get('proposal_id') or '--'}",
+                            theme.secondary_text or theme.secondary_color,
+                        ),
+                    ],
+                    spacing=2,
+                ),
+                padding=6,
+                border=ft.border.all(1, theme.secondary_color),
+                bgcolor=theme.background_color,
+            )
+        )
+    if not rows:
+        rows.append(text("NO SIMULATIONS RECORDED", theme.warning_color, bold=True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text("SIMULATION REGISTRY", theme.accent_color, size=14, bold=True),
+                        text(str(status.get("engine_status", "READY")), theme.primary_color, size=10, bold=True),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                text(
+                    f"SCENARIOS {status.get('scenario_count', 0)} | BRANCHES {status.get('branch_count', 0)} | LATEST {status.get('latest_simulation_id') or '--'}",
+                    theme.panel_value or theme.text_color,
+                ),
+                ft.Column(rows, spacing=6, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=600,
+        height=560,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
 def build_gui_layout(
     state: GuiState,
     submit,
@@ -1103,6 +1484,8 @@ def build_gui_layout(
     refresh_bellator_intelligence=None,
     toggle_diagnostics=None,
     open_trace_viewer=None,
+    on_template_select=None,
+    on_proposal_change=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -1124,31 +1507,58 @@ def build_gui_layout(
     def hold_footer_interaction() -> None:
         state.ui_interaction_hold_until = time.monotonic() + GUI_INTERACTION_HOLD_SECONDS
 
+    shortcut_text = "Ctrl+K Command   Ctrl+D Diagnostics   Ctrl+T Theme   Ctrl+H History   Ctrl+E Export"
+    footer_shortcuts = ft.Container(
+        content=ft.Text(
+            shortcut_text,
+            color=theme.secondary_text or theme.secondary_color,
+            size=10,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+            text_align=ft.TextAlign.CENTER,
+            data="footer_shortcuts_text",
+        ),
+        alignment=ft.alignment.center,
+        expand=True,
+        data={
+            "role": "footer_shortcuts",
+            "alignment": get_theme_layout_metadata(theme.key).footer_shortcut_alignment,
+        },
+    )
     footer_controls = ft.Row(
         [
-            build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
-            ft.Switch(
-                label="AURELIUS Voice Loop",
-                value=state.aurelius_voice_loop_enabled,
-                on_change=toggle_aurelius_voice,
-                active_color=theme.accent_color,
+            ft.Container(
+                build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
+                width=230,
+                alignment=ft.alignment.center_left,
             ),
-            terminal_button("EXPORT HISTORY", lambda _: export_decision_history()),
-            terminal_button("EXPORT LOGS", lambda _: export_session_logs()),
-            terminal_button("OPEN PREVIEWS", lambda _: open_theme_preview_folder()),
-            terminal_button("REFRESH STATUS", refresh),
-            terminal_button("RECHECK PROVIDER", recheck_provider or refresh),
-            terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
-            terminal_button("HEALTH CHECK", run_health),
-            terminal_button("SHUTDOWN GUI", close_gui),
+            footer_shortcuts,
+            ft.Container(
+                content=ft.Row(
+                    [
+                        terminal_button("DIAGNOSTICS", toggle_diagnostics or refresh),
+                    ],
+                    alignment=ft.MainAxisAlignment.END,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=0,
+                    tight=True,
+                ),
+                width=230,
+                alignment=ft.alignment.center_right,
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                data={"role": "footer_aux_controls"},
+            ),
         ],
-        wrap=True,
-        spacing=8,
+        wrap=False,
+        spacing=0,
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        data={"role": "footer_controls"},
     )
 
     last_verdict = state.current_result.verdict.value if state.current_result else "--"
     session_id = state.current_result.session_id if state.current_result else "--"
+    layout_meta = get_theme_layout_metadata(theme.key)
     left = ft.Container(
             build_monolith_panel(
                 theme,
@@ -1172,7 +1582,21 @@ def build_gui_layout(
     center = ft.Container(
         ft.Column(
             [
-                ft.Container(build_proposal_panel(theme, submit), expand=3, clip_behavior=ft.ClipBehavior.HARD_EDGE),
+                ft.Container(
+                    build_proposal_panel(
+                        theme,
+                        submit,
+                        initial_value=state.proposal_input_text,
+                        templates=list_templates(),
+                        selected_template_id=state.proposal_template_id,
+                        on_template_select=on_template_select,
+                        on_change=on_proposal_change,
+                    ),
+                    expand=4,
+                    height=layout_meta.proposal_panel_min_height,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "proposal_panel_region"},
+                ),
                 ft.Container(
                     build_verdict_panel(
                         theme,
@@ -1185,12 +1609,17 @@ def build_gui_layout(
                         context_summary=state.context_summary,
                         cursor_visible=state.cursor_visible,
                         consensus_locked=state.consensus_locked,
+                        lifecycle_events=state.lifecycle_events,
+                        reasoning_events=state.reasoning_stream,
+                        convergence_percent=state.convergence_percent,
+                        phase_durations=state.phase_durations,
                     ),
-                    expand=7,
+                    expand=6,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "verdict_panel_region"},
                 ),
             ],
-            spacing=12,
+            spacing=layout_meta.proposal_verdict_gap,
             expand=True,
         ),
         expand=6,
@@ -1217,6 +1646,7 @@ def build_gui_layout(
                         ],
                         spacing=8,
                         tight=True,
+                        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     ),
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 ),
@@ -1231,6 +1661,7 @@ def build_gui_layout(
             ],
             spacing=12,
             expand=True,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
         expand=2,
     )
@@ -1273,8 +1704,10 @@ def build_gui_layout(
     shell.diagnostics_drawer = build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer)  # type: ignore[attr-defined]
     shell.command_palette = build_command_palette(state)  # type: ignore[attr-defined]
     shell.decision_trace_viewer = build_decision_trace_viewer(state)  # type: ignore[attr-defined]
+    shell.proposal_history_viewer = build_proposal_history_viewer(state)  # type: ignore[attr-defined]
     shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
     shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
+    shell.simulation_viewer = build_simulation_viewer(state)  # type: ignore[attr-defined]
     return shell
 
 
@@ -1310,6 +1743,18 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     if not isinstance(visual_review, dict):
         visual_review = manual_visual_review_summary()
     telemetry = state.telemetry_snapshot or state.runtime_snapshot_cache.get("telemetry") or {}
+    proposal_status = state.runtime_snapshot_cache.get("proposal_history_status")
+    if not isinstance(proposal_status, dict):
+        proposal_status = proposal_history_status()
+    verdict_export = state.runtime_snapshot_cache.get("latest_verdict_export")
+    if not isinstance(verdict_export, dict):
+        verdict_export = latest_verdict_export_status()
+    lifecycle = state.runtime_snapshot_cache.get("proposal_lifecycle_summary")
+    if not isinstance(lifecycle, dict):
+        lifecycle = proposal_lifecycle_summary()
+    dossier_export = state.runtime_snapshot_cache.get("latest_dossier_export")
+    if not isinstance(dossier_export, dict):
+        dossier_export = latest_dossier_export_status()
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1349,6 +1794,13 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
                 height=34,
             ),
             text(f"LAST TEST MANIFEST: {latest_test_manifest_path()}"),
+            text(f"PROPOSAL HISTORY: {proposal_status.get('recent_count', 0)} recent | {proposal_status.get('last_proposal_id') or '--'}"),
+            text(
+                f"LIFECYCLE: DECIDED {lifecycle.get('decided_total', 0)} | NO_CONSENSUS {lifecycle.get('no_consensus_total', 0)} | ESCALATED {lifecycle.get('escalated_total', 0)} | ERROR {lifecycle.get('error_total', 0)}",
+                theme.panel_value or theme.text_color,
+            ),
+            text(f"LATEST VERDICT EXPORT: {verdict_export.get('latest_json') or '--'}"),
+            text(f"LATEST DOSSIER EXPORT: {dossier_export.get('latest_json') or '--'}"),
             text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
             text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
             text(
@@ -1432,9 +1884,49 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             log_event("gui_decision_trace_viewer", {"open": True, "theme": state.theme_key})
             _render_page(page, state)
 
+        def handle_template_select(template_id: str) -> None:
+            state.proposal_template_id = template_id
+            if template_id:
+                state.proposal_input_text = render_template_draft(template_id)
+            state.operator_status = f"Template loaded: {template_id or 'manual'}"
+            _render_page(page, state)
+
+        def handle_proposal_change(value: str) -> None:
+            state.proposal_input_text = value
+
+        def handle_proposal_history_action(action: str, proposal_id: str) -> None:
+            try:
+                if action == "resend":
+                    record = resend_proposal(proposal_id)
+                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                    state.operator_status = f"Proposal resent: {state.last_proposal_record_id}"
+                elif action in {"duplicate", "reopen"}:
+                    record = duplicate_proposal(proposal_id)
+                    state.proposal_input_text = str(record.get("body") or "")
+                    state.proposal_template_id = str(record.get("template_id") or "")
+                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                    state.operator_status = f"Draft reopened: {state.last_proposal_record_id}" if action == "reopen" else f"Draft duplicated: {state.last_proposal_record_id}"
+                elif action == "open_verdict":
+                    proposal = next((item for item in list_recent_proposals(5000, include_archived=True) if item.get("proposal_id") == proposal_id), None)
+                    verdict_path = str((proposal or {}).get("linked_verdict_export_md") or (proposal or {}).get("linked_verdict_export_json") or "")
+                    state.operator_status = f"Verdict: {verdict_path or 'Awaiting tribunal resolution.'}"
+                elif action == "export_dossier":
+                    result = export_dossier(proposal_id)
+                    state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+                    state.operator_status = f"Dossier exported: {result['markdown_path']}"
+                elif action == "archive":
+                    archive_proposal(proposal_id)
+                    state.operator_status = f"Proposal archived: {proposal_id}"
+                state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+                state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
+            except Exception as exc:
+                state.operator_status = f"Proposal history action failed: {exc}"
+                log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
+            _render_page(page, state)
+
         def handle_command_action(action: str) -> None:
             state.command_palette_open = False
-            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity"}:
+            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict"}:
                 state.operator_status = f"{action} running"
                 _render_page(page, state)
 
@@ -1464,6 +1956,20 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                     {"open": state.command_palette_open, "theme": state.theme_key},
                 )
                 _render_page(page, state)
+            elif ctrl and key == "D":
+                toggle_diagnostics(None)
+            elif ctrl and key == "T":
+                execute_command_palette_action(state, "Toggle Theme")
+                _render_page(page, state)
+            elif ctrl and key == "H":
+                state.proposal_history_open = not state.proposal_history_open
+                _render_page(page, state)
+            elif ctrl and key == "E":
+                try:
+                    execute_command_palette_action(state, "Export Latest Verdict")
+                except Exception:
+                    pass
+                _render_page(page, state)
 
         if hasattr(page, "on_keyboard_event"):
             page.on_keyboard_event = on_keyboard_event
@@ -1480,6 +1986,8 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             refresh_bellator_intelligence=refresh_bellator_intelligence,
             toggle_diagnostics=toggle_diagnostics,
             open_trace_viewer=open_trace_viewer,
+            on_template_select=handle_template_select,
+            on_proposal_change=handle_proposal_change,
         )
         page.controls.clear()
         page.add(layout)
@@ -1489,8 +1997,10 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                 "diagnostics_drawer",
                 "command_palette",
                 "decision_trace_viewer",
+                "proposal_history_viewer",
                 "visual_review_status",
                 "telemetry_snapshot",
+                "simulation_viewer",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
             if state.diagnostics_drawer_open:
@@ -1525,6 +2035,14 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                         data="decision_trace_viewer",
                     )
                 )
+            if state.proposal_history_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_proposal_history_viewer(state, on_action=handle_proposal_history_action),
+                        alignment=ft.alignment.center,
+                        data="proposal_history_viewer",
+                    )
+                )
             if state.visual_review_viewer_open:
                 overlay.append(
                     ft.Container(
@@ -1539,6 +2057,14 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                         content=build_telemetry_snapshot_viewer(state),
                         alignment=ft.alignment.center,
                         data="telemetry_snapshot",
+                    )
+                )
+            if state.simulation_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_simulation_viewer(state),
+                        alignment=ft.alignment.center,
+                        data="simulation_viewer",
                     )
                 )
         page.update()
@@ -1575,6 +2101,7 @@ def run_flet_gui(
     compact_header: bool = True,
     window_mode: GuiWindowMode = "maximized",
 ) -> None:
+    ensure_flet_desktop_runtime()
     state = create_gui_state(theme_key, config, nodes, compact_header=compact_header, window_mode=window_mode)
 
     def target(page: ft.Page) -> None:
@@ -1593,10 +2120,13 @@ __all__ = [
     "refresh_bellator_intelligence_status",
     "refresh_bellator_intelligence_for_gui",
     "run_flet_gui",
+    "ensure_flet_desktop_runtime",
     "build_gui_layout",
     "build_diagnostics_drawer",
     "build_command_palette",
     "build_decision_trace_viewer",
+    "build_proposal_history_viewer",
+    "build_simulation_viewer",
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",

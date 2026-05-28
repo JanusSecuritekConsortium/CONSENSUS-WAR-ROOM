@@ -1,0 +1,64 @@
+{
+  "version": "7.10.17",
+  "created_at": "2026-05-27T17:01:55+00:00",
+  "proposal": {
+    "proposal_id": "prop_e7eae699e32d",
+    "created_at": "2026-05-27T16:59:12+00:00",
+    "updated_at": "2026-05-27T16:59:14+00:00",
+    "source": "manual",
+    "template_id": null,
+    "title": "Approve a proposal lifecycle visualization test.",
+    "body": "Approve a proposal lifecycle visualization test.",
+    "taxonomy_hint": "",
+    "status": "SUBMITTED",
+    "decision_status": "DECIDED",
+    "parent_proposal_id": null
+  },
+  "decision": {
+    "linked_decision_trace_id": "7c5816ecc6da",
+    "decision_timestamp": "2026-05-27T18:59:13.925280",
+    "taxonomy": {
+      "proposal_classes": [
+        "analysis"
+      ],
+      "primary_class": "analysis",
+      "classifier_confidence": 1.0,
+      "classifier_version": "1.0.0",
+      "classified_at": "2026-05-27T16:59:13+00:00"
+    },
+    "votes": {
+      "RATIONALIS": {
+        "vote": "APPROVE",
+        "confidence": 0.82,
+        "evidence_quality": 0.72,
+        "critical_risk": false,
+        "model": "deepseek-coder:33b"
+      },
+      "AETERNUM": {
+        "vote": "APPROVE",
+        "confidence": 0.82,
+        "evidence_quality": 0.72,
+        "critical_risk": false,
+        "model": "llama3.3:70b"
+      },
+      "BELLATOR": {
+        "vote": "APPROVE",
+        "confidence": 0.82,
+        "evidence_quality": 0.72,
+        "critical_risk": false,
+        "model": "mixtral:8x7b"
+      }
+    },
+    "confidence": 0.9,
+    "final_verdict": "APPROVE",
+    "terminal_branch": "majority",
+    "review_triggers": []
+  },
+  "references": {
+    "history_path": "G:\\CONSENSUS_SYSTEM\\reports\\proposal_history.jsonl",
+    "trace_path": "G:\\CONSENSUS_SYSTEM\\_ARBITER\\logs\\system.jsonl",
+    "linked_verdict_path": "G:\\CONSENSUS_SYSTEM\\reports\\verdicts\\latest_verdict_7c5816ecc6da.md",
+    "linked_verdict_export_json": "G:\\CONSENSUS_SYSTEM\\reports\\verdicts\\latest_verdict_7c5816ecc6da.json",
+    "linked_verdict_export_md": "G:\\CONSENSUS_SYSTEM\\reports\\verdicts\\latest_verdict_7c5816ecc6da.md"
+  }
+}

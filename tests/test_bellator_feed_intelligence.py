@@ -80,7 +80,8 @@ def test_feed_normalizer_emits_shared_schema() -> None:
 
 
 def test_risk_scorer_builds_compact_summary() -> None:
-    today = datetime.now(timezone.utc).date().isoformat()
+    now = datetime.now(timezone.utc)
+    today = now.date().isoformat()
     events = normalize_feed_result(
         {
             "source": "nasa_firms",
@@ -91,7 +92,7 @@ def test_risk_scorer_builds_compact_summary() -> None:
                     "latitude": "12.1",
                     "longitude": "13.2",
                     "acq_date": today,
-                    "acq_time": "0800",
+                    "acq_time": now.strftime("%H%M"),
                     "frp": "120",
                     "confidence": "h",
                 }
@@ -99,7 +100,7 @@ def test_risk_scorer_builds_compact_summary() -> None:
         }
     )
 
-    score = score_events(events)
+    score = score_events(events, now=now)
 
     assert score["event_count"] == 1
     assert score["last_72h_count"] == 1

@@ -19,7 +19,13 @@ CATEGORIES = ("FAST", "GUI", "SLOW", "PROVIDER", "INTEGRATION")
 GUI_HEAVY_PATTERNS = ("gui_", "theme_logo", "theme_header", "compact_logo")
 PROVIDER_PATTERNS = ("provider", "msty", "ollama", "backend", "model_cache", "health_uses_model")
 INTEGRATION_PATTERNS = ("runtime", "bundle", "snapshot", "manifest", "integrity", "cli", "submission", "lifecycle")
-SLOW_NAME_PATTERNS = ("gui_window", "gui_header", "theme_logo", "msty_runtime", "provider_cli")
+SLOW_NAME_PATTERNS = (
+    "gui_window",
+    "gui_header",
+    "theme_logo",
+    "msty_runtime",
+    "provider_cli",
+)
 GUI_EXPENSIVE_SETUP_TOKENS = (
     "create_gui_state(",
     "ft.app(",

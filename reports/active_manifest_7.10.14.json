@@ -1,6 +1,6 @@
 {
   "version": "7.10.14",
-  "created_at": "2026-05-27T14:46:50.417099+00:00",
+  "created_at": "2026-05-27T14:56:01.649348+00:00",
   "root": "G:\\CONSENSUS_SYSTEM",
   "excluded_parts": [
     ".git",
@@ -29,10 +29,10 @@
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "bfdafbfbd2c2604efa3d6bb930138491a2cb427c4a347261f0d9d331cee4be2c",
-      "size": 42472,
-      "modified_timestamp": "2026-05-27T14:33:58+00:00",
-      "modified_time_ns": 1779892438000000000
+      "sha256": "e8024f64aec850f40e7fb973463ac5d270f4c08d57a26aae80440d0196dcb186",
+      "size": 42593,
+      "modified_timestamp": "2026-05-27T14:55:24+00:00",
+      "modified_time_ns": 1779893724000000000
     },
     {
       "path": "CONSENSUS_ARCHITECTURE.md",
@@ -1002,10 +1002,10 @@
     },
     {
       "path": "tests/test_header_logo_vertical_offsets.py",
-      "sha256": "29ab674c0a0b22a9722c1dc739ea3bab9c203681755da3cf6ff900c4e036941f",
+      "sha256": "42acab063e1a9a05e76d5e7a314069243f03c39b80c4bb2592b04e8fe1d62f94",
       "size": 1539,
-      "modified_timestamp": "2026-05-27T14:30:40+00:00",
-      "modified_time_ns": 1779892240000000000
+      "modified_timestamp": "2026-05-27T14:53:26+00:00",
+      "modified_time_ns": 1779893606000000000
     },
     {
       "path": "tests/test_health_badge.py",
@@ -1436,10 +1436,10 @@
     },
     {
       "path": "tests/test_theme_canonical_tokens.py",
-      "sha256": "271428c6ab62cb87cfdfaffe2c61160dbaf38abe23c790e640fe502b55769b04",
-      "size": 1790,
-      "modified_timestamp": "2026-05-27T14:30:40+00:00",
-      "modified_time_ns": 1779892240000000000
+      "sha256": "4885c7bd41c0fdd459469220fe9e08770eb1e91a73a574c9e148ef153776303f",
+      "size": 1784,
+      "modified_timestamp": "2026-05-27T14:53:26+00:00",
+      "modified_time_ns": 1779893606000000000
     },
     {
       "path": "tests/test_theme_colors_unchanged.py",
@@ -1471,10 +1471,10 @@
     },
     {
       "path": "tests/test_theme_header_layout_metadata.py",
-      "sha256": "89c796544a3313da91479379991f3f07d763d816903b4dedb978b5dbcd22cd9d",
-      "size": 1545,
-      "modified_timestamp": "2026-05-27T14:31:10+00:00",
-      "modified_time_ns": 1779892270000000000
+      "sha256": "67ddd531d249cc9925cf140e88bc45e159872fcf433d32071419b326a0ad7f86",
+      "size": 1710,
+      "modified_timestamp": "2026-05-27T14:53:26+00:00",
+      "modified_time_ns": 1779893606000000000
     },
     {
       "path": "tests/test_theme_header_presentation.py",
@@ -1555,10 +1555,10 @@
     },
     {
       "path": "tests/test_wh40k_compact_logo_asset.py",
-      "sha256": "f6b68fcb986d699157705f7fe50a43b8e9fd3cd60a910d589d0dea47cc4c95b8",
-      "size": 1159,
-      "modified_timestamp": "2026-05-27T14:30:40+00:00",
-      "modified_time_ns": 1779892240000000000
+      "sha256": "2d64f1bd725816a66b793931660dd0461d56e0f7defa295aa6e97822555c8bd4",
+      "size": 1207,
+      "modified_timestamp": "2026-05-27T14:53:26+00:00",
+      "modified_time_ns": 1779893606000000000
     },
     {
       "path": "tools/build_active_manifest.py",
@@ -1716,10 +1716,10 @@
     },
     {
       "path": "ui/assets/registry.py",
-      "sha256": "5bee97d81c4f8ac41f1e7cdce0bc26b86b323a242365a6760a166ce3e5c933bc",
-      "size": 6506,
-      "modified_timestamp": "2026-05-27T14:30:40+00:00",
-      "modified_time_ns": 1779892240000000000
+      "sha256": "5082fe4062c624152dcdc2a9e3da67cae9f8d5c43bff7cc5d50beeb93be22967",
+      "size": 6504,
+      "modified_timestamp": "2026-05-27T14:53:26+00:00",
+      "modified_time_ns": 1779893606000000000
     },
     {
       "path": "ui/components/__init__.py",

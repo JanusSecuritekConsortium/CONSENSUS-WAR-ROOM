@@ -9,17 +9,17 @@ from core.models import NodeIdentity
 
 
 DEFAULT_NODES: Dict[str, NodeIdentity] = {
-    RATIONALIS: NodeIdentity(
-        role="Logic",
-        codename=RATIONALIS,
-        core_name="Logic Core",
-        monolith_name=RATIONALIS,
-        symbol="R",
-        model=AGENT_PROFILES[RATIONALIS].model_preference,
-        temperature=0.1,
-        mission="formal reasoning, contradictions, feasibility, hidden assumptions",
+    BELLATOR: NodeIdentity(
+        role="Security",
+        codename=BELLATOR,
+        core_name="Security Core",
+        monolith_name=BELLATOR,
+        symbol="B",
+        model=AGENT_PROFILES[BELLATOR].model_preference,
+        temperature=0.6,
+        mission="operational risk, attack surface, resilience, tactical exposure",
         prompt=(
-            AGENT_PROFILES[RATIONALIS].system_prompt
+            AGENT_PROFILES[BELLATOR].system_prompt
         ),
     ),
     AETERNUM: NodeIdentity(
@@ -35,17 +35,17 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
             AGENT_PROFILES[AETERNUM].system_prompt
         ),
     ),
-    BELLATOR: NodeIdentity(
-        role="Security",
-        codename=BELLATOR,
-        core_name="Security Core",
-        monolith_name=BELLATOR,
-        symbol="B",
-        model=AGENT_PROFILES[BELLATOR].model_preference,
-        temperature=0.6,
-        mission="operational risk, attack surface, resilience, tactical exposure",
+    RATIONALIS: NodeIdentity(
+        role="Logic",
+        codename=RATIONALIS,
+        core_name="Logic Core",
+        monolith_name=RATIONALIS,
+        symbol="R",
+        model=AGENT_PROFILES[RATIONALIS].model_preference,
+        temperature=0.1,
+        mission="formal reasoning, contradictions, feasibility, hidden assumptions",
         prompt=(
-            AGENT_PROFILES[BELLATOR].system_prompt
+            AGENT_PROFILES[RATIONALIS].system_prompt
         ),
     ),
 }

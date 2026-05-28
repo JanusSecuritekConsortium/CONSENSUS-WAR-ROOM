@@ -94,14 +94,13 @@ def test_post_block_is_centered_consistently() -> None:
     assert leading_widths[0] > 0
 
 
-def test_logo_block_has_two_blank_lines_before_bios_header() -> None:
+def test_logo_block_has_one_blank_line_before_bios_header() -> None:
     for theme_key, theme in THEMES.items():
         lines = "\n".join(_boot_lines_with_logo(theme_key)).splitlines()
         logo_line_count = len(Path(theme.logo_path).read_text(encoding="utf-8").rstrip("\n").splitlines())
-        header_index = logo_line_count + (4 if theme_key == "arasaka" else 2)
+        header_index = logo_line_count + 1
 
         assert lines[logo_line_count] == "", theme_key
-        assert lines[logo_line_count + 1] == "", theme_key
         assert "BIOS" in lines[header_index], theme_key
 
 
@@ -122,6 +121,6 @@ if __name__ == "__main__":
     test_bios_post_does_not_include_provider_endpoint_details()
     test_ready_provider_line_is_compact_and_theme_specific()
     test_post_block_is_centered_consistently()
-    test_logo_block_has_two_blank_lines_before_bios_header()
+    test_logo_block_has_one_blank_line_before_bios_header()
     test_provider_details_remain_available_in_gui_provider_panel()
     print("test_bios_post_formatting PASS")
