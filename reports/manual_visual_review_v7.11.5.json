@@ -1,0 +1,49 @@
+{
+  "version": "7.11.5",
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "updated_at": "2026-05-28T04:50:00+00:00",
+  "themes": [
+    {
+      "theme": "eva",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\eva_v7.11.5.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "MAGI block/cube ASCII header replaced; user manual screenshot review remains authoritative.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "wh40k",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\wh40k_v7.11.5.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "v7.10.13 gothic ASCII restored with WH40K-only fit metadata.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "helldivers",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\helldivers_v7.11.5.png",
+      "status": "NEEDS_REVIEW",
+      "reviewer_notes": "Super Earth ASCII header tightened; no image logo introduced.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "arasaka",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\arasaka_v7.11.5.png",
+      "status": "PENDING",
+      "reviewer_notes": "No color or canonical logo changes in this pass.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "janus",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\janus_v7.11.5.png",
+      "status": "PENDING",
+      "reviewer_notes": "JANUS asset untouched.",
+      "reviewed_at": null
+    },
+    {
+      "theme": "military",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\military_v7.11.5.png",
+      "status": "PENDING",
+      "reviewer_notes": "Canonical EXCOMM asset unchanged.",
+      "reviewed_at": null
+    }
+  ]
+}

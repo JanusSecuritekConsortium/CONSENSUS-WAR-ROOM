@@ -17,11 +17,14 @@
     "max_history": 20
   },
   "llm": {
-    "provider": "ollama",
+    "provider": "msty",
     "api_timeout": 30,
     "vote_timeout": 45,
     "max_retries": 3,
-    "base_url": "http://localhost:11434",
+    "base_url": "",
+    "base_url_env": "AURELIUS_MSTY_BASE_URL",
+    "fallback_enabled": false,
+    "degraded_reason": "Msty provider endpoint not configured",
     "enable_parallel_processing": true,
     "response_validation": true
   },

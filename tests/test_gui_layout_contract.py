@@ -10,7 +10,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.runtime import RuntimeConfig
-from ui.components.header import COMPACT_LOGO_MAX_LINES, GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box
+from ui.assets.registry import THEME_GRAPHIC_ASSETS
+from ui.components.header import GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box, theme_header_height
 from ui.flet_app import _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -39,13 +40,27 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     logo_text = logo_text_control_from_box(header.content.controls[0]).value
 
     assert 120 <= GUI_HEADER_HEIGHT <= 180
-    assert header.height == GUI_HEADER_HEIGHT
+    assert header.height == theme_header_height(state.theme)
     assert logo_text == compact_logo_text(state.theme)
     assert logo_text != state.theme.logo.rstrip("\n")
-    assert len(logo_text.splitlines()) <= COMPACT_LOGO_MAX_LINES
+    assert len(logo_text.splitlines()) <= THEME_GRAPHIC_ASSETS[state.theme_key].expected_max_lines
     telemetry_labels = [row.controls[0].value for row in header.content.controls[1].content.controls[1:7]]
     assert "ACTIVE MODE" in telemetry_labels
     assert "SESSION" in telemetry_labels
+
+
+def test_helldivers_header_omits_session_status_row() -> None:
+    state = create_gui_state("HELLDIVERS", RuntimeConfig(theme="helldivers", backend="mock"))
+    layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
+    header = layout.content.controls[0]
+    telemetry_labels = [
+        row.controls[0].value
+        for row in header.content.controls[1].content.controls[1:]
+        if hasattr(row, "controls") and row.controls
+    ]
+
+    assert "ACTIVE MODE" in telemetry_labels
+    assert "SESSION" not in telemetry_labels
 
 
 def test_main_body_expands_and_footer_is_fixed() -> None:
@@ -112,6 +127,7 @@ def test_page_level_scroll_is_disabled_by_default() -> None:
 
 if __name__ == "__main__":
     test_header_has_bounded_height_and_compact_logo()
+    test_helldivers_header_omits_session_status_row()
     test_main_body_expands_and_footer_is_fixed()
     test_log_panel_scrolls_internally()
     test_recent_decisions_have_verdict_colors()

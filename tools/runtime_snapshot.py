@@ -14,8 +14,14 @@ from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import load_runtime_config
 from config.version import SYSTEM_VERSION
 from core.decision_trace import read_latest_trace
+from core.export.dossier import latest_dossier_export_status
+from core.export.verdict import latest_verdict_export_status
 from core.manual_visual_review import manual_visual_review_summary
+from core.decision_trace import read_latest_trace
 from core.paths import CONFIG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
+from core.proposals.lifecycle import proposal_lifecycle_summary
+from core.proposals.store import proposal_history_status
+from core.simulation.store import get_simulation_status
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
@@ -62,6 +68,8 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
     visual_review = manual_visual_review_summary()
     dependency_status = build_dependency_report()
     telemetry = sample_telemetry(TELEMETRY_HISTORY)
+    latest_trace = read_latest_trace()
+    lifecycle_events = latest_trace.get("lifecycle_events", []) if isinstance(latest_trace, dict) else []
     snapshot = {
         "version": SYSTEM_VERSION,
         "backend": config.backend,
@@ -87,6 +95,17 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "visual_review": visual_review,
         "dependency_status": dependency_status,
         "telemetry": telemetry,
+        "proposal_history_status": proposal_history_status(),
+        "proposal_lifecycle_summary": proposal_lifecycle_summary(),
+        "latest_verdict_export": latest_verdict_export_status(),
+        "latest_dossier_export": latest_dossier_export_status(),
+        "simulation_status": get_simulation_status(),
+        "tribunal_lifecycle": {
+            "latest_phase": lifecycle_events[-1].get("phase") if lifecycle_events else "IDLE",
+            "event_count": len(lifecycle_events),
+            "phase_durations": latest_trace.get("phase_durations", {}) if isinstance(latest_trace, dict) else {},
+            "convergence_percent": latest_trace.get("convergence_percent", 0.0) if isinstance(latest_trace, dict) else 0.0,
+        },
     }
     snapshot["health_badge"] = health_badge_from_snapshot(snapshot)
     return snapshot

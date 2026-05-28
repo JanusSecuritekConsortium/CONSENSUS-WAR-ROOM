@@ -47,7 +47,7 @@
       "operations"
     ]
   },
-  "ollama_base_url": "http://127.0.0.1:11434",
+  "ollama_base_url": "",
   "msty_base_url": "http://localhost:11964",
   "msty_llama_cpp_base_url": "",
   "mock_fallback_enabled": true,

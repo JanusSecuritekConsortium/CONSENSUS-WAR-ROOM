@@ -8,7 +8,7 @@ from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import HeaderLogoLayout, THEME_GRAPHIC_ASSETS, get_theme_graphic_asset
 
 GUI_HEADER_HEIGHT = 170
-COMPACT_LOGO_MAX_LINES = 8
+COMPACT_LOGO_MAX_LINES = 12
 GUI_LOGO_BOX_HEIGHT = GUI_HEADER_HEIGHT - 28
 GUI_LOGO_BOX_MAX_WIDTH = 1120
 LOGO_FONT_FAMILY = "Consolas"
@@ -16,9 +16,30 @@ LOGO_FONT_SIZE = 12
 GUI_COMPACT_LOGO_FILES = {key: asset.logo_path for key, asset in THEME_GRAPHIC_ASSETS.items()}
 
 
+def _read_logo_text_preserved(path) -> str:
+    return path.read_bytes().decode("utf-8")
+
+
 def _logo_width(logo: str) -> int:
     longest = max((len(line) for line in logo.splitlines()), default=64)
     return max(360, min(GUI_LOGO_BOX_MAX_WIDTH, int(longest * 7.5) + 32))
+
+
+def _logo_box_width(logo: str, layout: HeaderLogoLayout) -> int:
+    if layout.logo_box_width is not None:
+        return layout.logo_box_width
+    calculated = _logo_width(logo)
+    if layout.logo_box_max_width is not None:
+        return min(layout.logo_box_max_width, calculated)
+    return calculated
+
+
+def _logo_box_height(layout: HeaderLogoLayout) -> int:
+    return layout.logo_box_height or GUI_LOGO_BOX_HEIGHT
+
+
+def theme_header_height(theme: Theme) -> int:
+    return header_logo_layout(theme).header_height or GUI_HEADER_HEIGHT
 
 
 def header_logo_layout(theme: Theme) -> HeaderLogoLayout:
@@ -54,7 +75,7 @@ def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
         logo,
         font_family=LOGO_FONT_FAMILY,
         color=theme.primary_color,
-        selectable=True,
+        selectable=False,
         no_wrap=True,
         overflow=ft.TextOverflow.VISIBLE,
         style=ft.TextStyle(
@@ -68,6 +89,12 @@ def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
         size=font_size,
         data={"role": "theme_logo_text"},
     )
+
+
+def system_status_label_color(theme: Theme) -> str:
+    if theme.key == "arasaka":
+        return theme.secondary_text or "#ff8a8f"
+    return theme.secondary_color
 
 
 def _build_scrollable_logo_content(logo: str, theme: Theme) -> ft.Column:
@@ -103,6 +130,8 @@ def compact_logo_text(theme: Theme, max_lines: int = COMPACT_LOGO_MAX_LINES) -> 
     except KeyError:
         dedicated = GUI_COMPACT_LOGO_FILES.get(theme.key)
     if dedicated and dedicated.exists():
+        if theme.key in {"eva", "nerv", "helldivers"}:
+            return _read_logo_text_preserved(dedicated)
         return read_normalized_logo(dedicated).text
     lines = theme.logo.rstrip("\n").splitlines()
     first_visible = next((index for index, line in enumerate(lines) if line.strip()), 0)
@@ -140,16 +169,19 @@ def build_header(
         ("ACTIVE THEME", theme.key.upper()),
         ("PROVIDER", provider),
         ("MEMORY", memory_status),
-        ("SESSION", session_id),
     ]
+    if theme.key != "helldivers":
+        telemetry.append(("SESSION", session_id))
     logo_layout = header_logo_layout(theme)
+    logo_box_height = _logo_box_height(logo_layout)
+    header_height = theme_header_height(theme)
     return ft.Container(
         content=ft.Row(
             [
                 ft.Container(
                     content=_build_scrollable_logo_content(logo, theme),
-                    width=_logo_width(logo),
-                    height=GUI_LOGO_BOX_HEIGHT,
+                    width=_logo_box_width(logo, logo_layout),
+                    height=logo_box_height,
                     padding=ft.padding.only(
                         left=logo_layout.logo_side_padding,
                         right=logo_layout.logo_side_padding,
@@ -187,7 +219,7 @@ def build_header(
                                     [
                                         ft.Text(
                                             label,
-                                            color=theme.secondary_color,
+                                            color=system_status_label_color(theme),
                                             width=120,
                                             font_family=theme.font_family,
                                             size=12,
@@ -210,7 +242,7 @@ def build_header(
                     ),
                     padding=12,
                     expand=True,
-                    height=GUI_LOGO_BOX_HEIGHT,
+                    height=logo_box_height,
                     border=ft.border.all(1, theme.primary_color),
                     bgcolor=theme.surface_color,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -222,7 +254,7 @@ def build_header(
             wrap=False,
         ),
         padding=8,
-        height=GUI_HEADER_HEIGHT,
+        height=header_height,
         border=ft.border.all(1, theme.primary_color),
         bgcolor=theme.background_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -240,6 +272,8 @@ __all__ = [
     "build_header",
     "compact_logo_text",
     "header_logo_layout",
+    "theme_header_height",
     "has_dedicated_gui_compact_logo",
     "logo_text_control_from_box",
+    "system_status_label_color",
 ]
