@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 from config.version import SYSTEM_VERSION
 
 
-REQUIRED_DEPENDENCIES = ("psutil", "flet", "requests")
+REQUIRED_DEPENDENCIES = ("psutil", "flet", "flet_desktop", "requests")
 OPTIONAL_DEPENDENCIES = ("GPUtil",)
 INSTALL_HINTS = [
     "python -m pip install -e .",

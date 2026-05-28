@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.11.9 - Flet Desktop Runtime Dependency Fix
+
+- Declared `flet`, `flet-desktop`, and `requests` as runtime dependencies so editable installs provision the desktop GUI runtime instead of relying on Flet auto-install behavior.
+- Added a GUI launch preflight that checks for the importable `flet_desktop` module and raises a clear install command before opening the WAR ROOM.
+- Updated dependency diagnostics to include `flet_desktop` as a required runtime dependency.
+
 ## 7.11.8 - User ASCII Header Assets
 
 - Replaced the EVA/NERV and HELLDIVERS GUI header ASCII assets with the user-provided final framebuffer text files as canonical sources.

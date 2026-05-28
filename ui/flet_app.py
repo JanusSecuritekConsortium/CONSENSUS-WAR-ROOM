@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import uuid
+import importlib.util
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -136,6 +137,18 @@ COMMAND_PALETTE_ACTIONS = (
     "Toggle Theme",
     "Open Decision Trace Viewer",
 )
+
+
+def ensure_flet_desktop_runtime() -> None:
+    if importlib.util.find_spec("flet_desktop") is not None:
+        return
+    flet_version = getattr(ft, "__version__", None)
+    package = f"flet-desktop=={flet_version}" if flet_version else "flet-desktop"
+    raise RuntimeError(
+        "Flet desktop runtime is not installed in this Python environment. "
+        f"Run `python -m pip install -e .` or `python -m pip install {package}` "
+        "from the active CONSENSUS virtual environment, then restart the app."
+    )
 
 
 @dataclass
@@ -2086,6 +2099,7 @@ def run_flet_gui(
     compact_header: bool = True,
     window_mode: GuiWindowMode = "maximized",
 ) -> None:
+    ensure_flet_desktop_runtime()
     state = create_gui_state(theme_key, config, nodes, compact_header=compact_header, window_mode=window_mode)
 
     def target(page: ft.Page) -> None:
@@ -2104,6 +2118,7 @@ __all__ = [
     "refresh_bellator_intelligence_status",
     "refresh_bellator_intelligence_for_gui",
     "run_flet_gui",
+    "ensure_flet_desktop_runtime",
     "build_gui_layout",
     "build_diagnostics_drawer",
     "build_command_palette",
