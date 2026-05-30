@@ -33,6 +33,12 @@ def _layout_for(theme_key: str = "EVA") -> ft.Control:
     return build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
 
 
+def _header_status_labels(header: ft.Control) -> list[str]:
+    status_row = header.content.controls[1].content.controls[1]
+    status_column = status_row.controls[0]
+    return [row.controls[0].value for row in status_column.controls if hasattr(row, "controls")]
+
+
 def test_header_has_bounded_height_and_compact_logo() -> None:
     state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"))
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
@@ -44,7 +50,7 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     assert logo_text == compact_logo_text(state.theme)
     assert logo_text != state.theme.logo.rstrip("\n")
     assert len(logo_text.splitlines()) <= THEME_GRAPHIC_ASSETS[state.theme_key].expected_max_lines
-    telemetry_labels = [row.controls[0].value for row in header.content.controls[1].content.controls[1:7]]
+    telemetry_labels = _header_status_labels(header)
     assert "ACTIVE MODE" in telemetry_labels
     assert "SESSION" in telemetry_labels
 
@@ -53,11 +59,7 @@ def test_helldivers_header_omits_session_status_row() -> None:
     state = create_gui_state("HELLDIVERS", RuntimeConfig(theme="helldivers", backend="mock"))
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     header = layout.content.controls[0]
-    telemetry_labels = [
-        row.controls[0].value
-        for row in header.content.controls[1].content.controls[1:]
-        if hasattr(row, "controls") and row.controls
-    ]
+    telemetry_labels = _header_status_labels(header)
 
     assert "ACTIVE MODE" in telemetry_labels
     assert "SESSION" not in telemetry_labels

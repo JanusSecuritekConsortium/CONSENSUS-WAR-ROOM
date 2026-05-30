@@ -6,6 +6,7 @@ from config.version import SYSTEM_VERSION
 from core.models import Theme
 from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import HeaderLogoLayout, THEME_GRAPHIC_ASSETS, get_theme_graphic_asset
+from ui.components.telemetry_panel import telemetry_graph_lines, telemetry_summary_lines
 
 GUI_HEADER_HEIGHT = 170
 COMPACT_LOGO_MAX_LINES = 12
@@ -151,6 +152,7 @@ def build_header(
     compact: bool = True,
     ambient_status: str = "MONOLITH LINK STABLE",
     health_badge: dict[str, str] | None = None,
+    telemetry: dict | None = None,
 ) -> ft.Control:
     logo = compact_logo_text(theme) if compact else theme.logo.rstrip("\n")
     provider = provider_status.upper()
@@ -163,7 +165,7 @@ def build_header(
         "warning": theme.warning_color,
         "error": theme.error_color,
     }.get(badge_role, theme.warning_color)
-    telemetry = [
+    status_rows = [
         ("BUILD", SYSTEM_VERSION),
         ("ACTIVE MODE", "GUI WAR ROOM"),
         ("ACTIVE THEME", theme.key.upper()),
@@ -171,7 +173,9 @@ def build_header(
         ("MEMORY", memory_status),
     ]
     if theme.key != "helldivers":
-        telemetry.append(("SESSION", session_id))
+        status_rows.append(("SESSION", session_id))
+    telemetry_lines = telemetry_summary_lines(theme.key, telemetry)[:6]
+    telemetry_graph = telemetry_graph_lines(theme.key, telemetry)
     logo_layout = header_logo_layout(theme)
     logo_box_height = _logo_box_height(logo_layout)
     header_height = theme_header_height(theme)
@@ -214,31 +218,75 @@ def build_header(
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
-                            *[
-                                ft.Row(
-                                    [
-                                        ft.Text(
-                                            label,
-                                            color=system_status_label_color(theme),
-                                            width=120,
-                                            font_family=theme.font_family,
-                                            size=12,
+                            ft.Row(
+                                [
+                                    ft.Column(
+                                        [
+                                            *[
+                                                ft.Row(
+                                                    [
+                                                        ft.Text(
+                                                            label,
+                                                            color=system_status_label_color(theme),
+                                                            width=116,
+                                                            font_family=theme.font_family,
+                                                            size=11,
+                                                        ),
+                                                        ft.Text(
+                                                            value,
+                                                            color=provider_color if label == "PROVIDER" else theme.text_color,
+                                                            font_family=theme.font_family,
+                                                            size=11,
+                                                            weight=ft.FontWeight.BOLD if label in {"PROVIDER", "ACTIVE THEME"} else None,
+                                                            max_lines=1,
+                                                            overflow=ft.TextOverflow.ELLIPSIS,
+                                                        ),
+                                                    ],
+                                                    spacing=8,
+                                                )
+                                                for label, value in status_rows
+                                            ],
+                                            ft.Text(
+                                                f"* {ambient_status}",
+                                                color=theme.accent_color,
+                                                font_family=theme.font_family,
+                                                size=10,
+                                                max_lines=1,
+                                                overflow=ft.TextOverflow.ELLIPSIS,
+                                            ),
+                                        ],
+                                        spacing=2,
+                                        tight=True,
+                                        expand=1,
+                                    ),
+                                    ft.Container(
+                                        content=ft.Column(
+                                            [
+                                                ft.Text("LIVE TELEMETRY", color=theme.accent_color, font_family=theme.font_family, size=10, weight=ft.FontWeight.BOLD),
+                                                *[
+                                                    ft.Text(line, color=theme.panel_value or theme.text_color, font_family=theme.font_family, size=9, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS)
+                                                    for line in telemetry_lines
+                                                ],
+                                                *[
+                                                    ft.Text(line, color=theme.secondary_text or theme.secondary_color, font_family=theme.font_family, size=8, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS)
+                                                    for line in telemetry_graph
+                                                ],
+                                            ],
+                                            spacing=1,
+                                            tight=True,
                                         ),
-                                        ft.Text(
-                                            value,
-                                            color=provider_color if label == "PROVIDER" else theme.text_color,
-                                            font_family=theme.font_family,
-                                            size=12,
-                                            weight=ft.FontWeight.BOLD if label in {"PROVIDER", "ACTIVE THEME"} else None,
-                                        ),
-                                    ],
-                                    spacing=8,
-                                )
-                                for label, value in telemetry
-                            ],
-                            ft.Text(f"* {ambient_status}", color=theme.accent_color, font_family=theme.font_family, size=12),
+                                        width=460,
+                                        padding=ft.padding.only(left=10),
+                                        border=ft.border.only(left=ft.BorderSide(1, theme.secondary_color)),
+                                        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                                        data={"role": "header_telemetry_panel"},
+                                    ),
+                                ],
+                                spacing=10,
+                                vertical_alignment=ft.CrossAxisAlignment.START,
+                            ),
                         ],
-                        spacing=3,
+                        spacing=4,
                     ),
                     padding=12,
                     expand=True,
