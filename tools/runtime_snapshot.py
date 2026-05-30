@@ -26,6 +26,7 @@ from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
 from tools.verify_active_manifest import verify_active_manifest
+from voice.arbiter_verdict_voice import voice_status_snapshot
 
 
 def health_badge_from_snapshot(snapshot: Dict[str, Any] | None) -> Dict[str, str]:
@@ -95,6 +96,7 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "visual_review": visual_review,
         "dependency_status": dependency_status,
         "telemetry": telemetry,
+        "voice_status": voice_status_snapshot(),
         "proposal_history_status": proposal_history_status(),
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
         "latest_verdict_export": latest_verdict_export_status(),

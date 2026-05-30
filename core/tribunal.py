@@ -73,7 +73,7 @@ class Tribunal:
             self.voice_announcer(result)
         except Exception as exc:
             log_event(
-                "aurelius_verdict_announcement_failed",
+                "arbiter_verdict_announcement_failed",
                 {"session_id": result.session_id, "verdict": result.verdict.value, "error": str(exc)},
                 level="WARN",
             )

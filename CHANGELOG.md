@@ -1,5 +1,20 @@
 # Changelog
 
+## 7.11.13 - ARBITER Verdict Voice Dispatch
+
+- Added a dedicated ARBITER/GLaDOS verdict voice dispatcher for every terminal tribunal outcome, including NO_CONSENSUS and classification failure.
+- Routed GUI terminal verdict announcements through the ARBITER voice path instead of the AURELIUS operator voice path.
+- Added once-per-proposal dispatch guards, non-blocking GUI dispatch, and success/failure/degraded voice logging.
+- Added runtime snapshot and diagnostics voice status with the latest voice announcement metadata.
+- Added a manual ARBITER voice test script for terminal verdict announcements.
+
+## 7.11.12 - Telemetry Relocation and Diagnostics Freeze Fix
+
+- Moved live telemetry into the top-right header system area with compact theme-specific summary lines and widened text graphs.
+- Converted the lower-right telemetry slot into the health/system diagnostics summary area while preserving provider, active model, memory, context, and lifecycle visibility.
+- Made diagnostics drawer toggling use cached GUI snapshot state and avoid fresh runtime snapshot work on the UI thread.
+- Added overlay replacement/reentrant regression coverage so repeated diagnostics opens do not stack drawers or freeze the interface.
+
 ## 7.11.11 - WAR ROOM Layout Consistency Refinement
 
 - Tightened WH40K, EVA/NERV, HELLDIVERS, and ARASAKA header logo containers through theme metadata without changing ASCII assets or color palettes.
