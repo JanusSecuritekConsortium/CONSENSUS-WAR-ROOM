@@ -13,23 +13,30 @@ def utc_now() -> str:
 class Branch:
     branch_id: str
     parent_branch_id: str | None
+    scenario_id: str
+    depth: int
+    title: str
     probability: float
     risk_score: float
     summary: str
     assumptions_delta: Dict[str, Any] = field(default_factory=dict)
+    assumptions_used: Dict[str, Any] = field(default_factory=dict)
     escalation_flags: List[str] = field(default_factory=list)
     tribunal_votes: Dict[str, Any] = field(default_factory=dict)
     generated_at: str = field(default_factory=utc_now)
     divergence_index: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["parent_id"] = self.parent_branch_id
+        return payload
 
 
 @dataclass(frozen=True)
 class Scenario:
     scenario_id: str
     created_at: str
+    updated_at: str
     proposal_id: str | None
     title: str
     description: str
@@ -45,6 +52,8 @@ class Scenario:
 
     def to_dict(self) -> Dict[str, Any]:
         payload = asdict(self)
+        payload["linked_proposal_id"] = self.proposal_id
+        payload["horizon"] = self.timeline_horizon
         payload["generated_branches"] = [branch.to_dict() if isinstance(branch, Branch) else branch for branch in self.generated_branches]
         return payload
 

@@ -25,10 +25,16 @@ def create_scenario(
     registry = default_registry()
     definition = registry.get(scenario_type)
     scenario_id = f"sim_{uuid.uuid4().hex[:12]}"
-    initial_branch = create_initial_branch(scenario_id, "Baseline branch awaiting tribunal evaluation.")
+    timestamp = utc_now()
+    initial_branch = create_initial_branch(
+        scenario_id,
+        "Baseline branch containing operator-provided assumptions only.",
+        assumptions_used=assumptions or {},
+    )
     return Scenario(
         scenario_id=scenario_id,
-        created_at=utc_now(),
+        created_at=timestamp,
+        updated_at=timestamp,
         proposal_id=proposal_id,
         title=title.strip() or definition.title,
         description=description.strip(),

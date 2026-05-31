@@ -12,6 +12,7 @@ from core.paths import CONFIG_PATH
 @dataclass
 class RuntimeConfig:
     theme: str = "military"
+    startup_theme: str = "RANDOM"
     backend: str = "msty-local"
     sequential: bool = False
     minimum_confidence: float = 0.6

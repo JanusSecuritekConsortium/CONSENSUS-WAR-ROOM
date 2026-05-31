@@ -22,6 +22,7 @@ from core.paths import CONFIG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
 from core.proposals.lifecycle import proposal_lifecycle_summary
 from core.proposals.store import proposal_history_status
 from core.simulation.store import get_simulation_status
+from core.export.simulation import latest_simulation_dossier_status
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
@@ -102,6 +103,7 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "latest_verdict_export": latest_verdict_export_status(),
         "latest_dossier_export": latest_dossier_export_status(),
         "simulation_status": get_simulation_status(),
+        "latest_simulation_dossier": latest_simulation_dossier_status(),
         "tribunal_lifecycle": {
             "latest_phase": lifecycle_events[-1].get("phase") if lifecycle_events else "IDLE",
             "event_count": len(lifecycle_events),
