@@ -10,6 +10,7 @@ datas = [
     (str(ROOT / "static"), "static"),
     (str(ROOT / "_ARBITER" / "genesis_config.json"), "_ARBITER"),
     (str(ROOT / "voice" / "voice_config.json"), "voice"),
+    (str(ROOT / "config" / "data_sources.json"), "config"),
 ]
 
 a = Analysis(

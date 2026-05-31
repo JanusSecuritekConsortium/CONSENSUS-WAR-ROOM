@@ -185,6 +185,28 @@ Branch expansion requires explicit operator assumptions. The system records
 deterministic branch probability/risk scaffolding only and does not generate
 forecasts or invented intelligence.
 
+## Real Data Layer
+
+The v7.13 data-source foundation supplies normalized, cache-backed external
+context for `BELLATOR` and `AETERNUM`. Tribunal prompt enrichment is cache-only
+and explicitly reports unavailable data; it never invents intelligence when a
+source is disabled, unconfigured, stale, or empty.
+
+Public GDELT and configured RSS feeds are enabled by default. Credentialed
+sources stay disabled until explicitly enabled in `config/data_sources.json`
+and configured through environment variables. Ground News integration requires
+official API access and does not scrape. IBKR access is read-only and rejects
+order placement.
+
+GUI command palette actions:
+
+- `Refresh Data Sources`: background live refresh with TTL cache fallback.
+- `View Source Health`: redacted adapter health and configuration status.
+- `View Bellator Intel Feed`: normalized conflict/security context.
+- `View Aeternum Market Feed`: normalized market/economic context.
+
+Optional environment variables are listed in `.env.example`.
+
 ## Configuration
 
 The default runtime config is written to `_ARBITER/genesis_config.json` when the
