@@ -23,6 +23,8 @@ except ImportError:
     from core.intelligence.bellator_risk_scorer import score_events
     from core.intelligence.geospatial_filters import build_geo_filter_config, filter_and_weight_events
 
+from core.data_sources.enrichment import build_bellator_data_enrichment
+
 try:
     from integrations.feeds.abuse_ch_client import fetch_urlhaus_recent
     from integrations.feeds.acled_client import fetch_acled_events
@@ -109,6 +111,7 @@ def build_bellator_context_packet(
         "risk": score_events(recent_72h, now=current),
         "events": compact_events,
         "sources": sources,
+        "real_data_layer": build_bellator_data_enrichment(query, live=False),
         "cache_dir": str(FEED_CACHE_DIR),
         "anti_fabrication_instruction": ANTI_FABRICATION_INSTRUCTION,
         "operator_note": _operator_note(sources, compact_events),

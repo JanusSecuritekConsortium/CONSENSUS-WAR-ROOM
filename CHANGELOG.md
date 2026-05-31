@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.13.0 - Real Data Layer Foundation
+
+- Added a normalized, environment-configured data-source registry with TTL cache fallback, freshness reporting, source health, and secret redaction.
+- Added guarded ACLED, GDELT, Factal, Ground News, IBKR, public RSS, and configured-search adapters. Credentialed sources remain disabled by default, Ground News scraping is prohibited, and IBKR is read-only.
+- Added cache-only BELLATOR and AETERNUM enrichment packets with explicit unavailable states and anti-fabrication instructions for tribunal prompts.
+- Added data-source health and feed overlays to the command palette, runtime snapshot observability, and redacted runtime bundle artifacts.
+- Bundled the source configuration for frozen executable builds and documented optional source environment variables.
+
 ## 7.12.1 - Standalone Operator Executable
 
 - Added the PyInstaller build pipeline (`build_exe.py`, `build_exe.bat`, and `CONSENSUS.spec`) for a one-file `dist/CONSENSUS.exe` operator build.
