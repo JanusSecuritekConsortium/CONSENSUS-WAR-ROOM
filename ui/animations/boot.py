@@ -6,12 +6,12 @@ from typing import Dict
 
 from config.version import SYSTEM_VERSION
 from core.models import Theme
-from core.paths import ARBITER_DIR, SYSTEM_ROOT
+from core.paths import ARBITER_DIR, RESOURCE_ROOT
 from ui.animations.loading import build_loading_sample_text, render_loading_sample
 from ui.themes.boot_profiles import get_boot_profile
 
 
-LOGO_DIR = SYSTEM_ROOT / "static" / "logos"
+LOGO_DIR = RESOURCE_ROOT / "static" / "logos"
 THEME_PREVIEW_DIR = ARBITER_DIR / "theme_previews"
 
 

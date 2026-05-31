@@ -3,10 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from core.paths import SYSTEM_ROOT
+from core.paths import RESOURCE_ROOT
 
 
-APP_ICON_DIR = SYSTEM_ROOT / "static" / "icons"
+APP_ICON_DIR = RESOURCE_ROOT / "static" / "icons"
 APP_ICON_PNG = APP_ICON_DIR / "consensus_icon.png"
 APP_ICON_PNG_256 = APP_ICON_DIR / "consensus_icon_256.png"
 APP_ICON_ICO = APP_ICON_DIR / "consensus_icon.ico"
@@ -63,4 +63,3 @@ def apply_app_icon_to_page(page: Any) -> Path | None:
     elif hasattr(page, "window_icon"):
         setattr(page, "window_icon", str(icon_path))
     return icon_path
-

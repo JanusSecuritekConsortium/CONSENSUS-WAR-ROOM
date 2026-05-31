@@ -4,14 +4,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
-from core.paths import SYSTEM_ROOT
+from core.paths import RESOURCE_ROOT
 from ui.assets.logo_normalizer import read_normalized_logo
 
 
 LOGO_SAFE_MAX_WIDTH = 96
 ARASAKA_SAFE_MAX_WIDTH = 130
 LOGO_SAFE_MAX_HEIGHT = 10
-GUI_LOGO_DIR = SYSTEM_ROOT / "static" / "logos" / "gui"
+GUI_LOGO_DIR = RESOURCE_ROOT / "static" / "logos" / "gui"
 
 
 @dataclass(frozen=True)
@@ -182,7 +182,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
     ),
     "military": ThemeGraphicAsset(
         "military",
-        SYSTEM_ROOT / "static" / "logos" / "consensus_logo.txt",
+        RESOURCE_ROOT / "static" / "logos" / "consensus_logo.txt",
         "EXCOMM tactical command styling",
         ("███████╗██╗  ██╗", "CONSENSUS WAR ROOM"),
         "military_boot",

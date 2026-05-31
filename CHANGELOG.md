@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.12.1 - Standalone Operator Executable
+
+- Added the PyInstaller build pipeline (`build_exe.py`, `build_exe.bat`, and `CONSENSUS.spec`) for a one-file `dist/CONSENSUS.exe` operator build.
+- Routed frozen static resources through the PyInstaller extraction root while preserving writable runtime state beside the executable.
+- Bundled theme assets, ASCII logos, icon assets, tracked genesis configuration, and voice profile configuration.
+- Added Windows executable metadata for CONSENSUS SYSTEM by Janus Securitek Consortium.
+- Added frozen asset, executable boot entrypoint, and PyInstaller specification regression coverage.
+
 ## 7.12.0 - Simulation Workflow
 
 - Activated the deterministic operator-driven simulation workflow with create, history, branch-tree, branch expansion, and dossier export overlays.

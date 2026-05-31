@@ -46,6 +46,37 @@ environment, checks dependencies and provider status, selects the configured or
 random startup theme, runs the themed BIOS/POST sequence, and opens the GUI.
 Normal operation does not require Python arguments.
 
+### Standalone Windows Executable
+
+Build the standalone operator executable with:
+
+```powershell
+.\build_exe.bat
+```
+
+The output is `dist\CONSENSUS.exe`. Normal operation requires no Python
+arguments:
+
+```powershell
+.\dist\CONSENSUS.exe
+```
+
+Diagnostics-only recovery mode:
+
+```powershell
+.\dist\CONSENSUS.exe --safe
+```
+
+Packaged asset, voice configuration, and deterministic simulation scaffold check:
+
+```powershell
+.\dist\CONSENSUS.exe --self-test
+```
+
+The executable uses the same startup flow as `boot.bat`: dependency checks,
+Msty provider validation, random or configured theme selection, BIOS/POST
+output, then GUI launch.
+
 Run an offline mock tribunal:
 
 ```powershell
