@@ -1,5 +1,12 @@
 # Changelog
 
+## 7.12.0 - Simulation Workflow
+
+- Activated the deterministic operator-driven simulation workflow with create, history, branch-tree, branch expansion, and dossier export overlays.
+- Added Markdown and JSON simulation dossier exports plus runtime snapshot and runtime bundle simulation integration.
+- Added canonical `boot.bat` and `boot.ps1` operator launchers with dependency/provider checks, random or configured startup theme selection, BIOS/POST transition, GUI startup, and diagnostics-only safe mode.
+- Restored the SESSION header row across every theme and raised the top-right status/telemetry content slightly without changing theme assets, colors, or lower-right diagnostics layout.
+
 ## 7.11.13 - ARBITER Verdict Voice Dispatch
 
 - Added a dedicated ARBITER/GLaDOS verdict voice dispatcher for every terminal tribunal outcome, including NO_CONSENSUS and classification failure.

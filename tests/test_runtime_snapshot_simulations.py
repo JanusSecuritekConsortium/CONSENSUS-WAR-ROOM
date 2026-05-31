@@ -15,6 +15,7 @@ def test_runtime_snapshot_includes_simulation_status() -> None:
     snapshot = runtime_snapshot_from_gui_state(make_gui_state("eva"))
     assert "simulation_status" in snapshot
     assert snapshot["simulation_status"]["engine_status"] == "READY"
+    assert "latest_simulation_dossier" in snapshot["simulation_status"]
 
 
 if __name__ == "__main__":

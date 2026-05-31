@@ -172,8 +172,7 @@ def build_header(
         ("PROVIDER", provider),
         ("MEMORY", memory_status),
     ]
-    if theme.key != "helldivers":
-        status_rows.append(("SESSION", session_id))
+    status_rows.append(("SESSION", session_id))
     telemetry_lines = telemetry_summary_lines(theme.key, telemetry)[:6]
     telemetry_graph = telemetry_graph_lines(theme.key, telemetry)
     logo_layout = header_logo_layout(theme)
@@ -286,14 +285,15 @@ def build_header(
                                 vertical_alignment=ft.CrossAxisAlignment.START,
                             ),
                         ],
-                        spacing=4,
+                        spacing=2,
                     ),
-                    padding=12,
+                    padding=ft.padding.only(left=12, right=12, top=8, bottom=16),
                     expand=True,
                     height=logo_box_height,
                     border=ft.border.all(1, theme.primary_color),
                     bgcolor=theme.surface_color,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data={"role": "header_status_panel", "content_vertical_offset": "raised"},
                 ),
             ],
             alignment=ft.MainAxisAlignment.CENTER,

@@ -28,6 +28,7 @@ def _flatten_text(control) -> list[str]:
 def test_gui_simulation_actions_are_registered_and_overlay_renders() -> None:
     assert "Create Simulation" in COMMAND_PALETTE_ACTIONS
     assert "View Simulations" in COMMAND_PALETTE_ACTIONS
+    assert "Export Simulation Dossier" in COMMAND_PALETTE_ACTIONS
     state = make_gui_state("eva")
     execute_command_palette_action(state, "View Simulations")
     assert state.simulation_viewer_open is True

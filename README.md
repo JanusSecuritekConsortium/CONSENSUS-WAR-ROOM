@@ -29,6 +29,23 @@ python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
 
+Normal operator startup:
+
+```powershell
+.\boot.bat
+```
+
+Diagnostics-only recovery mode:
+
+```powershell
+.\boot.bat --safe
+```
+
+`boot.bat` is the canonical operator entrypoint. It validates the local
+environment, checks dependencies and provider status, selects the configured or
+random startup theme, runs the themed BIOS/POST sequence, and opens the GUI.
+Normal operation does not require Python arguments.
+
 Run an offline mock tribunal:
 
 ```powershell
@@ -129,8 +146,13 @@ forecasts or invented geopolitical predictions.
 
 GUI command palette actions:
 
-- `Create Simulation`: creates a deterministic scaffold linked to the current proposal context when available.
-- `View Simulations`: opens the simulation registry overlay.
+- `Create Simulation`: opens an operator input overlay and creates a deterministic scaffold linked to the current proposal context when available.
+- `View Simulations`: opens simulation history and branch-tree actions.
+- `Export Simulation Dossier`: exports the selected or latest scenario as Markdown and JSON.
+
+Branch expansion requires explicit operator assumptions. The system records
+deterministic branch probability/risk scaffolding only and does not generate
+forecasts or invented intelligence.
 
 ## Configuration
 
@@ -140,6 +162,9 @@ system first needs it. You can create it explicitly:
 ```powershell
 python consensus_war_room_genesis.py --write-default-config
 ```
+
+Set `startup_theme` to `RANDOM` for a random theme on each `boot.bat` launch, or
+set it to a theme name such as `ARASAKA`.
 
 Useful environment variables are documented in `.env.example`.
 

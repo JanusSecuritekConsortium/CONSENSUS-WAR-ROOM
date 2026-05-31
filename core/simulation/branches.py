@@ -26,13 +26,22 @@ def score_branch_risk(escalation_flags: List[str] | None = None, assumptions_del
     return round(_clamp(0.2 + (len(flags) * 0.18) + (delta_size * 0.05)), 4)
 
 
-def create_initial_branch(scenario_id: str, summary: str = "Baseline deterministic branch.") -> Branch:
+def create_initial_branch(
+    scenario_id: str,
+    summary: str = "Baseline deterministic branch.",
+    *,
+    assumptions_used: Dict[str, Any] | None = None,
+) -> Branch:
     return Branch(
         branch_id=f"branch_{_stable_suffix(scenario_id, 'root')}",
         parent_branch_id=None,
+        scenario_id=scenario_id,
+        depth=0,
+        title="Baseline",
         probability=evaluate_branch_probability(depth=0),
         risk_score=score_branch_risk(),
         summary=summary,
+        assumptions_used=assumptions_used or {},
         divergence_index=0,
     )
 
@@ -43,6 +52,7 @@ def generate_child_branch(
     assumptions_delta: Dict[str, Any] | None = None,
     escalation_flags: List[str] | None = None,
     summary: str = "Deterministic child branch scaffold.",
+    title: str = "Operator Assumption Branch",
 ) -> Branch:
     delta = assumptions_delta or {}
     flags = escalation_flags or []
@@ -50,10 +60,14 @@ def generate_child_branch(
     return Branch(
         branch_id=f"branch_{_stable_suffix(parent.branch_id, delta, flags, divergence_index)}",
         parent_branch_id=parent.branch_id,
+        scenario_id=parent.scenario_id,
+        depth=parent.depth + 1,
+        title=title,
         probability=evaluate_branch_probability(delta, divergence_index),
         risk_score=score_branch_risk(flags, delta),
         summary=summary,
         assumptions_delta=delta,
+        assumptions_used={**parent.assumptions_used, **delta},
         escalation_flags=flags,
         divergence_index=divergence_index,
     )
