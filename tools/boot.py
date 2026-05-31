@@ -68,11 +68,45 @@ def run_boot(
     return 0
 
 
+def run_self_test() -> int:
+    from core.simulation.scenarios import create_scenario
+    from ui.assets.registry import validate_graphic_registry
+    from voice.voice_profiles import get_voice_profile
+
+    failures = validate_graphic_registry()
+    if failures:
+        print(f"ASSET SUBSYSTEM: ERROR ({'; '.join(failures)})")
+        return 1
+    profile = get_voice_profile("ARBITER_GLADOS")
+    print(f"VOICE SUBSYSTEM: READY ({profile.name})")
+    scenario = create_scenario(
+        proposal_id=None,
+        title="Runtime self-test",
+        description="Deterministic scaffold validation only.",
+        scenario_type="strategic_forecast",
+        assumptions={"scope": "self-test only"},
+        actors=["OPERATOR"],
+        triggers=["SELF_TEST"],
+        timeline_horizon="self-test",
+        branch_depth=1,
+        confidence_model="deterministic",
+    )
+    if not scenario.generated_branches:
+        print("SIMULATION SUBSYSTEM: ERROR (initial branch missing)")
+        return 1
+    print(f"SIMULATION SUBSYSTEM: READY ({scenario.generated_branches[0].branch_id})")
+    print("ASSET SUBSYSTEM: READY")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Boot CONSENSUS War Room.")
     parser.add_argument("--safe", action="store_true", help="Run diagnostics without starting the GUI.")
+    parser.add_argument("--self-test", action="store_true", help="Validate packaged assets, voice config, and simulation scaffold.")
     parser.add_argument("--seed", type=int, default=None, help="Optional deterministic startup theme seed.")
     args = parser.parse_args()
+    if args.self_test:
+        return run_self_test()
     return run_boot(safe=args.safe, seed=args.seed)
 
 

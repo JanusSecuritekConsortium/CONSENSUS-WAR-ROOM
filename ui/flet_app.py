@@ -2403,6 +2403,9 @@ def run_flet_gui(
 
     def target(page: ft.Page) -> None:
         _render_page(page, state)
+        marker = os.getenv("CONSENSUS_GUI_READY_MARKER")
+        if marker:
+            Path(marker).write_text("ready", encoding="utf-8")
         _start_status_polling(page, state)
 
     ft.app(target=target)
