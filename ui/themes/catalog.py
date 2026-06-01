@@ -5,11 +5,11 @@ from typing import Dict, List
 
 from config.names import AETERNUM, BELLATOR, RATIONALIS, TRIBUNAL_AGENT_IDS
 from core.models import Theme
+from core.paths import RESOURCE_ROOT
 from ui.themes.boot_profiles import BOOT_PROFILES
 
 
-SYSTEM_ROOT = Path(__file__).resolve().parents[2]
-LOGO_DIR = SYSTEM_ROOT / "static" / "logos"
+LOGO_DIR = RESOURCE_ROOT / "static" / "logos"
 
 
 def _labels(

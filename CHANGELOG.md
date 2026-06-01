@@ -1,5 +1,28 @@
 # Changelog
 
+## 7.13.0 - Real Data Layer Foundation
+
+- Added a normalized, environment-configured data-source registry with TTL cache fallback, freshness reporting, source health, and secret redaction.
+- Added guarded ACLED, GDELT, Factal, Ground News, IBKR, public RSS, and configured-search adapters. Credentialed sources remain disabled by default, Ground News scraping is prohibited, and IBKR is read-only.
+- Added cache-only BELLATOR and AETERNUM enrichment packets with explicit unavailable states and anti-fabrication instructions for tribunal prompts.
+- Added data-source health and feed overlays to the command palette, runtime snapshot observability, and redacted runtime bundle artifacts.
+- Bundled the source configuration for frozen executable builds and documented optional source environment variables.
+
+## 7.12.1 - Standalone Operator Executable
+
+- Added the PyInstaller build pipeline (`build_exe.py`, `build_exe.bat`, and `CONSENSUS.spec`) for a one-file `dist/CONSENSUS.exe` operator build.
+- Routed frozen static resources through the PyInstaller extraction root while preserving writable runtime state beside the executable.
+- Bundled theme assets, ASCII logos, icon assets, tracked genesis configuration, and voice profile configuration.
+- Added Windows executable metadata for CONSENSUS SYSTEM by Janus Securitek Consortium.
+- Added frozen asset, executable boot entrypoint, and PyInstaller specification regression coverage.
+
+## 7.12.0 - Simulation Workflow
+
+- Activated the deterministic operator-driven simulation workflow with create, history, branch-tree, branch expansion, and dossier export overlays.
+- Added Markdown and JSON simulation dossier exports plus runtime snapshot and runtime bundle simulation integration.
+- Added canonical `boot.bat` and `boot.ps1` operator launchers with dependency/provider checks, random or configured startup theme selection, BIOS/POST transition, GUI startup, and diagnostics-only safe mode.
+- Restored the SESSION header row across every theme and raised the top-right status/telemetry content slightly without changing theme assets, colors, or lower-right diagnostics layout.
+
 ## 7.11.13 - ARBITER Verdict Voice Dispatch
 
 - Added a dedicated ARBITER/GLaDOS verdict voice dispatcher for every terminal tribunal outcome, including NO_CONSENSUS and classification failure.

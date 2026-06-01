@@ -4,7 +4,8 @@ import time
 from typing import Any, Dict, Optional, Protocol
 
 from config.version import SYSTEM_VERSION
-from config.names import BELLATOR, TRIBUNAL_AGENT_IDS
+from config.names import AETERNUM, BELLATOR, TRIBUNAL_AGENT_IDS
+from core.data_sources.enrichment import build_aeternum_data_enrichment
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION, build_bellator_context_packet
 from core.llm.prompts import build_node_prompt
 from core.logging import log_error, log_event
@@ -54,6 +55,8 @@ class VotingOrchestrator:
             runtime_context["model"] = node.model
             if agent_id == BELLATOR:
                 runtime_context["bellator_context_packet"] = self._build_bellator_context_packet(query)
+            if agent_id == AETERNUM:
+                runtime_context["aeternum_data_packet"] = build_aeternum_data_enrichment(query, live=False)
             prompt = build_node_prompt(node, query, runtime_context)
             started = time.perf_counter()
             try:

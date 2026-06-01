@@ -1,0 +1,22 @@
+{
+  "cache": {
+    "default_ttl_seconds": 900,
+    "offline_cache_fallback": true
+  },
+  "sources": {
+    "acled": {"enabled": false, "ttl_seconds": 900, "base_url": "https://acleddata.com/api/acled/read"},
+    "gdelt": {"enabled": true, "ttl_seconds": 900, "base_url": "https://api.gdeltproject.org/api/v2/doc/doc"},
+    "factal": {"enabled": false, "ttl_seconds": 900, "base_url": ""},
+    "ground_news": {"enabled": false, "ttl_seconds": 900, "base_url": "", "official_api_enabled": false, "scraping_allowed": false},
+    "ibkr": {"enabled": false, "ttl_seconds": 300, "base_url": "", "read_only": true},
+    "rss": {
+      "enabled": true,
+      "ttl_seconds": 900,
+      "feeds": [
+        {"name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml", "topics": ["world"]},
+        {"name": "BBC Business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml", "topics": ["markets"]}
+      ]
+    },
+    "search": {"enabled": false, "ttl_seconds": 900, "provider": "", "base_url": ""}
+  }
+}

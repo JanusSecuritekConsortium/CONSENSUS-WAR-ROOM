@@ -1,6 +1,6 @@
 [project]
 name = "consensus-war-room"
-version = "7.11.13"
+version = "7.13.0"
 description = "Local multi-agent tribunal for proposal review and auditable consensus decisions."
 authors = [{ name = "Erhardt Von Grupten Mundt" }]
 requires-python = ">=3.10"
@@ -11,7 +11,7 @@ dependencies = ["psutil>=5.9", "requests>=2.31", "flet>=0.28.3,<0.29", "flet-des
 Organization = "https://github.com/JanusSecuritekConsortium"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "pyinstaller>=6.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

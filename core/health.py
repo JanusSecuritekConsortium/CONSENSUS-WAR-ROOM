@@ -10,12 +10,12 @@ from config.runtime import RuntimeConfig, load_runtime_config
 from core.logging import log_error, log_event
 from core.memory.store import MemoryStore
 from core.models import NodeIdentity, VoteValue
-from core.paths import ARBITER_DIR, CONFIG_PATH, EXPORT_DIR, LOG_DIR, MEMORY_PATH, SYSTEM_ROOT
+from core.paths import ARBITER_DIR, CONFIG_PATH, EXPORT_DIR, LOG_DIR, MEMORY_PATH, RESOURCE_ROOT, is_frozen_runtime
 from core.voting.parser import parse_vote
 from monoliths.registry import DEFAULT_NODES
 
 
-REQUIRED_FOLDERS: List[Path] = [
+RUNTIME_FOLDERS: List[Path] = [
     ARBITER_DIR,
     ARBITER_DIR / "memory",
     ARBITER_DIR / "logs",
@@ -24,30 +24,17 @@ REQUIRED_FOLDERS: List[Path] = [
     ARBITER_DIR / "tmp_votes",
     EXPORT_DIR,
     LOG_DIR,
-    SYSTEM_ROOT / "core",
-    SYSTEM_ROOT / "core" / "voting",
-    SYSTEM_ROOT / "core" / "memory",
-    SYSTEM_ROOT / "core" / "llm",
-    SYSTEM_ROOT / "core" / "knowledge",
-    SYSTEM_ROOT / "config",
-    SYSTEM_ROOT / "integrations",
-    SYSTEM_ROOT / "integrations" / "msty",
-    SYSTEM_ROOT / "integrations" / "ollama",
-    SYSTEM_ROOT / "monoliths",
-    SYSTEM_ROOT / "monoliths" / "rationalis",
-    SYSTEM_ROOT / "monoliths" / "aeternum",
-    SYSTEM_ROOT / "monoliths" / "bellator",
-    SYSTEM_ROOT / "ui",
-    SYSTEM_ROOT / "ui" / "themes",
-    SYSTEM_ROOT / "ui" / "components",
-    SYSTEM_ROOT / "ui" / "animations",
-    SYSTEM_ROOT / "ui" / "assets",
-    SYSTEM_ROOT / "static",
 ]
+RESOURCE_FOLDERS: List[Path] = [
+    RESOURCE_ROOT / "static",
+    RESOURCE_ROOT / "static" / "logos",
+    RESOURCE_ROOT / "static" / "icons",
+]
+REQUIRED_FOLDERS = [*RUNTIME_FOLDERS, *RESOURCE_FOLDERS]
 
 
 def ensure_required_folders() -> None:
-    for folder in REQUIRED_FOLDERS:
+    for folder in RUNTIME_FOLDERS:
         folder.mkdir(parents=True, exist_ok=True)
 
 
@@ -95,12 +82,15 @@ def run_health_check(config_path: Path = CONFIG_PATH, config_override: RuntimeCo
         fail_check("required_folders", exc)
 
     try:
-        from core.active_compile import compile_active_sources
+        if is_frozen_runtime():
+            pass_check("active_source_compile", {"mode": "frozen_executable", "files": 0})
+        else:
+            from core.active_compile import compile_active_sources
 
-        compile_result = compile_active_sources()
-        if not compile_result.ok:
-            raise RuntimeError("; ".join(compile_result.failures[:5]))
-        pass_check("active_source_compile", {"files": len(compile_result.compiled)})
+            compile_result = compile_active_sources()
+            if not compile_result.ok:
+                raise RuntimeError("; ".join(compile_result.failures[:5]))
+            pass_check("active_source_compile", {"files": len(compile_result.compiled)})
     except Exception as exc:
         fail_check("active_source_compile", exc)
 
