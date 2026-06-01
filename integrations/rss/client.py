@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from typing import Any, Dict, List
-
-import requests
 
 from core.data_sources.models import DataSourceAdapter, NormalizedDataItem
 from core.data_sources.normalization import stable_item_id, text, utc_now_iso
+from integrations.rss.probe import probe_feed
 
 
 class RssAdapter(DataSourceAdapter):
@@ -24,16 +22,16 @@ class RssAdapter(DataSourceAdapter):
             return {"source": self.source_id, "status": health["status"], "items": [], "fetched_at": utc_now_iso()}
         items: List[Dict[str, Any]] = []
         for feed in self.config.get("feeds", []):
-            response = (self.session or requests).get(feed["url"], timeout=10)
-            response.raise_for_status()
-            root = ET.fromstring(response.text)
-            for item in root.findall(".//item")[:20]:
+            result = probe_feed(feed, session=self.session)
+            if result.status != "READY":
+                continue
+            for item in result.entries[:20]:
                 items.append({
-                    "title": item.findtext("title", default=""),
-                    "summary": item.findtext("description", default=""),
-                    "url": item.findtext("link", default=""),
-                    "published_at": item.findtext("pubDate", default=""),
-                    "topics": feed.get("topics", []),
+                    "title": item.get("title", ""),
+                    "summary": item.get("excerpt", ""),
+                    "url": item.get("url", ""),
+                    "published_at": item.get("published_at", ""),
+                    "topics": feed.get("taxonomy_tags", feed.get("topics", [])),
                 })
         return {"source": self.source_id, "status": "READY", "items": items, "fetched_at": utc_now_iso()}
 

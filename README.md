@@ -188,15 +188,37 @@ forecasts or invented intelligence.
 ## Real Data Layer
 
 The v7.13 data-source foundation supplies normalized, cache-backed external
-context for `BELLATOR` and `AETERNUM`. Tribunal prompt enrichment is cache-only
-and explicitly reports unavailable data; it never invents intelligence when a
-source is disabled, unconfigured, stale, or empty.
+context for `BELLATOR` and `AETERNUM`. RSS is the primary Bellator intelligence
+layer. APIs are enrichment only. Tribunal prompt enrichment explicitly reports
+unavailable data; it never invents intelligence when a source is disabled,
+unconfigured, stale, or empty.
 
-Public GDELT and configured RSS feeds are enabled by default. Credentialed
-sources stay disabled until explicitly enabled in `config/data_sources.json`
-and configured through environment variables. Ground News integration requires
-official API access and does not scrape. IBKR access is read-only and rejects
-order placement.
+The RSS cache is `_ARBITER/cache/data_sources/intelligence.db`. It uses SQLite
+FTS5 retrieval, GUID/URL/content-hash deduplication, conditional HTTP requests,
+and per-source failure backoff. The default poll interval is 20 minutes.
+Bellator receives at most 12 cited items after query, taxonomy, freshness, and
+deduplication filters. If refresh fails, cached items are explicitly marked
+`CACHE_FALLBACK`.
+
+Probe configured endpoints before enabling or scheduling ingestion:
+
+```powershell
+python tools\probe_rss_feeds.py
+python tools\poll_rss_feeds.py --force
+python tools\poll_rss_feeds.py --watch
+```
+
+`--watch` keeps the local ingestion process running at the configured interval.
+Reuters and AP are quarantined until current XML endpoints are confirmed.
+NATO remains quarantined while its official directory transition is resolved.
+ECB and European Council feeds are discovered from their official directory
+pages rather than hardcoded from assumptions.
+
+Public GDELT remains enabled as Tier 3 enrichment. Credentialed sources stay
+disabled until explicitly enabled in `config/data_sources.json` and configured
+through environment variables. Ground News integration requires official API
+access and does not scrape. IBKR access is read-only and rejects order
+placement.
 
 GUI command palette actions:
 

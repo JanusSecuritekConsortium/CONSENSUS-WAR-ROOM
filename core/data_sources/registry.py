@@ -25,7 +25,7 @@ ADAPTER_TYPES = {
     "search": SearchAdapter,
 }
 ROLE_SOURCES = {
-    "bellator": ("acled", "gdelt", "factal", "rss", "search"),
+    "bellator": ("acled", "gdelt", "factal", "search"),
     "aeternum": ("ibkr", "gdelt", "rss", "search"),
 }
 
