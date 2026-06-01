@@ -24,6 +24,7 @@ from core.proposals.store import proposal_history_status
 from core.simulation.store import get_simulation_status
 from core.export.simulation import latest_simulation_dossier_status
 from core.data_sources.health import build_data_sources_status
+from core.data_sources.rss_backbone import rss_backbone_status
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
@@ -106,6 +107,7 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "simulation_status": get_simulation_status(),
         "latest_simulation_dossier": latest_simulation_dossier_status(),
         "data_sources_status": build_data_sources_status(attempt_live=False),
+        "rss_intelligence_status": rss_backbone_status(),
         "tribunal_lifecycle": {
             "latest_phase": lifecycle_events[-1].get("phase") if lifecycle_events else "IDLE",
             "event_count": len(lifecycle_events),

@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.13.1 - RSS Intelligence Backbone
+
+- Added the RSS-first Bellator intelligence backbone with a local SQLite FTS5 cache at `_ARBITER/cache/data_sources/intelligence.db`, configurable 20-minute polling, conditional HTTP requests, per-source backoff, and explicit feed health states.
+- Added strict RSS/Atom probe tooling with official-directory discovery, XML structure validation, content-type checks, and redirect-to-HTML detection. Reuters and AP remain quarantined until valid current XML endpoints are confirmed.
+- Added GUID, canonical-URL, and stable-content-hash deduplication plus bounded Bellator retrieval packets with taxonomy filtering, freshness weighting, citations, and marked `CACHE_FALLBACK` behavior.
+- Registered Tier 1 institutional and Tier 2 editorial/OSINT feeds, kept Tier 3 APIs as enrichment only, and added RSS health/sample artifacts to runtime snapshots and bundles.
+- Added offline regression coverage for probing, conditional headers, FTS retrieval, deduplication, backoff, quarantine, bounded packet construction, and cache fallback.
+
 ## 7.13.0 - Real Data Layer Foundation
 
 - Added a normalized, environment-configured data-source registry with TTL cache fallback, freshness reporting, source health, and secret redaction.

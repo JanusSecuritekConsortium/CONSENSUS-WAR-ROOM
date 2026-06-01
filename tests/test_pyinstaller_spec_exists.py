@@ -22,7 +22,7 @@ def test_pyinstaller_spec_bundles_runtime_assets_and_metadata() -> None:
     assert '"CONSENSUS SYSTEM"' in version_info
     assert '"Janus Securitek Consortium"' in version_info
     assert '"Multi-Agent Tribunal Decision System"' in version_info
-    assert '"7.13.0"' in version_info
+    assert '"7.13.1"' in version_info
 
 
 if __name__ == "__main__":
