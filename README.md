@@ -29,6 +29,54 @@ python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
 
+Normal operator startup:
+
+```powershell
+.\boot.bat
+```
+
+Diagnostics-only recovery mode:
+
+```powershell
+.\boot.bat --safe
+```
+
+`boot.bat` is the canonical operator entrypoint. It validates the local
+environment, checks dependencies and provider status, selects the configured or
+random startup theme, runs the themed BIOS/POST sequence, and opens the GUI.
+Normal operation does not require Python arguments.
+
+### Standalone Windows Executable
+
+Build the standalone operator executable with:
+
+```powershell
+.\build_exe.bat
+```
+
+The output is `dist\CONSENSUS.exe`. Normal operation requires no Python
+arguments:
+
+```powershell
+.\dist\CONSENSUS.exe
+```
+
+Diagnostics-only recovery mode:
+
+```powershell
+.\dist\CONSENSUS.exe --safe
+```
+
+Packaged asset, voice configuration, and deterministic simulation scaffold check:
+
+```powershell
+.\dist\CONSENSUS.exe --self-test
+```
+
+The executable uses the same startup flow as `boot.bat`: dependency checks,
+Msty provider validation, random or configured theme selection, BIOS/POST
+output, then GUI launch.
+
 Run an offline mock tribunal:
 
 ```powershell
@@ -129,8 +177,35 @@ forecasts or invented geopolitical predictions.
 
 GUI command palette actions:
 
-- `Create Simulation`: creates a deterministic scaffold linked to the current proposal context when available.
-- `View Simulations`: opens the simulation registry overlay.
+- `Create Simulation`: opens an operator input overlay and creates a deterministic scaffold linked to the current proposal context when available.
+- `View Simulations`: opens simulation history and branch-tree actions.
+- `Export Simulation Dossier`: exports the selected or latest scenario as Markdown and JSON.
+
+Branch expansion requires explicit operator assumptions. The system records
+deterministic branch probability/risk scaffolding only and does not generate
+forecasts or invented intelligence.
+
+## Real Data Layer
+
+The v7.13 data-source foundation supplies normalized, cache-backed external
+context for `BELLATOR` and `AETERNUM`. Tribunal prompt enrichment is cache-only
+and explicitly reports unavailable data; it never invents intelligence when a
+source is disabled, unconfigured, stale, or empty.
+
+Public GDELT and configured RSS feeds are enabled by default. Credentialed
+sources stay disabled until explicitly enabled in `config/data_sources.json`
+and configured through environment variables. Ground News integration requires
+official API access and does not scrape. IBKR access is read-only and rejects
+order placement.
+
+GUI command palette actions:
+
+- `Refresh Data Sources`: background live refresh with TTL cache fallback.
+- `View Source Health`: redacted adapter health and configuration status.
+- `View Bellator Intel Feed`: normalized conflict/security context.
+- `View Aeternum Market Feed`: normalized market/economic context.
+
+Optional environment variables are listed in `.env.example`.
 
 ## Configuration
 
@@ -140,6 +215,9 @@ system first needs it. You can create it explicitly:
 ```powershell
 python consensus_war_room_genesis.py --write-default-config
 ```
+
+Set `startup_theme` to `RANDOM` for a random theme on each `boot.bat` launch, or
+set it to a theme name such as `ARASAKA`.
 
 Useful environment variables are documented in `.env.example`.
 

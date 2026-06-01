@@ -14,6 +14,8 @@ from core.simulation.store import (
     SIMULATION_HISTORY_PATH,
     append_branch,
     create_stored_scenario,
+    expand_stored_branch,
+    get_scenario,
     get_simulation_status,
     list_recent_scenarios,
 )
@@ -32,7 +34,9 @@ __all__ = [
     "create_stored_scenario",
     "default_registry",
     "evaluate_branch_probability",
+    "expand_stored_branch",
     "generate_child_branch",
+    "get_scenario",
     "get_simulation_status",
     "list_recent_scenarios",
     "score_branch_risk",

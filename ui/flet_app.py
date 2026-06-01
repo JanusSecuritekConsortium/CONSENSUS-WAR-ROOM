@@ -16,7 +16,7 @@ from typing import Any, Callable, Dict, List, Literal
 import flet as ft
 
 from assistant.aurelius_runtime import AureliusRuntime, get_aurelius_runtime
-from config.names import ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
+from config.names import AETERNUM, ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
@@ -27,6 +27,8 @@ from core.intelligence.bellator_context_builder import (
     build_bellator_context_packet,
     build_bellator_diagnostics_payload,
 )
+from core.data_sources.enrichment import build_aeternum_data_enrichment
+from core.data_sources.health import build_data_sources_status
 from core.llm.prompts import build_node_prompt
 from core.logging import log_decision_trace, log_error, log_event
 from core.manual_visual_review import manual_visual_review_summary
@@ -44,7 +46,16 @@ from core.proposals.store import (
 )
 from core.proposals.lifecycle import link_decision_trace_to_proposal, proposal_lifecycle_summary
 from core.proposals.templates import get_template, list_templates, render_template_draft
-from core.simulation.store import create_stored_scenario, get_simulation_status, list_recent_scenarios
+from core.export.simulation import export_simulation_dossier, latest_simulation_dossier_status
+from core.simulation.registry import SCENARIO_TYPES
+from core.simulation.store import (
+    branches_for_scenario,
+    create_stored_scenario,
+    expand_stored_branch,
+    get_scenario,
+    get_simulation_status,
+    list_recent_scenarios,
+)
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from core.tribunal import Tribunal
 from core.tribunal_events import (
@@ -135,6 +146,11 @@ COMMAND_PALETTE_ACTIONS = (
     "Export Latest Verdict",
     "Create Simulation",
     "View Simulations",
+    "Export Simulation Dossier",
+    "Refresh Data Sources",
+    "View Source Health",
+    "View Bellator Intel Feed",
+    "View Aeternum Market Feed",
     "Toggle Theme",
     "Open Decision Trace Viewer",
 )
@@ -204,6 +220,13 @@ class GuiState:
     visual_review_viewer_open: bool = False
     telemetry_viewer_open: bool = False
     simulation_viewer_open: bool = False
+    simulation_create_open: bool = False
+    branch_tree_viewer_open: bool = False
+    selected_simulation_id: str = ""
+    selected_simulation_branch_id: str = ""
+    simulation_branch_expand_open: bool = False
+    data_sources_viewer_open: bool = False
+    data_sources_viewer_mode: str = "health"
     trace_filter: str = ""
     operator_status: str = "OPERATOR READY"
     runtime_snapshot_cache: Dict[str, Any] = field(default_factory=dict)
@@ -303,6 +326,7 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "proposal_lifecycle_summary": proposal_lifecycle_summary(),
         "latest_dossier_export": latest_dossier_export_status(),
         "simulation_status": get_simulation_status(),
+        "latest_simulation_dossier": latest_simulation_dossier_status(),
         "tribunal_lifecycle": {
             "current_phase": state.lifecycle_state,
             "event_count": len(state.lifecycle_events),
@@ -605,6 +629,8 @@ def submit_proposal_live_for_gui(
                 packet = build_bellator_context_packet(clean_proposal)
                 runtime_context["bellator_context_packet"] = packet
                 state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
+            if agent_id == AETERNUM:
+                runtime_context["aeternum_data_packet"] = build_aeternum_data_enrichment(clean_proposal, live=False)
             prompt = build_node_prompt(node, clean_proposal, runtime_context)
             vote_started = time.perf_counter()
             try:
@@ -950,26 +976,37 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
             state.runtime_snapshot_cache["latest_verdict_export"] = latest_verdict_export_status()
             message = f"Latest verdict exported: {result['json_path']}"
         elif action == "Create Simulation":
-            title = state.current_proposal.splitlines()[0][:80] if state.current_proposal else "Operator Simulation Scaffold"
-            scenario = create_stored_scenario(
-                title=title,
-                description=state.current_proposal or "Deterministic simulation scaffold awaiting proposal context.",
-                scenario_type="strategic_forecast",
-                proposal_id=state.last_proposal_record_id or None,
-                assumptions={},
-                actors=[],
-                triggers=[],
-                timeline_horizon="operator_defined",
-                branch_depth=1,
-                status="DRAFT",
-            )
-            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
-            state.simulation_viewer_open = True
-            message = f"Simulation created: {scenario.scenario_id}"
+            state.simulation_create_open = True
+            message = "Simulation creation opened"
         elif action == "View Simulations":
             state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
             state.simulation_viewer_open = True
             message = "Simulation registry opened"
+        elif action == "Export Simulation Dossier":
+            scenario_id = state.selected_simulation_id or str(get_simulation_status().get("latest_simulation_id") or "")
+            if not scenario_id:
+                raise RuntimeError("No simulation is available for export.")
+            exported = export_simulation_dossier(scenario_id)
+            state.runtime_snapshot_cache["latest_simulation_dossier"] = latest_simulation_dossier_status()
+            message = f"Simulation dossier exported: {exported['json_path']}"
+        elif action == "Refresh Data Sources":
+            state.runtime_snapshot_cache["data_sources_status"] = build_data_sources_status(attempt_live=True)
+            message = "Data sources refreshed with cache fallback"
+        elif action == "View Source Health":
+            state.runtime_snapshot_cache["data_sources_status"] = build_data_sources_status(attempt_live=False)
+            state.data_sources_viewer_mode = "health"
+            state.data_sources_viewer_open = True
+            message = "Data source health opened"
+        elif action == "View Bellator Intel Feed":
+            state.runtime_snapshot_cache["data_sources_status"] = build_data_sources_status(attempt_live=False)
+            state.data_sources_viewer_mode = "bellator"
+            state.data_sources_viewer_open = True
+            message = "Bellator intel feed opened"
+        elif action == "View Aeternum Market Feed":
+            state.runtime_snapshot_cache["data_sources_status"] = build_data_sources_status(attempt_live=False)
+            state.data_sources_viewer_mode = "aeternum"
+            state.data_sources_viewer_open = True
+            message = "Aeternum market feed opened"
         elif action == "Toggle Theme":
             options = [theme.key for theme in get_gui_theme_options()]
             index = options.index(state.theme_key) if state.theme_key in options else -1
@@ -1091,6 +1128,56 @@ def build_command_palette(state: GuiState, on_action: Callable[[str], None] | No
             tight=True,
         ),
         width=460,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+    )
+
+
+def build_data_sources_viewer(state: GuiState, status: Dict[str, Any] | None = None) -> ft.Control:
+    theme = state.theme
+    payload = status or state.runtime_snapshot_cache.get("data_sources_status") or build_data_sources_status(attempt_live=False)
+    mode = state.data_sources_viewer_mode
+    feeds = payload.get("feeds", {}) if isinstance(payload, dict) else {}
+    feed = feeds.get(mode, {}) if mode in {"bellator", "aeternum"} else {}
+
+    def line(value: str, color: str | None = None, bold: bool = False) -> ft.Text:
+        return ft.Text(
+            value,
+            color=color or theme.text_color,
+            size=10,
+            weight=ft.FontWeight.BOLD if bold else None,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
+
+    rows: list[ft.Control] = []
+    if mode == "health":
+        for item in payload.get("source_health", []):
+            source_status = str(item.get("status", "UNKNOWN"))
+            color = theme.primary_color if source_status == "READY" else theme.warning_color
+            rows.append(line(f"{item.get('source_id', '--').upper()}: {source_status}", color, True))
+    else:
+        rows.append(line(f"FEED STATUS: {feed.get('status', 'DATA_UNAVAILABLE')}", theme.accent_color, True))
+        rows.append(line(str(feed.get("operator_note") or "No normalized source items available."), theme.panel_value or theme.text_color))
+        for item in feed.get("items", [])[:16]:
+            rows.append(line(f"[{item.get('source', '--')}] {item.get('title', '--')}", theme.text_color))
+    if not rows:
+        rows.append(line("NO DATA SOURCE STATUS AVAILABLE", theme.warning_color, True))
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                line("DATA SOURCES STATUS", theme.accent_color, True),
+                line(f"MODE: {mode.upper()} | REFRESH: CACHE ONLY", theme.secondary_color),
+                ft.Column(rows, spacing=5, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=620,
+        height=520,
         padding=12,
         border=ft.border.all(1, theme.accent_color),
         bgcolor=theme.surface_color,
@@ -1416,7 +1503,165 @@ def build_telemetry_snapshot_viewer(state: GuiState) -> ft.Control:
     )
 
 
-def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | None = None) -> ft.Control:
+def build_simulation_create_overlay(state: GuiState, on_create=None) -> ft.Control:
+    theme = state.theme
+    title = ft.TextField(label="TITLE", value=(state.current_proposal.splitlines()[0][:80] if state.current_proposal else ""), dense=True)
+    scenario_type = ft.Dropdown(
+        label="SCENARIO TYPE",
+        value="strategic_forecast",
+        options=[ft.dropdown.Option(value) for value in SCENARIO_TYPES],
+        dense=True,
+    )
+    actors = ft.TextField(label="ACTORS (comma separated)", dense=True)
+    assumptions = ft.TextField(label="ASSUMPTIONS (key=value, comma separated)", dense=True)
+    triggers = ft.TextField(label="TRIGGERS (comma separated)", dense=True)
+    horizon = ft.TextField(label="HORIZON", value="operator_defined", dense=True)
+    description = ft.TextField(label="DESCRIPTION", value=state.current_proposal, multiline=True, min_lines=3, max_lines=4)
+
+    def submit(_: ft.ControlEvent | None = None) -> None:
+        if on_create is not None:
+            on_create(
+                {
+                    "title": title.value or "Operator Simulation Scaffold",
+                    "scenario_type": scenario_type.value or "strategic_forecast",
+                    "actors": _comma_values(actors.value),
+                    "assumptions": _key_value_pairs(assumptions.value),
+                    "triggers": _comma_values(triggers.value),
+                    "timeline_horizon": horizon.value or "operator_defined",
+                    "description": description.value or "",
+                }
+            )
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Text("CREATE SIMULATION", color=theme.accent_color, weight=ft.FontWeight.BOLD, size=14),
+                ft.Text("DETERMINISTIC SCAFFOLD - OPERATOR INPUTS ONLY", color=theme.warning_color, size=10),
+                title,
+                scenario_type,
+                actors,
+                assumptions,
+                triggers,
+                horizon,
+                description,
+                ft.TextButton("CREATE SCENARIO", on_click=submit),
+            ],
+            spacing=7,
+            tight=True,
+        ),
+        width=620,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "simulation_create_overlay"},
+    )
+
+
+def build_branch_tree_viewer(state: GuiState, scenario_id: str | None = None, on_expand=None, on_export=None) -> ft.Control:
+    theme = state.theme
+    active_id = scenario_id or state.selected_simulation_id
+    scenario = get_scenario(active_id) if active_id else None
+    branches = list((scenario or {}).get("generated_branches", []))
+
+    def text(value: str, color: str | None = None, bold: bool = False) -> ft.Text:
+        return ft.Text(value, color=color or theme.text_color, size=10, weight=ft.FontWeight.BOLD if bold else None, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS)
+
+    rows: list[ft.Control] = []
+    for branch in branches:
+        branch_id = str(branch.get("branch_id") or "--")
+        rows.append(
+            ft.Container(
+                content=ft.Column(
+                    [
+                        text(f"{'  ' * int(branch.get('depth', 0) or 0)}{branch_id}", theme.accent_color, True),
+                        text(f"{branch.get('title', '--')} | P {branch.get('probability', '--')} | RISK {branch.get('risk_score', '--')}"),
+                        text(str(branch.get("summary") or ""), theme.secondary_text or theme.secondary_color),
+                        ft.TextButton("EXPAND WITH OPERATOR ASSUMPTIONS", on_click=(lambda _, value=branch_id: on_expand(value)) if on_expand else None),
+                    ],
+                    spacing=2,
+                    tight=True,
+                ),
+                padding=6,
+                border=ft.border.all(1, theme.secondary_color),
+            )
+        )
+    if not rows:
+        rows.append(text("NO BRANCH TREE SELECTED", theme.warning_color, True))
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        text(f"BRANCH TREE {active_id or '--'}", theme.accent_color, True),
+                        ft.TextButton("EXPORT DOSSIER", on_click=(lambda _: on_export(active_id)) if on_export and active_id else None),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                ft.Column(rows, spacing=5, scroll=ft.ScrollMode.AUTO, expand=True),
+            ],
+            spacing=8,
+            expand=True,
+        ),
+        width=680,
+        height=560,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "branch_tree_viewer"},
+    )
+
+
+def build_branch_expand_overlay(state: GuiState, on_expand=None) -> ft.Control:
+    theme = state.theme
+    assumptions = ft.TextField(label="OPERATOR ASSUMPTIONS (key=value, comma separated)", dense=True)
+    flags = ft.TextField(label="ESCALATION FLAGS (comma separated)", dense=True)
+    title = ft.TextField(label="BRANCH TITLE", value="Operator Assumption Branch", dense=True)
+    summary = ft.TextField(
+        label="SUMMARY",
+        value="Deterministic branch derived from operator-provided assumptions.",
+        multiline=True,
+        min_lines=2,
+        max_lines=3,
+    )
+
+    def submit(_: ft.ControlEvent | None = None) -> None:
+        if on_expand is not None:
+            on_expand(
+                {
+                    "assumptions_delta": _key_value_pairs(assumptions.value),
+                    "escalation_flags": _comma_values(flags.value),
+                    "title": title.value or "Operator Assumption Branch",
+                    "summary": summary.value or "Deterministic branch derived from operator-provided assumptions.",
+                }
+            )
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Text("EXPAND BRANCH", color=theme.accent_color, weight=ft.FontWeight.BOLD, size=14),
+                ft.Text(f"PARENT {state.selected_simulation_branch_id or '--'}", color=theme.secondary_text or theme.secondary_color, size=10),
+                ft.Text("Operator assumptions are required. No autonomous forecast will be generated.", color=theme.warning_color, size=10),
+                assumptions,
+                flags,
+                title,
+                summary,
+                ft.TextButton("EXPAND DETERMINISTIC BRANCH", on_click=submit),
+            ],
+            spacing=7,
+            tight=True,
+        ),
+        width=600,
+        padding=12,
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "simulation_branch_expand_overlay"},
+    )
+
+
+def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | None = None, on_action=None) -> ft.Control:
     theme = state.theme
     recent = scenarios if scenarios is not None else list_recent_scenarios(limit=20)
     status = state.runtime_snapshot_cache.get("simulation_status")
@@ -1435,15 +1680,23 @@ def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | N
 
     rows: list[ft.Control] = []
     for scenario in recent:
+        scenario_id = str(scenario.get("scenario_id", "--"))
         rows.append(
             ft.Container(
                 content=ft.Column(
                     [
-                        text(str(scenario.get("scenario_id", "--")), theme.accent_color, bold=True),
+                        text(scenario_id, theme.accent_color, bold=True),
                         text(str(scenario.get("title", "Untitled Simulation")), theme.panel_value or theme.text_color),
                         text(
                             f"{scenario.get('scenario_type', '--')} | {scenario.get('status', '--')} | proposal {scenario.get('proposal_id') or '--'}",
                             theme.secondary_text or theme.secondary_color,
+                        ),
+                        ft.Row(
+                            [
+                                ft.TextButton("OPEN TREE", on_click=(lambda _, value=scenario_id: on_action("tree", value)) if on_action else None),
+                                ft.TextButton("EXPORT DOSSIER", on_click=(lambda _, value=scenario_id: on_action("export", value)) if on_action else None),
+                            ],
+                            spacing=6,
                         ),
                     ],
                     spacing=2,
@@ -1482,6 +1735,20 @@ def build_simulation_viewer(state: GuiState, scenarios: List[Dict[str, Any]] | N
         bgcolor=theme.surface_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
+
+
+def _comma_values(value: str | None) -> List[str]:
+    return [item.strip() for item in str(value or "").split(",") if item.strip()]
+
+
+def _key_value_pairs(value: str | None) -> Dict[str, str]:
+    pairs: Dict[str, str] = {}
+    for item in _comma_values(value):
+        key, separator, raw_value = item.partition("=")
+        if not separator or not key.strip() or not raw_value.strip():
+            raise ValueError("Assumptions must use comma-separated key=value entries.")
+        pairs[key.strip()] = raw_value.strip()
+    return pairs
 
 
 def build_gui_layout(
@@ -1720,6 +1987,8 @@ def build_gui_layout(
     shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
     shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
     shell.simulation_viewer = build_simulation_viewer(state)  # type: ignore[attr-defined]
+    shell.simulation_create_overlay = build_simulation_create_overlay(state)  # type: ignore[attr-defined]
+    shell.branch_tree_viewer = build_branch_tree_viewer(state)  # type: ignore[attr-defined]
     return shell
 
 
@@ -1773,6 +2042,9 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
     last_voice = voice_status.get("last_voice_announcement")
     if not isinstance(last_voice, dict):
         last_voice = {}
+    data_sources = state.runtime_snapshot_cache.get("data_sources_status")
+    if not isinstance(data_sources, dict):
+        data_sources = {"status": "UNKNOWN", "enabled_sources": []}
 
     def text(value: str, color: str | None = None, size: int = 10, bold: bool = False) -> ft.Text:
         return ft.Text(
@@ -1825,6 +2097,10 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
                 theme.panel_value or theme.text_color,
             ),
             text(f"INTEGRITY STATUS: {integrity_status}", integrity_color, bold=True),
+            text(
+                f"DATA SOURCES: {data_sources.get('status', 'UNKNOWN')} | {', '.join(data_sources.get('enabled_sources', [])) or '--'}",
+                theme.panel_value or theme.text_color,
+            ),
             text(f"VISUAL REVIEW FILE: {visual_review.get('path', '--')}"),
             text(
                 f"VISUAL REVIEW PENDING: {visual_review.get('pending_count', 0)} | NEEDS FIX/REJECTED: {visual_review.get('action_required_count', 0)}",
@@ -1943,9 +2219,65 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                 log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
             _render_page(page, state)
 
+        def handle_simulation_create(values: Dict[str, Any]) -> None:
+            try:
+                scenario = create_stored_scenario(
+                    **values,
+                    proposal_id=state.last_proposal_record_id or None,
+                    branch_depth=1,
+                    status="DRAFT",
+                )
+                state.selected_simulation_id = scenario.scenario_id
+                state.simulation_create_open = False
+                state.simulation_viewer_open = True
+                state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+                state.operator_status = f"Simulation created: {scenario.scenario_id}"
+            except Exception as exc:
+                state.operator_status = f"Simulation creation failed: {exc}"
+                log_error("gui_simulation_create_error", exc)
+            _render_page(page, state)
+
+        def handle_simulation_action(action: str, scenario_id: str) -> None:
+            state.selected_simulation_id = scenario_id
+            try:
+                if action == "tree":
+                    state.branch_tree_viewer_open = True
+                    state.operator_status = f"Branch tree opened: {scenario_id}"
+                elif action == "export":
+                    exported = export_simulation_dossier(scenario_id)
+                    state.runtime_snapshot_cache["latest_simulation_dossier"] = latest_simulation_dossier_status()
+                    state.operator_status = f"Simulation dossier exported: {exported['json_path']}"
+            except Exception as exc:
+                state.operator_status = f"Simulation action failed: {exc}"
+                log_error("gui_simulation_action_error", exc, {"action": action, "scenario_id": scenario_id})
+            _render_page(page, state)
+
+        def handle_branch_expand_request(branch_id: str) -> None:
+            state.selected_simulation_branch_id = branch_id
+            state.simulation_branch_expand_open = True
+            _render_page(page, state)
+
+        def handle_branch_expand(values: Dict[str, Any]) -> None:
+            try:
+                branch = expand_stored_branch(
+                    state.selected_simulation_id,
+                    state.selected_simulation_branch_id,
+                    **values,
+                )
+                state.simulation_branch_expand_open = False
+                state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+                state.operator_status = f"Branch expanded: {branch.branch_id}"
+            except Exception as exc:
+                state.operator_status = f"Branch expansion failed: {exc}"
+                log_error("gui_simulation_branch_expand_error", exc)
+            _render_page(page, state)
+
+        def handle_simulation_export(scenario_id: str) -> None:
+            handle_simulation_action("export", scenario_id)
+
         def handle_command_action(action: str) -> None:
             state.command_palette_open = False
-            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict"}:
+            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict", "Refresh Data Sources"}:
                 state.operator_status = f"{action} running"
                 _render_page(page, state)
 
@@ -2020,6 +2352,10 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
                 "visual_review_status",
                 "telemetry_snapshot",
                 "simulation_viewer",
+                "simulation_create_overlay",
+                "branch_tree_viewer",
+                "simulation_branch_expand_overlay",
+                "data_sources_viewer",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
             if state.diagnostics_drawer_open:
@@ -2081,9 +2417,45 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             if state.simulation_viewer_open:
                 overlay.append(
                     ft.Container(
-                        content=build_simulation_viewer(state),
+                        content=build_simulation_viewer(state, on_action=handle_simulation_action),
                         alignment=ft.alignment.center,
                         data="simulation_viewer",
+                    )
+                )
+            if state.simulation_create_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_simulation_create_overlay(state, on_create=handle_simulation_create),
+                        alignment=ft.alignment.center,
+                        data="simulation_create_overlay",
+                    )
+                )
+            if state.branch_tree_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_branch_tree_viewer(
+                            state,
+                            on_expand=handle_branch_expand_request,
+                            on_export=handle_simulation_export,
+                        ),
+                        alignment=ft.alignment.center,
+                        data="branch_tree_viewer",
+                    )
+                )
+            if state.simulation_branch_expand_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_branch_expand_overlay(state, on_expand=handle_branch_expand),
+                        alignment=ft.alignment.center,
+                        data="simulation_branch_expand_overlay",
+                    )
+                )
+            if state.data_sources_viewer_open:
+                overlay.append(
+                    ft.Container(
+                        content=build_data_sources_viewer(state),
+                        alignment=ft.alignment.center,
+                        data="data_sources_viewer",
                     )
                 )
         page.update()
@@ -2125,6 +2497,9 @@ def run_flet_gui(
 
     def target(page: ft.Page) -> None:
         _render_page(page, state)
+        marker = os.getenv("CONSENSUS_GUI_READY_MARKER")
+        if marker:
+            Path(marker).write_text("ready", encoding="utf-8")
         _start_status_polling(page, state)
 
     ft.app(target=target)
@@ -2146,6 +2521,10 @@ __all__ = [
     "build_decision_trace_viewer",
     "build_proposal_history_viewer",
     "build_simulation_viewer",
+    "build_simulation_create_overlay",
+    "build_branch_tree_viewer",
+    "build_branch_expand_overlay",
+    "build_data_sources_viewer",
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",

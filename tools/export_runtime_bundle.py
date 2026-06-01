@@ -21,6 +21,9 @@ from core.paths import SYSTEM_LOG_PATH, WAR_ROOM_RUNTIME_LOG_PATH
 from core.proposals.lifecycle import proposal_lifecycle_summary
 from core.proposals.store import PROPOSAL_HISTORY_PATH, proposal_history_status
 from core.simulation.store import SIMULATION_HISTORY_PATH, get_simulation_status
+from core.export.simulation import SIMULATION_DOSSIER_DIR, latest_simulation_dossier_status
+from core.data_sources.health import build_data_sources_status, normalized_sample_items
+from core.data_sources.source_config import load_data_source_config, redacted_data_source_config
 from tools.check_dependencies import build_dependency_report
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot
@@ -119,8 +122,11 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
     proposal_status = proposal_history_status()
     proposal_lifecycle = proposal_lifecycle_summary()
     simulation_status = get_simulation_status()
+    simulation_dossier = latest_simulation_dossier_status()
     verdict_exports = _latest_verdict_exports()
     dossier_exports = _latest_dossier_exports()
+    data_sources_status = snapshot.get("data_sources_status") or build_data_sources_status(attempt_live=False)
+    data_sources_config = redacted_data_source_config(load_data_source_config())
 
     with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         bundle.writestr("runtime_snapshot.json", _safe_json(snapshot))
@@ -133,6 +139,10 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
         bundle.writestr("proposal_history_status.json", _safe_json(proposal_status))
         bundle.writestr("proposal_lifecycle_summary.json", _safe_json(proposal_lifecycle))
         bundle.writestr("simulation_status.json", _safe_json(simulation_status))
+        bundle.writestr("simulation_dossier_status.json", _safe_json(simulation_dossier))
+        bundle.writestr("data_sources_status.json", _safe_json(data_sources_status))
+        bundle.writestr("data_sources_config_redacted.json", _safe_json(data_sources_config))
+        bundle.writestr("data_sources_sample_items.json", _safe_json(normalized_sample_items(data_sources_status)))
         if PROPOSAL_HISTORY_PATH.exists():
             bundle.write(PROPOSAL_HISTORY_PATH, "reports/proposal_history.jsonl")
         else:
@@ -141,6 +151,12 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
             bundle.write(SIMULATION_HISTORY_PATH, "reports/simulation_history.jsonl")
         else:
             bundle.writestr("reports/simulation_history.jsonl", "")
+        for value in simulation_dossier.values():
+            if not value:
+                continue
+            dossier_path = Path(str(value))
+            if dossier_path.is_file() and dossier_path.parent == SIMULATION_DOSSIER_DIR:
+                bundle.write(dossier_path, f"reports/simulation_dossiers/{dossier_path.name}")
         for verdict_path in verdict_exports:
             bundle.write(verdict_path, f"reports/verdicts/{verdict_path.name}")
         for dossier_path in dossier_exports:
@@ -177,6 +193,10 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
                     "proposal_history_status": "proposal_history_status.json",
                     "proposal_lifecycle_summary": "proposal_lifecycle_summary.json",
                     "simulation_status": "simulation_status.json",
+                    "simulation_dossier_status": "simulation_dossier_status.json",
+                    "data_sources_status": "data_sources_status.json",
+                    "data_sources_config_redacted": "data_sources_config_redacted.json",
+                    "data_sources_sample_items": "data_sources_sample_items.json",
                     "proposal_history": "reports/proposal_history.jsonl",
                     "simulation_history": "reports/simulation_history.jsonl",
                     "latest_verdict_exports": [f"reports/verdicts/{path.name}" for path in verdict_exports],

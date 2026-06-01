@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from core.paths import SYSTEM_ROOT
-from core.simulation.models import Branch, Scenario
+from core.simulation.branches import generate_child_branch
+from core.simulation.models import Branch, Scenario, utc_now
 from core.simulation.scenarios import create_scenario
 
 
@@ -45,6 +46,47 @@ def append_branch(scenario_id: str, branch: Branch, *, path: Path = SIMULATION_H
     return branch
 
 
+def get_scenario(scenario_id: str, *, path: Path = SIMULATION_HISTORY_PATH) -> Dict[str, Any] | None:
+    records = _read_records(path)
+    scenarios = [
+        record
+        for record in records
+        if record.get("record_type") == "scenario" and record.get("scenario_id") == scenario_id
+    ]
+    if not scenarios:
+        return None
+    scenario = dict(scenarios[-1])
+    scenario["generated_branches"] = branches_for_scenario(scenario_id, path=path)
+    return scenario
+
+
+def expand_stored_branch(
+    scenario_id: str,
+    parent_branch_id: str,
+    *,
+    assumptions_delta: Dict[str, Any],
+    escalation_flags: List[str] | None = None,
+    title: str = "Operator Assumption Branch",
+    summary: str = "Deterministic branch derived from operator-provided assumptions.",
+    path: Path = SIMULATION_HISTORY_PATH,
+) -> Branch:
+    if not assumptions_delta:
+        raise ValueError("Branch expansion requires operator-provided assumptions.")
+    records = branches_for_scenario(scenario_id, path=path)
+    parent_record = next((record for record in records if record.get("branch_id") == parent_branch_id), None)
+    if parent_record is None:
+        raise KeyError(f"Unknown branch: {parent_branch_id}")
+    parent = _branch_from_record(parent_record)
+    branch = generate_child_branch(
+        parent,
+        assumptions_delta=assumptions_delta,
+        escalation_flags=escalation_flags,
+        title=title,
+        summary=summary,
+    )
+    return append_branch(scenario_id, branch, path=path)
+
+
 def list_recent_scenarios(limit: int = 20, *, path: Path = SIMULATION_HISTORY_PATH) -> List[Dict[str, Any]]:
     scenarios = [record for record in _read_records(path) if record.get("record_type") == "scenario"]
     scenarios.sort(key=lambda record: str(record.get("created_at", "")), reverse=True)
@@ -72,7 +114,35 @@ def get_simulation_status(path: Path = SIMULATION_HISTORY_PATH) -> Dict[str, Any
         "branch_count": len(branches),
         "latest_simulation_id": latest.get("scenario_id") if latest else None,
         "latest_branch_count": latest_branch_count,
+        "latest_simulation_dossier": _latest_simulation_dossier(),
     }
+
+
+def _branch_from_record(record: Dict[str, Any]) -> Branch:
+    return Branch(
+        branch_id=str(record.get("branch_id")),
+        parent_branch_id=record.get("parent_branch_id") or record.get("parent_id"),
+        scenario_id=str(record.get("scenario_id")),
+        depth=int(record.get("depth", record.get("divergence_index", 0)) or 0),
+        title=str(record.get("title") or "Operator Assumption Branch"),
+        probability=float(record.get("probability", 0.0) or 0.0),
+        risk_score=float(record.get("risk_score", 0.0) or 0.0),
+        summary=str(record.get("summary") or ""),
+        assumptions_delta=dict(record.get("assumptions_delta") or {}),
+        assumptions_used=dict(record.get("assumptions_used") or {}),
+        escalation_flags=list(record.get("escalation_flags") or []),
+        tribunal_votes=dict(record.get("tribunal_votes") or {}),
+        generated_at=str(record.get("generated_at") or utc_now()),
+        divergence_index=int(record.get("divergence_index", record.get("depth", 0)) or 0),
+    )
+
+
+def _latest_simulation_dossier() -> str | None:
+    dossier_dir = SYSTEM_ROOT / "reports" / "simulation_dossiers"
+    candidates = list(dossier_dir.glob("*_simulation_dossier.json"))
+    if not candidates:
+        return None
+    return str(max(candidates, key=lambda item: item.stat().st_mtime))
 
 
 __all__ = [
@@ -80,6 +150,8 @@ __all__ = [
     "append_branch",
     "branches_for_scenario",
     "create_stored_scenario",
+    "expand_stored_branch",
+    "get_scenario",
     "get_simulation_status",
     "list_recent_scenarios",
 ]

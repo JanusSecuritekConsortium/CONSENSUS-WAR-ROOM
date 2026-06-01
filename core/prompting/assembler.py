@@ -28,11 +28,17 @@ def assemble_monolith_prompt(node: NodeIdentity, proposal: str, context: Dict[st
     selected_model = context.get("model", node.model) if isinstance(context, dict) else node.model
     shared_context = json.dumps(context, indent=2, ensure_ascii=True) if context else "{}"
     bellator_packet = context.get("bellator_context_packet") if isinstance(context, dict) else None
+    aeternum_packet = context.get("aeternum_data_packet") if isinstance(context, dict) else None
     bellator_feed_rules = ""
     if isinstance(bellator_packet, dict) and bellator_packet.get("anti_fabrication_instruction"):
         bellator_feed_rules = (
             "\n\nBELLATOR FEED HANDLING RULES:\n"
             f"{bellator_packet['anti_fabrication_instruction']}"
+        )
+    if isinstance(aeternum_packet, dict) and aeternum_packet.get("anti_fabrication_instruction"):
+        bellator_feed_rules += (
+            "\n\nAETERNUM DATA HANDLING RULES:\n"
+            f"{aeternum_packet['anti_fabrication_instruction']}"
         )
 
     return f"""
