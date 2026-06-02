@@ -5,3 +5,7 @@ uvicorn>=0.30
 pydantic>=2.7
 psutil>=5.9
 pyttsx3>=2.90
+openai>=1.0
+python-dotenv>=1.0
+schedule>=1.2
+pyTelegramBotAPI>=4.20

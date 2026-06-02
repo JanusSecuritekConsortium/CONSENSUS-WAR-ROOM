@@ -69,6 +69,11 @@ def test_runtime_dependencies_remain_declared() -> None:
     assert "flet>=0.28.3,<0.29" in text
     assert "flet-desktop>=0.28.3,<0.29" in text
     assert "Pillow>=10.0" in text
+    assert "openai>=1.0" in text
+    assert "python-dotenv>=1.0" in text
+    assert "schedule>=1.2" in text
+    assert "pyTelegramBotAPI>=4.20" in text
+    assert "ib_insync" not in text
 
 
 if __name__ == "__main__":
