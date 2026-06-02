@@ -1,0 +1,42 @@
+{
+  "version": "7.11.12",
+  "proposal_id": "2f0651c596dd",
+  "timestamp": "2026-05-28T21:09:45.222835",
+  "taxonomy": {
+    "status": "FAILED",
+    "reason": "classifier_confidence_below_threshold:0.5000"
+  },
+  "votes": {
+    "BELLATOR": {
+      "vote": "ABSTAIN",
+      "confidence": 0.55,
+      "evidence_quality": 0.45,
+      "critical_risk": false,
+      "model": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/mixtral-8x7b-instruct-v0.1.Q5_K_M.gguf"
+    },
+    "AETERNUM": {
+      "vote": "ABSTAIN",
+      "confidence": 0.55,
+      "evidence_quality": 0.45,
+      "critical_risk": false,
+      "model": "yi-34b-chat.Q4_K_S:latest"
+    },
+    "RATIONALIS": {
+      "vote": "ABSTAIN",
+      "confidence": 0.55,
+      "evidence_quality": 0.45,
+      "critical_risk": false,
+      "model": "deepseek-coder-33b-instruct.Q4_K_S:latest"
+    }
+  },
+  "confidence": 0.55,
+  "final_verdict": "NO_CONSENSUS",
+  "terminal_branch": "classification_failure",
+  "review_triggers": [
+    "confidence_below_threshold:BELLATOR",
+    "confidence_below_threshold:AETERNUM",
+    "confidence_below_threshold:RATIONALIS",
+    "classification_failure"
+  ],
+  "source_trace_path": "G:\\CONSENSUS_SYSTEM\\_ARBITER\\logs\\system.jsonl"
+}
