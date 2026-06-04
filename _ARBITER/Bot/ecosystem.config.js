@@ -4,7 +4,7 @@ module.exports = {
     name: "aurelius-telegram",
     script: "aurelius_bot.py",
     cwd: __dirname,
-    interpreter: "python",
+    interpreter: "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
     watch: false
   }]
 }

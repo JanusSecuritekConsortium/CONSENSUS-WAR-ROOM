@@ -1,7 +1,7 @@
 {
   "version": "7.13.2",
-  "timestamp": "2026-06-02T08:52:48+00:00",
-  "python_executable": "C:\\Users\\JMaje\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+  "timestamp": "2026-06-03T07:11:26+00:00",
+  "python_executable": "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
   "selected_categories": [
     "FAST"
   ],
@@ -10,15 +10,22 @@
   "test_files_run": 205,
   "passed": 205,
   "failed": 0,
-  "duration_seconds": 394.157,
+  "duration_seconds": 389.0475,
   "duration_report": {
-    "total_duration_seconds": 394.157,
+    "total_duration_seconds": 389.0475,
     "slow_threshold_seconds": 30.0,
     "total_budget_seconds": 900.0,
     "slowest_10": [
       {
+        "file": "tests\\test_health_badge.py",
+        "duration_seconds": 49.1471,
+        "categories": [
+          "FAST"
+        ]
+      },
+      {
         "file": "tests\\test_tribunal_lifecycle_phases.py",
-        "duration_seconds": 18.1878,
+        "duration_seconds": 18.7333,
         "categories": [
           "FAST",
           "INTEGRATION"
@@ -26,7 +33,7 @@
       },
       {
         "file": "tests\\test_runtime_snapshot_tribunal_lifecycle.py",
-        "duration_seconds": 13.9115,
+        "duration_seconds": 14.1486,
         "categories": [
           "FAST",
           "INTEGRATION"
@@ -34,195 +41,195 @@
       },
       {
         "file": "tests\\test_war_room_state_machine.py",
-        "duration_seconds": 10.6321,
+        "duration_seconds": 11.0461,
         "categories": [
           "FAST"
         ]
       },
       {
         "file": "tests\\test_proposal_lifecycle_flow.py",
-        "duration_seconds": 10.6308,
+        "duration_seconds": 10.8075,
         "categories": [
           "FAST",
           "INTEGRATION"
         ]
       },
       {
-        "file": "tests\\test_command_palette.py",
-        "duration_seconds": 10.4278,
+        "file": "tests\\test_top_header_telemetry_layout.py",
+        "duration_seconds": 10.4117,
+        "categories": [
+          "FAST"
+        ]
+      },
+      {
+        "file": "tests\\test_deterministic_tribunal_event_order.py",
+        "duration_seconds": 10.1297,
         "categories": [
           "FAST"
         ]
       },
       {
         "file": "tests\\test_header_logo_alignment.py",
-        "duration_seconds": 9.9995,
-        "categories": [
-          "FAST"
-        ]
-      },
-      {
-        "file": "tests\\test_top_header_telemetry_layout.py",
-        "duration_seconds": 9.8384,
-        "categories": [
-          "FAST"
-        ]
-      },
-      {
-        "file": "tests\\test_deterministic_tribunal_event_order.py",
-        "duration_seconds": 9.7578,
+        "duration_seconds": 9.8194,
         "categories": [
           "FAST"
         ]
       },
       {
         "file": "tests\\test_footer_shortcuts_centered.py",
-        "duration_seconds": 9.4954,
+        "duration_seconds": 9.5015,
         "categories": [
           "FAST"
         ]
       },
       {
-        "file": "tests\\test_header_container_constraints.py",
-        "duration_seconds": 9.2998,
+        "file": "tests\\test_command_palette.py",
+        "duration_seconds": 9.274,
         "categories": [
           "FAST"
         ]
       }
     ],
-    "slow_tests": [],
+    "slow_tests": [
+      {
+        "file": "tests\\test_health_badge.py",
+        "duration_seconds": 49.1471
+      }
+    ],
     "gui_launch_heavy_tests": [],
-    "warnings": []
+    "warnings": [
+      "slow_test: tests\\test_health_badge.py exceeded 30s (49.1471s)"
+    ]
   },
   "duration_comparison": {
     "baseline_manifest": "G:\\CONSENSUS_SYSTEM\\reports\\verification_v7.13.1.json",
     "baseline_version": "7.13.1",
-    "current_total_seconds": 394.157,
+    "current_total_seconds": 389.0475,
     "baseline_total_seconds": 731.8983,
-    "delta_total_seconds": -337.7413,
+    "delta_total_seconds": -342.8508,
     "tests_compared": 205,
     "improved_10": [
       {
-        "file": "tests\\test_deterministic_tribunal_event_order.py",
-        "previous_seconds": 10.0106,
-        "current_seconds": 9.7578,
-        "delta_seconds": -0.2528
+        "file": "tests\\test_command_palette.py",
+        "previous_seconds": 9.9506,
+        "current_seconds": 9.274,
+        "delta_seconds": -0.6766
       },
       {
-        "file": "tests\\test_fallback_resolution_chain.py",
-        "previous_seconds": 0.5237,
-        "current_seconds": 0.4025,
-        "delta_seconds": -0.1212
+        "file": "tests\\test_arbiter_voice_not_on_repaint.py",
+        "previous_seconds": 7.0555,
+        "current_seconds": 6.4886,
+        "delta_seconds": -0.5669
       },
       {
-        "file": "tests\\test_bellator_data_enrichment.py",
-        "previous_seconds": 0.3678,
-        "current_seconds": 0.277,
-        "delta_seconds": -0.0908
+        "file": "tests\\test_diagnostics_overlay_reentrant_guard.py",
+        "previous_seconds": 4.9174,
+        "current_seconds": 4.4246,
+        "delta_seconds": -0.4928
       },
       {
-        "file": "tests\\test_bellator_feed_intelligence.py",
-        "previous_seconds": 0.5119,
-        "current_seconds": 0.4433,
-        "delta_seconds": -0.0686
-      },
-      {
-        "file": "tests\\test_helldivers_logo_not_dense_block.py",
-        "previous_seconds": 0.1322,
-        "current_seconds": 0.0791,
-        "delta_seconds": -0.0531
-      },
-      {
-        "file": "tests\\test_helldivers_logo_quality.py",
-        "previous_seconds": 0.1234,
-        "current_seconds": 0.0779,
-        "delta_seconds": -0.0455
-      },
-      {
-        "file": "tests\\test_factal_adapter_disabled_without_key.py",
-        "previous_seconds": 0.3011,
-        "current_seconds": 0.2626,
-        "delta_seconds": -0.0385
-      },
-      {
-        "file": "tests\\test_bellator_rss_bounded_packet.py",
-        "previous_seconds": 0.3512,
-        "current_seconds": 0.3134,
-        "delta_seconds": -0.0378
-      },
-      {
-        "file": "tests\\test_model_remap_fallback.py",
-        "previous_seconds": 0.5474,
-        "current_seconds": 0.5099,
-        "delta_seconds": -0.0375
-      },
-      {
-        "file": "tests\\test_lifecycle_audio_hooks.py",
-        "previous_seconds": 0.1381,
-        "current_seconds": 0.1015,
-        "delta_seconds": -0.0366
-      }
-    ],
-    "regressed_10": [
-      {
-        "file": "tests\\test_runtime_bundle_data_sources_redacted.py",
-        "previous_seconds": 2.5231,
-        "current_seconds": 7.8835,
-        "delta_seconds": 5.3604
-      },
-      {
-        "file": "tests\\test_active_compile.py",
-        "previous_seconds": 0.3162,
-        "current_seconds": 5.0717,
-        "delta_seconds": 4.7555
-      },
-      {
-        "file": "tests\\test_runtime_bundle_dossiers.py",
-        "previous_seconds": 2.4356,
-        "current_seconds": 5.1745,
-        "delta_seconds": 2.7389
-      },
-      {
-        "file": "tests\\test_tribunal_lifecycle_phases.py",
-        "previous_seconds": 15.8568,
-        "current_seconds": 18.1878,
-        "delta_seconds": 2.331
-      },
-      {
-        "file": "tests\\test_runtime_bundle_export.py",
-        "previous_seconds": 2.4267,
-        "current_seconds": 4.7304,
-        "delta_seconds": 2.3037
-      },
-      {
-        "file": "tests\\test_runtime_snapshot_tribunal_lifecycle.py",
-        "previous_seconds": 11.6541,
-        "current_seconds": 13.9115,
-        "delta_seconds": 2.2574
-      },
-      {
-        "file": "tests\\test_header_logo_vertical_offsets.py",
-        "previous_seconds": 5.1413,
-        "current_seconds": 7.3182,
-        "delta_seconds": 2.1769
+        "file": "tests\\test_decision_trace_viewer.py",
+        "previous_seconds": 6.1042,
+        "current_seconds": 5.7798,
+        "delta_seconds": -0.3244
       },
       {
         "file": "tests\\test_app_icon_configured.py",
         "previous_seconds": 2.5483,
-        "current_seconds": 4.7062,
-        "delta_seconds": 2.1579
+        "current_seconds": 2.3072,
+        "delta_seconds": -0.2411
       },
       {
-        "file": "tests\\test_aeternum_data_enrichment.py",
-        "previous_seconds": 0.2958,
-        "current_seconds": 2.4437,
-        "delta_seconds": 2.1479
+        "file": "tests\\test_bellator_feed_intelligence.py",
+        "previous_seconds": 0.5119,
+        "current_seconds": 0.3159,
+        "delta_seconds": -0.196
       },
       {
-        "file": "tests\\test_acled_adapter_requires_credentials.py",
-        "previous_seconds": 0.2867,
-        "current_seconds": 2.2943,
-        "delta_seconds": 2.0076
+        "file": "tests\\test_bellator_data_enrichment.py",
+        "previous_seconds": 0.3678,
+        "current_seconds": 0.2417,
+        "delta_seconds": -0.1261
+      },
+      {
+        "file": "tests\\test_boot_theme_override.py",
+        "previous_seconds": 0.4031,
+        "current_seconds": 0.2853,
+        "delta_seconds": -0.1178
+      },
+      {
+        "file": "tests\\test_arbiter_panel_bounds.py",
+        "previous_seconds": 2.3291,
+        "current_seconds": 2.2125,
+        "delta_seconds": -0.1166
+      },
+      {
+        "file": "tests\\test_consensus_spec_engine.py",
+        "previous_seconds": 0.408,
+        "current_seconds": 0.3005,
+        "delta_seconds": -0.1075
+      }
+    ],
+    "regressed_10": [
+      {
+        "file": "tests\\test_health_badge.py",
+        "previous_seconds": 5.8555,
+        "current_seconds": 49.1471,
+        "delta_seconds": 43.2916
+      },
+      {
+        "file": "tests\\test_tribunal_lifecycle_phases.py",
+        "previous_seconds": 15.8568,
+        "current_seconds": 18.7333,
+        "delta_seconds": 2.8765
+      },
+      {
+        "file": "tests\\test_runtime_snapshot_tribunal_lifecycle.py",
+        "previous_seconds": 11.6541,
+        "current_seconds": 14.1486,
+        "delta_seconds": 2.4945
+      },
+      {
+        "file": "tests\\test_top_header_telemetry_layout.py",
+        "previous_seconds": 8.0032,
+        "current_seconds": 10.4117,
+        "delta_seconds": 2.4085
+      },
+      {
+        "file": "tests\\test_war_room_state_machine.py",
+        "previous_seconds": 9.1373,
+        "current_seconds": 11.0461,
+        "delta_seconds": 1.9088
+      },
+      {
+        "file": "tests\\test_proposal_lifecycle_flow.py",
+        "previous_seconds": 9.0189,
+        "current_seconds": 10.8075,
+        "delta_seconds": 1.7886
+      },
+      {
+        "file": "tests\\test_header_logo_alignment.py",
+        "previous_seconds": 8.1586,
+        "current_seconds": 9.8194,
+        "delta_seconds": 1.6608
+      },
+      {
+        "file": "tests\\test_header_logo_vertical_offsets.py",
+        "previous_seconds": 5.1413,
+        "current_seconds": 6.432,
+        "delta_seconds": 1.2907
+      },
+      {
+        "file": "tests\\test_runtime_snapshot_proposal_history.py",
+        "previous_seconds": 5.0451,
+        "current_seconds": 5.9895,
+        "delta_seconds": 0.9444
+      },
+      {
+        "file": "tests\\test_runtime_snapshot_simulations.py",
+        "previous_seconds": 5.2163,
+        "current_seconds": 6.0656,
+        "delta_seconds": 0.8493
       }
     ]
   },
@@ -236,7 +243,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.2943,
+      "duration_seconds": 0.2306,
       "stdout": "test_acled_adapter_requires_credentials PASS\n",
       "stderr": ""
     },
@@ -248,7 +255,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 1.2588,
+      "duration_seconds": 0.2343,
       "stdout": "test_acled_oauth_resolution PASS\n",
       "stderr": ""
     },
@@ -260,7 +267,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 5.0717,
+      "duration_seconds": 0.2567,
       "stdout": "test_active_compile PASS\n",
       "stderr": ""
     },
@@ -273,7 +280,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 1.3749,
+      "duration_seconds": 0.1189,
       "stdout": "test_active_manifest PASS\n",
       "stderr": ""
     },
@@ -285,7 +292,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.4437,
+      "duration_seconds": 0.276,
       "stdout": "test_aeternum_data_enrichment PASS\n",
       "stderr": ""
     },
@@ -297,7 +304,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.7924,
+      "duration_seconds": 0.0739,
       "stdout": "test_agent_profiles PASS\n",
       "stderr": ""
     },
@@ -309,7 +316,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.6704,
+      "duration_seconds": 0.0617,
       "stdout": "test_app_icon_asset_exists PASS\n",
       "stderr": ""
     },
@@ -321,7 +328,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.7062,
+      "duration_seconds": 2.3072,
       "stdout": "test_app_icon_configured PASS\n",
       "stderr": ""
     },
@@ -333,7 +340,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1845,
+      "duration_seconds": 0.0801,
       "stdout": "test_app_icon_not_old_default PASS\n",
       "stderr": ""
     },
@@ -345,7 +352,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.9917,
+      "duration_seconds": 2.1944,
       "stdout": "test_arasaka_status_readability PASS\n",
       "stderr": ""
     },
@@ -357,7 +364,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8169,
+      "duration_seconds": 2.2125,
       "stdout": "test_arbiter_panel_bounds PASS\n",
       "stderr": ""
     },
@@ -369,7 +376,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.152,
+      "duration_seconds": 0.0863,
       "stdout": "test_arbiter_voice_announces_classification_failure PASS\n",
       "stderr": ""
     },
@@ -381,7 +388,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1358,
+      "duration_seconds": 0.0838,
       "stdout": "test_arbiter_voice_announces_no_consensus PASS\n",
       "stderr": ""
     },
@@ -393,7 +400,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1223,
+      "duration_seconds": 0.0851,
       "stdout": "test_arbiter_voice_dispatch_once_per_proposal PASS\n",
       "stderr": ""
     },
@@ -405,7 +412,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 7.7782,
+      "duration_seconds": 6.4886,
       "stdout": "test_arbiter_voice_not_on_repaint PASS\n",
       "stderr": ""
     },
@@ -417,7 +424,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1485,
+      "duration_seconds": 0.0987,
       "stdout": "test_arbiter_voice_uses_glados_not_aurelius PASS\n",
       "stderr": ""
     },
@@ -429,7 +436,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.156,
+      "duration_seconds": 0.1266,
       "stdout": "test_ascii_logo_whitespace_preservation PASS\n",
       "stderr": ""
     },
@@ -442,7 +449,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1294,
+      "duration_seconds": 0.1997,
       "stdout": "test_aurelius_runtime PASS\n",
       "stderr": ""
     },
@@ -454,7 +461,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1338,
+      "duration_seconds": 0.1129,
       "stdout": "test_aurelius_voice_events PASS\n",
       "stderr": ""
     },
@@ -466,7 +473,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.277,
+      "duration_seconds": 0.2417,
       "stdout": "test_bellator_data_enrichment PASS\n",
       "stderr": ""
     },
@@ -478,7 +485,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4433,
+      "duration_seconds": 0.3159,
       "stdout": "test_bellator_feed_intelligence PASS\n",
       "stderr": ""
     },
@@ -490,7 +497,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4395,
+      "duration_seconds": 0.3613,
       "stdout": "test_bellator_geospatial_filters PASS\n",
       "stderr": ""
     },
@@ -502,7 +509,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3134,
+      "duration_seconds": 0.2723,
       "stdout": "test_bellator_rss_bounded_packet PASS\n",
       "stderr": ""
     },
@@ -514,7 +521,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4282,
+      "duration_seconds": 0.3261,
       "stdout": "test_bios_boot PASS\n",
       "stderr": ""
     },
@@ -526,7 +533,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.5188,
+      "duration_seconds": 2.2258,
       "stdout": "test_bios_post_formatting PASS\n",
       "stderr": ""
     },
@@ -538,8 +545,8 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4024,
-      "stdout": "VOICE SUBSYSTEM: READY (ARBITER_GLADOS)\nSIMULATION SUBSYSTEM: READY (branch_2edf4325e2)\nASSET SUBSYSTEM: READY\ntest_boot_entrypoint_resolution PASS\n",
+      "duration_seconds": 0.3073,
+      "stdout": "VOICE SUBSYSTEM: READY (ARBITER_GLADOS)\nSIMULATION SUBSYSTEM: READY (branch_b910e9cd29)\nASSET SUBSYSTEM: READY\ntest_boot_entrypoint_resolution PASS\n",
       "stderr": ""
     },
     {
@@ -550,7 +557,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0783,
+      "duration_seconds": 0.0565,
       "stdout": "test_boot_launcher_exists PASS\n",
       "stderr": ""
     },
@@ -562,7 +569,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1436,
+      "duration_seconds": 0.1179,
       "stdout": "test_boot_logo_text_spacing PASS\n",
       "stderr": ""
     },
@@ -574,7 +581,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1196,
+      "duration_seconds": 0.1253,
       "stdout": "test_boot_phrase_randomization PASS\n",
       "stderr": ""
     },
@@ -586,7 +593,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1032,
+      "duration_seconds": 0.1013,
       "stdout": "test_boot_phrase_registry PASS\n",
       "stderr": ""
     },
@@ -598,7 +605,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1196,
+      "duration_seconds": 0.1344,
       "stdout": "test_boot_phrase_variations PASS\n",
       "stderr": ""
     },
@@ -610,7 +617,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3646,
+      "duration_seconds": 0.3329,
       "stdout": "CONSENSUS dependency status: READY\nRequired:\nOptional:\nSELECTED THEME: JANUS\nPROVIDER STATUS: READY\nPROVIDER BACKEND: mock\ntest_boot_starts_gui PASS\n",
       "stderr": ""
     },
@@ -622,7 +629,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.8139,
+      "duration_seconds": 0.2853,
       "stdout": "test_boot_theme_override PASS\n",
       "stderr": ""
     },
@@ -634,7 +641,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2725,
+      "duration_seconds": 0.1126,
       "stdout": "test_branch_expansion_deterministic PASS\n",
       "stderr": ""
     },
@@ -646,7 +653,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1294,
+      "duration_seconds": 0.0957,
       "stdout": "test_branch_generation PASS\n",
       "stderr": ""
     },
@@ -658,7 +665,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1023,
+      "duration_seconds": 0.0933,
       "stdout": "test_branch_probability_scoring PASS\n",
       "stderr": ""
     },
@@ -670,7 +677,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.9009,
+      "duration_seconds": 2.3737,
       "stdout": "test_branch_tree_viewer PASS\n",
       "stderr": ""
     },
@@ -682,7 +689,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 10.4278,
+      "duration_seconds": 9.274,
       "stdout": "test_command_palette PASS\n",
       "stderr": ""
     },
@@ -694,7 +701,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3738,
+      "duration_seconds": 0.3005,
       "stdout": "test_consensus_spec_engine PASS\n",
       "stderr": ""
     },
@@ -706,7 +713,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2181,
+      "duration_seconds": 0.1578,
       "stdout": "test_context_retrieval PASS\n",
       "stderr": ""
     },
@@ -718,7 +725,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.5091,
+      "duration_seconds": 2.2199,
       "stdout": "test_convergence_visualization PASS\n",
       "stderr": ""
     },
@@ -730,7 +737,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1146,
+      "duration_seconds": 0.1027,
       "stdout": "test_data_cache_ttl PASS\n",
       "stderr": ""
     },
@@ -742,7 +749,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.338,
+      "duration_seconds": 0.251,
       "stdout": "test_data_source_adapter_interface PASS\n",
       "stderr": ""
     },
@@ -754,7 +761,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1274,
+      "duration_seconds": 0.0701,
       "stdout": "test_data_source_config_redaction PASS\n",
       "stderr": ""
     },
@@ -766,7 +773,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1165,
+      "duration_seconds": 0.0937,
       "stdout": "test_decision_trace_reader PASS\n",
       "stderr": ""
     },
@@ -778,7 +785,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 6.887,
+      "duration_seconds": 5.7798,
       "stdout": "test_decision_trace_viewer PASS\n",
       "stderr": ""
     },
@@ -790,7 +797,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1402,
+      "duration_seconds": 0.0825,
       "stdout": "test_dependency_check PASS\n",
       "stderr": ""
     },
@@ -802,7 +809,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 9.7578,
+      "duration_seconds": 10.1297,
       "stdout": "test_deterministic_tribunal_event_order PASS\n",
       "stderr": ""
     },
@@ -814,7 +821,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.2692,
+      "duration_seconds": 3.0654,
       "stdout": "test_diagnostics_button_nonblocking PASS\n",
       "stderr": ""
     },
@@ -827,7 +834,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.3193,
+      "duration_seconds": 2.9321,
       "stdout": "test_diagnostics_cached_snapshot PASS\n",
       "stderr": ""
     },
@@ -839,7 +846,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 5.1181,
+      "duration_seconds": 4.4246,
       "stdout": "test_diagnostics_overlay_reentrant_guard PASS\n",
       "stderr": ""
     },
@@ -851,7 +858,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.8625,
+      "duration_seconds": 0.879,
       "stdout": "test_dossier_export_json PASS\n",
       "stderr": ""
     },
@@ -863,7 +870,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.8301,
+      "duration_seconds": 0.8147,
       "stdout": "test_dossier_export_markdown PASS\n",
       "stderr": ""
     },
@@ -875,7 +882,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0643,
+      "duration_seconds": 0.0745,
       "stdout": "test_editable_install_package_discovery PASS\n",
       "stderr": ""
     },
@@ -887,7 +894,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.9819,
+      "duration_seconds": 3.7055,
       "stdout": "test_eva_logo_centered PASS\n",
       "stderr": ""
     },
@@ -899,7 +906,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0819,
+      "duration_seconds": 0.0933,
       "stdout": "test_eva_logo_rectangular_alignment PASS\n",
       "stderr": ""
     },
@@ -911,7 +918,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0817,
+      "duration_seconds": 0.0867,
       "stdout": "test_eva_magi_logo_quality PASS\n",
       "stderr": ""
     },
@@ -923,7 +930,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6095,
+      "duration_seconds": 2.4283,
       "stdout": "test_eva_uses_user_ascii_asset PASS\n",
       "stderr": ""
     },
@@ -935,7 +942,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2626,
+      "duration_seconds": 0.2892,
       "stdout": "test_factal_adapter_disabled_without_key PASS\n",
       "stderr": ""
     },
@@ -947,7 +954,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4025,
+      "duration_seconds": 0.5183,
       "stdout": "test_fallback_resolution_chain PASS\n",
       "stderr": ""
     },
@@ -959,7 +966,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4183,
+      "duration_seconds": 0.3623,
       "stdout": "test_feed_health PASS\n",
       "stderr": ""
     },
@@ -971,7 +978,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1568,
+      "duration_seconds": 0.1515,
       "stdout": "test_final_logo_mapping PASS\n",
       "stderr": ""
     },
@@ -983,7 +990,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7105,
+      "duration_seconds": 2.5304,
       "stdout": "test_flet_app_import PASS\n",
       "stderr": ""
     },
@@ -996,7 +1003,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6869,
+      "duration_seconds": 2.602,
       "stdout": "test_flet_desktop_runtime_dependency PASS\n",
       "stderr": ""
     },
@@ -1008,7 +1015,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 5.3269,
+      "duration_seconds": 5.2484,
       "stdout": "test_footer_diagnostics_visibility PASS\n",
       "stderr": ""
     },
@@ -1020,7 +1027,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.1321,
+      "duration_seconds": 3.4802,
       "stdout": "test_footer_shortcuts PASS\n",
       "stderr": ""
     },
@@ -1032,7 +1039,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 9.4954,
+      "duration_seconds": 9.5015,
       "stdout": "test_footer_shortcuts_centered PASS\n",
       "stderr": ""
     },
@@ -1044,7 +1051,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.0264,
+      "duration_seconds": 3.5697,
       "stdout": "test_footer_shortcuts_no_overlap PASS\n",
       "stderr": ""
     },
@@ -1056,7 +1063,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0811,
+      "duration_seconds": 0.1861,
       "stdout": "test_frozen_asset_resolution PASS\n",
       "stderr": ""
     },
@@ -1068,7 +1075,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3324,
+      "duration_seconds": 0.2603,
       "stdout": "test_gdelt_adapter_mock PASS\n",
       "stderr": ""
     },
@@ -1080,7 +1087,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1372,
+      "duration_seconds": 0.0923,
       "stdout": "test_ground_news_disabled_without_official_access PASS\n",
       "stderr": ""
     },
@@ -1092,7 +1099,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 9.2998,
+      "duration_seconds": 8.724,
       "stdout": "test_header_container_constraints PASS\n",
       "stderr": ""
     },
@@ -1104,7 +1111,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 9.9995,
+      "duration_seconds": 9.8194,
       "stdout": "test_header_logo_alignment PASS\n",
       "stderr": ""
     },
@@ -1116,7 +1123,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 7.3182,
+      "duration_seconds": 6.432,
       "stdout": "test_header_logo_vertical_offsets PASS\n",
       "stderr": ""
     },
@@ -1128,7 +1135,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 5.9806,
+      "duration_seconds": 4.879,
       "stdout": "test_header_no_wrap PASS\n",
       "stderr": ""
     },
@@ -1140,7 +1147,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7945,
+      "duration_seconds": 2.3591,
       "stdout": "test_header_status_margin_spacing PASS\n",
       "stderr": ""
     },
@@ -1152,7 +1159,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.9803,
+      "duration_seconds": 2.5388,
       "stdout": "test_header_telemetry_no_overlap_health_badge PASS\n",
       "stderr": ""
     },
@@ -1164,7 +1171,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.9561,
+      "duration_seconds": 2.8553,
       "stdout": "test_header_telemetry_vertical_offset PASS\n",
       "stderr": ""
     },
@@ -1176,7 +1183,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 7.3351,
+      "duration_seconds": 49.1471,
       "stdout": "test_health_badge PASS\n",
       "stderr": ""
     },
@@ -1188,7 +1195,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0877,
+      "duration_seconds": 0.103,
       "stdout": "test_helldivers_ascii_logo_quality PASS\n",
       "stderr": ""
     },
@@ -1200,7 +1207,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.8591,
+      "duration_seconds": 3.9887,
       "stdout": "test_helldivers_logo_centered PASS\n",
       "stderr": ""
     },
@@ -1212,7 +1219,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0791,
+      "duration_seconds": 0.0916,
       "stdout": "test_helldivers_logo_not_dense_block PASS\n",
       "stderr": ""
     },
@@ -1224,7 +1231,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0779,
+      "duration_seconds": 0.0926,
       "stdout": "test_helldivers_logo_quality PASS\n",
       "stderr": ""
     },
@@ -1236,7 +1243,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6388,
+      "duration_seconds": 2.4612,
       "stdout": "test_helldivers_uses_user_ascii_asset PASS\n",
       "stderr": ""
     },
@@ -1248,7 +1255,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2923,
+      "duration_seconds": 0.2619,
       "stdout": "test_ibkr_read_only_guard PASS\n",
       "stderr": ""
     },
@@ -1261,7 +1268,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1691,
+      "duration_seconds": 0.2926,
       "stdout": "test_integrity_verifier PASS\n",
       "stderr": ""
     },
@@ -1273,7 +1280,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0849,
+      "duration_seconds": 0.1098,
       "stdout": "test_legacy_visual_identity PASS\n",
       "stderr": ""
     },
@@ -1286,7 +1293,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1015,
+      "duration_seconds": 0.0857,
       "stdout": "test_lifecycle_audio_hooks PASS\n",
       "stderr": ""
     },
@@ -1298,7 +1305,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0884,
+      "duration_seconds": 0.0876,
       "stdout": "test_logo_normalizer PASS\n",
       "stderr": ""
     },
@@ -1310,7 +1317,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1135,
+      "duration_seconds": 0.1947,
       "stdout": "test_logo_registry PASS\n",
       "stderr": ""
     },
@@ -1322,7 +1329,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6485,
+      "duration_seconds": 2.4693,
       "stdout": "test_logo_vertical_alignment PASS\n",
       "stderr": ""
     },
@@ -1334,7 +1341,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7792,
+      "duration_seconds": 2.4771,
       "stdout": "test_logo_whitespace_preserved PASS\n",
       "stderr": ""
     },
@@ -1346,7 +1353,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.8325,
+      "duration_seconds": 3.8087,
       "stdout": "test_lower_right_health_panel_layout PASS\n",
       "stderr": ""
     },
@@ -1371,7 +1378,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.5994,
+      "duration_seconds": 0.7969,
       "stdout": "test_memory_cli PASS\n",
       "stderr": ""
     },
@@ -1384,7 +1391,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.492,
+      "duration_seconds": 0.4389,
       "stdout": "test_model_assignment_cli PASS\n",
       "stderr": ""
     },
@@ -1396,7 +1403,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.291,
+      "duration_seconds": 0.3638,
       "stdout": "test_model_availability PASS\n",
       "stderr": ""
     },
@@ -1408,7 +1415,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.5099,
+      "duration_seconds": 0.4557,
       "stdout": "test_model_remap_fallback PASS\n",
       "stderr": ""
     },
@@ -1420,7 +1427,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8009,
+      "duration_seconds": 2.5107,
       "stdout": "test_monolith_identity_enhancement PASS\n",
       "stderr": ""
     },
@@ -1432,7 +1439,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1273,
+      "duration_seconds": 0.0883,
       "stdout": "test_monolith_idle_pulses PASS\n",
       "stderr": ""
     },
@@ -1444,7 +1451,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1331,
+      "duration_seconds": 0.0911,
       "stdout": "test_monolith_order_contract PASS\n",
       "stderr": ""
     },
@@ -1456,7 +1463,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1245,
+      "duration_seconds": 0.2071,
       "stdout": "test_monolith_profiles PASS\n",
       "stderr": ""
     },
@@ -1468,7 +1475,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4025,
+      "duration_seconds": 0.3829,
       "stdout": "test_msty_runtime_fast_path PASS\n",
       "stderr": ""
     },
@@ -1480,7 +1487,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7003,
+      "duration_seconds": 2.4786,
       "stdout": "test_no_codex_generated_bad_logo_tokens PASS\n",
       "stderr": ""
     },
@@ -1492,7 +1499,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1205,
+      "duration_seconds": 0.1316,
       "stdout": "test_no_duplicate_boot_sequence PASS\n",
       "stderr": ""
     },
@@ -1504,7 +1511,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0829,
+      "duration_seconds": 0.0894,
       "stdout": "test_no_placeholder_logos PASS\n",
       "stderr": ""
     },
@@ -1516,7 +1523,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0855,
+      "duration_seconds": 0.0999,
       "stdout": "test_no_scrambled_ascii_logos PASS\n",
       "stderr": ""
     },
@@ -1528,7 +1535,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.087,
+      "duration_seconds": 0.0879,
       "stdout": "test_normalized_item_schema PASS\n",
       "stderr": ""
     },
@@ -1540,7 +1547,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1596,
+      "duration_seconds": 0.2546,
       "stdout": "test_preview_theme_samples PASS\n",
       "stderr": ""
     },
@@ -1552,7 +1559,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1157,
+      "duration_seconds": 0.0913,
       "stdout": "test_prompt_assembly PASS\n",
       "stderr": ""
     },
@@ -1564,7 +1571,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1454,
+      "duration_seconds": 0.1208,
       "stdout": "test_proposal_decision_linking PASS\n",
       "stderr": ""
     },
@@ -1576,7 +1583,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8245,
+      "duration_seconds": 2.7012,
       "stdout": "test_proposal_history_panel PASS\n",
       "stderr": ""
     },
@@ -1589,7 +1596,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 10.6308,
+      "duration_seconds": 10.8075,
       "stdout": "test_proposal_lifecycle_flow PASS\n",
       "stderr": ""
     },
@@ -1601,7 +1608,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6161,
+      "duration_seconds": 2.5383,
       "stdout": "test_proposal_panel_ergonomics PASS\n",
       "stderr": ""
     },
@@ -1613,7 +1620,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.5251,
+      "duration_seconds": 2.4686,
       "stdout": "test_proposal_panel_internal_spacing PASS\n",
       "stderr": ""
     },
@@ -1625,7 +1632,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.8369,
+      "duration_seconds": 3.9488,
       "stdout": "test_proposal_panel_not_overlapping_verdict PASS\n",
       "stderr": ""
     },
@@ -1637,7 +1644,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8154,
+      "duration_seconds": 2.4974,
       "stdout": "test_proposal_panel_spacing PASS\n",
       "stderr": ""
     },
@@ -1649,7 +1656,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1731,
+      "duration_seconds": 0.1427,
       "stdout": "test_proposal_resend_duplicate_archive PASS\n",
       "stderr": ""
     },
@@ -1661,7 +1668,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0975,
+      "duration_seconds": 0.084,
       "stdout": "test_proposal_status_transitions PASS\n",
       "stderr": ""
     },
@@ -1673,7 +1680,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1232,
+      "duration_seconds": 0.1245,
       "stdout": "test_proposal_store PASS\n",
       "stderr": ""
     },
@@ -1685,7 +1692,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.091,
+      "duration_seconds": 0.0982,
       "stdout": "test_proposal_template_rendering PASS\n",
       "stderr": ""
     },
@@ -1697,7 +1704,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1096,
+      "duration_seconds": 0.0896,
       "stdout": "test_proposal_templates PASS\n",
       "stderr": ""
     },
@@ -1709,7 +1716,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0781,
+      "duration_seconds": 0.0727,
       "stdout": "test_pyinstaller_spec_exists PASS\n",
       "stderr": ""
     },
@@ -1721,7 +1728,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.4099,
+      "duration_seconds": 0.4288,
       "stdout": "test_random_theme_selection PASS\n",
       "stderr": ""
     },
@@ -1733,7 +1740,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0795,
+      "duration_seconds": 0.0843,
       "stdout": "test_reasoning_stream_bounded PASS\n",
       "stderr": ""
     },
@@ -1745,7 +1752,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2449,
+      "duration_seconds": 0.2535,
       "stdout": "test_record_visual_review PASS\n",
       "stderr": ""
     },
@@ -1757,7 +1764,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.089,
+      "duration_seconds": 0.1058,
       "stdout": "test_reference_ascii_headers PASS\n",
       "stderr": ""
     },
@@ -1781,7 +1788,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.07,
+      "duration_seconds": 0.072,
       "stdout": "test_root_hygiene PASS\n",
       "stderr": ""
     },
@@ -1793,7 +1800,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.302,
+      "duration_seconds": 0.3161,
       "stdout": "test_rss_adapter_mock PASS\n",
       "stderr": ""
     },
@@ -1805,7 +1812,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3022,
+      "duration_seconds": 0.4196,
       "stdout": "test_rss_cache_fallback PASS\n",
       "stderr": ""
     },
@@ -1817,7 +1824,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2855,
+      "duration_seconds": 0.2652,
       "stdout": "test_rss_conditional_headers PASS\n",
       "stderr": ""
     },
@@ -1829,7 +1836,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3797,
+      "duration_seconds": 0.3129,
       "stdout": "test_rss_failure_backoff PASS\n",
       "stderr": ""
     },
@@ -1841,7 +1848,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1607,
+      "duration_seconds": 0.1674,
       "stdout": "test_rss_fts_retrieval PASS\n",
       "stderr": ""
     },
@@ -1853,7 +1860,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2505,
+      "duration_seconds": 0.2907,
       "stdout": "test_rss_official_directory_discovery PASS\n",
       "stderr": ""
     },
@@ -1865,7 +1872,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3046,
+      "duration_seconds": 0.2637,
       "stdout": "test_rss_probe_validation PASS\n",
       "stderr": ""
     },
@@ -1877,7 +1884,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1161,
+      "duration_seconds": 0.0822,
       "stdout": "test_rss_registry_quarantine PASS\n",
       "stderr": ""
     },
@@ -1889,7 +1896,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1919,
+      "duration_seconds": 0.165,
       "stdout": "test_rss_store_deduplication PASS\n",
       "stderr": ""
     },
@@ -1901,7 +1908,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1862,
+      "duration_seconds": 0.1832,
       "stdout": "test_run_tests_budget_warning PASS\n",
       "stderr": ""
     },
@@ -1913,7 +1920,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0778,
+      "duration_seconds": 0.0757,
       "stdout": "test_run_tests_categories PASS\n",
       "stderr": ""
     },
@@ -1925,7 +1932,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0761,
+      "duration_seconds": 0.0757,
       "stdout": "test_run_tests_duration_report PASS\n",
       "stderr": ""
     },
@@ -1938,7 +1945,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 7.8835,
+      "duration_seconds": 3.0471,
       "stdout": "test_runtime_bundle_data_sources_redacted PASS\n",
       "stderr": ""
     },
@@ -1951,7 +1958,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 5.1745,
+      "duration_seconds": 2.7864,
       "stdout": "test_runtime_bundle_dossiers PASS\n",
       "stderr": ""
     },
@@ -1964,7 +1971,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.7304,
+      "duration_seconds": 2.6128,
       "stdout": "test_runtime_bundle_export PASS\n",
       "stderr": ""
     },
@@ -1977,7 +1984,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 1.6201,
+      "duration_seconds": 0.9265,
       "stdout": "test_runtime_bundle_integrity PASS\n",
       "stderr": ""
     },
@@ -1990,7 +1997,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.1263,
+      "duration_seconds": 2.586,
       "stdout": "test_runtime_bundle_proposals PASS\n",
       "stderr": ""
     },
@@ -2003,7 +2010,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.2114,
+      "duration_seconds": 2.6145,
       "stdout": "test_runtime_bundle_rss_backbone PASS\n",
       "stderr": ""
     },
@@ -2016,7 +2023,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.7016,
+      "duration_seconds": 2.5661,
       "stdout": "test_runtime_bundle_simulations PASS\n",
       "stderr": ""
     },
@@ -2029,7 +2036,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.5645,
+      "duration_seconds": 2.6867,
       "stdout": "test_runtime_snapshot PASS\n",
       "stderr": ""
     },
@@ -2042,7 +2049,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3553,
+      "duration_seconds": 0.278,
       "stdout": "test_runtime_snapshot_data_sources PASS\n",
       "stderr": ""
     },
@@ -2055,7 +2062,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.2174,
+      "duration_seconds": 2.6696,
       "stdout": "test_runtime_snapshot_dependencies PASS\n",
       "stderr": ""
     },
@@ -2068,7 +2075,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2149,
+      "duration_seconds": 0.1492,
       "stdout": "test_runtime_snapshot_lifecycle_counts PASS\n",
       "stderr": ""
     },
@@ -2081,7 +2088,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 6.6963,
+      "duration_seconds": 5.9895,
       "stdout": "test_runtime_snapshot_proposal_history PASS\n",
       "stderr": ""
     },
@@ -2094,7 +2101,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.553,
+      "duration_seconds": 4.0436,
       "stdout": "test_runtime_snapshot_rss_backbone PASS\n",
       "stderr": ""
     },
@@ -2107,7 +2114,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 6.5114,
+      "duration_seconds": 6.0656,
       "stdout": "test_runtime_snapshot_simulations PASS\n",
       "stderr": ""
     },
@@ -2120,7 +2127,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6721,
+      "duration_seconds": 2.5357,
       "stdout": "test_runtime_snapshot_telemetry PASS\n",
       "stderr": ""
     },
@@ -2133,7 +2140,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 13.9115,
+      "duration_seconds": 14.1486,
       "stdout": "test_runtime_snapshot_tribunal_lifecycle PASS\n",
       "stderr": ""
     },
@@ -2146,7 +2153,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.2381,
+      "duration_seconds": 2.3,
       "stdout": "test_runtime_snapshot_voice_status PASS\n",
       "stderr": ""
     },
@@ -2158,7 +2165,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.3632,
+      "duration_seconds": 0.3657,
       "stdout": "CONSENSUS dependency status: READY\nRequired:\nOptional:\nSELECTED THEME: ARASAKA\nPROVIDER STATUS: READY\nPROVIDER BACKEND: mock\nSAFE MODE: diagnostics only\ntest_safe_mode_boot PASS\n",
       "stderr": ""
     },
@@ -2170,7 +2177,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1115,
+      "duration_seconds": 0.0932,
       "stdout": "test_search_adapter_disabled_by_default PASS\n",
       "stderr": ""
     },
@@ -2182,7 +2189,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.2539,
+      "duration_seconds": 0.2545,
       "stdout": "test_session_memory PASS\n",
       "stderr": ""
     },
@@ -2194,7 +2201,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.5957,
+      "duration_seconds": 2.5505,
       "stdout": "test_session_row_present_all_themes PASS\n",
       "stderr": ""
     },
@@ -2206,7 +2213,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8674,
+      "duration_seconds": 2.7853,
       "stdout": "test_simulation_create_overlay PASS\n",
       "stderr": ""
     },
@@ -2218,7 +2225,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1698,
+      "duration_seconds": 0.1638,
       "stdout": "test_simulation_dossier_export PASS\n",
       "stderr": ""
     },
@@ -2230,7 +2237,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7611,
+      "duration_seconds": 2.7094,
       "stdout": "test_simulation_history_overlay PASS\n",
       "stderr": ""
     },
@@ -2242,7 +2249,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0971,
+      "duration_seconds": 0.1177,
       "stdout": "test_simulation_models PASS\n",
       "stderr": ""
     },
@@ -2254,7 +2261,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1218,
+      "duration_seconds": 0.1269,
       "stdout": "test_simulation_registry PASS\n",
       "stderr": ""
     },
@@ -2266,7 +2273,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.146,
+      "duration_seconds": 0.1538,
       "stdout": "test_simulation_store PASS\n",
       "stderr": ""
     },
@@ -2278,7 +2285,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1,
+      "duration_seconds": 0.0964,
       "stdout": "test_static_assets PASS\n",
       "stderr": ""
     },
@@ -2290,7 +2297,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.617,
+      "duration_seconds": 2.5231,
       "stdout": "test_status_panel_cleanup PASS\n",
       "stderr": ""
     },
@@ -2302,7 +2309,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.127,
+      "duration_seconds": 0.1334,
       "stdout": "test_telemetry_collector PASS\n",
       "stderr": ""
     },
@@ -2314,7 +2321,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1006,
+      "duration_seconds": 0.0946,
       "stdout": "test_telemetry_degraded_psutil_missing PASS\n",
       "stderr": ""
     },
@@ -2326,7 +2333,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7314,
+      "duration_seconds": 2.5555,
       "stdout": "test_telemetry_full_visibility PASS\n",
       "stderr": ""
     },
@@ -2338,7 +2345,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0838,
+      "duration_seconds": 0.1022,
       "stdout": "test_telemetry_history PASS\n",
       "stderr": ""
     },
@@ -2350,7 +2357,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.9743,
+      "duration_seconds": 4.0276,
       "stdout": "test_telemetry_no_footer_overlap PASS\n",
       "stderr": ""
     },
@@ -2362,7 +2369,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0852,
+      "duration_seconds": 0.0952,
       "stdout": "test_telemetry_no_gpu_available PASS\n",
       "stderr": ""
     },
@@ -2374,7 +2381,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 4.3319,
+      "duration_seconds": 4.079,
       "stdout": "test_telemetry_no_header_overlap PASS\n",
       "stderr": ""
     },
@@ -2386,7 +2393,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7594,
+      "duration_seconds": 2.5667,
       "stdout": "test_telemetry_no_overlap PASS\n",
       "stderr": ""
     },
@@ -2398,7 +2405,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.8089,
+      "duration_seconds": 2.5619,
       "stdout": "test_telemetry_no_scroll_required PASS\n",
       "stderr": ""
     },
@@ -2410,7 +2417,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.586,
+      "duration_seconds": 2.5506,
       "stdout": "test_telemetry_theme_styles PASS\n",
       "stderr": ""
     },
@@ -2422,7 +2429,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1232,
+      "duration_seconds": 0.1087,
       "stdout": "test_theme_ambient_messages PASS\n",
       "stderr": ""
     },
@@ -2434,7 +2441,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1047,
+      "duration_seconds": 0.0981,
       "stdout": "test_theme_ascii_dimensions PASS\n",
       "stderr": ""
     },
@@ -2446,7 +2453,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1229,
+      "duration_seconds": 0.1372,
       "stdout": "test_theme_boot_phrase_selection PASS\n",
       "stderr": ""
     },
@@ -2458,7 +2465,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.088,
+      "duration_seconds": 0.0838,
       "stdout": "test_theme_canonical_tokens PASS\n",
       "stderr": ""
     },
@@ -2470,7 +2477,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0929,
+      "duration_seconds": 0.0874,
       "stdout": "test_theme_colors_unchanged PASS\n",
       "stderr": ""
     },
@@ -2482,7 +2489,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1487,
+      "duration_seconds": 0.1349,
       "stdout": "test_theme_completeness PASS\n",
       "stderr": ""
     },
@@ -2494,7 +2501,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.7156,
+      "duration_seconds": 2.5715,
       "stdout": "test_theme_contrast_readability PASS\n",
       "stderr": ""
     },
@@ -2506,7 +2513,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.935,
+      "duration_seconds": 2.5428,
       "stdout": "test_theme_contrast_tokens PASS\n",
       "stderr": ""
     },
@@ -2518,7 +2525,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.0463,
+      "duration_seconds": 3.1328,
       "stdout": "test_theme_gallery_logos PASS\n",
       "stderr": ""
     },
@@ -2530,7 +2537,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1334,
+      "duration_seconds": 0.2435,
       "stdout": "test_theme_loading_bars PASS\n",
       "stderr": ""
     },
@@ -2542,7 +2549,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0963,
+      "duration_seconds": 0.0845,
       "stdout": "test_theme_panel_labels PASS\n",
       "stderr": ""
     },
@@ -2554,7 +2561,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1098,
+      "duration_seconds": 0.0905,
       "stdout": "test_theme_visual_consistency PASS\n",
       "stderr": ""
     },
@@ -2566,7 +2573,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 9.8384,
+      "duration_seconds": 10.4117,
       "stdout": "test_top_header_telemetry_layout PASS\n",
       "stderr": ""
     },
@@ -2579,7 +2586,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 18.1878,
+      "duration_seconds": 18.7333,
       "stdout": "test_tribunal_lifecycle_phases PASS\n",
       "stderr": ""
     },
@@ -2591,7 +2598,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1762,
+      "duration_seconds": 0.1547,
       "stdout": "test_typewriter_animation PASS\n",
       "stderr": ""
     },
@@ -2603,7 +2610,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1387,
+      "duration_seconds": 0.1075,
       "stdout": "test_verdict_export_json PASS\n",
       "stderr": ""
     },
@@ -2615,7 +2622,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1262,
+      "duration_seconds": 0.1038,
       "stdout": "test_verdict_export_markdown PASS\n",
       "stderr": ""
     },
@@ -2627,7 +2634,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1959,
+      "duration_seconds": 0.1415,
       "stdout": "test_verdict_typing_animation PASS\n",
       "stderr": ""
     },
@@ -2640,7 +2647,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1298,
+      "duration_seconds": 0.1182,
       "stdout": "test_verification_manifest_durations PASS\n",
       "stderr": ""
     },
@@ -2652,7 +2659,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.1014,
+      "duration_seconds": 0.0981,
       "stdout": "test_voice_failure_logged_not_crashing_gui PASS\n",
       "stderr": ""
     },
@@ -2665,7 +2672,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.1573,
+      "duration_seconds": 3.222,
       "stdout": "test_voting_runtime_integration PASS\n",
       "stderr": ""
     },
@@ -2677,7 +2684,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 10.6321,
+      "duration_seconds": 11.0461,
       "stdout": "test_war_room_state_machine PASS\n",
       "stderr": ""
     },
@@ -2689,7 +2696,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 2.6611,
+      "duration_seconds": 2.5333,
       "stdout": "test_war_room_visual_hierarchy PASS\n",
       "stderr": ""
     },
@@ -2701,7 +2708,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 3.8726,
+      "duration_seconds": 3.9153,
       "stdout": "test_wh40k_logo_full_visibility PASS\n",
       "stderr": ""
     },
@@ -2713,7 +2720,7 @@
       "gui_launch_heavy": false,
       "status": "pass",
       "returncode": 0,
-      "duration_seconds": 0.0985,
+      "duration_seconds": 0.0871,
       "stdout": "test_wh40k_theme_specific_layout PASS\n",
       "stderr": ""
     }
