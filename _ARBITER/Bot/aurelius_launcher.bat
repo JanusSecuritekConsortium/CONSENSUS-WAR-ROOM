@@ -1,4 +1,4 @@
 @echo off
 REM AURELIUS Telegram assistant launcher
 cd /d "%~dp0"
-python aurelius_bot.py
+"%~dp0..\..\.venv\Scripts\python.exe" aurelius_bot.py
