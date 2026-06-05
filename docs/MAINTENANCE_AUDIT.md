@@ -146,7 +146,7 @@ Filename duplicates found:
 - `.gitkeep`: expected in `static` and `ui/assets`.
 - `runtime.py`: expected in `config` and `integrations/msty`.
 - `engine.py`: active `core/voting/engine.py` and legacy `_ARBITER/Bot/Voice/glados-tts-main/engine.py`.
-- `anima_bot.py`: `_ARBITER/Bot/anima_bot.py` and `_ARBITER/Bot/OLD/anima_bot.py`.
+- `anima_bot.py`: archived at `archive/legacy_bots/anima_bot.py`; an older retained copy also remains under `_ARBITER/Bot/OLD/anima_bot.py`.
 - `glados.py`: `_ARBITER/glados.py` and `_ARBITER/Bot/Voice/glados-tts-main/glados.py`.
 - `LICENSE`: duplicated within embedded legacy voice dependencies.
 
@@ -175,7 +175,7 @@ Active/config-driven path references:
 Stale or risky absolute paths:
 
 - `_ARBITER/launch_war_room.bat` contains `cd /d J:\CONSENSUS_SYSTEM\_ARBITER`. `J:\CONSENSUS_SYSTEM` was not present during this audit.
-- `_ARBITER/Bot/anima_launcher.bat` contains `cd "F:\ANIMA - AI Agent\Bot"` and a user-specific Python path under `C:\Users\JMaje\...`. `F:\` exists, but this is outside the active CONSENSUS runtime and was not touched.
+- The retired `_ARBITER/Bot/anima_launcher.bat` contained `cd "F:\ANIMA - AI Agent\Bot"` and a user-specific Python path under `C:\Users\JMaje\...`. It was replaced by `_ARBITER/Bot/aurelius_launcher.bat`.
 
 Generated files with absolute project paths:
 
@@ -215,9 +215,9 @@ Legacy launchers:
   - Contains simulated placeholder content.
   - Recommended: archive if not used.
 
-- `_ARBITER/Bot/anima_launcher.bat`
-  - Uses `F:\ANIMA - AI Agent\Bot` and a user-specific Python 3.13 path.
-  - This is outside the active CONSENSUS runtime. Leave until the Anima path is explicitly reviewed.
+- `_ARBITER/Bot/aurelius_launcher.bat`
+  - Uses its own directory and launches `python aurelius_bot.py`.
+  - Replaces the retired ANIMA launcher without hardcoded drive or user-specific Python paths.
 
 - Embedded TTS launchers under `_ARBITER/tts_audio/**`
   - Belong to bundled voice/RVC tooling, not active CONSENSUS launch flow.

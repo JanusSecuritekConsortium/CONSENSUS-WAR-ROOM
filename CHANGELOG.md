@@ -1,5 +1,20 @@
 # Changelog
 
+## 7.13.2 - AURELIUS Telegram Cleanup
+
+- Retired the active legacy ANIMA Telegram bootstrap and archived it under `archive/legacy_bots/anima_bot.py`.
+- Added the clean `_ARBITER/Bot/aurelius_bot.py` entrypoint with Msty-only provider routing through `integrations/msty/aurelius_provider.py`.
+- Preserved the 08:00 Morning Brief and 18:00 End-of-Day Shutdown schedules while suppressing repeated scheduled Telegram errors when Msty is missing or unavailable.
+- Removed direct IBKR imports from Telegram startup, refreshed launch files, and declared the active Telegram dependencies without `ib_insync`.
+
+## 7.13.1 - RSS Intelligence Backbone
+
+- Added the RSS-first Bellator intelligence backbone with a local SQLite FTS5 cache at `_ARBITER/cache/data_sources/intelligence.db`, configurable 20-minute polling, conditional HTTP requests, per-source backoff, and explicit feed health states.
+- Added strict RSS/Atom probe tooling with official-directory discovery, XML structure validation, content-type checks, and redirect-to-HTML detection. Reuters and AP remain quarantined until valid current XML endpoints are confirmed.
+- Added GUID, canonical-URL, and stable-content-hash deduplication plus bounded Bellator retrieval packets with taxonomy filtering, freshness weighting, citations, and marked `CACHE_FALLBACK` behavior.
+- Registered Tier 1 institutional and Tier 2 editorial/OSINT feeds, kept Tier 3 APIs as enrichment only, and added RSS health/sample artifacts to runtime snapshots and bundles.
+- Added offline regression coverage for probing, conditional headers, FTS retrieval, deduplication, backoff, quarantine, bounded packet construction, and cache fallback.
+
 ## 7.13.0 - Real Data Layer Foundation
 
 - Added a normalized, environment-configured data-source registry with TTL cache fallback, freshness reporting, source health, and secret redaction.

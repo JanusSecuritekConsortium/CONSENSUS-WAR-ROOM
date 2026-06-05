@@ -1,9 +1,10 @@
 
 module.exports = {
   apps: [{
-    name: "anima",
-    script: "F:/ANIMA - AI Agent/Bot/anima_bot.py",
-    interpreter: "C:/Users/JMaje/AppData/Local/Programs/Python/Python313/python.exe",
+    name: "aurelius-telegram",
+    script: "aurelius_bot.py",
+    cwd: __dirname,
+    interpreter: "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
     watch: false
   }]
 }

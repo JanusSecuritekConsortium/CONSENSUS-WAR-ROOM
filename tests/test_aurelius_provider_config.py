@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import sys
+import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +15,26 @@ from integrations.msty.aurelius_provider import (
     ProviderErrorGate,
     resolve_aurelius_provider_config,
 )
+
+BOT_PATH = ROOT / "_ARBITER" / "Bot" / "aurelius_bot.py"
+
+
+def _load_aurelius_bot():
+    dotenv = types.ModuleType("dotenv")
+    dotenv.load_dotenv = lambda *_args, **_kwargs: False
+    previous = sys.modules.get("dotenv")
+    sys.modules["dotenv"] = dotenv
+    try:
+        spec = importlib.util.spec_from_file_location("aurelius_bot_under_test", BOT_PATH)
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        if previous is None:
+            sys.modules.pop("dotenv", None)
+        else:
+            sys.modules["dotenv"] = previous
 
 
 def test_aurelius_defaults_to_msty_without_ollama_endpoint() -> None:
@@ -81,19 +103,63 @@ def test_active_aurelius_config_is_msty_only() -> None:
 
 
 def test_aurelius_bot_no_direct_ollama_endpoint() -> None:
-    bot_source = (ROOT / "_ARBITER" / "Bot" / "anima_bot.py").read_text(encoding="utf-8")
+    bot_source = BOT_PATH.read_text(encoding="utf-8")
 
     assert "localhost:11434" not in bot_source
     assert "127.0.0.1:11434" not in bot_source
     assert 'api_key = "ollama"' not in bot_source
+    assert "from integrations.msty.aurelius_provider import" in bot_source
     assert "send_morning_brief" in bot_source
     assert "send_end_of_day_shutdown" in bot_source
+
+
+def test_aurelius_bot_has_no_direct_ibkr_import() -> None:
+    bot_source = BOT_PATH.read_text(encoding="utf-8")
+
+    assert "ib_insync" not in bot_source
+    assert "execute_ibkr_trade" not in bot_source
+
+
+def test_anima_bot_is_archived_and_launchers_use_aurelius() -> None:
+    bot_dir = ROOT / "_ARBITER" / "Bot"
+    ecosystem = (bot_dir / "ecosystem.config.js").read_text(encoding="utf-8")
+    launcher = (bot_dir / "aurelius_launcher.bat").read_text(encoding="utf-8")
+
+    assert not (bot_dir / "anima_bot.py").exists()
+    assert (ROOT / "archive" / "legacy_bots" / "anima_bot.py").exists()
+    assert not (bot_dir / "anima_launcher.bat").exists()
+    assert "aurelius_bot.py" in ecosystem
+    assert "aurelius_bot.py" in launcher
+    assert "anima_bot.py" not in ecosystem
+    assert "anima_bot.py" not in launcher
+
+
+def test_aurelius_bot_missing_telegram_token_is_clear() -> None:
+    bot_module = _load_aurelius_bot()
+
+    try:
+        bot_module.validate_startup({})
+    except RuntimeError as exc:
+        assert "Missing TELEGRAM_BOT_TOKEN" in str(exc)
+    else:
+        raise AssertionError("missing Telegram token must fail startup validation")
+
+
+def test_active_telegram_dependencies_are_declared_without_ibkr() -> None:
+    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+
+    assert "openai" in requirements
+    assert "python-dotenv" in requirements
+    assert "schedule" in requirements
+    assert "pyTelegramBotAPI" in requirements
+    assert "requests" in requirements
+    assert "ib_insync" not in requirements
 
 
 def test_aurelius_bot_compiles() -> None:
     import py_compile
 
-    py_compile.compile(str(ROOT / "_ARBITER" / "Bot" / "anima_bot.py"), doraise=True)
+    py_compile.compile(str(BOT_PATH), doraise=True)
 
 
 if __name__ == "__main__":
@@ -103,5 +169,9 @@ if __name__ == "__main__":
     test_provider_error_gate_logs_once()
     test_active_aurelius_config_is_msty_only()
     test_aurelius_bot_no_direct_ollama_endpoint()
+    test_aurelius_bot_has_no_direct_ibkr_import()
+    test_anima_bot_is_archived_and_launchers_use_aurelius()
+    test_aurelius_bot_missing_telegram_token_is_clear()
+    test_active_telegram_dependencies_are_declared_without_ibkr()
     test_aurelius_bot_compiles()
     print("test_aurelius_provider_config PASS")
