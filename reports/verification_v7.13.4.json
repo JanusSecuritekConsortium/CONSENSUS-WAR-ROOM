@@ -1,0 +1,69 @@
+{
+  "version": "7.13.4",
+  "timestamp": "2026-06-05T19:25:10+00:00",
+  "python_executable": "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
+  "summary": {
+    "status": "PASS",
+    "notes": [
+      "Added read-only local CONSENSUS MCP server for MstyClaw.",
+      "Official MCP Python SDK is not installed; server uses a minimal stdio JSON-RPC MCP-compatible transport.",
+      "No arbitrary command execution, file writes, deletion, or non-localhost network access added."
+    ]
+  },
+  "checks": {
+    "mcp_self_test": {
+      "command": ".\\.venv\\Scripts\\python.exe integrations\\mcp\\test_consensus_mcp.py",
+      "status": "PASS",
+      "covered": [
+        "safe path rejection",
+        ".env redaction",
+        "Msty health response shape",
+        "Msty model discovery response shape",
+        "AURELIUS recent log response shape",
+        "project tree exclusion list",
+        "JSON-RPC tools/list",
+        "JSON-RPC tools/call"
+      ]
+    },
+    "mcp_regression_test": {
+      "command": ".\\.venv\\Scripts\\python.exe tests\\test_consensus_mcp_server.py",
+      "status": "PASS"
+    },
+    "msty_model_discovery": {
+      "command": ".\\.venv\\Scripts\\python.exe integrations\\mcp\\consensus_mcp_server.py --tool msty_models",
+      "status": "PASS",
+      "reachable": true,
+      "model_count": 10,
+      "required_model_seen": "qwen3:latest"
+    },
+    "active_compile": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\compile_active_tree.py",
+      "status": "PASS",
+      "compiled_files": 460
+    },
+    "active_manifest": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\verify_active_manifest.py",
+      "status": "CLEAN",
+      "manifest_path": "G:\\CONSENSUS_SYSTEM\\reports\\active_manifest_7.13.4.json",
+      "current_file_count": 496
+    },
+    "runtime_snapshot": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\runtime_snapshot.py --compact",
+      "status": "PASS"
+    },
+    "runtime_bundle": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\export_runtime_bundle.py",
+      "status": "PASS",
+      "path": "G:\\CONSENSUS_SYSTEM\\reports\\runtime_bundle_7.13.4_20260605T192401Z.zip"
+    }
+  },
+  "mcp_registration": {
+    "name": "CONSENSUS MCP",
+    "transport": "Local command",
+    "command": "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
+    "arguments": "G:\\CONSENSUS_SYSTEM\\integrations\\mcp\\consensus_mcp_server.py",
+    "fallback_launcher": "G:\\CONSENSUS_SYSTEM\\integrations\\mcp\\run_consensus_mcp.bat"
+  },
+  "active_manifest_path": "G:\\CONSENSUS_SYSTEM\\reports\\active_manifest_7.13.4.json",
+  "runtime_bundle_path": "G:\\CONSENSUS_SYSTEM\\reports\\runtime_bundle_7.13.4_20260605T192401Z.zip"
+}

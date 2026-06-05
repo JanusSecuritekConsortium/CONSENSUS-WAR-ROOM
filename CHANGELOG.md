@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.13.4 - CONSENSUS MCP Server for MstyClaw
+
+- Added local CONSENSUS MCP server for MstyClaw integration with read-only status, logs, model discovery, project tree, safe file read, and text search tools.
+- Added `integrations/mcp/run_consensus_mcp.bat` and MCP registration documentation for local command transport.
+- Added MCP self-test coverage for path traversal rejection, `.env` redaction, Msty health/model discovery shape, AURELIUS log reads, and project tree exclusions.
+
 ## 7.13.3 - Theme-Safe UI Scaling Pass
 
 - v7.13.3: Theme-safe UI scaling pass. Enlarged proposal panel, fixed telemetry/header clipping, added bounded logo profiles, and protected long system-status strings.
