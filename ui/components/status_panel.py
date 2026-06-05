@@ -6,6 +6,7 @@ import flet as ft
 
 from config.version import SYSTEM_VERSION
 from core.models import Theme
+from ui.components.safe_text import safe_ellipsis, safe_wrap
 
 
 def build_status_panel(
@@ -66,14 +67,26 @@ def build_status_panel(
     def section(title: str) -> ft.Control:
         return ft.Text(title, color=theme.accent_color, weight=ft.FontWeight.BOLD, size=11)
 
-    def row(label: str, value: str, color: str | None = None, bold: bool = False) -> ft.Control:
+    def row(label: str, value: str, color: str | None = None, bold: bool = False, wrap_value: bool = False) -> ft.Control:
+        display = f"{label}: {value}"
+        if wrap_value:
+            return ft.Text(
+                "\n".join(safe_wrap(display, width=42, max_lines=2)),
+                color=color or value_color,
+                size=10,
+                weight=ft.FontWeight.BOLD if bold else None,
+                max_lines=2,
+                overflow=ft.TextOverflow.ELLIPSIS,
+                font_family=theme.font_family,
+            )
         return ft.Text(
-            f"{label}: {value}",
+            safe_ellipsis(display, 54),
             color=color or value_color,
             size=10,
             weight=ft.FontWeight.BOLD if bold else None,
             max_lines=1,
             overflow=ft.TextOverflow.ELLIPSIS,
+            font_family=theme.font_family,
         )
 
     return ft.Container(
@@ -111,11 +124,13 @@ def build_status_panel(
                 row("KNOWLEDGE", "METADATA INDEX READY"),
                 section("LIFECYCLE"),
                 row("STATE", lifecycle_state, theme.accent_color, bold=True),
-                row("ACTIVITY", ambient_status, muted_color),
+                row("ACTIVITY", ambient_status, muted_color, wrap_value=True),
             ],
             spacing=6,
         ),
         padding=8,
         border=ft.border.all(1, label_color),
         bgcolor=theme.surface_color,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "right_system_status_panel", "bounded_text": True},
     )

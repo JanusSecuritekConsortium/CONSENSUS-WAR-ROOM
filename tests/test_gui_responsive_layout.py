@@ -51,7 +51,7 @@ def test_fixed_header_footer_and_expanding_body() -> None:
     body = shell.controls[1]
     footer = shell.controls[2]
 
-    assert 120 <= GUI_HEADER_HEIGHT <= 180
+    assert 120 <= GUI_HEADER_HEIGHT <= 200
     assert header.height == theme_header_height(state.theme)
     assert body.expand is True
     assert footer.height == FOOTER_HEIGHT

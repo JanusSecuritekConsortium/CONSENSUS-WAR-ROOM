@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.13.3 - Theme-Safe UI Scaling Pass
+
+- v7.13.3: Theme-safe UI scaling pass. Enlarged proposal panel, fixed telemetry/header clipping, added bounded logo profiles, and protected long system-status strings.
+- Separated GUI header logo registry from boot-logo assets so the WAR ROOM header uses only `static/logos/gui/*` while BIOS/startup keeps `static/logos/*`.
+- Added explicit full/compact/micro GUI header fallback handling without arbitrary ASCII cropping.
+- Tightened ARBITER voice dispatch reporting so generated audio without confirmed playback is logged as degraded instead of successful.
+- Separated normal operator boot from release validation: `boot.bat` launches quickly, `--safe` runs diagnostics only, `--validate` runs tests/compile/screenshots, and `--test-theme` runs targeted theme/layout checks.
+
 ## 7.13.2 - AURELIUS Telegram Cleanup
 
 - Retired the active legacy ANIMA Telegram bootstrap and archived it under `archive/legacy_bots/anima_bot.py`.

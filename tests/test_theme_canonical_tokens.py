@@ -19,12 +19,15 @@ def test_all_theme_assets_include_canonical_tokens() -> None:
             assert token in logo, f"{theme_key} missing {token!r}"
 
 
-def test_military_logo_matches_canonical_consensus_source() -> None:
+def test_military_gui_logo_is_separate_from_boot_consensus_source() -> None:
     canonical = ROOT / "static" / "logos" / "consensus_logo.txt"
+    gui_header = ROOT / "static" / "logos" / "gui" / "military_header.txt"
     military = THEME_GRAPHIC_ASSETS["military"]
 
-    assert military.logo_path == canonical
-    assert read_normalized_logo(military.logo_path).text == read_normalized_logo(canonical).text
+    assert military.logo_path == gui_header
+    assert read_normalized_logo(military.logo_path).text == read_normalized_logo(gui_header).text
+    assert military.logo_path != canonical
+    assert "CONSENSUS WAR ROOM" in read_normalized_logo(military.logo_path).text
 
 
 def test_wh40k_and_helldivers_headers_are_full_identity_banners() -> None:
@@ -43,6 +46,6 @@ def test_wh40k_and_helldivers_headers_are_full_identity_banners() -> None:
 
 if __name__ == "__main__":
     test_all_theme_assets_include_canonical_tokens()
-    test_military_logo_matches_canonical_consensus_source()
+    test_military_gui_logo_is_separate_from_boot_consensus_source()
     test_wh40k_and_helldivers_headers_are_full_identity_banners()
     print("test_theme_canonical_tokens PASS")

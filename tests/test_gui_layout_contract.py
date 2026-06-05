@@ -45,7 +45,7 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     header = layout.content.controls[0]
     logo_text = logo_text_control_from_box(header.content.controls[0]).value
 
-    assert 120 <= GUI_HEADER_HEIGHT <= 180
+    assert 120 <= GUI_HEADER_HEIGHT <= 200
     assert header.height == theme_header_height(state.theme)
     assert logo_text == compact_logo_text(state.theme)
     assert logo_text != state.theme.logo.rstrip("\n")

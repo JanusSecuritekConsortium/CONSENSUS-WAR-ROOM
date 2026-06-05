@@ -57,17 +57,20 @@ def theme_window_title(theme_key: str) -> str:
 
 
 def _flet_process_ids() -> set[int]:
-    completed = subprocess.run(
-        [
-            "powershell",
-            "-NoProfile",
-            "-Command",
-            "Get-Process flet -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id",
-        ],
-        text=True,
-        capture_output=True,
-        timeout=5,
-    )
+    try:
+        completed = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                "Get-Process flet -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id",
+            ],
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        return set()
     return {int(line.strip()) for line in completed.stdout.splitlines() if line.strip().isdigit()}
 
 
@@ -109,21 +112,79 @@ def _enum_windows() -> list[tuple[int, str, tuple[int, int, int, int]]]:
 def _find_window(theme_key: str, timeout: float) -> tuple[int, Tuple[int, int, int, int]]:
     expected_title = theme_window_title(theme_key)
     deadline = time.monotonic() + timeout
+    best_match: tuple[int, Tuple[int, int, int, int]] | None = None
     while time.monotonic() < deadline:
         for hwnd, title, rect in _enum_windows():
             if expected_title in title and rect[2] - rect[0] > 200 and rect[3] - rect[1] > 200:
-                return hwnd, rect
+                best_match = (hwnd, rect)
+                if rect[2] - rect[0] >= 1600 and rect[3] - rect[1] >= 850:
+                    return hwnd, rect
         time.sleep(0.2)
+    if best_match is not None:
+        return best_match
     raise TimeoutError(f"Could not find visible Flet window titled {expected_title!r}")
 
 
 def _capture_window(hwnd: int, rect: Tuple[int, int, int, int]) -> Image.Image:
+    width = max(1, rect[2] - rect[0])
+    height = max(1, rect[3] - rect[1])
+    user32 = ctypes.windll.user32
+    gdi32 = ctypes.windll.gdi32
+    _bring_window_to_front(hwnd)
     try:
-        ctypes.windll.user32.SetForegroundWindow(hwnd)
+        foreground = ImageGrab.grab(bbox=_screen_safe_rect(rect))
+        if not _looks_blank_capture(foreground):
+            return foreground
+    except OSError:
+        pass
+    window_dc = user32.GetWindowDC(hwnd)
+    memory_dc = gdi32.CreateCompatibleDC(window_dc)
+    bitmap = gdi32.CreateCompatibleBitmap(window_dc, width, height)
+    old_bitmap = gdi32.SelectObject(memory_dc, bitmap)
+    try:
+        if user32.PrintWindow(hwnd, memory_dc, 2):
+            buffer = ctypes.create_string_buffer(width * height * 4)
+            if gdi32.GetBitmapBits(bitmap, len(buffer), buffer):
+                image = Image.frombuffer("RGB", (width, height), buffer, "raw", "BGRX", 0, 1).copy()
+                if not _looks_blank_capture(image):
+                    return image
+    finally:
+        gdi32.SelectObject(memory_dc, old_bitmap)
+        gdi32.DeleteObject(bitmap)
+        gdi32.DeleteDC(memory_dc)
+        user32.ReleaseDC(hwnd, window_dc)
+    return ImageGrab.grab(bbox=_screen_safe_rect(rect))
+
+
+def _screen_safe_rect(rect: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+    return (max(0, rect[0]), max(0, rect[1]), max(1, rect[2]), max(1, rect[3]))
+
+
+def _bring_window_to_front(hwnd: int) -> None:
+    user32 = ctypes.windll.user32
+    hwnd_topmost = -1
+    hwnd_notopmost = -2
+    swp_nosize = 0x0001
+    swp_nomove = 0x0002
+    swp_showwindow = 0x0040
+    try:
+        user32.ShowWindow(hwnd, 9)
+        user32.BringWindowToTop(hwnd)
+        user32.SetForegroundWindow(hwnd)
+        user32.SetWindowPos(hwnd, hwnd_topmost, 0, 0, 0, 0, swp_nomove | swp_nosize | swp_showwindow)
+        user32.SetWindowPos(hwnd, hwnd_notopmost, 0, 0, 0, 0, swp_nomove | swp_nosize | swp_showwindow)
     except Exception:
         pass
-    time.sleep(0.5)
-    return ImageGrab.grab(bbox=rect)
+    time.sleep(0.7)
+
+
+def _looks_blank_capture(image: Image.Image) -> bool:
+    sample = image.convert("RGB").resize((80, 45))
+    bright_pixels = 0
+    for red, green, blue in sample.getdata():
+        if red + green + blue > 45:
+            bright_pixels += 1
+    return bright_pixels < 20
 
 
 def _hex_to_rgb(value: str) -> tuple[int, int, int]:

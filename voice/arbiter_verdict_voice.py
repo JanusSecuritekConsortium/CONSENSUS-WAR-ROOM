@@ -193,14 +193,21 @@ def _speak_dispatch(dispatch: ArbiterVoiceDispatch, adapter_factory: Callable[[]
         audio_path = getattr(rendered, "audio_path", None)
         metadata = getattr(rendered, "metadata", {}) or {}
         if bool(getattr(rendered, "ok", False)):
-            if mode in {"rvc", "glados_tts"}:
+            playback_completed = bool(metadata.get("played")) or str(metadata.get("playback", "")).lower() in {
+                "winsound",
+                "windows_sapi",
+            }
+            if mode in {"rvc", "glados_tts"} and playback_completed:
                 completed = _replace_dispatch(dispatch, status="success", audio_path=audio_path)
             else:
+                reason = f"configured fallback backend used: {mode}"
+                if mode in {"rvc", "glados_tts"}:
+                    reason = "audio generated but playback was not confirmed"
                 completed = _replace_dispatch(
                     dispatch,
                     status="degraded",
                     audio_path=audio_path,
-                    degraded_reason=f"configured fallback backend used: {mode}",
+                    degraded_reason=reason,
                 )
             _log_dispatch(completed, {"mode": mode, **metadata})
             return completed

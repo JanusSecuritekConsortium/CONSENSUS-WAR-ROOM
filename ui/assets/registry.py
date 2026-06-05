@@ -27,14 +27,28 @@ class HeaderLogoLayout:
     logo_box_max_width: int | None = None
     logo_box_height: int | None = None
     header_height: int | None = None
+    logo_offset_x: int = 0
+    logo_offset_y: int = 0
+
+
+@dataclass(frozen=True)
+class HeaderLogoProfile:
+    max_width: int
+    max_height: int
+    padding_top: int = 1
+    padding_bottom: int = 1
+    alignment: str = "center"
+    max_width_ratio: float = 0.85
+    compact: bool = False
+    crop_safe: bool = False
 
 
 @dataclass(frozen=True)
 class WarRoomLayoutMetadata:
     header_logo_width_ratio: float = 0.35
     header_logo_height: int | None = None
-    proposal_panel_min_height: int = 250
-    proposal_verdict_gap: int = 16
+    proposal_panel_min_height: int = 235
+    proposal_verdict_gap: int = 12
     telemetry_panel_height: int = 192
     footer_shortcut_alignment: str = "center"
     left_panel_compaction_allowed: bool = False
@@ -53,7 +67,20 @@ class ThemeGraphicAsset:
     expected_min_width: int = 24
     max_width: int = LOGO_SAFE_MAX_WIDTH
     header_layout: HeaderLogoLayout = HeaderLogoLayout()
+    header_profile: HeaderLogoProfile | None = None
     layout_metadata: WarRoomLayoutMetadata = WarRoomLayoutMetadata()
+
+
+LOGO_PROFILES: Dict[str, HeaderLogoProfile] = {
+    "arasaka": HeaderLogoProfile(max_width=122, max_height=7, max_width_ratio=0.92, compact=True),
+    "wh40k": HeaderLogoProfile(max_width=90, max_height=10, max_width_ratio=0.88, compact=False),
+    "magi": HeaderLogoProfile(max_width=88, max_height=8, max_width_ratio=0.80, compact=False),
+    "eva": HeaderLogoProfile(max_width=88, max_height=8, max_width_ratio=0.80, compact=False),
+    "nerv": HeaderLogoProfile(max_width=88, max_height=8, max_width_ratio=0.80, compact=False),
+    "janus": HeaderLogoProfile(max_width=72, max_height=6, max_width_ratio=0.78, compact=True),
+    "helldivers": HeaderLogoProfile(max_width=88, max_height=7, max_width_ratio=0.82, compact=True),
+    "military": HeaderLogoProfile(max_width=110, max_height=10, max_width_ratio=0.85, compact=True),
+}
 
 
 THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
@@ -77,6 +104,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             header_height=254,
             logo_box_scroll_enabled=False,
         ),
+        header_profile=LOGO_PROFILES["eva"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.28),
     ),
     "nerv": ThemeGraphicAsset(
@@ -99,6 +127,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             header_height=254,
             logo_box_scroll_enabled=False,
         ),
+        header_profile=LOGO_PROFILES["nerv"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.28),
     ),
     "wh40k": ThemeGraphicAsset(
@@ -121,10 +150,11 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             header_height=266,
             logo_box_scroll_enabled=False,
         ),
+        header_profile=LOGO_PROFILES["wh40k"],
         layout_metadata=WarRoomLayoutMetadata(
             header_logo_width_ratio=0.33,
             header_logo_height=238,
-            proposal_verdict_gap=18,
+            proposal_verdict_gap=12,
             telemetry_panel_height=198,
             left_panel_compaction_allowed=True,
         ),
@@ -148,6 +178,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_box_height=154,
             logo_box_scroll_enabled=False,
         ),
+        header_profile=LOGO_PROFILES["helldivers"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.3),
     ),
     "arasaka": ThemeGraphicAsset(
@@ -167,6 +198,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_side_padding=4,
             logo_box_width=880,
         ),
+        header_profile=LOGO_PROFILES["arasaka"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.32),
     ),
     "janus": ThemeGraphicAsset(
@@ -178,7 +210,15 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         ("88888", "88b 88", "bodP"),
         expected_min_lines=4,
         expected_min_width=40,
-        header_layout=HeaderLogoLayout(logo_font_size=12, logo_top_padding=22, logo_bottom_padding=22, logo_box_width=410),
+        header_layout=HeaderLogoLayout(
+            logo_font_size=12,
+            logo_top_padding=22,
+            logo_bottom_padding=22,
+            logo_box_width=410,
+            logo_offset_x=-20,
+            logo_offset_y=2,
+        ),
+        header_profile=LOGO_PROFILES["janus"],
     ),
     "military": ThemeGraphicAsset(
         "military",
@@ -193,6 +233,22 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         header_layout=HeaderLogoLayout(logo_font_size=9, logo_top_padding=14, logo_bottom_padding=14, logo_box_width=745),
     ),
 }
+
+
+THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
+    "military",
+    GUI_LOGO_DIR / "military_header.txt",
+    "EXCOMM tactical command styling",
+    ("EXCOMM", "WAR ROOM", "TRIBUNAL"),
+    "military_boot",
+    ("███████╗██╗  ██╗", "╚══════╝╚═╝  ╚═╝", "CONSENSUS WAR ROOM"),
+    expected_min_lines=10,
+    expected_max_lines=10,
+    expected_min_width=70,
+    max_width=110,
+    header_layout=HeaderLogoLayout(logo_font_size=9, logo_top_padding=14, logo_bottom_padding=14, logo_box_width=745),
+    header_profile=LOGO_PROFILES["military"],
+)
 
 
 def get_theme_graphic_asset(theme_key: str) -> ThemeGraphicAsset:

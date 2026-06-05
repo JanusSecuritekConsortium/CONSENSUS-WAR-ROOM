@@ -142,7 +142,13 @@ class RVCAdapter:
                     "playback_error": played.metadata.get("error", "converted WAV playback failed"),
                 },
             )
-        return TTSBackendResult(ok=True, text=cleaned, mode="rvc", audio_path=str(converted_wav))
+        return TTSBackendResult(
+            ok=True,
+            text=cleaned,
+            mode="rvc",
+            audio_path=str(converted_wav),
+            metadata={"playback": played.metadata.get("playback", "unknown"), "played": played.metadata.get("played", False)},
+        )
 
     def _build_command(self, input_wav: Path, output_wav: Path) -> List[str]:
         raw: Any = self.settings.get("rvc_command", [])
@@ -186,11 +192,11 @@ class RVCAdapter:
 
     def _play_wav(self, path: Path) -> TTSBackendResult:
         if os.name != "nt":
-            return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported"})
+            return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported", "played": False})
         try:
             import winsound
 
             winsound.PlaySound(str(path), winsound.SND_FILENAME)
         except Exception as exc:
             return TTSBackendResult(ok=False, text="", mode="wav_file", audio_path=str(path), metadata={"error": str(exc)})
-        return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path))
+        return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "winsound", "played": True})

@@ -35,10 +35,27 @@ Normal operator startup:
 .\boot.bat
 ```
 
+Normal boot runs only lightweight dependency/provider health checks, selects the
+configured or random startup theme, runs BIOS/POST, and launches the GUI. It
+does not run `tools\run_tests.py`, active-tree compilation, or screenshot
+regression checks.
+
 Diagnostics-only recovery mode:
 
 ```powershell
 .\boot.bat --safe
+```
+
+Release validation mode:
+
+```powershell
+.\boot.bat --validate
+```
+
+Developer theme/layout validation:
+
+```powershell
+.\boot.bat --test-theme
 ```
 
 `boot.bat` is the canonical operator entrypoint. It validates the local
