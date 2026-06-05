@@ -40,10 +40,10 @@ def build_proposal_panel(
         label="Proposal",
         value=initial_value,
         hint_text="Enter tribunal proposal...",
-        helper_text="CTRL+ENTER = Submit to Tribunal",
+        dense=True,
         multiline=True,
-        min_lines=4,
-        max_lines=5,
+        min_lines=5,
+        max_lines=7,
         border_color=theme.primary_color,
         focused_border_color=theme.accent_color,
         cursor_color=theme.accent_color,
@@ -52,8 +52,8 @@ def build_proposal_panel(
         content_padding=ft.padding.symmetric(horizontal=12, vertical=8),
         text_style=ft.TextStyle(font_family=theme.font_family, size=13),
         hint_style=ft.TextStyle(color=theme.muted_text or theme.secondary_color, font_family=theme.font_family),
-        helper_style=ft.TextStyle(color=theme.secondary_text or theme.secondary_color, font_family=theme.font_family, size=10),
         on_change=handle_change if on_change is not None else None,
+        data={"role": "proposal_input"},
     )
 
     def handle_submit(_: ft.ControlEvent) -> None:
@@ -67,6 +67,7 @@ def build_proposal_panel(
             ft.Dropdown(
                 label="Proposal Template",
                 value=selected_template_id or None,
+                dense=True,
                 options=[
                     ft.dropdown.Option(
                         str(item["id"]),
@@ -104,10 +105,12 @@ def build_proposal_panel(
         [
             proposal_input,
             ft.Text(
-                EMPTY_PROPOSAL_HINT,
+                f"{EMPTY_PROPOSAL_HINT}  CTRL+ENTER = Submit.",
                 color=theme.secondary_text or theme.secondary_color,
                 size=10,
                 font_family=theme.font_family,
+                max_lines=1,
+                overflow=ft.TextOverflow.ELLIPSIS,
             ),
             ft.TextButton(
                 "SUBMIT TO TRIBUNAL",
@@ -117,8 +120,10 @@ def build_proposal_panel(
                     bgcolor=theme.background_color,
                     side=ft.BorderSide(1, theme.primary_color),
                     shape=ft.RoundedRectangleBorder(radius=0),
-                    padding=ft.padding.symmetric(horizontal=18, vertical=12),
+                    padding=ft.padding.symmetric(horizontal=16, vertical=8),
                 ),
+                height=36,
+                data={"role": "submit_to_tribunal_button"},
             ),
         ]
     )
@@ -126,13 +131,14 @@ def build_proposal_panel(
     return ft.Container(
         content=ft.Column(
             controls,
-            spacing=8,
+            spacing=5,
             tight=True,
         ),
-        padding=ft.padding.only(left=10, right=10, top=8, bottom=12),
+        padding=ft.padding.only(left=10, right=10, top=8, bottom=8),
         border=ft.border.all(1, theme.secondary_color),
         bgcolor=theme.surface_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "proposal_panel"},
     )
 
 

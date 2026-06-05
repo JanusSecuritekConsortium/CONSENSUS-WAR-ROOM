@@ -19,7 +19,8 @@ def test_proposal_input_has_hint_shortcut_and_focus_color() -> None:
 
     assert isinstance(input_control, ft.TextField)
     assert input_control.hint_text == "Enter tribunal proposal..."
-    assert input_control.helper_text == "CTRL+ENTER = Submit to Tribunal"
+    guidance = panel.content.controls[2]
+    assert "CTRL+ENTER = Submit" in guidance.value
     assert input_control.focused_border_color == THEMES["arasaka"].accent_color
     assert input_control.cursor_color == THEMES["arasaka"].accent_color
 

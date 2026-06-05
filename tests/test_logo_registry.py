@@ -33,18 +33,21 @@ def test_logo_registry_reports_exact_theme_for_missing_key() -> None:
         raise AssertionError("missing theme registry lookup did not fail")
 
 
-def test_military_registry_uses_canonical_consensus_logo_source() -> None:
+def test_military_registry_uses_gui_header_logo_source() -> None:
     asset = get_theme_graphic_asset("military")
-    canonical = ROOT / "static" / "logos" / "consensus_logo.txt"
+    gui_header = ROOT / "static" / "logos" / "gui" / "military_header.txt"
+    boot_logo = ROOT / "static" / "logos" / "consensus_logo.txt"
 
-    assert asset.logo_path == canonical
-    assert read_normalized_logo(asset.logo_path).text == read_normalized_logo(canonical).text
-    assert "E X C O M M   W A R   R O O M   T R I B U N A L" not in read_normalized_logo(asset.logo_path).text
+    assert asset.logo_path == gui_header
+    assert read_normalized_logo(asset.logo_path).text == read_normalized_logo(gui_header).text
+    assert asset.logo_path != boot_logo
+    assert "███████╗██╗  ██╗" in read_normalized_logo(asset.logo_path).text
+    assert "CONSENSUS WAR ROOM" in read_normalized_logo(asset.logo_path).text
 
 
 if __name__ == "__main__":
     test_logo_registry_covers_active_gui_themes()
     test_logo_registry_validation_is_clean()
     test_logo_registry_reports_exact_theme_for_missing_key()
-    test_military_registry_uses_canonical_consensus_logo_source()
+    test_military_registry_uses_gui_header_logo_source()
     print("test_logo_registry PASS")

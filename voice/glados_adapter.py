@@ -100,18 +100,24 @@ class GladosAdapter:
                 audio_path=str(target),
                 metadata={"error": played.metadata.get("error", "playback failed")},
             )
-        return TTSBackendResult(ok=True, text=text, mode="glados_tts", audio_path=str(target))
+        return TTSBackendResult(
+            ok=True,
+            text=text,
+            mode="glados_tts",
+            audio_path=str(target),
+            metadata={"playback": played.metadata.get("playback", "unknown"), "played": played.metadata.get("played", False)},
+        )
 
     def _play_wav(self, path: Path) -> TTSBackendResult:
         if os.name != "nt":
-            return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported"})
+            return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported", "played": False})
         try:
             import winsound
 
             winsound.PlaySound(str(path), winsound.SND_FILENAME)
         except Exception as exc:
             return TTSBackendResult(ok=False, text="", mode="wav_file", audio_path=str(path), metadata={"error": str(exc)})
-        return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path))
+        return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "winsound", "played": True})
 
     @staticmethod
     def _default_project_dir() -> Path:

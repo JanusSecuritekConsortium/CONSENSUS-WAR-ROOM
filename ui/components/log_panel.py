@@ -6,6 +6,7 @@ import flet as ft
 
 from core.models import Theme
 from ui.components.bellator_intelligence_panel import build_bellator_intelligence_panel
+from ui.components.safe_text import safe_ellipsis
 
 
 def log_level_color_category(line: str) -> str:
@@ -54,7 +55,15 @@ def compact_log_line(line: str) -> str:
 
 def _log_rows(theme: Theme, logs: Iterable[str]) -> ft.Control:
     rows = [
-        ft.Text(compact_log_line(line), color=_level_color(theme, line), font_family=theme.font_family, selectable=True, size=11)
+        ft.Text(
+            safe_ellipsis(compact_log_line(line), 88),
+            color=_level_color(theme, line),
+            font_family=theme.font_family,
+            selectable=True,
+            size=11,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
         for line in logs
     ]
     return ft.Column(rows or [ft.Text("No recent log events.", color=theme.secondary_color, size=11)], spacing=2)
@@ -73,7 +82,15 @@ def _decision_color(theme: Theme, line: str) -> str:
 
 def _decision_rows(theme: Theme, decisions: Iterable[str]) -> ft.Control:
     rows = [
-        ft.Text(line, color=_decision_color(theme, line), font_family=theme.font_family, selectable=True, size=11)
+        ft.Text(
+            safe_ellipsis(line, 88),
+            color=_decision_color(theme, line),
+            font_family=theme.font_family,
+            selectable=True,
+            size=11,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
         for line in decisions
     ]
     return ft.Column(rows or [ft.Text("No recent decisions.", color=theme.secondary_color, size=11)], spacing=3)
@@ -81,7 +98,15 @@ def _decision_rows(theme: Theme, decisions: Iterable[str]) -> ft.Control:
 
 def _timeline_rows(theme: Theme, timeline_events: Iterable[str]) -> ft.Control:
     rows = [
-        ft.Text(line, color=theme.accent_color, font_family=theme.font_family, selectable=True, size=10)
+        ft.Text(
+            safe_ellipsis(line, 96),
+            color=theme.accent_color,
+            font_family=theme.font_family,
+            selectable=True,
+            size=10,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        )
         for line in timeline_events
     ]
     return ft.Column(rows or [ft.Text("Timeline standing by.", color=theme.secondary_color, size=10)], spacing=2)

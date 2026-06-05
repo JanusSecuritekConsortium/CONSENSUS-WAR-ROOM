@@ -7,11 +7,11 @@ from ui.components.reasoning_stream import build_phase_timeline, build_reasoning
 from ui.war_room_runtime import lifecycle_banner_label
 
 VERDICT_PANEL_PADDING = 14
-VERDICT_PANEL_SPACING = 7
+VERDICT_PANEL_SPACING = 4
 VERDICT_TIMELINE_HEIGHT = 24
-VERDICT_VECTOR_HEIGHT = 58
-VERDICT_SYNTHESIS_MAX_LINES = 3
-VERDICT_REASONING_HEIGHT = 66
+VERDICT_VECTOR_HEIGHT = 28
+VERDICT_SYNTHESIS_MAX_LINES = 2
+VERDICT_REASONING_HEIGHT = 36
 
 
 def _confidence_color(theme: Theme, value: float) -> str:
