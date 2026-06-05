@@ -24,6 +24,7 @@ from core.simulation.store import SIMULATION_HISTORY_PATH, get_simulation_status
 from core.export.simulation import SIMULATION_DOSSIER_DIR, latest_simulation_dossier_status
 from core.data_sources.health import build_data_sources_status, normalized_sample_items
 from core.data_sources.source_config import load_data_source_config, redacted_data_source_config
+from core.data_sources.rss_backbone import RssIntelligenceBackbone
 from tools.check_dependencies import build_dependency_report
 from tools.provider_status_report import build_provider_status_report
 from tools.runtime_snapshot import build_runtime_snapshot
@@ -127,6 +128,9 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
     dossier_exports = _latest_dossier_exports()
     data_sources_status = snapshot.get("data_sources_status") or build_data_sources_status(attempt_live=False)
     data_sources_config = redacted_data_source_config(load_data_source_config())
+    rss_backbone = RssIntelligenceBackbone()
+    rss_intelligence_status = snapshot.get("rss_intelligence_status") or rss_backbone.status()
+    rss_intelligence_sample = rss_backbone.build_packet("", live=False)
 
     with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         bundle.writestr("runtime_snapshot.json", _safe_json(snapshot))
@@ -143,6 +147,8 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
         bundle.writestr("data_sources_status.json", _safe_json(data_sources_status))
         bundle.writestr("data_sources_config_redacted.json", _safe_json(data_sources_config))
         bundle.writestr("data_sources_sample_items.json", _safe_json(normalized_sample_items(data_sources_status)))
+        bundle.writestr("rss_intelligence_status.json", _safe_json(rss_intelligence_status))
+        bundle.writestr("rss_intelligence_sample.json", _safe_json(rss_intelligence_sample))
         if PROPOSAL_HISTORY_PATH.exists():
             bundle.write(PROPOSAL_HISTORY_PATH, "reports/proposal_history.jsonl")
         else:
@@ -197,6 +203,8 @@ def export_runtime_bundle(output: Path | None = None, log_lines: int = 200) -> P
                     "data_sources_status": "data_sources_status.json",
                     "data_sources_config_redacted": "data_sources_config_redacted.json",
                     "data_sources_sample_items": "data_sources_sample_items.json",
+                    "rss_intelligence_status": "rss_intelligence_status.json",
+                    "rss_intelligence_sample": "rss_intelligence_sample.json",
                     "proposal_history": "reports/proposal_history.jsonl",
                     "simulation_history": "reports/simulation_history.jsonl",
                     "latest_verdict_exports": [f"reports/verdicts/{path.name}" for path in verdict_exports],

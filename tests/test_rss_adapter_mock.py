@@ -7,6 +7,9 @@ from integrations.rss.client import RssAdapter
 
 class Response:
     text = "<rss><channel><item><title>Example</title><link>https://example.test/rss</link><description>Summary</description></item></channel></rss>"
+    status_code = 200
+    url = "https://example.test/feed"
+    headers = {"Content-Type": "application/rss+xml"}
     def raise_for_status(self): return None
 
 
