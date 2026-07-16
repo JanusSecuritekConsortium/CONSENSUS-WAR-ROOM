@@ -55,18 +55,21 @@ def test_llama_cpp_candidate_only_when_selected() -> None:
 
 
 def test_msty_claw_is_separate_explicit_backend() -> None:
-    original = os.environ.get("MSTY_BASE_URL")
+    original = {name: os.environ.get(name) for name in ("CONSENSUS_MSTY_BASE_URL", "MSTY_BASE_URL")}
     try:
+        os.environ.pop("CONSENSUS_MSTY_BASE_URL", None)
         os.environ["MSTY_BASE_URL"] = "http://explicit-msty.local/"
         candidates = api_module._provider_candidates(RuntimeConfig(backend="msty-claw"))
 
-        assert candidates[0]["source"] == "config_msty_claw"
-        assert candidates[0]["base_url"] == "http://127.0.0.1:11964"
+        assert candidates[0]["source"] == "env_msty_base_url"
+        assert candidates[0]["backend"] == "msty-claw"
+        assert candidates[0]["base_url"] == "http://explicit-msty.local"
     finally:
-        if original is None:
-            os.environ.pop("MSTY_BASE_URL", None)
-        else:
-            os.environ["MSTY_BASE_URL"] = original
+        for name, value in original.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 def test_provider_diagnostics_reports_named_services_and_shapes() -> None:

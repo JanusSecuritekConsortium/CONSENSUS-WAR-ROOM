@@ -105,7 +105,7 @@ def call_msty(prompt: str, context: str, scheduled: bool = False) -> Optional[st
         client = OpenAI(
             base_url=provider_config.api_base_url,
             api_key=os.getenv("MSTY_API_KEY", "msty"),
-            timeout=10.0,
+            timeout=60.0,
         )
         response = client.chat.completions.create(
             model=MODEL,

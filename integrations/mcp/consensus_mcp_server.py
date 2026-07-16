@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import re
@@ -13,11 +14,12 @@ from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-AURELIUS_ROOT = Path(r"G:\CONSENSUS_SYSTEM_ARBITER\Bot")
+AURELIUS_ROOT = PROJECT_ROOT / "_ARBITER" / "Bot"
 AURELIUS_LOG = AURELIUS_ROOT / "logs" / "aurelius_bot.log"
 MSTY_BASE_URL = os.getenv("MSTY_BASE_URL", "http://localhost:11964").rstrip("/")
 MSTY_MODELS_URL = f"{MSTY_BASE_URL}/v1/models"
 AURELIUS_MODEL = os.getenv("AURELIUS_MODEL", "qwen3:latest")
+MCP_LOG_PATH = Path(os.getenv("CONSENSUS_MCP_LOG", str(PROJECT_ROOT / "logs" / "consensus_mcp.log")))
 
 MAX_FILE_CHARS = 20_000
 MAX_LOG_LINES = 300
@@ -65,6 +67,20 @@ TEXT_SUFFIXES = {
 
 def _json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def _diagnostic_log(event: str, **fields: Any) -> None:
+    try:
+        MCP_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "ts": dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+            "event": event,
+            **fields,
+        }
+        with MCP_LOG_PATH.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+    except Exception:
+        pass
 
 
 def _redact_line(line: str) -> str:
@@ -377,7 +393,25 @@ TOOLS = [
 def call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
     if name not in TOOL_HANDLERS:
         raise ValueError(f"Unknown tool: {name}")
-    return TOOL_HANDLERS[name](arguments or {})
+    _diagnostic_log("tool_call_start", tool=name, argument_keys=sorted((arguments or {}).keys()))
+    started = time.perf_counter()
+    try:
+        result = TOOL_HANDLERS[name](arguments or {})
+    except Exception as exc:
+        _diagnostic_log(
+            "tool_call_error",
+            tool=name,
+            duration_ms=round((time.perf_counter() - started) * 1000, 2),
+            error=str(exc),
+        )
+        raise
+    _diagnostic_log(
+        "tool_call_end",
+        tool=name,
+        duration_ms=round((time.perf_counter() - started) * 1000, 2),
+        result_keys=sorted(result.keys()),
+    )
+    return result
 
 
 def _mcp_result_text(data: dict[str, Any]) -> dict[str, Any]:
@@ -387,28 +421,41 @@ def _mcp_result_text(data: dict[str, Any]) -> dict[str, Any]:
 def handle_jsonrpc(message: dict[str, Any]) -> dict[str, Any] | None:
     method = message.get("method")
     request_id = message.get("id")
+    _diagnostic_log("jsonrpc_request", method=method, request_id=request_id)
     try:
         if method == "initialize":
             result = {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {"listChanged": False}},
-                "serverInfo": {"name": "CONSENSUS MCP", "version": "7.13.4"},
+                "serverInfo": {"name": "CONSENSUS MCP", "version": "7.13.5"},
             }
+            _diagnostic_log("mcp_initialize", request_id=request_id, protocol_version=result["protocolVersion"])
         elif method == "tools/list":
             result = {"tools": TOOLS}
+            _diagnostic_log("mcp_tools_list", request_id=request_id, tool_count=len(TOOLS), tools=[tool["name"] for tool in TOOLS])
         elif method == "tools/call":
             params = message.get("params") or {}
+            _diagnostic_log("mcp_tools_call", request_id=request_id, tool=params.get("name"))
             result = _mcp_result_text(call_tool(str(params.get("name")), params.get("arguments") or {}))
+        elif method == "resources/list":
+            result = {"resources": []}
+            _diagnostic_log("mcp_resources_list", request_id=request_id, resource_count=0)
+        elif method == "prompts/list":
+            result = {"prompts": []}
+            _diagnostic_log("mcp_prompts_list", request_id=request_id, prompt_count=0)
         elif method and method.startswith("notifications/"):
+            _diagnostic_log("mcp_notification", method=method)
             return None
         else:
             raise ValueError(f"Unsupported method: {method}")
         return {"jsonrpc": "2.0", "id": request_id, "result": result}
     except Exception as exc:
+        _diagnostic_log("jsonrpc_error", method=method, request_id=request_id, error=str(exc))
         return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32000, "message": str(exc)}}
 
 
 def serve_stdio() -> None:
+    _diagnostic_log("stdio_start", argv=sys.argv, cwd=os.getcwd(), python=sys.executable)
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -436,4 +483,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

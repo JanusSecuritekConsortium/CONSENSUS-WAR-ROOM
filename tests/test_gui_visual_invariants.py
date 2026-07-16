@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.runtime import RuntimeConfig
-from ui.flet_app import build_gui_layout, create_gui_state
+from ui.flet_app import CENTER_COLUMN_FLEX, LEFT_COLUMN_FLEX, RIGHT_COLUMN_FLEX, build_gui_layout, create_gui_state
 from ui.visual_checks import assert_visual_invariants, evaluate_visual_invariants
 
 
@@ -21,7 +21,8 @@ def test_war_room_visual_invariants_hold_with_diagnostics_closed() -> None:
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     invariants = assert_visual_invariants(layout)
 
-    assert invariants["layout_expands"] == [2, 6, 2]
+    assert invariants["layout_expands"] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
+    assert invariants["proposal_height_fixed"] is True
 
 
 def test_diagnostics_drawer_open_does_not_mutate_layout_proportions() -> None:
@@ -30,7 +31,7 @@ def test_diagnostics_drawer_open_does_not_mutate_layout_proportions() -> None:
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     invariants = evaluate_visual_invariants(layout)
 
-    assert invariants["layout_proportions_2_6_2"] is True
+    assert invariants["layout_proportions_25_54_21"] is True
     assert invariants["diagnostics_overlay_not_layout_mutation"] is True
 
 

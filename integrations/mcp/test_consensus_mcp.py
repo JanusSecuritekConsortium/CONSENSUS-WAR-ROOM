@@ -9,6 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from integrations.mcp.consensus_mcp_server import (  # noqa: E402
+    AURELIUS_ROOT,
     PROJECT_ROOT as SERVER_ROOT,
     call_tool,
     handle_jsonrpc,
@@ -25,6 +26,10 @@ def assert_true(value: bool, message: str) -> None:
 def main() -> int:
     status = call_tool("consensus_status", {})
     assert_true(status["project_root"] == str(SERVER_ROOT), "consensus_status project root mismatch")
+    assert_true(status["aurelius_root"] == str(SERVER_ROOT / "_ARBITER" / "Bot"), "consensus_status aurelius_root mismatch")
+    assert_true(AURELIUS_ROOT == SERVER_ROOT / "_ARBITER" / "Bot", "AURELIUS_ROOT should resolve under project root")
+    assert_true(status["key_files"]["aurelius_bot.py"], "consensus_status did not find aurelius_bot.py")
+    assert_true(status["key_files"]["aurelius_launcher.bat"], "consensus_status did not find aurelius_launcher.bat")
 
     logs = call_tool("aurelius_recent_logs", {"lines": 5})
     assert_true("exists" in logs and "lines" in logs, "aurelius_recent_logs returned malformed response")
@@ -65,6 +70,12 @@ def main() -> int:
 
     listed = handle_jsonrpc({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
     assert_true(bool(listed and listed["result"]["tools"]), "tools/list returned no tools")
+
+    resources = handle_jsonrpc({"jsonrpc": "2.0", "id": 20, "method": "resources/list"})
+    assert_true(resources == {"jsonrpc": "2.0", "id": 20, "result": {"resources": []}}, "resources/list should return an empty list")
+
+    prompts = handle_jsonrpc({"jsonrpc": "2.0", "id": 21, "method": "prompts/list"})
+    assert_true(prompts == {"jsonrpc": "2.0", "id": 21, "result": {"prompts": []}}, "prompts/list should return an empty list")
 
     called = handle_jsonrpc(
         {

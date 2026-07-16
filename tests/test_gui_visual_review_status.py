@@ -16,6 +16,7 @@ from ui.flet_app import (
     create_gui_state,
     execute_command_palette_action,
 )
+from ui.layout_contract import CENTER_COLUMN_FLEX, LEFT_COLUMN_FLEX, RIGHT_COLUMN_FLEX
 
 
 def _flatten_text(control) -> list[str]:
@@ -63,7 +64,7 @@ def test_visual_review_overlay_does_not_mutate_body_layout() -> None:
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     body = layout.content.controls[1].content
 
-    assert [control.expand for control in body.controls] == [2, 6, 2]
+    assert [control.expand for control in body.controls] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
     assert hasattr(layout, "visual_review_status_viewer")
 
 

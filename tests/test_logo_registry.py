@@ -41,8 +41,10 @@ def test_military_registry_uses_gui_header_logo_source() -> None:
     assert asset.logo_path == gui_header
     assert read_normalized_logo(asset.logo_path).text == read_normalized_logo(gui_header).text
     assert asset.logo_path != boot_logo
-    assert "███████╗██╗  ██╗" in read_normalized_logo(asset.logo_path).text
-    assert "CONSENSUS WAR ROOM" in read_normalized_logo(asset.logo_path).text
+    logo = read_normalized_logo(asset.logo_path)
+    assert (logo.height, logo.width) == (66, 100)
+    assert "---×÷÷×----" in logo.text
+    assert "×÷÷÷÷÷÷÷÷×" in logo.text
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ def test_eva_magi_logo_uses_nerv_reference_geometry() -> None:
     assert "BALTHASAR" not in logo.text
     assert "MELCHIOR" not in logo.text
     assert logo.height == 56
+    assert logo.width == 88
 
 
 if __name__ == "__main__":

@@ -29,19 +29,19 @@ def test_active_gui_logos_are_not_miniature_placeholders_and_are_bounded() -> No
         assert "A R A S A K A   E X E C U T I V E" not in logo.text
 
 
-def test_canonical_arasaka_and_excomm_logo_tokens_are_present() -> None:
+def test_canonical_arasaka_and_military_logo_tokens_are_present() -> None:
     arasaka = read_normalized_logo(THEME_GRAPHIC_ASSETS["arasaka"].logo_path).text
-    excomm = read_normalized_logo(THEME_GRAPHIC_ASSETS["military"].logo_path).text
+    military = read_normalized_logo(THEME_GRAPHIC_ASSETS["military"].logo_path).text
 
     assert "sdmNNNs" in arasaka
     assert "mNNNNNNNNNNm" in arasaka
-    assert "███████╗██╗  ██╗" in excomm
-    assert "╚══════╝╚═╝  ╚═╝" in excomm
-    assert "CONSENSUS WAR ROOM" in excomm
+    assert "---×÷÷×----" in military
+    assert "×÷÷÷÷÷÷÷÷×" in military
+    assert "â" not in military
 
 
 if __name__ == "__main__":
     test_active_gui_logos_do_not_contain_mojibake_or_replacement_chars()
     test_active_gui_logos_are_not_miniature_placeholders_and_are_bounded()
-    test_canonical_arasaka_and_excomm_logo_tokens_are_present()
+    test_canonical_arasaka_and_military_logo_tokens_are_present()
     print("test_no_scrambled_ascii_logos PASS")

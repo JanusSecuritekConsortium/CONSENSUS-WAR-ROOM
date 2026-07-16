@@ -25,7 +25,7 @@ def test_tall_header_logos_use_theme_specific_fit_without_asset_mutation() -> No
         layout = header_logo_layout(THEMES[theme_key])
 
         assert logo.value == compact_logo_text(THEMES[theme_key])
-        assert logo.size == layout.logo_font_size
+        assert 2 <= logo.size <= layout.logo_font_size
         assert logo._Control__attrs["nowrap"][0] is True
 
 

@@ -38,13 +38,18 @@ def _flatten_text(control) -> list[str]:
 
 def test_msty_unreachable_falls_back_to_ollama_direct() -> None:
     original_backend = api_module.OllamaBackend
+    env_names = ("CONSENSUS_MSTY_BASE_URL", "MSTY_BASE_URL", "MSTY_LLAMA_CPP_BASE_URL", "OLLAMA_BASE_URL")
+    original_env = {name: os.environ.get(name) for name in env_names}
     try:
+        for name in env_names:
+            os.environ.pop(name, None)
         api_module.OllamaBackend = ProbeBackend
         status = api_module.health_check(
             RuntimeConfig(
                 backend="msty-local",
                 msty_base_url="http://127.0.0.1:11964",
                 ollama_base_url="http://127.0.0.1:11964",
+                model_cache_ttl_seconds=0,
             )
         )
 
@@ -55,6 +60,11 @@ def test_msty_unreachable_falls_back_to_ollama_direct() -> None:
         assert status["model_count"] == 1
     finally:
         api_module.OllamaBackend = original_backend
+        for name, value in original_env.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 def test_ollama_base_url_uses_ollama_direct_label() -> None:

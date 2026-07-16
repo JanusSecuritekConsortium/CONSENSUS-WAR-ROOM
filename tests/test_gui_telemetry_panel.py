@@ -16,6 +16,7 @@ from ui.flet_app import (
     create_gui_state,
     execute_command_palette_action,
 )
+from ui.layout_contract import CENTER_COLUMN_FLEX, LEFT_COLUMN_FLEX, RIGHT_COLUMN_FLEX
 
 
 def _flatten_text(control) -> list[str]:
@@ -60,9 +61,10 @@ def test_gui_layout_contains_telemetry_without_body_ratio_change() -> None:
     body = layout.content.controls[1].content
     text = "\n".join(_flatten_text(layout))
 
-    assert [control.expand for control in body.controls] == [2, 6, 2]
+    assert [control.expand for control in body.controls] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
     assert "TELEMETRY" in text
-    assert "DEMOCRACY LOAD" in text
+    assert "DEMOCRACY" in text
+    assert "LIBERTY ENGINE" in text
 
 
 def test_command_palette_opens_telemetry_snapshot() -> None:

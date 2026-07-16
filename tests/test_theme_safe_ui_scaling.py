@@ -10,7 +10,6 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for
-from ui.assets.logo_normalizer import read_normalized_logo
 from ui.assets.registry import THEME_GRAPHIC_ASSETS
 from ui.components.header import header_logo_layout, header_logo_text, logo_text_control_from_box
 from ui.components.status_panel import build_status_panel
@@ -39,12 +38,12 @@ def test_header_logo_uses_full_asset_or_explicit_fallback_only() -> None:
         theme = THEMES[theme_key]
         asset = THEME_GRAPHIC_ASSETS[theme_key]
         rendered = header_logo_text(theme)
-        full = read_normalized_logo(asset.logo_path).text if theme_key not in {"eva", "helldivers"} else asset.logo_path.read_text(encoding="utf-8")
+        full = asset.logo_path.read_bytes().decode("utf-8")
         explicit_fallbacks = []
         for suffix in ("compact", "micro"):
             path = asset.logo_path.with_name(f"{asset.logo_path.stem}_{suffix}{asset.logo_path.suffix}")
             if path.exists():
-                explicit_fallbacks.append(path.read_text(encoding="utf-8"))
+                explicit_fallbacks.append(path.read_bytes().decode("utf-8"))
 
         assert rendered == full or rendered in explicit_fallbacks or rendered == "[LOGO TOO LARGE]"
 

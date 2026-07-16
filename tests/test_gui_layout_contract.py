@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 
 from config.runtime import RuntimeConfig
 from ui.assets.registry import THEME_GRAPHIC_ASSETS
-from ui.components.header import GUI_HEADER_HEIGHT, compact_logo_text, logo_text_control_from_box, theme_header_height
+from ui.components.header import GUI_HEADER_HEIGHT, header_logo_text, logo_text_control_from_box, theme_header_height
 from ui.flet_app import _apply_page_theme, build_gui_layout, create_gui_state
 
 
@@ -43,12 +43,13 @@ def test_header_has_bounded_height_and_compact_logo() -> None:
     state = create_gui_state("EVA", RuntimeConfig(theme="eva", backend="mock"))
     layout = build_gui_layout(state, _noop, _noop, _noop, _noop, _noop)
     header = layout.content.controls[0]
-    logo_text = logo_text_control_from_box(header.content.controls[0]).value
+    logo_box = header.content.controls[0]
+    logo_text = logo_text_control_from_box(logo_box).value
 
     assert 120 <= GUI_HEADER_HEIGHT <= 200
     assert header.height == theme_header_height(state.theme)
-    assert logo_text == compact_logo_text(state.theme)
-    assert logo_text != state.theme.logo.rstrip("\n")
+    assert logo_text == header_logo_text(state.theme)
+    assert logo_text == THEME_GRAPHIC_ASSETS[state.theme_key].logo_path.read_bytes().decode("utf-8")
     assert len(logo_text.splitlines()) <= THEME_GRAPHIC_ASSETS[state.theme_key].expected_max_lines
     telemetry_labels = _header_status_labels(header)
     assert "ACTIVE MODE" in telemetry_labels

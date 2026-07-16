@@ -36,6 +36,16 @@ G:\CONSENSUS_SYSTEM\integrations\mcp\run_consensus_mcp.bat
 
 The server intentionally exposes read-only tools only. It does not execute arbitrary commands, write files, delete files, or access the network except for the local Msty endpoint at `localhost:11964`.
 
+## Diagnostics
+
+The stdio server writes JSONL diagnostics to:
+
+```text
+G:\CONSENSUS_SYSTEM\logs\consensus_mcp.log
+```
+
+Set `CONSENSUS_MCP_LOG` to override the path. The log records process startup, MCP `initialize`, `tools/list`, `resources/list`, `prompts/list`, and `tools/call` start/end/error events. It never writes diagnostics to stdout because stdout is reserved for JSON-RPC.
+
 ## Tools
 
 - `consensus_status`
@@ -52,4 +62,3 @@ The server intentionally exposes read-only tools only. It does not execute arbit
 ```powershell
 G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe G:\CONSENSUS_SYSTEM\integrations\mcp\test_consensus_mcp.py
 ```
-
