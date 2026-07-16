@@ -6,12 +6,13 @@ from core.models import Theme, TribunalResult
 from ui.components.reasoning_stream import build_phase_timeline, build_reasoning_stream, convergence_bar_text
 from ui.war_room_runtime import lifecycle_banner_label
 
-VERDICT_PANEL_PADDING = 14
-VERDICT_PANEL_SPACING = 4
-VERDICT_TIMELINE_HEIGHT = 24
-VERDICT_VECTOR_HEIGHT = 28
+VERDICT_PANEL_PADDING = 10
+VERDICT_PANEL_SPACING = 1
+VERDICT_TIMELINE_HEIGHT = 18
+VERDICT_VECTOR_HEIGHT = 20
 VERDICT_SYNTHESIS_MAX_LINES = 2
-VERDICT_REASONING_HEIGHT = 36
+VERDICT_REASONING_HEIGHT = 26
+VERDICT_HEADLINE_SIZE = 30
 
 
 def _confidence_color(theme: Theme, value: float) -> str:
@@ -116,7 +117,7 @@ def build_verdict_panel(
                     max_lines=1,
                     overflow=ft.TextOverflow.ELLIPSIS,
                 ),
-                ft.Text(verdict, color=verdict_color, weight=ft.FontWeight.BOLD, size=32),
+                ft.Text(verdict, color=verdict_color, weight=ft.FontWeight.BOLD, size=VERDICT_HEADLINE_SIZE),
                 ft.Text(lock_text, color=theme.primary_color if consensus_locked else theme.secondary_color, size=11, font_family=theme.font_family),
                 ft.Row(
                     [

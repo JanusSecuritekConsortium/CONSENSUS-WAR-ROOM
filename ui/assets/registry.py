@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
@@ -12,11 +13,19 @@ LOGO_SAFE_MAX_WIDTH = 96
 ARASAKA_SAFE_MAX_WIDTH = 130
 LOGO_SAFE_MAX_HEIGHT = 10
 GUI_LOGO_DIR = RESOURCE_ROOT / "static" / "logos" / "gui"
+GUI_LOGO_ROOT = GUI_LOGO_DIR.resolve()
+REJECTED_GUI_LOGO_HASHES = {
+    "eva": "04786ec6cbfad90e20c91a4ff8e3de24ef056320734f4174add37631cf1069b8",
+    "nerv": "04786ec6cbfad90e20c91a4ff8e3de24ef056320734f4174add37631cf1069b8",
+    "wh40k": "c15e317b7230dcff6ba757a1426aeae2266da88a23c3f24c7c2da3ba9836d8e6",
+}
 
 
 @dataclass(frozen=True)
 class HeaderLogoLayout:
-    logo_font_size: int = 12
+    logo_font_size: float = 12
+    logo_line_height: float = 1.0
+    logo_visual_scale: float = 1.0
     logo_top_padding: int = 4
     logo_bottom_padding: int = 4
     logo_side_padding: int = 4
@@ -88,20 +97,22 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "eva",
         GUI_LOGO_DIR / "eva_header.txt",
         "MAGI/NERV diagnostic styling",
-        ("NERV", "MAGI", "GEOMETRY"),
+        ("NERV", "MAGI", "REFERENCE"),
         "eva_boot",
         ("###########################", "################################", "#######"),
         expected_min_lines=56,
         expected_max_lines=56,
         expected_min_width=80,
+        max_width=88,
         header_layout=HeaderLogoLayout(
-            logo_font_size=4,
-            logo_top_padding=6,
-            logo_bottom_padding=6,
-            logo_side_padding=2,
-            logo_box_width=430,
-            logo_box_height=238,
-            header_height=254,
+            logo_font_size=10,
+            logo_line_height=0.85,
+            logo_visual_scale=1.0,
+            logo_top_padding=0,
+            logo_bottom_padding=0,
+            logo_side_padding=0,
+            logo_box_width=185,
+            logo_box_height=168,
             logo_box_scroll_enabled=False,
         ),
         header_profile=LOGO_PROFILES["eva"],
@@ -111,20 +122,22 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "nerv",
         GUI_LOGO_DIR / "eva_header.txt",
         "NERV diagnostic styling",
-        ("NERV", "MAGI", "GEOMETRY"),
+        ("NERV", "MAGI", "REFERENCE"),
         "nerv_boot",
         ("###########################", "################################", "#######"),
         expected_min_lines=56,
         expected_max_lines=56,
         expected_min_width=80,
+        max_width=88,
         header_layout=HeaderLogoLayout(
-            logo_font_size=4,
-            logo_top_padding=6,
-            logo_bottom_padding=6,
-            logo_side_padding=2,
-            logo_box_width=430,
-            logo_box_height=238,
-            header_height=254,
+            logo_font_size=10,
+            logo_line_height=0.85,
+            logo_visual_scale=1.0,
+            logo_top_padding=0,
+            logo_bottom_padding=0,
+            logo_side_padding=0,
+            logo_box_width=185,
+            logo_box_height=168,
             logo_box_scroll_enabled=False,
         ),
         header_profile=LOGO_PROFILES["nerv"],
@@ -136,18 +149,19 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         "Cogitator gothic terminal styling",
         ("COGITATOR", "MACHINE SPIRIT", "OMNISSIAH"),
         "wh40k_boot",
-        ("@@@@@@@@", "@@@@@@@#", "#@@"),
-        expected_min_lines=50,
-        expected_max_lines=56,
+        ("@@@@@@@@", "@@@@@@#", "#@@"),
+        expected_min_lines=53,
+        expected_max_lines=53,
         expected_min_width=80,
         header_layout=HeaderLogoLayout(
-            logo_font_size=4,
-            logo_top_padding=8,
-            logo_bottom_padding=8,
-            logo_side_padding=2,
-            logo_box_width=400,
-            logo_box_height=238,
-            header_height=266,
+            logo_font_size=10,
+            logo_visual_scale=1.0,
+            logo_top_padding=0,
+            logo_bottom_padding=0,
+            logo_side_padding=0,
+            logo_box_width=185,
+            logo_box_height=168,
+            logo_offset_x=6,
             logo_box_scroll_enabled=False,
         ),
         header_profile=LOGO_PROFILES["wh40k"],
@@ -192,11 +206,12 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         expected_min_width=110,
         max_width=ARASAKA_SAFE_MAX_WIDTH,
         header_layout=HeaderLogoLayout(
-            logo_font_size=11,
-            logo_top_padding=22,
-            logo_bottom_padding=20,
+            logo_font_size=8,
+            logo_top_padding=4,
+            logo_bottom_padding=4,
             logo_side_padding=4,
-            logo_box_width=880,
+            logo_visual_scale=1.12,
+            logo_box_width=640,
         ),
         header_profile=LOGO_PROFILES["arasaka"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.32),
@@ -214,7 +229,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_font_size=12,
             logo_top_padding=22,
             logo_bottom_padding=22,
-            logo_box_width=410,
+            logo_box_width=328,
             logo_offset_x=-20,
             logo_offset_y=2,
         ),
@@ -250,6 +265,27 @@ THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
     header_profile=LOGO_PROFILES["military"],
 )
 
+THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
+    "military",
+    GUI_LOGO_DIR / "military_header.txt",
+    "Military tactical command styling",
+    ("×", "÷", "-"),
+    "military_boot",
+    ("---×÷÷×----", "×÷÷÷÷÷÷÷÷×", "------"),
+    expected_min_lines=66,
+    expected_max_lines=66,
+    expected_min_width=100,
+    max_width=100,
+    header_layout=HeaderLogoLayout(
+        logo_font_size=14,
+        logo_top_padding=14,
+        logo_bottom_padding=14,
+        logo_box_width=400,
+        logo_box_scroll_enabled=False,
+    ),
+    header_profile=LOGO_PROFILES["military"],
+)
+
 
 def get_theme_graphic_asset(theme_key: str) -> ThemeGraphicAsset:
     normalized = theme_key.lower()
@@ -262,15 +298,29 @@ def get_theme_layout_metadata(theme_key: str) -> WarRoomLayoutMetadata:
     return get_theme_graphic_asset(theme_key).layout_metadata
 
 
+def validate_gui_logo_path(path: Path) -> None:
+    resolved = path.resolve()
+    if GUI_LOGO_ROOT not in resolved.parents:
+        raise ValueError(f"GUI logo must reside beneath {GUI_LOGO_ROOT}; received {resolved}")
+
+
 def validate_theme_graphic_asset(asset: ThemeGraphicAsset) -> List[str]:
     failures: List[str] = []
+    try:
+        validate_gui_logo_path(asset.logo_path)
+    except ValueError as exc:
+        failures.append(f"{asset.theme_key}: {exc}")
     if not asset.logo_path.exists():
-        return [f"{asset.theme_key}: missing logo asset {asset.logo_path}"]
+        return failures + [f"{asset.theme_key}: missing logo asset {asset.logo_path}"]
     try:
         raw = asset.logo_path.read_bytes()
         text = raw.decode("utf-8")
     except UnicodeDecodeError as exc:
-        return [f"{asset.theme_key}: logo asset is not UTF-8 readable: {exc}"]
+        return failures + [f"{asset.theme_key}: logo asset is not UTF-8 readable: {exc}"]
+    digest = hashlib.sha256(raw).hexdigest()
+    rejected_hash = REJECTED_GUI_LOGO_HASHES.get(asset.theme_key)
+    if rejected_hash is not None and digest == rejected_hash:
+        failures.append(f"{asset.theme_key}: GUI logo uses rejected boot asset hash {digest}")
     if text.startswith("\ufeff") or raw.startswith(b"\xef\xbb\xbf"):
         failures.append(f"{asset.theme_key}: logo asset contains UTF-8 BOM")
     logo = read_normalized_logo(asset.logo_path)

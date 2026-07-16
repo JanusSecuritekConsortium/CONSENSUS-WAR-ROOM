@@ -43,6 +43,17 @@ def _canonical_backend(backend: str) -> str:
     return backend
 
 
+def _endpoint_source_from_source(source: object) -> str:
+    value = str(source or "").lower()
+    if value.startswith("env_"):
+        return "env"
+    if value.startswith("config_"):
+        return "config"
+    if value.startswith("default_"):
+        return "default"
+    return "default"
+
+
 def _model_cache_ttl(config: RuntimeConfig) -> int:
     raw = os.getenv("CONSENSUS_MODEL_CACHE_TTL")
     if raw:
@@ -318,10 +329,15 @@ def _provider_candidates(config: Optional[RuntimeConfig] = None) -> list[Dict[st
     runtime_config = config or RuntimeConfig()
     candidates: list[Dict[str, str]] = []
 
-    def add(source: str, backend: str, base_url: Optional[str]) -> None:
+    def add(source: str, backend: str, base_url: Optional[str], endpoint_source: str) -> None:
         if not base_url:
             return
-        candidate = {"source": source, "backend": backend, "base_url": base_url.rstrip("/")}
+        candidate = {
+            "source": source,
+            "endpoint_source": endpoint_source,
+            "backend": backend,
+            "base_url": base_url.rstrip("/"),
+        }
         if not any(
             item["backend"] == candidate["backend"] and item["base_url"] == candidate["base_url"]
             for item in candidates
@@ -329,21 +345,24 @@ def _provider_candidates(config: Optional[RuntimeConfig] = None) -> list[Dict[st
             candidates.append(candidate)
 
     if runtime_config.backend == "mock":
-        return [{"source": "config_backend", "backend": "mock", "base_url": ""}]
+        return [{"source": "config_backend", "endpoint_source": "config", "backend": "mock", "base_url": ""}]
 
     def add_backend(backend: str) -> None:
         if backend == "msty-claw":
-            add("config_msty_claw", "msty-claw", runtime_config.msty_base_url)
-            add("env_msty_claw", "msty-claw", os.getenv("MSTY_BASE_URL"))
-            add("default_msty_claw_service", "msty-claw", MSTY_CLAW_SERVICE)
+            add("env_consensus_msty_base_url", "msty-claw", os.getenv("CONSENSUS_MSTY_BASE_URL"), "env")
+            add("env_msty_base_url", "msty-claw", os.getenv("MSTY_BASE_URL"), "env")
+            add("config_msty_claw", "msty-claw", runtime_config.msty_base_url, "config")
+            add("default_msty_claw_service", "msty-claw", MSTY_CLAW_SERVICE, "default")
         elif backend == "msty-llama-cpp":
-            add("config_msty_llama_cpp", "msty-llama-cpp", runtime_config.msty_llama_cpp_base_url)
-            add("env_msty_llama_cpp", "msty-llama-cpp", os.getenv("MSTY_LLAMA_CPP_BASE_URL"))
-            add("default_msty_llama_cpp", "msty-llama-cpp", MSTY_LLAMA_CPP_SERVICE)
+            add("env_consensus_msty_base_url", "msty-llama-cpp", os.getenv("CONSENSUS_MSTY_BASE_URL"), "env")
+            add("env_msty_base_url", "msty-llama-cpp", os.getenv("MSTY_BASE_URL"), "env")
+            add("config_msty_llama_cpp", "msty-llama-cpp", runtime_config.msty_llama_cpp_base_url, "config")
+            add("env_msty_llama_cpp", "msty-llama-cpp", os.getenv("MSTY_LLAMA_CPP_BASE_URL"), "env")
+            add("default_msty_llama_cpp", "msty-llama-cpp", MSTY_LLAMA_CPP_SERVICE, "default")
         elif backend == "ollama-direct":
-            add("config_ollama", "ollama-direct", runtime_config.ollama_base_url)
-            add("env_ollama", "ollama-direct", os.getenv("OLLAMA_BASE_URL"))
-            add("default_ollama_direct", "ollama-direct", OLLAMA_DIRECT)
+            add("config_ollama", "ollama-direct", runtime_config.ollama_base_url, "config")
+            add("env_ollama", "ollama-direct", os.getenv("OLLAMA_BASE_URL"), "env")
+            add("default_ollama_direct", "ollama-direct", OLLAMA_DIRECT, "default")
 
     requested_backend = _canonical_backend(runtime_config.backend)
     backend_order = [requested_backend]
@@ -363,6 +382,7 @@ def resolve_provider(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
         "provider": "msty",
         "requested_backend": requested_backend,
         "requested_endpoint": requested_endpoint,
+        "requested_endpoint_source": concrete_candidates[0].get("endpoint_source") if concrete_candidates else "default",
         "candidate_priority": candidates,
         "default_backend": _canonical_backend(RuntimeConfig().backend),
         "mock_selected": runtime_config.backend == "mock",
@@ -519,14 +539,17 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
         return {
             "backend": "mock",
             "active_backend": "mock",
+            "selected_backend": "mock",
             "requested_backend": "mock",
             "requested_endpoint": None,
             "requested_backend_status": "ready",
+            "endpoint_source": "config",
             "fallback_active": False,
             "fallback_reason": None,
             "probe_chain": [],
             "status": "ready",
             "base_url": None,
+            "selected_endpoint": None,
             "models": ["mock"],
             "model_count": 1,
             "latency_ms": 0,
@@ -886,6 +909,7 @@ def list_models(config: Optional[RuntimeConfig] = None) -> Dict[str, Any]:
         "requested_backend": requested_backend,
         "requested_endpoint": first_endpoint,
         "requested_backend_status": (requested_probe or {}).get("status", "offline"),
+        "endpoint_source": resolution.get("requested_endpoint_source", "default"),
         "status": "offline",
         "base_url": first_endpoint,
         "models": [],
@@ -1104,6 +1128,7 @@ def health_check(
             "requested_backend": "mock",
             "requested_endpoint": None,
             "requested_backend_status": "ready",
+            "endpoint_source": "config",
             "status": "ready",
             "base_url": None,
             "models": ["mock"],
@@ -1136,11 +1161,16 @@ def health_check(
             return {
                 "backend": model_payload.get("active_backend", runtime_config.backend),
                 "active_backend": model_payload.get("active_backend", runtime_config.backend),
+                "selected_backend": model_payload.get("active_backend", runtime_config.backend),
                 "requested_backend": model_payload.get("requested_backend", _canonical_backend(runtime_config.backend)),
                 "requested_endpoint": model_payload.get("requested_endpoint"),
                 "requested_backend_status": model_payload.get("requested_backend_status", "offline"),
+                "source": model_payload.get("source"),
+                "endpoint_source": model_payload.get("endpoint_source")
+                or _endpoint_source_from_source(model_payload.get("source")),
                 "status": "offline",
                 "base_url": model_payload["base_url"],
+                "selected_endpoint": model_payload["base_url"],
                 "models": [],
                 "latency_ms": model_payload["latency_ms"],
                 "model_count": 0,
@@ -1201,12 +1231,16 @@ def health_check(
         return {
             "backend": model_payload.get("active_backend", model_payload["backend"]),
             "active_backend": model_payload.get("active_backend", model_payload["backend"]),
+            "selected_backend": model_payload.get("active_backend", model_payload["backend"]),
             "requested_backend": model_payload.get("requested_backend", _canonical_backend(runtime_config.backend)),
             "requested_endpoint": model_payload.get("requested_endpoint"),
             "requested_backend_status": model_payload.get("requested_backend_status"),
             "source": model_payload.get("source"),
+            "endpoint_source": model_payload.get("endpoint_source")
+            or _endpoint_source_from_source(model_payload.get("source")),
             "status": status,
             "base_url": model_payload["base_url"],
+            "selected_endpoint": model_payload["base_url"],
             "models": models,
             "latency_ms": model_payload["latency_ms"],
             "model_count": len(models),
@@ -1245,11 +1279,14 @@ def health_check(
         return {
             "backend": runtime_config.backend,
             "active_backend": runtime_config.backend,
+            "selected_backend": runtime_config.backend,
             "requested_backend": _canonical_backend(runtime_config.backend),
             "requested_endpoint": resolve_provider_base_url(runtime_config),
             "requested_backend_status": "offline",
+            "endpoint_source": _endpoint_source_from_source(None),
             "status": "offline",
             "base_url": resolve_provider_base_url(runtime_config),
+            "selected_endpoint": resolve_provider_base_url(runtime_config),
             "models": [],
             "latency_ms": None,
             "model_count": 0,

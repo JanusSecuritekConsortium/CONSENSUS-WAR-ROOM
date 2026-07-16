@@ -143,6 +143,59 @@ def run_self_test() -> int:
     return 0
 
 
+def run_telemetry_layout_debug() -> int:
+    from ui.components.header import logo_runtime_diagnostics
+    from ui.components.telemetry_widgets import build_themed_telemetry, telemetry_control_signature
+    from ui.themes.catalog import THEMES
+
+    telemetry = {
+        "status": "DEBUG",
+        "latest": {
+            "cpu": {"percent": 38.0},
+            "ram": {"percent": 76.0},
+            "disk": {"percent": 78.0},
+            "gpu": {"status": "ready", "usage_percent": 33.0, "vram_percent": 35.0, "temperature_c": None},
+            "cpu_package_temp_c": None,
+            "gpu_core_temp_c": None,
+            "thermal": {
+                "cpu_package_temp_c": None,
+                "gpu_core_temp_c": None,
+                "gpu_hotspot_temp_c": None,
+                "vram_temp_c": None,
+                "storage_temp_c": None,
+                "sensor_age_seconds": None,
+                "thermal_state": "UNKNOWN",
+            },
+        },
+        "history": {
+            "cpu": [25.0, 31.0, 38.0],
+            "ram": [68.0, 72.0, 76.0],
+            "gpu": [21.0, 29.0, 33.0],
+            "cpu_temp": [],
+            "gpu_temp": [],
+        },
+    }
+    for theme_key in ("janus", "arasaka", "eva", "wh40k", "helldivers", "military"):
+        theme = THEMES[theme_key]
+        control = build_themed_telemetry(theme_key, telemetry, None, theme)
+        logo = logo_runtime_diagnostics(theme, header_width=1920)
+        thermal = control.data.get("temperatures", {}) if isinstance(control.data, dict) else {}
+        print(f"theme={theme_key}")
+        print(f"telemetry_layout_id={control.data.get('telemetry_layout_id') if isinstance(control.data, dict) else 'unknown'}")
+        print(f"control_signature={telemetry_control_signature(control)}")
+        print(f"logo={logo}")
+        print(f"cpu_temperature={thermal.get('cpu')}")
+        print(f"cpu_temperature_source={thermal.get('cpu_source')}")
+        print(f"gpu_temperature={thermal.get('gpu')}")
+        print(f"gpu_temperature_source={thermal.get('gpu_source')}")
+        print(f"gpu_hotspot_temperature={thermal.get('gpu_hotspot')}")
+        print(f"vram_temperature={thermal.get('vram')}")
+        print(f"storage_temperature={thermal.get('storage')}")
+        print(f"sensor_age_seconds={thermal.get('sensor_age_seconds')}")
+        print(f"thermal_state={thermal.get('thermal_state')}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Boot CONSENSUS War Room.")
     mode = parser.add_mutually_exclusive_group()
@@ -150,10 +203,13 @@ def main() -> int:
     mode.add_argument("--validate", action="store_true", help="Run release validation: fast tests, active compile, and theme screenshots.")
     mode.add_argument("--test-theme", action="store_true", help="Run targeted theme/layout validation only.")
     mode.add_argument("--self-test", action="store_true", help="Validate packaged assets, voice config, and simulation scaffold.")
+    mode.add_argument("--telemetry-layout-debug", action="store_true", help="Print themed telemetry and logo layout diagnostics without starting the GUI.")
     parser.add_argument("--seed", type=int, default=None, help="Optional deterministic startup theme seed.")
     args = parser.parse_args()
     if args.self_test:
         return run_self_test()
+    if args.telemetry_layout_debug:
+        return run_telemetry_layout_debug()
     if args.validate:
         return run_release_validation()
     if args.test_theme:

@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from ui.components.proposal_panel import build_proposal_panel
-from ui.components.verdict_panel import build_verdict_panel
+from ui.components.verdict_panel import VERDICT_HEADLINE_SIZE, build_verdict_panel
 from ui.themes.catalog import THEMES
 
 
@@ -35,7 +35,8 @@ def test_verdict_panel_has_stronger_visual_weight_than_proposal() -> None:
         for control in verdict.content.controls
         if getattr(control, "value", "").startswith("AWAITING PROPOSAL")
     )
-    assert verdict_text.size >= 32
+    assert verdict_text.size == VERDICT_HEADLINE_SIZE
+    assert verdict_text.size > 24
 
 
 def test_verdict_panel_has_lifecycle_banner_and_ready_empty_state() -> None:

@@ -29,6 +29,7 @@ from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report
 from tools.verify_active_manifest import verify_active_manifest
+from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from voice.arbiter_verdict_voice import voice_status_snapshot
 
 
@@ -82,7 +83,9 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
         "missing_models": provider.get("missing_required_models", {}),
         "degraded_reason": provider.get("degraded_reason"),
         "war_room_layout_guard": {
-            "main_column_expand": [2, 6, 2],
+            "main_column_expand": [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX],
+            "proposal_height": PROPOSAL_HEIGHT,
+            "footer_height": FOOTER_HEIGHT,
             "footer_fixed": True,
             "diagnostics_overlay": True,
         },

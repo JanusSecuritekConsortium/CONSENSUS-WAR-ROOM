@@ -27,7 +27,9 @@ def test_military_gui_logo_is_separate_from_boot_consensus_source() -> None:
     assert military.logo_path == gui_header
     assert read_normalized_logo(military.logo_path).text == read_normalized_logo(gui_header).text
     assert military.logo_path != canonical
-    assert "CONSENSUS WAR ROOM" in read_normalized_logo(military.logo_path).text
+    logo = read_normalized_logo(military.logo_path)
+    assert (logo.height, logo.width) == (66, 100)
+    assert "---×÷÷×----" in logo.text
 
 
 def test_wh40k_and_helldivers_headers_are_full_identity_banners() -> None:

@@ -8,7 +8,6 @@ from typing import Mapping, Optional
 MSTY_ENDPOINT_ENV_VARS = (
     "AURELIUS_MSTY_BASE_URL",
     "MSTY_BASE_URL",
-    "MSTY_LLAMA_CPP_BASE_URL",
 )
 MSTY_PROVIDER_ENDPOINT_NOT_CONFIGURED = "Msty provider endpoint not configured"
 OLLAMA_DISABLED_REASON = "Ollama provider is disabled for AURELIUS"
@@ -19,6 +18,7 @@ class AureliusProviderConfig:
     provider: str
     base_url: Optional[str]
     base_url_env: Optional[str]
+    endpoint_source: str
     fallback_enabled: bool
     status: str
     degraded_reason: Optional[str] = None
@@ -40,6 +40,7 @@ class AureliusProviderConfig:
             "provider": self.provider,
             "base_url": self.base_url,
             "base_url_env": self.base_url_env,
+            "endpoint_source": self.endpoint_source,
             "api_base_url": self.api_base_url,
             "fallback_enabled": self.fallback_enabled,
             "status": self.status,
@@ -97,6 +98,7 @@ def resolve_aurelius_provider_config(
             provider="msty",
             base_url=None,
             base_url_env=base_url_env,
+            endpoint_source="env" if base_url_env else "default",
             fallback_enabled=fallback_enabled,
             status="DEGRADED",
             degraded_reason=reason,
@@ -108,6 +110,7 @@ def resolve_aurelius_provider_config(
             provider="msty",
             base_url=None,
             base_url_env=base_url_env,
+            endpoint_source="env" if base_url_env else "default",
             fallback_enabled=fallback_enabled,
             status="DEGRADED",
             degraded_reason=f"Unsupported AURELIUS provider '{requested_provider}'; use msty",
@@ -119,6 +122,7 @@ def resolve_aurelius_provider_config(
             provider="msty",
             base_url=None,
             base_url_env=None,
+            endpoint_source="default",
             fallback_enabled=fallback_enabled,
             status="DEGRADED",
             degraded_reason=MSTY_PROVIDER_ENDPOINT_NOT_CONFIGURED,
@@ -130,6 +134,7 @@ def resolve_aurelius_provider_config(
             provider="msty",
             base_url=None,
             base_url_env=base_url_env,
+            endpoint_source="env",
             fallback_enabled=fallback_enabled,
             status="DEGRADED",
             degraded_reason=OLLAMA_DISABLED_REASON,
@@ -140,6 +145,7 @@ def resolve_aurelius_provider_config(
         provider="msty",
         base_url=base_url,
         base_url_env=base_url_env,
+        endpoint_source="env" if base_url_env else "default",
         fallback_enabled=fallback_enabled,
         status="READY",
         requested_provider=requested_provider,

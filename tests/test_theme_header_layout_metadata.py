@@ -9,7 +9,8 @@ if str(ROOT) not in sys.path:
 
 from ui.assets.registry import HeaderLogoLayout, THEME_GRAPHIC_ASSETS, WarRoomLayoutMetadata
 from ui.assets.logo_normalizer import read_normalized_logo
-from ui.themes.catalog import get_gui_theme_options
+from ui.components.header import GUI_LOGO_BOX_HEIGHT, supersampled_logo_metrics, theme_logo_layout_mode
+from ui.themes.catalog import THEMES, get_gui_theme_options
 
 
 def test_all_gui_themes_register_header_layout_metadata() -> None:
@@ -30,10 +31,25 @@ def test_tall_theme_layouts_fit_header_height_budget() -> None:
     for theme_key in ("wh40k", "helldivers", "military"):
         asset = THEME_GRAPHIC_ASSETS[theme_key]
         layout = asset.header_layout
+        if theme_logo_layout_mode(THEMES[theme_key])["mode"] in {"supersampled_square", "supersampled_rect", "supersampled_banner"}:
+            logo_text = asset.logo_path.read_bytes().decode("utf-8")
+            cell_width = int(layout.logo_box_width or GUI_LOGO_BOX_HEIGHT)
+            cell_height = int(layout.logo_box_height or GUI_LOGO_BOX_HEIGHT)
+            metrics = supersampled_logo_metrics(
+                logo_text,
+                base_font_size=int(layout.logo_font_size),
+                cell_width=cell_width,
+                cell_height=cell_height,
+                line_height_factor=layout.logo_line_height,
+            )
+            assert metrics.fit_scale < 1.0
+            assert metrics.visible_top >= 6
+            assert metrics.visible_bottom <= cell_height - 6
+            continue
         logo = read_normalized_logo(asset.logo_path)
         max_text_height = logo.height * layout.logo_font_size
 
-        budget = layout.logo_box_height or 142
+        budget = layout.logo_box_height or GUI_LOGO_BOX_HEIGHT
         if max_text_height + layout.logo_top_padding + layout.logo_bottom_padding > budget:
             assert layout.logo_box_scroll_enabled is True
         else:

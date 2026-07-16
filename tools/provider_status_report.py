@@ -20,7 +20,7 @@ def build_provider_status_report(config_path: Path | None = None) -> dict[str, A
     config = load_runtime_config(config_path or CONFIG_PATH)
     nodes = apply_node_overrides(DEFAULT_NODES, config.node_overrides)
     status = health_check(config, nodes)
-    endpoint = status.get("base_url")
+    endpoint = status.get("selected_endpoint") or status.get("base_url")
     endpoint_validity = status.get("health_endpoint") or {}
     if endpoint and not endpoint_validity:
         endpoint_validity = validate_health_endpoint(str(endpoint))
@@ -31,6 +31,9 @@ def build_provider_status_report(config_path: Path | None = None) -> dict[str, A
         "backend": status.get("active_backend") or status.get("backend"),
         "requested_backend": status.get("requested_backend"),
         "endpoint": endpoint,
+        "endpoint_source": status.get("endpoint_source"),
+        "selected_backend": status.get("selected_backend") or status.get("active_backend") or status.get("backend"),
+        "selected_endpoint": endpoint,
         "endpoint_validity": endpoint_validity,
         "active_models": status.get("models", []),
         "model_availability_report": status.get("model_availability_report", []),

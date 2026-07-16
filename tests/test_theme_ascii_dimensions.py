@@ -19,15 +19,15 @@ def test_theme_ascii_assets_meet_registered_dimensions() -> None:
         assert asset.expected_min_width <= logo.width <= asset.max_width, theme_key
 
 
-def test_military_gui_logo_preserves_excomm_wordmark_and_title_spacing() -> None:
+def test_military_gui_logo_preserves_supplied_glyph_artwork() -> None:
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["military"].logo_path)
-    title_index = logo.lines.index("                        CONSENSUS WAR ROOM")
 
-    assert "███████╗██╗  ██╗" in logo.text
-    assert logo.lines[title_index - 1] == ""
+    assert (logo.height, logo.width) == (66, 100)
+    assert logo.lines[0] == logo.lines[-1] == "                                               ------"
+    assert "---×÷÷×----" in logo.text
 
 
 if __name__ == "__main__":
     test_theme_ascii_assets_meet_registered_dimensions()
-    test_military_gui_logo_preserves_excomm_wordmark_and_title_spacing()
+    test_military_gui_logo_preserves_supplied_glyph_artwork()
     print("test_theme_ascii_dimensions PASS")

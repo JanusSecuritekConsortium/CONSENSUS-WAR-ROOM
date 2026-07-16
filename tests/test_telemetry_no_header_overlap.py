@@ -8,6 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for
+from ui.components.header import HEADER_STATUS_METADATA_FLEX, HEADER_TELEMETRY_FLEX
 
 
 def test_header_telemetry_does_not_overlap_health_badge_or_status_fields() -> None:
@@ -19,8 +20,9 @@ def test_header_telemetry_does_not_overlap_health_badge_or_status_fields() -> No
     telemetry_box = status_and_telemetry.controls[1]
 
     assert title_row.controls[1].content.value.startswith("HEALTH ")
-    assert telemetry_box.width < status_panel.width if status_panel.width else telemetry_box.width <= 460
-    assert status_column.expand == 1
+    assert telemetry_box.width is None
+    assert telemetry_box.expand == HEADER_TELEMETRY_FLEX
+    assert status_column.expand == HEADER_STATUS_METADATA_FLEX
     assert telemetry_box.clip_behavior is not None
     assert telemetry_box.content.scroll is None
 

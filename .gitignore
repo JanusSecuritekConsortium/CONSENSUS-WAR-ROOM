@@ -32,6 +32,10 @@ dist/
 
 # Consensus runtime artifacts
 memory/
+reports/verdicts/latest_verdict_*
+reports/logo_audit/current/
+reports/theme_gallery/current/
+reports/logo_history_candidates/
 _ARBITER/backups/
 _ARBITER/Bot/Ext/
 _ARBITER/Bot/Voice/

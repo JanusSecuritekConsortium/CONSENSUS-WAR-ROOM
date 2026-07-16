@@ -60,7 +60,23 @@ def test_aurelius_uses_msty_env_endpoint() -> None:
     assert config.provider == "msty"
     assert config.base_url == "http://localhost:11454"
     assert config.api_base_url == "http://localhost:11454/v1"
+    assert config.base_url_env == "AURELIUS_MSTY_BASE_URL"
+    assert config.endpoint_source == "env"
     assert config.fallback_enabled is False
+
+
+def test_aurelius_uses_msty_base_url_when_aurelius_env_missing() -> None:
+    config = resolve_aurelius_provider_config(
+        {
+            "AURELIUS_PROVIDER": "msty",
+            "MSTY_BASE_URL": "http://localhost:11964",
+        }
+    )
+
+    assert config.ready
+    assert config.base_url == "http://localhost:11964"
+    assert config.base_url_env == "MSTY_BASE_URL"
+    assert config.endpoint_source == "env"
 
 
 def test_aurelius_rejects_ollama_provider_and_port() -> None:
@@ -165,6 +181,7 @@ def test_aurelius_bot_compiles() -> None:
 if __name__ == "__main__":
     test_aurelius_defaults_to_msty_without_ollama_endpoint()
     test_aurelius_uses_msty_env_endpoint()
+    test_aurelius_uses_msty_base_url_when_aurelius_env_missing()
     test_aurelius_rejects_ollama_provider_and_port()
     test_provider_error_gate_logs_once()
     test_active_aurelius_config_is_msty_only()

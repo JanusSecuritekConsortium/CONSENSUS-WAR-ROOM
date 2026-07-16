@@ -1,0 +1,49 @@
+{
+  "version": "7.13.24",
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "updated_at": "2026-06-20T16:19:04+00:00",
+  "themes": [
+    {
+      "theme": "eva",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\eva_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "arasaka",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\arasaka_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "janus",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\janus_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "wh40k",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\wh40k_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "helldivers",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\helldivers_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    },
+    {
+      "theme": "military",
+      "screenshot_path": "G:\\CONSENSUS_SYSTEM\\reports\\theme_gallery\\military_v7.13.24.png",
+      "status": "PENDING",
+      "reviewer_notes": "",
+      "reviewed_at": null
+    }
+  ]
+}
