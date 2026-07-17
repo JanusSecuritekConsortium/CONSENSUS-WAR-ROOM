@@ -115,6 +115,8 @@ def run_theme_validation() -> int:
 def run_self_test() -> int:
     from core.simulation.scenarios import create_scenario
     from ui.assets.registry import validate_graphic_registry
+    from ui.animations.bios_boot import _theme_boot_logo_text
+    from ui.components.header import logo_runtime_diagnostics
     from voice.voice_profiles import get_voice_profile
 
     failures = validate_graphic_registry()
@@ -138,8 +140,25 @@ def run_self_test() -> int:
     if not scenario.generated_branches:
         print("SIMULATION SUBSYSTEM: ERROR (initial branch missing)")
         return 1
+    boot_logo = _theme_boot_logo_text("military")
+    boot_lines = boot_logo.splitlines()
+    boot_dimensions = (max((len(line) for line in boot_lines), default=0), len(boot_lines))
+    if boot_dimensions != (38, 28):
+        print(f"BOOT LOGO SUBSYSTEM: ERROR (expected 38x28, received {boot_dimensions[0]}x{boot_dimensions[1]})")
+        return 1
+    gui_logo = logo_runtime_diagnostics("military", header_width=1920)
+    gui_contract = (
+        gui_logo["renderer_mode"],
+        int(gui_logo["logo_region_width"]),
+        int(gui_logo["logo_region_height"]),
+    )
+    if gui_contract != ("supersampled_square", 162, 162):
+        print(f"GUI LOGO SUBSYSTEM: ERROR (received {gui_contract!r})")
+        return 1
     print(f"SIMULATION SUBSYSTEM: READY ({scenario.generated_branches[0].branch_id})")
     print("ASSET SUBSYSTEM: READY")
+    print("BOOT LOGO SUBSYSTEM: READY (military 38x28)")
+    print("GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)")
     return 0
 
 

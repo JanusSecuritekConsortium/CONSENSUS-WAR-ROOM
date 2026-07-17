@@ -147,7 +147,7 @@ def test_historical_logo_renderer_settings_are_restored() -> None:
         "eva": {"font": 10, "scale": 1.0, "mode": "supersampled_rect"},
         "arasaka": {"font": 8, "split": (34, 66)},
         "wh40k": {"font": 10, "scale": 1.0, "mode": "supersampled_rect"},
-        "military": {"font": 14, "mode": "supersampled_banner"},
+        "military": {"font": 9, "mode": "supersampled_square"},
         "janus": {"split": (18, 82)},
         "helldivers": {"split": (20, 80)},
     }

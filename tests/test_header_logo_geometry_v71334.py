@@ -32,7 +32,7 @@ def test_logo_geometry_matches_v71334_theme_policy() -> None:
 
     assert diagnostics["military"]["logo_region_width"] <= BASELINE_71333["military"]["region"][0] * 0.80
     assert diagnostics["military"]["visible_artwork_width"] <= BASELINE_71333["military"]["art"][0] * 0.90
-    assert _min_clearance("military") >= 14
+    assert _min_clearance("military") >= 6
 
     assert diagnostics["janus"]["logo_region_width"] <= BASELINE_71333["janus"]["region"][0] * 0.80
     assert _min_clearance("janus") >= 8

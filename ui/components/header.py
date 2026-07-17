@@ -34,7 +34,7 @@ THEME_LOGO_LAYOUTS = {
     "eva": {"mode": "supersampled_rect"},
     "nerv": {"mode": "supersampled_rect"},
     "wh40k": {"mode": "supersampled_rect"},
-    "military": {"mode": "supersampled_banner"},
+    "military": {"mode": "supersampled_square"},
 }
 HEADER_STATUS_METADATA_FLEX = 68
 HEADER_TELEMETRY_FLEX = 32

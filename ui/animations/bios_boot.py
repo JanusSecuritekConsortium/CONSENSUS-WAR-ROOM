@@ -5,11 +5,12 @@ import random
 import shutil
 import sys
 import time
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
-from config.version import SYSTEM_VERSION
+from config.version import SYSTEM_AUTHOR, SYSTEM_LAST_PATCH_DATE, SYSTEM_ORGANIZATION, SYSTEM_VERSION
 from core.paths import RESOURCE_ROOT
 from ui.boot.phrases import node_boot_lines
 from ui.boot.registry import select_detected_devices, select_post_checks
@@ -28,6 +29,52 @@ RANDOM_DELAY_RANGE = (0.025, 0.075)
 
 DEFAULT_BOOT_WIDTH = 100
 TRIBUNAL_PHRASE_SEED = 0
+MILITARY_BOOT_LOGO_MAX_WIDTH = 56
+MILITARY_BOOT_LOGO_MAX_HEIGHT = 28
+BOOT_LOGO_DENSITY_GLYPHS = " .:-=+*#%@"
+MIN_RENDER_SLEEP = 0.016
+
+DENSE_READY_LINES = {
+    "military": "EXCOMM WAR ROOM READY",
+    "eva": "MAGI CONSENSUS ARRAY READY",
+    "nerv": "NERV MAGI INTERLOCK READY",
+    "wh40k": "IMPERIAL COGITATOR AWAKENED",
+    "helldivers": "MANAGED DEMOCRACY INTERFACE READY",
+    "arasaka": "ARASAKA EXECUTIVE GRID READY",
+    "janus": "JANUS MIRROR CHANNEL READY",
+}
+
+DENSE_SUMMARY_LINES = {
+    "military": "THREATCON: GREEN    COMMAND INTEGRITY: 99.91%    AUTHORIZATION BUS: ARMED",
+    "eva": "PATTERN ANALYSIS: BLUE    CONSENSUS INTEGRITY: 99.97%    HUMAN INTERLOCK: ARMED",
+    "nerv": "PATTERN ANALYSIS: BLUE    MAGI INTERLOCK: 99.97%    CENTRAL DOGMA LINK: ARMED",
+    "wh40k": "MACHINE SPIRIT: PURE    NOOSPHERIC INTEGRITY: 99.88%    SANCTION SEAL: BLESSED",
+    "helldivers": "LIBERTY INDEX: MAXIMUM    DEMOCRACY INTEGRITY: 99.93%    STRATAGEM BUS: ARMED",
+    "arasaka": "BLACKWALL: SECURED    CLEARANCE INTEGRITY: 99.94%    EXECUTIVE CHANNEL: ARMED",
+    "janus": "MIRROR STATE: ALIGNED    DUAL-CHANNEL INTEGRITY: 99.95%    COUNTERPART GATE: ARMED",
+}
+
+DENSE_CONFIGURATION_ROWS = (
+    ("0D0E0", "SYS", "1", "5296", "kernel"),
+    ("0D22C", "SYS", "1", "2416", "terminal_driver"),
+    ("0D2C4", "2081", "1", "16384", "consensus_bus"),
+    ("0D6C5", "DBFE", "1", "21392", "<free>"),
+    ("0DE02", "E000", "1", "8160", "<free>"),
+    ("00586", "SYS", "1", "2144", "memory_alignment"),
+    ("0060D", "SYS", "1", "3968", "forecast_vector"),
+    ("00706", "SYS", "1", "3312", "judgement_gate"),
+)
+
+
+@dataclass(frozen=True)
+class BootTerminalPalette:
+    logo: str = ""
+    primary: str = ""
+    data: str = ""
+    success: str = ""
+    text: str = ""
+    warning: str = ""
+    reset: str = ""
 
 
 def _terminal_width() -> int:
@@ -122,6 +169,53 @@ def _theme_logo_text(theme_id: str) -> str:
     theme_key = resolve_theme_key(theme_id)
     theme = THEMES.get(theme_key, THEMES["nerv"])
     return Path(theme.logo_path).read_text(encoding="utf-8")
+
+
+def _fit_terminal_logo(text: str, max_width: int, max_height: int) -> str:
+    lines = text.rstrip("\n").splitlines()
+    source_height = len(lines)
+    source_width = max((len(line) for line in lines), default=0)
+    if not lines or source_width == 0:
+        return ""
+    if source_width <= max_width and source_height <= max_height:
+        return "\n".join(lines)
+
+    scale = min(max_width / source_width, max_height / source_height)
+    target_width = max(1, round(source_width * scale))
+    target_height = max(1, round(source_height * scale))
+    grid = [line.ljust(source_width) for line in lines]
+    result: List[str] = []
+    for target_y in range(target_height):
+        source_y0 = target_y * source_height // target_height
+        source_y1 = max(source_y0 + 1, ((target_y + 1) * source_height + target_height - 1) // target_height)
+        output_line: List[str] = []
+        for target_x in range(target_width):
+            source_x0 = target_x * source_width // target_width
+            source_x1 = max(source_x0 + 1, ((target_x + 1) * source_width + target_width - 1) // target_width)
+            sample_count = (source_y1 - source_y0) * (source_x1 - source_x0)
+            filled = sum(
+                grid[source_y][source_x] != " "
+                for source_y in range(source_y0, source_y1)
+                for source_x in range(source_x0, source_x1)
+            )
+            density = filled / sample_count
+            glyph_index = round(density * (len(BOOT_LOGO_DENSITY_GLYPHS) - 1))
+            if filled and glyph_index == 0:
+                glyph_index = 1
+            output_line.append(BOOT_LOGO_DENSITY_GLYPHS[glyph_index])
+        result.append("".join(output_line).rstrip())
+    return "\n".join(result)
+
+
+def _theme_boot_logo_text(theme_id: str) -> str:
+    logo = _theme_logo_text(theme_id)
+    if resolve_theme_key(theme_id) == "military":
+        return _fit_terminal_logo(
+            logo,
+            max_width=MILITARY_BOOT_LOGO_MAX_WIDTH,
+            max_height=MILITARY_BOOT_LOGO_MAX_HEIGHT,
+        )
+    return logo.rstrip("\n")
 
 
 def _bios_header_lines(theme_id: str, version: str) -> List[str]:
@@ -251,6 +345,143 @@ def _loading_label(theme_id: str) -> str:
     return get_loading_style(theme_id).label
 
 
+def _dense_rule(title: str, width: int) -> str:
+    label = f" {title} "
+    remaining = max(4, width - len(label))
+    left = remaining // 2
+    return ("-" * left) + label + ("-" * (remaining - left))
+
+
+def _dense_diagnostic_line(name: str, state: str, detail: str, result: str) -> str:
+    return f"{name:<23}{state:<12}{detail:<27}{result:>10}"
+
+
+def _dense_configuration_line(addr: str, psp: str, blocks: str, size: str, owner: str) -> str:
+    return f"{addr:<11}{psp:<11}{blocks:>5}{size:>11}   {owner}"
+
+
+def _dense_subsystem_line(node: str, subsystem: str, value: str, status: str) -> str:
+    return f"{node:<28}{subsystem:<28}{value:>10}{status:>14}"
+
+
+def _dense_owner_name(value: str) -> str:
+    normalized = "_".join(value.lower().replace("/", " ").replace("-", " ").split())
+    return normalized[:32] or "system_component"
+
+
+def _dense_configuration_rows(theme_id: str, rng: random.Random) -> List[tuple[str, str, str, str, str]]:
+    devices = [_dense_owner_name(device) for device in _detected_devices(theme_id, rng)]
+    owners = ["kernel", "terminal_driver", "consensus_bus", *devices]
+    rows: List[tuple[str, str, str, str, str]] = []
+    for index, row in enumerate(DENSE_CONFIGURATION_ROWS):
+        addr, psp, blocks, size, fallback_owner = row
+        owner = owners[index] if index < len(owners) else fallback_owner
+        rows.append((addr, psp, blocks, size, owner))
+    return rows
+
+
+def _dense_subsystem_rows(theme_id: str) -> List[tuple[str, str, str, str]]:
+    theme_key = resolve_theme_key(theme_id)
+    theme = THEMES.get(theme_key, THEMES["nerv"])
+    rows = [
+        (labels["node"][:27], labels["core"][:27], "NOMINAL", "ONLINE")
+        for labels in theme.monolith_labels.values()
+    ]
+    rows.append(("ARBITER", "QUORUM CONTROL", "LOCKED", "ONLINE"))
+    return rows
+
+
+def generate_dense_bios_boot_lines(
+    theme_id: str,
+    version: str = SYSTEM_VERSION,
+    include_logo: bool = True,
+    include_loading: bool = True,
+    center_logo: bool = False,
+    total_memory_mb: int | None = None,
+    provider_status: Dict[str, Any] | None = None,
+    seed: int | None = None,
+    width: int = DEFAULT_BOOT_WIDTH,
+) -> List[str]:
+    """Build the active dense BIOS layout used by console and Flet startup."""
+
+    theme_key = resolve_theme_key(theme_id)
+    theme = THEMES.get(theme_key, THEMES["nerv"])
+    active_width = max(80, width)
+    rng = random.Random(seed if seed is not None else TRIBUNAL_PHRASE_SEED)
+    lines: List[str] = []
+    if include_logo:
+        logo = _theme_boot_logo_text(theme_key)
+        lines.extend([_center_block(logo, active_width) if center_logo else logo, ""])
+    lines.extend(_bios_header_lines(theme_key, version))
+    lines.extend([f"Chief Architect: {SYSTEM_AUTHOR}", SYSTEM_ORGANIZATION])
+    if theme_key == "wh40k":
+        lines.append(f"LAST PATCH REF: 0918015.M03 | BUILD: v{version} | MODE: HIGH")
+    else:
+        lines.append(f"LAST PATCH: {SYSTEM_LAST_PATCH_DATE} | BUILD: v{version} | MODE: HIGH")
+
+    memory_steps, memory_fallback = _memory_steps_mb(total_memory_mb)
+    memory_total = memory_steps[-1]
+    provider_line = _provider_post_line(provider_status)
+    if provider_line.startswith("[OK]"):
+        provider_result = "OK"
+    elif provider_line.startswith("[ERROR]"):
+        provider_result = "ERROR"
+    else:
+        provider_result = "WARN"
+    provider_detail = _theme_runtime_label(theme_key).upper()
+    diagnostic_rows = [
+        ("CO-CPU", "CHECK", "256 SEGMENTS", "OK"),
+        ("MEMORY BANK", "CHECK", f"{memory_total:06d} MB" + (" FALLBACK" if memory_fallback else ""), "OK"),
+        ("I/O VECTORS", "CHECK", theme.boot_profile_id.upper(), "OK"),
+        ("CONSOLE DRIVERS", "CHECK", "VT-09 / UTF-8", "OK"),
+        ("ROUTING TABLES", "CHECK", "12 CHANNELS", "OK"),
+        ("STATUS ANALYZER", "CHECK", theme.panel_style.upper()[:24], "OK"),
+        ("SECURITY INTERLOCK", "CHECK", theme.border_style.upper()[:24], "OK"),
+        ("THEME RUNTIME", "CHECK", provider_detail[:24], provider_result),
+    ]
+    lines.extend(
+        [
+            "",
+            _dense_rule("SYSTEM DIAGNOSTICS", active_width),
+            _dense_diagnostic_line("DEVICE", "STATE", "PARAMETERS", "RESULT"),
+            _dense_diagnostic_line("-" * 18, "-" * 7, "-" * 18, "-" * 6),
+        ]
+    )
+    lines.extend(_dense_diagnostic_line(*row) for row in diagnostic_rows)
+    lines.extend(
+        [
+            "",
+            _dense_rule("CONSENSUS SYSTEM CONFIGURATION", active_width),
+            _dense_configuration_line("ADDR", "PSP", "BLKS", "SIZE", "OWNER / PARAMETERS"),
+            _dense_configuration_line("-" * 5, "-" * 4, "-" * 4, "-" * 4, "-" * 18),
+        ]
+    )
+    lines.extend(_dense_configuration_line(*row) for row in _dense_configuration_rows(theme_key, rng))
+    lines.extend(
+        [
+            "",
+            _dense_rule(theme.display_name.upper(), active_width),
+            _dense_subsystem_line("NODE", "SUBSYSTEM", "VALUE", "STATUS"),
+            _dense_subsystem_line("-" * 12, "-" * 14, "-" * 7, "-" * 8),
+        ]
+    )
+    lines.extend(_dense_subsystem_line(*row) for row in _dense_subsystem_rows(theme_key))
+    lines.extend(["", DENSE_SUMMARY_LINES[theme_key]])
+
+    if include_loading:
+        style = get_loading_style(theme_key)
+        lines.extend(["", style.label])
+        lines.extend(f"[LOAD] {stage}" for stage in style.stages)
+        lines.extend(
+            [
+                format_loading_bar(theme_key, 100),
+                DENSE_READY_LINES[theme_key],
+                "HANDOFF TO MAIN INTERFACE",
+            ]
+        )
+    return lines
+
+
 def generate_bios_boot_lines(
     theme_id: str,
     version: str = SYSTEM_VERSION,
@@ -265,7 +496,7 @@ def generate_bios_boot_lines(
     theme_key = resolve_theme_key(theme_id)
     lines: List[str] = []
     if include_logo:
-        logo = _theme_logo_text(theme_id).rstrip("\n")
+        logo = _theme_boot_logo_text(theme_id)
         lines.extend([_center_block(logo) if center_logo else logo, ""])
     header_lines = _bios_header_lines(theme_id, version)
     lines.extend([*(_center_lines_block(header_lines) if center_logo else header_lines), ""])
@@ -390,32 +621,59 @@ def _console_safe_text(text: str) -> str:
     return translated.encode(encoding, errors="replace").decode(encoding, errors="replace")
 
 
-def _logo_console_color(theme_id: str) -> str:
-    theme_key = resolve_theme_key(theme_id)
-    try:
-        from colorama import Fore, init  # type: ignore
+def _ansi_color(hex_color: str) -> str:
+    value = hex_color.lstrip("#")
+    red, green, blue = (int(value[index : index + 2], 16) for index in (0, 2, 4))
+    return f"\x1b[38;2;{red};{green};{blue}m"
 
-        init()
-    except Exception:
-        return ""
-    colors = {
-        "military": Fore.LIGHTGREEN_EX,
-        "eva": Fore.LIGHTRED_EX,
-        "nerv": Fore.LIGHTRED_EX,
-        "wh40k": Fore.YELLOW,
-        "helldivers": Fore.LIGHTBLUE_EX,
-        "arasaka": Fore.LIGHTRED_EX,
-        "janus": Fore.LIGHTMAGENTA_EX,
+
+def _boot_color_values(theme_id: str) -> Dict[str, str]:
+    theme_key = resolve_theme_key(theme_id)
+    theme = THEMES.get(theme_key, THEMES["nerv"])
+    data_color = theme.secondary_text or theme.secondary_color
+    success_color = theme.accent_color
+    logo_color = theme.primary_color
+    if theme_key == "arasaka":
+        data_color = "#c7c7c7"
+        success_color = "#ffffff"
+    elif theme_key in {"eva", "nerv"}:
+        success_color = "#008fbd"
+        logo_color = "#7a0018"
+    return {
+        "logo": logo_color,
+        "primary": theme.primary_color,
+        "data": data_color,
+        "success": success_color,
+        "text": theme.text_color,
+        "warning": theme.warning_color,
     }
-    return colors.get(theme_key, "")
+
+
+def _boot_terminal_palette(theme_id: str) -> BootTerminalPalette:
+    try:
+        from colorama import just_fix_windows_console  # type: ignore
+
+        just_fix_windows_console()
+    except Exception:
+        pass
+    colors = _boot_color_values(theme_id)
+    return BootTerminalPalette(
+        logo=_ansi_color(colors["logo"]),
+        primary=_ansi_color(colors["primary"]),
+        data=_ansi_color(colors["data"]),
+        success=_ansi_color(colors["success"]),
+        text=_ansi_color(colors["text"]),
+        warning=_ansi_color(colors["warning"]),
+        reset="\x1b[0m",
+    )
+
+
+def _logo_console_color(theme_id: str) -> str:
+    return _boot_terminal_palette(theme_id).logo
 
 
 def _reset_console_color() -> str:
-    try:
-        from colorama import Style  # type: ignore
-    except Exception:
-        return ""
-    return Style.RESET_ALL
+    return "\x1b[0m"
 
 
 def _print_logo_with_cursor(logo: str, theme_id: str, delay: float) -> None:
@@ -438,6 +696,88 @@ def _render_lines(lines: Iterable[str], delay: float) -> None:
                     time.sleep(delay * 1.3)
             else:
                 _print_with_cursor(subline, delay)
+
+
+def _dense_styled_segments(line: str, palette: BootTerminalPalette) -> List[tuple[str, str]]:
+    stripped = line.strip()
+    if not stripped:
+        return [(palette.text, line)]
+    if "BIOS v" in stripped or stripped.startswith("-"):
+        return [(palette.primary, line)]
+    if stripped.startswith(("INITIALIZING", "AUTHORIZING", "AWAKENING", "[LOAD]")):
+        return [(palette.primary, line)]
+    if "[" in stripped and "]" in stripped and "%" in stripped:
+        return [(palette.primary, line)]
+    if stripped.endswith((" READY", " AWAKENED")) or stripped in {
+        "HANDOFF TO MAIN INTERFACE",
+        "TRANSFERRING CONTROL TO WAR ROOM...",
+    }:
+        return [(palette.success, line)]
+    if "WARN" in stripped or "ERROR" in stripped or stripped.endswith(("WARN", "ERROR")):
+        return [(palette.warning, line)]
+    if stripped.startswith(
+        (
+            "Copyright",
+            "MAGI Consensus Array",
+            "Adeptus Mechanicus",
+            "Managed Democracy",
+            "Corporate Black/Red",
+            "Dual-Face Intelligence",
+            "DATE",
+            "SERIAL:",
+            "Chief Architect:",
+            "Janus Securitek",
+            "LAST PATCH",
+        )
+    ):
+        return [(palette.text, line)]
+    for status in ("ONLINE", "OK"):
+        if stripped.endswith(status):
+            split_at = line.rfind(status)
+            return [(palette.data, line[:split_at]), (palette.success, line[split_at:])]
+    if stripped.startswith(("DEVICE", "ADDR", "NODE")):
+        return [(palette.text, line)]
+    return [(palette.data, line)]
+
+
+def _type_dense_line(line: str, delay: float, palette: BootTerminalPalette) -> None:
+    if not line:
+        print()
+        time.sleep(delay)
+        return
+    character_delay = max(0.0008, delay * 0.06)
+    burst_size = max(1, round(MIN_RENDER_SLEEP / character_delay))
+    for color, text in _dense_styled_segments(line, palette):
+        sys.stdout.write(color)
+        for offset in range(0, len(text), burst_size):
+            burst = text[offset : offset + burst_size]
+            sys.stdout.write(burst)
+            sys.stdout.flush()
+            time.sleep(max(MIN_RENDER_SLEEP, character_delay * len(burst)))
+    sys.stdout.write(palette.reset + "\n")
+    sys.stdout.flush()
+    time.sleep(delay)
+
+
+def _render_dense_lines(lines: Iterable[str], theme_id: str, delay: float) -> None:
+    palette = _boot_terminal_palette(theme_id)
+    for line in lines:
+        for subline in line.splitlines() or [""]:
+            _type_dense_line(subline, delay, palette)
+
+
+def _flet_dense_line_color(theme_id: str, line: str) -> str:
+    colors = _boot_color_values(theme_id)
+    stripped = line.strip()
+    if "BIOS v" in stripped or stripped.startswith("-"):
+        return colors["primary"]
+    if stripped.endswith(("ONLINE", "OK", " READY", " AWAKENED")) or stripped == "HANDOFF TO MAIN INTERFACE":
+        return colors["success"]
+    if "WARN" in stripped or "ERROR" in stripped:
+        return colors["warning"]
+    if stripped.startswith(("DEVICE", "ADDR", "NODE", "Copyright", "DATE", "SERIAL", "Chief", "Janus", "LAST PATCH")):
+        return colors["text"]
+    return colors["data"]
 
 
 def _render_runtime_diagnostics(theme_id: str, delay: float, rng: random.Random) -> None:
@@ -476,25 +816,26 @@ def render_bios_boot_console(
     rng = random.Random(seed)
     delay = _delay_for(speed, rng)
     _clear_console()
-    logo = _center_block(_theme_logo_text(theme_id))
-    header_and_checks = generate_bios_boot_lines(
+    logo = _center_block(_theme_boot_logo_text(theme_id))
+    dense_lines = generate_dense_bios_boot_lines(
         theme_id,
         SYSTEM_VERSION,
         include_logo=False,
         include_loading=False,
         provider_status=provider_status,
-        randomize_phrases=True,
         seed=seed,
+        width=_terminal_width(),
     )
 
     _print_logo_with_cursor(logo, theme_id, delay)
-    _print_with_cursor("", delay)
-    _render_lines(header_and_checks, delay)
-    _render_runtime_diagnostics(theme_id, delay, rng)
-    _print_with_cursor("", delay)
+    time.sleep(max(0.4, delay * 12))
+    _clear_console()
+    _render_dense_lines(dense_lines, theme_id, delay)
+    print()
     render_loading_console(theme_id, speed=speed, seed=seed)
+    _render_dense_lines((DENSE_READY_LINES[resolve_theme_key(theme_id)],), theme_id, delay)
     await_user_interaction()
-    _render_lines(("HANDOFF TO MAIN INTERFACE",), delay)
+    _render_dense_lines(("HANDOFF TO MAIN INTERFACE",), theme_id, delay)
 
 
 def render_bios_boot_flet(
@@ -504,12 +845,11 @@ def render_bios_boot_flet(
     seed: int | None = None,
     provider_status: Dict[str, Any] | None = None,
 ) -> None:
-    lines = generate_bios_boot_lines(
+    lines = generate_dense_bios_boot_lines(
         theme_id,
         SYSTEM_VERSION,
         center_logo=True,
         provider_status=provider_status,
-        randomize_phrases=True,
         seed=seed,
     )
     if "HANDOFF TO MAIN INTERFACE" in lines:
@@ -519,6 +859,7 @@ def render_bios_boot_flet(
         lines.append("PRESS ENTER TO ENTER THE WAR ROOM")
     theme_key = resolve_theme_key(theme_id)
     theme = THEMES.get(theme_key, THEMES["nerv"])
+    boot_colors = _boot_color_values(theme_key)
     delay = _delay_for(speed, random.Random(seed))
     try:
         import flet as ft  # type: ignore
@@ -528,7 +869,7 @@ def render_bios_boot_flet(
                 ft.Text(
                     line,
                     font_family=theme.font_family,
-                    color=theme.primary_color if index == 0 else theme.text_color,
+                    color=boot_colors["logo"] if index == 0 else _flet_dense_line_color(theme_key, line),
                     text_align=ft.TextAlign.CENTER if index == 0 else ft.TextAlign.LEFT,
                     selectable=False,
                     no_wrap=False,

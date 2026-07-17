@@ -1,5 +1,13 @@
 # Changelog
 
+## 7.14.0 - Dense Interchangeable BIOS Promotion
+
+- Promoted the reviewed dense old-BIOS startup layout into the active console and Flet boot paths for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.
+- Preserved each theme's centered boot logo, identity header, author, build, date, provider state, subsystem language, and animated handoff while replacing the former active sequential POST presentation.
+- Added a dedicated dark-crimson EVA/NERV boot-logo treatment, darker EVA success blue, and readable high-contrast Arasaka terminal data without changing GUI palette contracts.
+- Gave every theme a distinct loading-bar geometry in addition to its existing label, stages, and color.
+- Retained the former BIOS line generator for compatibility with archived previews and historical regression contracts; normal startup now uses the dense builder.
+
 ## 7.13.40 - EVA GUI Header Source Replacement
 
 - Replaced the dense `56x88` EVA GUI header source with a lower-density `18x39` GUI-specific NERV/MAGI text asset in `static/logos/gui/eva_header.txt`.

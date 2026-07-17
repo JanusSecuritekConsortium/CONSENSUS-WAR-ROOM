@@ -21,6 +21,9 @@ def test_build_wrapper_targets_consensus_executable() -> None:
     script = (ROOT / "build_exe.py").read_text(encoding="utf-8")
     batch = (ROOT / "build_exe.bat").read_text(encoding="utf-8")
     assert 'ROOT / "dist" / "CONSENSUS.exe"' in script
+    assert "verify_executable(OUTPUT_PATH)" in script
+    assert "BOOT LOGO SUBSYSTEM: READY (military 38x28)" in script
+    assert "GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)" in script
     assert "build_exe.py" in batch
 
 

@@ -200,7 +200,7 @@ def _consolas_supports_all_characters(text: str) -> tuple[bool, list[str]]:
         user32.ReleaseDC(None, hdc)
 
 
-def test_military_renderer_uses_supersampled_banner_text_settings() -> None:
+def test_military_renderer_uses_supersampled_square_text_settings() -> None:
     control = header_logo_control_for("military")
     asset_text = THEME_GRAPHIC_ASSETS["military"].logo_path.read_bytes().decode("utf-8")
     logo = read_normalized_logo(THEME_GRAPHIC_ASSETS["military"].logo_path)
@@ -208,7 +208,7 @@ def test_military_renderer_uses_supersampled_banner_text_settings() -> None:
 
     assert MILITARY_HISTORICAL_RENDERER_COMMIT == "f7248fc"
     assert MILITARY_FONT_REGISTRATION_PATH is None
-    assert theme_logo_layout_mode(THEMES["military"])["mode"] == "supersampled_banner"
+    assert theme_logo_layout_mode(THEMES["military"])["mode"] == "supersampled_square"
     assert control.value == asset_text
     assert control._Control__attrs["nowrap"][0] is True
     assert control.overflow == ft.TextOverflow.VISIBLE
@@ -217,8 +217,8 @@ def test_military_renderer_uses_supersampled_banner_text_settings() -> None:
     assert control.style.word_spacing == 0
     assert control.style.height == 1.0
     assert control.font_family == LOGO_FONT_FAMILY
-    assert layout.logo_font_size == 14
-    assert layout.logo_box_width == 400
+    assert layout.logo_font_size == 9
+    assert layout.logo_box_width == 162
     assert layout.logo_box_scroll_enabled is False
     assert logo.height == 66
     assert logo.width == 100
@@ -235,6 +235,6 @@ if __name__ == "__main__":
     test_dense_square_logo_sources_are_current_exact_assets()
     test_eva_uses_supersampled_rect_renderer_like_wh40k()
     test_wh40k_uses_supersampled_integer_base_font_renderer()
-    test_military_renderer_uses_supersampled_banner_text_settings()
+    test_military_renderer_uses_supersampled_square_text_settings()
     test_military_consolas_font_covers_all_asset_glyphs()
     print("test_header_logo_layout_modes PASS")
