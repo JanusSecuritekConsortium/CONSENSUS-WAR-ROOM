@@ -35,10 +35,27 @@ Normal operator startup:
 .\boot.bat
 ```
 
+Normal boot runs only lightweight dependency/provider health checks, selects the
+configured or random startup theme, runs BIOS/POST, and launches the GUI. It
+does not run `tools\run_tests.py`, active-tree compilation, or screenshot
+regression checks.
+
 Diagnostics-only recovery mode:
 
 ```powershell
 .\boot.bat --safe
+```
+
+Release validation mode:
+
+```powershell
+.\boot.bat --validate
+```
+
+Developer theme/layout validation:
+
+```powershell
+.\boot.bat --test-theme
 ```
 
 `boot.bat` is the canonical operator entrypoint. It validates the local
@@ -250,6 +267,32 @@ Common backend choices:
 - `msty-local`: Msty local LLaMA.cpp endpoint
 - `msty-claw`: Msty Claw bridge endpoint
 - `msty-llama-cpp`: explicit Msty lower-level LLaMA.cpp endpoint
+
+## MstyClaw MCP
+
+CONSENSUS exposes a read-only local MCP server for MstyClaw at:
+
+```text
+G:\CONSENSUS_SYSTEM\integrations\mcp\consensus_mcp_server.py
+```
+
+Register it in MstyClaw as a local command:
+
+```text
+Name: CONSENSUS MCP
+Command: G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe
+Arguments: G:\CONSENSUS_SYSTEM\integrations\mcp\consensus_mcp_server.py
+```
+
+Fallback launcher:
+
+```text
+G:\CONSENSUS_SYSTEM\integrations\mcp\run_consensus_mcp.bat
+```
+
+The MCP server exposes read-only status, AURELIUS logs, Msty model discovery,
+project tree, safe file read, and project text search tools. It does not execute
+commands, write files, delete files, or access external network targets.
 
 ## Repository Map
 

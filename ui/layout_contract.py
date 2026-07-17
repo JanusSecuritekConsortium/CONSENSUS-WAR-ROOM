@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+
+LEFT_COLUMN_FLEX = 25
+CENTER_COLUMN_FLEX = 54
+RIGHT_COLUMN_FLEX = 21
+PROPOSAL_HEIGHT = 270
+FOOTER_HEIGHT = 58
+
+
+__all__ = [
+    "LEFT_COLUMN_FLEX",
+    "CENTER_COLUMN_FLEX",
+    "RIGHT_COLUMN_FLEX",
+    "PROPOSAL_HEIGHT",
+    "FOOTER_HEIGHT",
+]

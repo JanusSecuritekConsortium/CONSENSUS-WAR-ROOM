@@ -90,6 +90,7 @@ from ui.components.status_panel import build_status_panel
 from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph_lines, telemetry_summary_lines
 from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
+from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
 from ui.war_room_runtime import (
     append_timeline,
@@ -105,7 +106,6 @@ from ui.war_room_runtime import (
 )
 
 
-FOOTER_HEIGHT = 62
 GUI_ACTIVITY_REFRESH_INTERVAL_SECONDS = 6.0
 GUI_PROVIDER_REFRESH_INTERVAL_SECONDS = 30.0
 GUI_INTERACTION_HOLD_SECONDS = 12.0
@@ -304,7 +304,9 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "missing_models": provider_payload.get("missing_required_models", {}),
         "degraded_reason": provider_payload.get("degraded_reason") or state.provider_status.get("error"),
         "war_room_layout_guard": {
-            "main_column_expand": [2, 6, 2],
+            "main_column_expand": [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX],
+            "proposal_height": PROPOSAL_HEIGHT,
+            "footer_height": FOOTER_HEIGHT,
             "footer_fixed": True,
             "diagnostics_overlay": True,
         },
@@ -1808,7 +1810,7 @@ def build_gui_layout(
         [
             ft.Container(
                 build_theme_switcher(theme, switch_theme, on_interaction=hold_footer_interaction),
-                width=230,
+                width=260,
                 alignment=ft.alignment.center_left,
             ),
             footer_shortcuts,
@@ -1822,7 +1824,7 @@ def build_gui_layout(
                     spacing=0,
                     tight=True,
                 ),
-                width=230,
+                width=125,
                 alignment=ft.alignment.center_right,
                 clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 data={"role": "footer_aux_controls"},
@@ -1855,7 +1857,7 @@ def build_gui_layout(
                     state.pulse_index,
                 ),
         ),
-        expand=2,
+        expand=LEFT_COLUMN_FLEX,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
     center = ft.Container(
@@ -1871,8 +1873,7 @@ def build_gui_layout(
                         on_template_select=on_template_select,
                         on_change=on_proposal_change,
                     ),
-                    expand=4,
-                    height=layout_meta.proposal_panel_min_height,
+                    height=PROPOSAL_HEIGHT,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={"role": "proposal_panel_region"},
                 ),
@@ -1893,7 +1894,7 @@ def build_gui_layout(
                         convergence_percent=state.convergence_percent,
                         phase_durations=state.phase_durations,
                     ),
-                    expand=6,
+                    expand=True,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={"role": "verdict_panel_region"},
                 ),
@@ -1901,7 +1902,7 @@ def build_gui_layout(
             spacing=layout_meta.proposal_verdict_gap,
             expand=True,
         ),
-        expand=6,
+        expand=CENTER_COLUMN_FLEX,
     )
     right = ft.Container(
         ft.Column(
@@ -1941,7 +1942,7 @@ def build_gui_layout(
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
-        expand=2,
+        expand=RIGHT_COLUMN_FLEX,
     )
     body = ft.Row(
         [left, center, right],
@@ -2506,6 +2507,11 @@ def run_flet_gui(
 
 
 __all__ = [
+    "LEFT_COLUMN_FLEX",
+    "CENTER_COLUMN_FLEX",
+    "RIGHT_COLUMN_FLEX",
+    "PROPOSAL_HEIGHT",
+    "FOOTER_HEIGHT",
     "GuiState",
     "create_gui_state",
     "submit_proposal_for_gui",

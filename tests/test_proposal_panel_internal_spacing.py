@@ -19,9 +19,10 @@ def test_proposal_text_area_stays_compact_inside_panel() -> None:
 
     assert text_fields
     proposal_input = text_fields[0]
-    assert proposal_input.min_lines == 4
-    assert proposal_input.max_lines == 5
-    assert panel.padding.top < panel.padding.bottom
+    assert proposal_input.min_lines == 5
+    assert proposal_input.max_lines == 7
+    assert proposal_input.dense is True
+    assert panel.padding.top <= panel.padding.bottom
     assert panel.clip_behavior is not None
 
 

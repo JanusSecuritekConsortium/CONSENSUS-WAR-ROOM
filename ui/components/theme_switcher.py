@@ -7,7 +7,7 @@ import flet as ft
 from core.models import Theme
 from ui.themes.catalog import get_gui_theme_key, get_gui_theme_options
 
-THEME_SWITCHER_WIDTH = 220
+THEME_SWITCHER_WIDTH = 260
 
 
 def build_theme_switcher(
@@ -37,7 +37,7 @@ def build_theme_switcher(
         color=theme.text_color,
         dense=True,
         width=THEME_SWITCHER_WIDTH,
-        menu_width=280,
+        menu_width=320,
         text_size=12,
         label_style=ft.TextStyle(color=theme.secondary_color, size=10, font_family=theme.font_family),
         text_style=ft.TextStyle(color=theme.text_color, size=12, font_family=theme.font_family),

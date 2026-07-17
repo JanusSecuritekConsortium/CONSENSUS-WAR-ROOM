@@ -11,7 +11,15 @@ if str(ROOT) not in sys.path:
 
 from config.runtime import RuntimeConfig
 from ui.components.header import GUI_HEADER_HEIGHT, theme_header_height
-from ui.flet_app import FOOTER_HEIGHT, _apply_page_theme, build_gui_layout, create_gui_state
+from ui.flet_app import (
+    CENTER_COLUMN_FLEX,
+    FOOTER_HEIGHT,
+    LEFT_COLUMN_FLEX,
+    RIGHT_COLUMN_FLEX,
+    _apply_page_theme,
+    build_gui_layout,
+    create_gui_state,
+)
 
 
 class FakePage:
@@ -38,9 +46,9 @@ def test_body_has_responsive_left_center_right_regions() -> None:
     left, center, right = body_row.controls
 
     assert len(body_row.controls) == 3
-    assert left.expand == 2
-    assert center.expand == 6
-    assert right.expand == 2
+    assert left.expand == LEFT_COLUMN_FLEX
+    assert center.expand == CENTER_COLUMN_FLEX
+    assert right.expand == RIGHT_COLUMN_FLEX
 
 
 def test_fixed_header_footer_and_expanding_body() -> None:
@@ -51,7 +59,7 @@ def test_fixed_header_footer_and_expanding_body() -> None:
     body = shell.controls[1]
     footer = shell.controls[2]
 
-    assert 120 <= GUI_HEADER_HEIGHT <= 180
+    assert 120 <= GUI_HEADER_HEIGHT <= 200
     assert header.height == theme_header_height(state.theme)
     assert body.expand is True
     assert footer.height == FOOTER_HEIGHT

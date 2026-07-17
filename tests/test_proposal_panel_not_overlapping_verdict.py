@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from tests.helpers.gui_harness import build_layout_for
 from ui.assets.registry import get_theme_layout_metadata
+from ui.flet_app import PROPOSAL_HEIGHT
 
 
 def test_proposal_and_verdict_regions_have_explicit_gap() -> None:
@@ -20,8 +21,9 @@ def test_proposal_and_verdict_regions_have_explicit_gap() -> None:
     assert center_column.spacing == metadata.proposal_verdict_gap
     assert proposal_region.data["role"] == "proposal_panel_region"
     assert verdict_region.data["role"] == "verdict_panel_region"
-    assert proposal_region.expand == 4
-    assert verdict_region.expand == 6
+    assert proposal_region.expand is None
+    assert proposal_region.height == PROPOSAL_HEIGHT
+    assert verdict_region.expand is True
 
 
 if __name__ == "__main__":

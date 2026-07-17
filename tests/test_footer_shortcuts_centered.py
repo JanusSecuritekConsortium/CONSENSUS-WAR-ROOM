@@ -8,6 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for
+from ui.components.theme_switcher import THEME_SWITCHER_WIDTH
 
 
 def _footer_row(theme_key: str):
@@ -19,7 +20,8 @@ def test_footer_shortcuts_are_center_region_for_all_themes() -> None:
         footer = _footer_row(theme_key)
         left, shortcuts, right = footer.controls
 
-        assert left.width == right.width == 230
+        assert left.width == THEME_SWITCHER_WIDTH
+        assert right.width == 125
         assert shortcuts.expand is True
         assert shortcuts.data["role"] == "footer_shortcuts"
         assert shortcuts.data["alignment"] == "center"

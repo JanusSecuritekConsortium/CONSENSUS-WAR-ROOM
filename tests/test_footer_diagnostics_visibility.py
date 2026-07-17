@@ -8,6 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for
+from ui.components.theme_switcher import THEME_SWITCHER_WIDTH
 
 
 def _walk(control):
@@ -24,7 +25,8 @@ def test_footer_keeps_diagnostics_button_visible_in_right_region() -> None:
     left, shortcuts, right = footer.controls
     values = [getattr(control, "text", None) or getattr(control, "value", None) for control in _walk(right)]
 
-    assert left.width == right.width == 230
+    assert left.width == THEME_SWITCHER_WIDTH
+    assert right.width == 125
     assert shortcuts.expand is True
     assert "DIAGNOSTICS" in values
     assert right.clip_behavior is not None

@@ -1,5 +1,6 @@
 param(
-    [switch]$Safe
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$BootArgs
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,8 +13,8 @@ if (-not (Test-Path -LiteralPath $Python)) {
 }
 
 $Arguments = @((Join-Path $Root "tools\boot.py"))
-if ($Safe) {
-    $Arguments += "--safe"
+if ($BootArgs) {
+    $Arguments += $BootArgs
 }
 
 & $Python @Arguments

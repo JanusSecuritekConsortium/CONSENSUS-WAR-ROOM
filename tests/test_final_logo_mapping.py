@@ -34,8 +34,10 @@ def test_final_supplied_logo_shapes_are_present() -> None:
     assert "++++++++++++" in helldivers
     assert "++++++       ++++++       ++++ +" in helldivers
     assert len(helldivers.splitlines()) >= 30
-    assert "CONSENSUS WAR ROOM" in military
-    assert "███████╗" in military
+    military_lines = military.splitlines()
+    assert len(military_lines) == 100
+    assert max(len(line) for line in military_lines) == 135
+    assert "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" in military
 
 
 def test_helldivers_and_janus_use_separate_color_families() -> None:

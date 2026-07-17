@@ -20,7 +20,7 @@ class FakeBackend:
         return ["deepseek-coder:33b", "llama3.3:70b", "mixtral:8x7b"]
 
 
-def test_provider_base_url_prefers_runtime_config_before_msty_env() -> None:
+def test_provider_base_url_prefers_launcher_msty_env_before_runtime_config() -> None:
     original_msty = os.environ.get("MSTY_BASE_URL")
     original_ollama = os.environ.get("OLLAMA_BASE_URL")
     try:
@@ -28,7 +28,7 @@ def test_provider_base_url_prefers_runtime_config_before_msty_env() -> None:
         os.environ["OLLAMA_BASE_URL"] = "http://127.0.0.1:11434"
 
         config = RuntimeConfig(backend="msty-llama-cpp", msty_llama_cpp_base_url="http://configured.local")
-        assert api_module.resolve_provider_base_url(config) == "http://configured.local"
+        assert api_module.resolve_provider_base_url(config) == "http://127.0.0.1:11964"
     finally:
         if original_msty is None:
             os.environ.pop("MSTY_BASE_URL", None)
@@ -82,7 +82,7 @@ def test_model_availability_report_marks_ready_and_missing_models() -> None:
 
 
 if __name__ == "__main__":
-    test_provider_base_url_prefers_runtime_config_before_msty_env()
+    test_provider_base_url_prefers_launcher_msty_env_before_runtime_config()
     test_single_provider_resolver_keeps_msty_default_priority()
     test_provider_discovery_reports_latency_and_models()
     test_model_availability_report_marks_ready_and_missing_models()

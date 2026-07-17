@@ -17,7 +17,7 @@ def test_header_status_content_is_raised_with_bottom_breathing_room() -> None:
     assert status_panel.data["role"] == "header_status_panel"
     assert status_panel.data["content_vertical_offset"] == "raised"
     assert status_panel.padding.top == 8
-    assert status_panel.padding.bottom == 16
+    assert status_panel.padding.bottom == 12
 
 
 if __name__ == "__main__":

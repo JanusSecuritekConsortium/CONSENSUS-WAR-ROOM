@@ -11,7 +11,8 @@ def test_boot_launchers_exist_and_delegate_to_operator_boot() -> None:
     powershell = (ROOT / "boot.ps1").read_text(encoding="utf-8")
     assert "boot.ps1" in batch
     assert "tools\\boot.py" in powershell
-    assert "--safe" in powershell
+    assert "ValueFromRemainingArguments" in powershell
+    assert "$Arguments += $BootArgs" in powershell
 
 
 if __name__ == "__main__":
