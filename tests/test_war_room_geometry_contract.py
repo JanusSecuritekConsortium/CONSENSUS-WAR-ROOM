@@ -94,7 +94,7 @@ def test_header_uses_approved_theme_geometry() -> None:
     assert "wh40k" not in THEME_HEADER_SPLITS
     assert THEME_LOGO_LAYOUTS["eva"]["mode"] == "supersampled_rect"
     assert THEME_LOGO_LAYOUTS["wh40k"]["mode"] == "supersampled_rect"
-    assert THEME_LOGO_LAYOUTS["military"]["mode"] == "supersampled_banner"
+    assert THEME_LOGO_LAYOUTS["military"]["mode"] == "supersampled_square"
 
 
 def test_monolith_cards_clear_footer_at_review_viewports() -> None:

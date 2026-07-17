@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.version import SYSTEM_VERSION
-from ui.animations.bios_boot import generate_bios_boot_lines
+from ui.animations.bios_boot import _theme_boot_logo_text, generate_bios_boot_lines
 from ui.components.status_panel import build_status_panel
 from ui.themes.catalog import THEMES
 
@@ -97,7 +97,7 @@ def test_post_block_is_centered_consistently() -> None:
 def test_logo_block_has_one_blank_line_before_bios_header() -> None:
     for theme_key, theme in THEMES.items():
         lines = "\n".join(_boot_lines_with_logo(theme_key)).splitlines()
-        logo_line_count = len(Path(theme.logo_path).read_text(encoding="utf-8").rstrip("\n").splitlines())
+        logo_line_count = len(_theme_boot_logo_text(theme_key).splitlines())
         header_index = logo_line_count + 1
 
         assert lines[logo_line_count] == "", theme_key

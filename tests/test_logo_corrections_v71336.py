@@ -72,24 +72,24 @@ def test_wh40k_uses_theme_specific_optical_offset_only() -> None:
     assert logo_runtime_diagnostics("military", header_width=1920)["optical_offset_x"] == 0
 
 
-def test_military_uses_supersampled_banner_renderer_with_exact_asset() -> None:
+def test_military_uses_supersampled_square_renderer_with_exact_asset() -> None:
     diagnostic = logo_runtime_diagnostics("military", header_width=1920)
     left, right, top, bottom = diagnostic["clearances"]
     logo_box = build_layout_for("military").content.controls[0].content.controls[0]
     control = logo_text_control_from_box(logo_box)
 
     assert _hash("military") == EXPECTED_LOGO_HASHES["military"]
-    assert diagnostic["renderer_mode"] == "supersampled_banner"
-    assert 395 <= diagnostic["logo_region_width"] <= 405
-    assert 110 <= diagnostic["visible_artwork_width"] <= 120
-    assert 118 <= diagnostic["visible_artwork_height"] <= 126
-    assert left >= 140
-    assert right >= 140
-    assert top >= 18
-    assert bottom >= 18
-    assert logo_box.width == 400
+    assert diagnostic["renderer_mode"] == "supersampled_square"
+    assert diagnostic["logo_region_width"] == 162
+    assert 138 <= diagnostic["visible_artwork_width"] <= 144
+    assert 148 <= diagnostic["visible_artwork_height"] <= 152
+    assert left >= 10
+    assert right >= 10
+    assert top >= 6
+    assert bottom >= 6
+    assert logo_box.width == 162
     assert logo_box.content.scroll is None
-    assert control.data["base_font_size"] >= 12
+    assert control.data["base_font_size"] >= 8
     assert control._Control__attrs["nowrap"][0] is True
     assert control.overflow == ft.TextOverflow.VISIBLE
     assert control.value == THEME_GRAPHIC_ASSETS["military"].logo_path.read_bytes().decode("utf-8")
@@ -113,6 +113,6 @@ def test_telemetry_control_signatures_remain_frozen_from_v71335() -> None:
 if __name__ == "__main__":
     test_eva_region_expands_without_clipping_or_asset_change()
     test_wh40k_uses_theme_specific_optical_offset_only()
-    test_military_uses_supersampled_banner_renderer_with_exact_asset()
+    test_military_uses_supersampled_square_renderer_with_exact_asset()
     test_telemetry_control_signatures_remain_frozen_from_v71335()
     print("test_logo_corrections_v71336 PASS")

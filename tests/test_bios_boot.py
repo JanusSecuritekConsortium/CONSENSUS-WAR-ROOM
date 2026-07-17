@@ -102,7 +102,18 @@ def test_bios_boot_uses_selected_theme_only() -> None:
 
 
 def _logo_text(theme_key: str) -> str:
-    return Path(THEMES[theme_key].logo_path).read_text(encoding="utf-8").rstrip("\n")
+    return bios_boot._theme_boot_logo_text(theme_key)
+
+
+def test_military_boot_logo_is_compact_and_derived_from_full_asset() -> None:
+    logo = bios_boot._theme_boot_logo_text("military")
+    lines = logo.splitlines()
+
+    assert len(lines) == bios_boot.MILITARY_BOOT_LOGO_MAX_HEIGHT
+    assert max(len(line) for line in lines) <= bios_boot.MILITARY_BOOT_LOGO_MAX_WIDTH
+    assert 30 <= max(len(line) for line in lines) <= 45
+    assert "@" in logo
+    assert logo != Path(THEMES["military"].logo_path).read_text(encoding="utf-8").rstrip("\n")
 
 
 def _bios_header_for(theme_key: str) -> str:

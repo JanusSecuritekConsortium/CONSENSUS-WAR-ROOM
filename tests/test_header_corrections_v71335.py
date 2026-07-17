@@ -95,14 +95,14 @@ def test_military_logo_region_and_artwork_match_final_geometry() -> None:
     logo_box = build_layout_for("military").content.controls[0].content.controls[0]
     logo_text = logo_text_control_from_box(logo_box)
 
-    assert diagnostic["renderer_mode"] == "supersampled_banner"
-    assert 395 <= diagnostic["logo_region_width"] <= 405
-    assert 110 <= diagnostic["visible_artwork_width"] <= 120
-    assert 118 <= diagnostic["visible_artwork_height"] <= 126
+    assert diagnostic["renderer_mode"] == "supersampled_square"
+    assert diagnostic["logo_region_width"] == 162
+    assert 138 <= diagnostic["visible_artwork_width"] <= 144
+    assert 148 <= diagnostic["visible_artwork_height"] <= 152
     assert abs(left - right) <= 1
-    assert left >= 140
-    assert right >= 140
-    assert logo_box.width == 400
+    assert left >= 10
+    assert right >= 10
+    assert logo_box.width == 162
     assert logo_box.content.scroll is None
     assert logo_text.value == THEME_GRAPHIC_ASSETS["military"].logo_path.read_bytes().decode("utf-8")
 
