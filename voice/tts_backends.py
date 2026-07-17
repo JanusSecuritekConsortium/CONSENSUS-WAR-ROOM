@@ -86,7 +86,12 @@ class WindowsSAPIBackend:
         if completed.returncode != 0:
             error = (completed.stderr or completed.stdout or "Windows SAPI playback failed").strip()
             return TTSBackendResult(ok=False, text=text, mode="windows_sapi", metadata={"error": error})
-        return TTSBackendResult(ok=True, text=text, mode="windows_sapi", metadata={"voice": selected})
+        return TTSBackendResult(
+            ok=True,
+            text=text,
+            mode="windows_sapi",
+            metadata={"voice": selected, "playback": "windows_sapi", "played": True},
+        )
 
     def synthesize(self, text: str) -> TTSBackendResult:
         return self.speak(text)

@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from config.version import SYSTEM_VERSION
 from tools import runtime_snapshot
+from ui.layout_contract import CENTER_COLUMN_FLEX, LEFT_COLUMN_FLEX, RIGHT_COLUMN_FLEX
 
 
 def test_runtime_snapshot_uses_real_provider_payload_shape() -> None:
@@ -30,7 +31,11 @@ def test_runtime_snapshot_uses_real_provider_payload_shape() -> None:
         assert snapshot["provider_status"] == "degraded"
         assert snapshot["active_models"] == ["m1"]
         assert snapshot["missing_models"] == {"BELLATOR": "m2"}
-        assert snapshot["war_room_layout_guard"]["main_column_expand"] == [2, 6, 2]
+        assert snapshot["war_room_layout_guard"]["main_column_expand"] == [
+            LEFT_COLUMN_FLEX,
+            CENTER_COLUMN_FLEX,
+            RIGHT_COLUMN_FLEX,
+        ]
         assert snapshot["render_guard_status"]["enabled"] is True
         assert snapshot["latest_decision_trace"]["proposal_id"] == "p1"
         assert snapshot["test_manifest_path"].endswith(f"verification_v{SYSTEM_VERSION}.json")

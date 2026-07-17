@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List
 
+from ui.layout_contract import PROPOSAL_HEIGHT
+
 
 def flatten_text(control: object) -> List[str]:
     values: List[str] = []
@@ -31,9 +33,12 @@ def evaluate_visual_invariants(layout: object) -> Dict[str, Any]:
     shell = getattr(layout, "content", None)
     body_row = shell.controls[1].content  # type: ignore[attr-defined]
     right_column = body_row.controls[2].content
+    center_column = body_row.controls[1].content
+    proposal_region = center_column.controls[0]
     return {
-        "layout_proportions_2_6_2": expands == [2, 6, 2],
+        "layout_proportions_25_54_21": expands == [25, 54, 21],
         "layout_expands": expands,
+        "proposal_height_fixed": getattr(proposal_region, "height", None) == PROPOSAL_HEIGHT,
         "diagnostics_overlay_not_layout_mutation": hasattr(layout, "diagnostics_drawer") and "DIAGNOSTICS" not in joined,
         "provider_status_block_visible": "SYSTEM STATUS" in texts and "PROVIDER" in texts,
         "active_model_list_visible": "ACTIVE MODELS" in texts,

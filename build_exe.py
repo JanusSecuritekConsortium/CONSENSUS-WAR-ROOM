@@ -9,6 +9,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SPEC_PATH = ROOT / "CONSENSUS.spec"
 OUTPUT_PATH = ROOT / "dist" / "CONSENSUS.exe"
+PACKAGED_SELF_TEST_MARKERS = (
+    "ASSET SUBSYSTEM: READY",
+    "BOOT LOGO SUBSYSTEM: READY (military 38x28)",
+    "GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)",
+)
+
+
+def verify_executable(path: Path) -> None:
+    completed = subprocess.run(
+        [str(path), "--self-test"],
+        cwd=path.parent,
+        text=True,
+        capture_output=True,
+        timeout=60,
+    )
+    output = "\n".join(part for part in (completed.stdout, completed.stderr) if part)
+    if completed.returncode != 0:
+        raise RuntimeError(f"Packaged self-test failed with exit code {completed.returncode}:\n{output}")
+    missing = [marker for marker in PACKAGED_SELF_TEST_MARKERS if marker not in output]
+    if missing:
+        raise RuntimeError(f"Packaged self-test omitted required markers: {missing!r}\n{output}")
 
 
 def build_executable() -> Path:
@@ -24,6 +45,7 @@ def build_executable() -> Path:
     )
     if not OUTPUT_PATH.exists() or OUTPUT_PATH.stat().st_size == 0:
         raise RuntimeError(f"Executable build did not produce {OUTPUT_PATH}")
+    verify_executable(OUTPUT_PATH)
     return OUTPUT_PATH
 
 

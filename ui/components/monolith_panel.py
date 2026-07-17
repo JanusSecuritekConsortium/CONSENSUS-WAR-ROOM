@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Dict
 
 import flet as ft
@@ -11,6 +12,8 @@ from core.models import NodeIdentity, Theme
 READINESS_ROW_LABELS = ("SESSION", "MEMORY", "THEME", "PROVIDER", "LAST VERDICT", "LIFECYCLE")
 READINESS_LABEL_WIDTH = 78
 READINESS_ROW_FONT_SIZE = 9
+MONOLITH_CARD_COUNT = 4
+MONOLITH_CARD_PADDING = 8
 
 
 def status_color_category(status: str) -> str:
@@ -55,6 +58,24 @@ def _runtime_color(theme: Theme, state: str) -> str:
     if normalized in {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING"}:
         return theme.accent_color
     return theme.secondary_text or theme.secondary_color
+
+
+def _compact_model_name(model: str) -> str:
+    candidate = model.rsplit("/", 1)[-1].replace(".gguf", "")
+    lower = candidate.lower()
+    quant_match = re.search(r"(q\d(?:_[a-z]){1,2})", lower)
+    quant = quant_match.group(1).upper() if quant_match else ""
+    families = (
+        ("mixtral-8x7b", "Mixtral-8x7B"),
+        ("yi-34b", "Yi-34B"),
+        ("deepseek-coder-33b", "DeepSeek-Coder-33B"),
+        ("hermes-3-llama-3.1-8b", "Hermes-3-Llama-3.1-8B"),
+        ("hermes-3-llama-3-1-8b", "Hermes-3-Llama-3.1-8B"),
+    )
+    for needle, label in families:
+        if needle in lower:
+            return f"{label} {quant}".strip()
+    return candidate[:38] + ("..." if len(candidate) > 38 else "")
 
 
 def _readiness_panel(
@@ -157,6 +178,7 @@ def build_monolith_panel(
         core_name = labels["core"] if labels else "CONTROL CORE"
         status = statuses.get(key, "ONLINE")
         model = nodes[key].model if key in nodes else "operator"
+        compact_model = _compact_model_name(model)
         color = status_color(theme, status)
         category = status_color_category(status)
         opacity = 0.55 if category == "error" and status.upper() == "OFFLINE" else 1.0
@@ -175,7 +197,7 @@ def build_monolith_panel(
                 ft.Text(
                     f"{glyph} {pulse} {activity}".strip(),
                     color=_runtime_color(theme, activity_state),
-                    size=10,
+                    size=9,
                     max_lines=1,
                     overflow=ft.TextOverflow.ELLIPSIS,
                 )
@@ -184,7 +206,7 @@ def build_monolith_panel(
                 ft.Text(
                     f"LATENCY: {latency_ms}ms {signal}",
                     color=muted_color,
-                    size=10,
+                    size=9,
                     max_lines=1,
                     overflow=ft.TextOverflow.ELLIPSIS,
                 )
@@ -197,21 +219,30 @@ def build_monolith_panel(
             reasoning = str(details.get("reasoning", "") or "")
             if confidence is not None:
                 detail_lines.append(
-                    ft.Text(f"confidence {float(confidence):.0%}", color=theme.text_color, size=10)
+                    ft.Text(f"confidence {float(confidence):.0%}", color=theme.text_color, size=9, max_lines=1)
                 )
             if evidence_quality is not None:
                 detail_lines.append(
-                    ft.Text(f"evidence {float(evidence_quality):.0%}", color=theme.text_color, size=10)
+                    ft.Text(f"evidence {float(evidence_quality):.0%}", color=theme.text_color, size=9, max_lines=1)
                 )
             if critical_risk:
-                detail_lines.append(ft.Text("critical risk flagged", color=theme.error_color, size=10))
+                detail_lines.append(ft.Text("critical risk flagged", color=theme.error_color, size=9, max_lines=1))
             if response_time is not None:
                 detail_lines.append(
-                    ft.Text(f"response {float(response_time):.2f}s", color=theme.text_color, size=10)
+                    ft.Text(f"response {float(response_time):.2f}s", color=theme.text_color, size=9, max_lines=1)
                 )
             if reasoning:
                 snippet = reasoning[:72] + ("..." if len(reasoning) > 72 else "")
-                detail_lines.append(ft.Text(snippet, color=theme.muted_text or theme.secondary_color, size=10))
+                detail_lines.append(
+                    ft.Text(
+                        snippet,
+                        color=theme.muted_text or theme.secondary_color,
+                        size=9,
+                        max_lines=1,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    )
+                )
+        detail_lines = detail_lines[:3]
         cards.append(
             ft.Container(
                 content=ft.Row(
@@ -222,20 +253,36 @@ def build_monolith_panel(
                                     node_name,
                                     color=theme.primary_color if active_runtime else theme.accent_color,
                                     weight=ft.FontWeight.BOLD,
-                                    size=17,
+                                    size=15,
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
                                 ),
-                                ft.Text(key, color=theme.text_color, size=11, font_family=theme.font_family),
-                                ft.Text(core_name, color=theme.secondary_text or theme.secondary_color, size=11),
-                                ft.Text(model, color=muted_color, size=10),
+                                ft.Text(key, color=theme.text_color, size=10, font_family=theme.font_family, max_lines=1),
+                                ft.Text(
+                                    core_name,
+                                    color=theme.secondary_text or theme.secondary_color,
+                                    size=9,
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                ),
+                                ft.Text(
+                                    compact_model,
+                                    color=muted_color,
+                                    size=9,
+                                    max_lines=1,
+                                    overflow=ft.TextOverflow.ELLIPSIS,
+                                    tooltip=model,
+                                ),
                                 *detail_lines,
                             ],
-                            spacing=2,
+                            spacing=1,
                             expand=True,
+                            tight=True,
                         ),
                         ft.Column(
                             [
-                                ft.Text(_status_glyph(status), color=color, size=18),
-                                ft.Text(status, color=color, weight=ft.FontWeight.BOLD, size=15),
+                                ft.Text(_status_glyph(status), color=color, size=14),
+                                ft.Text(status, color=color, weight=ft.FontWeight.BOLD, size=13, max_lines=1),
                             ],
                             horizontal_alignment=ft.CrossAxisAlignment.END,
                             spacing=0,
@@ -244,10 +291,13 @@ def build_monolith_panel(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                padding=10,
+                padding=MONOLITH_CARD_PADDING,
                 border=ft.border.all(2 if active_runtime else 1, color),
                 bgcolor=theme.surface_color,
                 opacity=opacity,
+                expand=1,
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                data={"role": "monolith_card", "agent_id": key, "compact_model": compact_model},
             )
         )
     readiness = _readiness_panel(
@@ -268,6 +318,7 @@ def build_monolith_panel(
 
 __all__ = [
     "READINESS_ROW_LABELS",
+    "MONOLITH_CARD_COUNT",
     "build_monolith_panel",
     "status_color",
     "status_color_category",

@@ -1,5 +1,253 @@
 # Changelog
 
+## 7.14.0 - Dense Interchangeable BIOS Promotion
+
+- Promoted the reviewed dense old-BIOS startup layout into the active console and Flet boot paths for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.
+- Preserved each theme's centered boot logo, identity header, author, build, date, provider state, subsystem language, and animated handoff while replacing the former active sequential POST presentation.
+- Added a dedicated dark-crimson EVA/NERV boot-logo treatment, darker EVA success blue, and readable high-contrast Arasaka terminal data without changing GUI palette contracts.
+- Gave every theme a distinct loading-bar geometry in addition to its existing label, stages, and color.
+- Retained the former BIOS line generator for compatibility with archived previews and historical regression contracts; normal startup now uses the dense builder.
+
+## 7.13.40 - EVA GUI Header Source Replacement
+
+- Replaced the dense `56x88` EVA GUI header source with a lower-density `18x39` GUI-specific NERV/MAGI text asset in `static/logos/gui/eva_header.txt`.
+- Preserved the EVA `ascii_grid_vector` renderer, `210x162` header region, WH40K, Military, Arasaka, Janus, Helldivers, telemetry, proposal panel, ARBITER, body layout, footer, provider routing, and boot assets.
+- Added current-source hash/dimension coverage for all six GUI logo files and updated EVA source-integrity tests for the new canonical asset.
+
+## 7.13.39 - EVA Grid Texture Correction
+
+- Refined the EVA/NERV `ascii_grid_vector` renderer to draw individual occupied source cells instead of solid merged run bands.
+- Preserved the canonical EVA GUI text asset, `210x162` region, canvas renderer, telemetry signatures, WH40K, Military, Arasaka, Janus, Helldivers, body layout, proposal panel, ARBITER, and footer.
+- Added regression coverage for occupied-cell count, cell fill ratios, containment, and unchanged telemetry signatures.
+
+## 7.13.38 - EVA Vector Grid Logo Renderer
+
+- Replaced only the EVA/NERV header artwork renderer with an `ascii_grid_vector` canvas path that draws merged occupied-cell runs from the unchanged canonical GUI text asset.
+- Preserved the EVA source hash, `210x162` logo region, body/proposal/footer geometry, telemetry builders, and all non-EVA logo renderers.
+- Added focused regression coverage for exact source handoff, grid dimensions, run merging, containment, no EVA artwork `ft.Text`, no PNG logo assets, and unchanged telemetry signatures.
+
+## 7.13.37 - GUI Logo Source Correction
+
+- Added runtime and bundled-archive regression checks proving EVA and WH40K GUI headers resolve to the canonical `static/logos/gui` text assets and not boot/report/archive sources.
+- Reversed WH40K optical correction to a positive `+6px` post-centering offset while preserving the asset, scale, and region dimensions.
+- Added one-time logo diagnostics including resolved GUI path, SHA256, and renderer mode for supersampled GUI headers.
+
+## 7.13.36 - Three Logo Correction
+
+- Increased the EVA/NERV supersampled logo region to `210px` so the unchanged artwork clears the right edge without reducing scale.
+- Applied the WH40K theme-specific `-3px` optical offset after visible-glyph centring while preserving source, scale, and region size.
+- Replaced Military/EXCOMM direct small-font rendering with a `supersampled_banner` renderer using the unchanged GUI asset at base font size `14` inside a `400px` region.
+
+## 7.13.35 - Narrow Header Corrections
+
+- Compacted EVA/MAGI header telemetry by keeping the three vertical MAGI channels and replacing lower thermal gauges with a compact horizontal thermal row.
+- Preserved WH40K source/scale while adding visible-glyph centring regression coverage for the supersampled renderer.
+- Reduced the Military/EXCOMM header logo region to `430px`, scaled the historical text artwork into the requested bounds, and disabled header-logo scrolling.
+
+## 7.13.34 - Distinct Header Telemetry and Logo Geometry
+
+- Rebuilt themed header telemetry into six distinct Flet-native layouts with structural regression coverage and per-theme layout diagnostics.
+- Added canonical CPU/GPU temperature fields, guarded Windows sensor collection, bounded thermal histories, and thermal status display without synthetic readings.
+- Corrected theme-specific header logo geometry for Janus, Helldivers, Arasaka, EVA/MAGI, WH40K, and Military while preserving raw logo assets and frozen body/proposal/footer geometry.
+
+## 7.13.33 - Themed Header Telemetry Visuals
+
+- Added a dedicated `ui/components/telemetry_widgets.py` module for themed Flet-native header telemetry controls.
+- Replaced the header's plain text-only telemetry list with per-theme segmented meters, compact history indicators, and preserved numeric metric labels.
+- Bounded telemetry history defaults to 30 samples with a minimum 1-second sampling interval, while preserving provider routing, logos, body layout, proposal, footer, and ARBITER geometry.
+
+## 7.13.32 - GUI Logo Semantic Asset Rollback
+
+- Restored the canonical EVA/MAGI and WH40K GUI header assets from the archived v7.13.30 GUI sources, removing boot-sequence assets from GUI headers.
+- Added GUI logo path validation so production header assets must resolve beneath `static/logos/gui`.
+- Added boot-hash denylist regression coverage for EVA/MAGI and WH40K while preserving the supersampled square renderer and frozen layout geometry.
+
+## 7.13.31 - Selected GUI Logo Asset Replacement
+
+- Replaced the canonical EVA/MAGI GUI logo with the selected `nerv_logo.txt` candidate and the canonical WH40K GUI logo with the selected `cogitator_logo.txt` candidate.
+- Archived the outgoing v7.13.30 dense EVA and WH40K GUI assets under `reports/logo_history_candidates`.
+- Preserved the v7.13.30 `supersampled_square` renderer, fixed `162x162` logo cells, and frozen body/proposal/footer/provider behavior.
+
+## 7.13.30 - Supersampled Dense Logo Renderer
+
+- Replaced the EVA/MAGI and WH40K tiny-font square logo path with a supersampled ASCII text renderer that lays out the full source at integer base font size `10` and uniformly fits the natural canvas into the `162x162` viewport.
+- Preserved the current EVA, WH40K, and Military source assets byte-for-byte and kept dense logos text-based with no PNG/raster asset generation.
+- Added regression coverage for source hashes, integer base font size, fit-scale containment, no wrapping/ellipsis, fixed square cells, and frozen body/proposal/footer geometry.
+
+## 7.13.29 - Square Logo Scale-Up Correction
+
+- Increased EVA/MAGI and WH40K square-cell visual scale while preserving raw assets, font sizes, and `162x162` cells.
+- Kept WH40K at the smallest allowed adjusted scale that satisfies the deterministic `5px` clearance invariant.
+- Preserved Military, Arasaka, Janus, Helldivers, ARBITER, proposal, body layout, footer, provider routing, and boot behavior.
+
+## 7.13.28 - Explicit Square Logo Scale Transform
+
+- Applied a centered uniform visual scale transform to EVA/MAGI and WH40K square-cell logo text while preserving raw assets, `162x162` cells, and frozen font sizes.
+- Added deterministic transform bounds checks for occupancy, clearance, centered uniform scaling, and unchanged square-cell geometry.
+- Preserved Military, Arasaka, Janus, Helldivers, ARBITER, proposal, body layout, footer, provider routing, and boot behavior.
+
+## 7.13.27 - Square Logo Breathing Room Adjustment
+
+- Reduced EVA/MAGI and WH40K square-cell render scale only, preserving the `162x162` cells and raw text assets.
+- Updated square-cell bounds checks to use visible ASCII bounds and require target occupancy plus at least `8px` clearance.
+- Kept Military, Arasaka, Janus, Helldivers, ARBITER, proposal, body layout, footer, and provider routing unchanged.
+
+## 7.13.26 - Final Square Logo Scale Correction
+
+- Increased EVA/MAGI and WH40K square-cell render scale without changing square-cell dimensions, raw logo assets, or header geometry.
+- Preserved Military, Arasaka, Janus, Helldivers, ARBITER, proposal, body, footer, and provider routing.
+- Tightened square-cell regression checks to require `0.91-0.94` visible-height occupancy with at least `3px` deterministic clearance.
+
+## 7.13.25 - Square Logo Cells and EXCOMM Renderer Recovery
+
+- Added explicit header logo layout modes: percentage, square, and historical.
+- Moved EVA/MAGI and WH40K out of percentage splits into square logo cells derived from the fixed header logo height.
+- Preserved WH40K source bytes and adjusted no other accepted theme assets.
+- Restored Military/EXCOMM to the recovered `f7248fc` text renderer settings with the historical fixed logo box and font sizing.
+- Added containment, glyph-coverage, renderer provenance, and frozen geometry tests while preserving ARBITER, proposal, body, footer, and provider routing.
+
+## 7.13.24 - Narrow Logo and Verdict Bounds Correction
+
+- Restored the larger historical EVA/MAGI and Military/EXCOMM GUI text assets without rasterizing or normalizing them.
+- Added EVA and Military theme-specific header splits while leaving Janus, Helldivers, and Arasaka rendering unchanged.
+- Reduced WH40K logo render scale only; the accepted WH40K asset and split remain unchanged.
+- Compacted ARBITER verdict internals so context and reasoning lines clear the fixed footer at review viewports.
+- Preserved `25 / 54 / 21` body layout, `PROPOSAL_HEIGHT = 270`, `FOOTER_HEIGHT = 58`, proposal internals, monolith cards, and provider routing.
+
+## 7.13.23 - Historical Header Logo Restoration
+
+- Restored EVA/MAGI, WH40K, and Military/EXCOMM GUI logo text assets directly from selected historical commits.
+- Kept Arasaka source unchanged and restored its earliest working text-render settings.
+- Added theme-aware header splits with default `23 / 77`, Arasaka `34 / 66`, and WH40K `28 / 72`.
+- Preserved frozen body layout `25 / 54 / 21`, `PROPOSAL_HEIGHT = 270`, and `FOOTER_HEIGHT = 58`.
+- Added regression coverage for historical asset byte integrity, text-based logo rendering, theme-specific header splits, and absence of GUI PNG logo assets.
+
+## Documentation - Canonical MstyConsensusLauncher v1.1.3
+
+- Updated canonical launcher documentation from `MstyConsensusLauncher v1.1.2` to `v1.1.3`.
+- Recorded `msty_window_mode` with default `minimized` behavior.
+- Documented `hidden` mode as best-effort and `MSTY_WINDOW_HANDLE_NOT_FOUND` as non-fatal.
+- Clarified that Start Menu shortcut metadata may be warning-only without elevation, while the Windows Startup shortcut remains a critical self-test requirement.
+- No CONSENSUS or launcher version bump; documentation-only update.
+
+## 7.13.19 - CONSENSUS Launcher Environment Routing
+
+- Bumped CONSENSUS to v7.13.19.
+- Updated Msty provider routing to consume launcher-injected `CONSENSUS_MSTY_BASE_URL` first, then `MSTY_BASE_URL`, then configured/default endpoints.
+- Confirmed AURELIUS provider routing uses `AURELIUS_MSTY_BASE_URL`, then `MSTY_BASE_URL`, then default degraded behavior when no endpoint is configured.
+- Added provider diagnostics fields for selected backend, selected endpoint, and normalized endpoint source (`env`, `config`, or `default`).
+- Added regression coverage for CONSENSUS and AURELIUS environment override behavior.
+
+## 7.13.18 - Msty Consensus Launcher Operator Hardening
+
+- Added read-only `--print-config` / `--print-config --json` to print the effective launcher config after default application without probing APIs or touching shortcuts.
+- Added redaction for sensitive environment variable names before logging or status/config JSON output.
+- Added `G:\Tools\MstyConsensusLauncher\regression-test.ps1` for read-only command checks and temporary malformed-config validation.
+- Added versioned EXE backup packaging for the current launcher build.
+
+## 7.13.17 - Msty Consensus Launcher CONSENSUS Environment Injection
+
+- Bumped `MstyConsensusLauncher` to v1.1.2 with child-process-only environment injection for the selected semantically-ready Msty API endpoint.
+- Added `consensus_environment_variables` and `enable_consensus_environment_injection` config fields, with `{selected_msty_api_url}` replacement at launch time.
+- Added `CONSENSUS_ENV_INJECT_STARTED`, `CONSENSUS_ENV_SET`, `CONSENSUS_ENV_INJECT_COMPLETE`, `CONSENSUS_ENV_INJECT_DISABLED`, and `CONSENSUS_LAUNCH_ENDPOINT` logging.
+- Extended `--status` / `--status --json` with CONSENSUS launch endpoint, environment injection state, and configured environment variable templates.
+- Extended `--self-test` with critical validation for malformed environment variable configuration and warning behavior for an empty environment map.
+
+## 7.13.16 - Msty Consensus Launcher Fallback API Selection
+
+- Bumped `MstyConsensusLauncher` to v1.1.1 with fallback Msty API endpoint support controlled by `fallback_msty_api_urls` and `allow_fallback_api`.
+- Added semantic endpoint selection order: primary `msty_api_url` first, then configured fallbacks, selecting the first `/v1/models` endpoint with HTTP 200, valid JSON, a `data` array, and at least one model.
+- Extended `--diagnose-api` to show primary and fallback probe results plus the selected endpoint.
+- Extended `--status` / `--status --json` with selected API endpoint, fallback enablement, fallback URLs, and fallback probe results.
+- Extended `--self-test` with fallback URL syntax validation, warning when fallback is disabled and critical failure when fallback is enabled.
+
+## 7.13.15 - Msty Consensus Launcher API Model Readiness
+
+- Bumped `MstyConsensusLauncher` to v1.1.0 with `--diagnose-api` for read-only diagnostics against `<msty_api_url>/v1/models`.
+- Changed launch readiness to require HTTP 200, valid JSON, a `data` array, and at least one detected model before launching CONSENSUS.
+- Extended `--status` / `--status --json` with the models endpoint, semantic API readiness, model count, and model IDs.
+- Extended `--self-test` so API down or empty model state remains a warning while config, path, and shortcut checks remain critical.
+
+## 7.13.14 - Msty Consensus Launcher Port Diagnostics
+
+- Bumped `MstyConsensusLauncher` to v1.0.9 with `--diagnose-port` for read-only Msty API port ownership diagnostics.
+- Added configured API URL parsing, API readiness reporting, TCP listener detection, listener PID/process/path output, and logging for `PORT_OCCUPIED_API_NOT_READY` and `PORT_NOT_LISTENING`.
+- Extended `--status` / `--status --json` with Msty API host/port and port listener ownership fields.
+- Extended `--self-test` with a warning when the configured Msty API port is occupied while the API is not ready.
+
+## 7.13.13 - Msty Consensus Launcher Shortcut Repair
+
+- Bumped `MstyConsensusLauncher` to v1.0.8 with `--install-shortcuts` for creating or repairing the Windows Startup shortcut and the user Start Menu shortcut.
+- Added shortcut install logging for `SHORTCUT_INSTALL_STARTED`, `SHORTCUT_CREATED`, `SHORTCUT_REPAIRED`, `SHORTCUT_ALREADY_VALID`, and `SHORTCUT_INSTALL_COMPLETE`.
+- Hardened `--self-test` to validate shortcut target path, arguments, and working directory instead of checking existence only.
+- Updated `--status` / `--status --json` to report shortcut states as `VALID`, `INVALID`, or `MISSING`, and added shortcut paths to JSON output.
+
+## 7.13.12 - Msty Consensus Launcher Mutex and Log Rotation
+
+- Bumped `MstyConsensusLauncher` to v1.0.7 with a named Windows mutex, `Global\MstyConsensusLauncher`, so only one launcher instance can execute launch, recovery, startup, status, self-test, open-logs, or tail-log logic at a time.
+- Added `INSTANCE_ALREADY_RUNNING` handling with a clear operator message and exit code `0` when another launcher instance already owns the mutex.
+- Added launcher log rotation controlled by `log_retention_days` and `max_log_files`, deleting only `msty-consensus-launcher-*.log` files and logging `LOG_ROTATION_STARTED`, `LOG_ROTATION_DELETED`, and `LOG_ROTATION_COMPLETE`.
+- Extended `--status` / `--status --json` with single-instance lock and log-retention fields, and extended `--self-test` with mutex and log-rotation config validation.
+
+## 7.13.11 - Msty Consensus Launcher External Config
+
+- Bumped `MstyConsensusLauncher` to v1.0.6 with external JSON configuration at `G:\Tools\MstyConsensusLauncher\launcher.config.json`.
+- Added automatic default config creation, config loading, malformed-config detection with `CONFIG_INVALID`, and missing-field default fallback logging with `CONFIG_DEFAULT_USED`.
+- Routed Msty API URL, CONSENSUS executable path, log directory, startup delay, stale recovery timeout, stale relaunch delay, known Msty process names, and stale recovery enablement through config while preserving default runtime behavior when no config exists.
+- Extended `--self-test` to validate config and `--status` / `--status --json` to report config path and validity.
+
+## 7.13.10 - Msty Consensus Launcher Maintenance Commands
+
+- Bumped `MstyConsensusLauncher` to v1.0.5 with read-only maintenance commands for operator upkeep.
+- Added `--open-logs` to open `G:\Msty\logs` in Windows Explorer without launching Msty, launching CONSENSUS, or terminating processes.
+- Added `--tail-log` to print the last 80 lines of the latest launcher log with exit codes `0` for log found, `1` for no log found, and `2` for unexpected exceptions.
+- Added `--help` output listing all supported flags: `--startup`, `--no-recover`, `--self-test`, `--status`, `--status --json`, `--open-logs`, `--tail-log`, and `--help`.
+
+## 7.13.9 - Msty Consensus Launcher Status Mode
+
+- Bumped `MstyConsensusLauncher` to v1.0.4 with a read-only `--status` mode for compact operator-facing runtime status.
+- Added `--status --json` for machine-readable status output covering launcher version, Msty API readiness, known Msty process state, CONSENSUS process state, Startup shortcut, Start Menu shortcut, and last log path.
+- Kept `--status` non-invasive: it does not launch Msty, terminate processes, or launch CONSENSUS, and returns `0` for operational or partially operational states, `1` for critical path failures, and `2` for unexpected exceptions.
+
+## 7.13.8 - Msty Consensus Launcher Self-Test
+
+- Bumped `MstyConsensusLauncher` to v1.0.3 with a read-only `--self-test` mode that does not launch Msty, terminate processes, or launch CONSENSUS.
+- Added PASS/WARN/FAIL checks for launcher version, Msty endpoint configuration, port `11964` readiness, known Msty/MstyClaw processes, `CONSENSUS.exe` presence/running state, log directory presence, Startup shortcut `--startup`, and Start Menu pinning shortcut presence.
+- Added self-test result logging under `G:\Msty\logs` with exit code `0` for critical pass, `1` for critical failures, and `2` for unexpected exceptions.
+
+## 7.13.7 - Msty Consensus Launcher Stale Recovery
+
+- Bumped `MstyConsensusLauncher` to v1.0.2 with stale-Msty recovery for cases where known Msty/MstyClaw processes are running but `http://127.0.0.1:11964` never becomes ready.
+- Added `STALE_MSTY_DETECTED` logging, allowlisted Msty/MstyClaw process termination, a randomized 3-5 second recovery pause, Msty relaunch, and a second readiness wait before launching CONSENSUS.
+- Added `--no-recover` to disable process termination while still logging stale-state detection and preventing CONSENSUS launch until Msty readiness is restored.
+
+## 7.13.6 - Msty Consensus Launcher Duplicate Protection
+
+- Added `MstyConsensusLauncher` v1.0.1 with explicit startup-stage logging under `G:\Msty\logs`.
+- Prevented duplicate Msty startup when a known Msty process is already running or the Msty Local AI API at `http://127.0.0.1:11964` is already ready.
+- Prevented duplicate `G:\CONSENSUS_SYSTEM\dist\CONSENSUS.exe` launches by checking the running executable path before starting CONSENSUS.
+- Confirmed the Windows Startup shortcut uses `--startup` for randomized boot-delay launch behavior while the launcher starts child processes detached and exits without terminating Msty services.
+
+## 7.13.5 - CONSENSUS MCP AURELIUS Path Fix
+
+- Fixed CONSENSUS MCP AURELIUS path resolution to use `G:\CONSENSUS_SYSTEM\_ARBITER\Bot` from `PROJECT_ROOT` instead of the obsolete external `G:\CONSENSUS_SYSTEM_ARBITER\Bot` path.
+- Restored `consensus_status` key-file detection for `aurelius_bot.py` and `aurelius_launcher.bat`.
+- Added MCP regression coverage for the corrected AURELIUS root and launcher/bot file presence.
+
+## 7.13.4 - CONSENSUS MCP Server for MstyClaw
+
+- Added local CONSENSUS MCP server for MstyClaw integration with read-only status, logs, model discovery, project tree, safe file read, and text search tools.
+- Added `integrations/mcp/run_consensus_mcp.bat` and MCP registration documentation for local command transport.
+- Added MCP self-test coverage for path traversal rejection, `.env` redaction, Msty health/model discovery shape, AURELIUS log reads, and project tree exclusions.
+
+## 7.13.3 - Theme-Safe UI Scaling Pass
+
+- v7.13.3: Theme-safe UI scaling pass. Enlarged proposal panel, fixed telemetry/header clipping, added bounded logo profiles, and protected long system-status strings.
+- Separated GUI header logo registry from boot-logo assets so the WAR ROOM header uses only `static/logos/gui/*` while BIOS/startup keeps `static/logos/*`.
+- Added explicit full/compact/micro GUI header fallback handling without arbitrary ASCII cropping.
+- Tightened ARBITER voice dispatch reporting so generated audio without confirmed playback is logged as degraded instead of successful.
+- Separated normal operator boot from release validation: `boot.bat` launches quickly, `--safe` runs diagnostics only, `--validate` runs tests/compile/screenshots, and `--test-theme` runs targeted theme/layout checks.
+
 ## 7.13.2 - AURELIUS Telegram Cleanup
 
 - Retired the active legacy ANIMA Telegram bootstrap and archived it under `archive/legacy_bots/anima_bot.py`.

@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
 
 from config.runtime import RuntimeConfig
 from ui.flet_app import build_diagnostics_drawer, build_gui_layout, create_gui_state
+from ui.layout_contract import CENTER_COLUMN_FLEX, LEFT_COLUMN_FLEX, RIGHT_COLUMN_FLEX
 
 
 def _noop(*_args, **_kwargs) -> None:
@@ -36,7 +37,7 @@ def test_diagnostics_drawer_does_not_change_main_layout_contract() -> None:
     body_row = shell.controls[1].content
 
     assert isinstance(shell, ft.Column)
-    assert [control.expand for control in body_row.controls] == [2, 6, 2]
+    assert [control.expand for control in body_row.controls] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
     assert hasattr(layout, "diagnostics_drawer")
 
 

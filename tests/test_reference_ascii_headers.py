@@ -17,7 +17,7 @@ def test_eva_header_is_nerv_reference_derived_ascii() -> None:
     assert "###########################" in logo.text
     assert "NERV GEOMETRIC MAGI MARK" not in logo.text
     assert "CASPER" not in logo.text
-    assert logo.width <= 88
+    assert logo.width == 88
     assert logo.height == 56
 
 
@@ -30,11 +30,11 @@ def test_helldivers_header_is_skull_wings_reference_ascii() -> None:
     assert logo.width <= 88
 
 
-def test_wh40k_header_box_is_tighter_than_previous_wide_box() -> None:
+def test_wh40k_uses_square_header_cell_without_asset_changes() -> None:
     layout = THEME_GRAPHIC_ASSETS["wh40k"].header_layout
 
     assert layout.logo_box_width is not None
-    assert layout.logo_box_width <= 400
+    assert layout.logo_box_width <= 420
     assert layout.logo_box_scroll_enabled is False
 
 
@@ -44,16 +44,16 @@ def test_manual_reviewed_header_boxes_are_tight_without_asset_changes() -> None:
         for key in ("eva", "nerv", "wh40k", "helldivers", "arasaka")
     }
 
-    assert widths["eva"] == 430
-    assert widths["nerv"] == 430
-    assert widths["wh40k"] == 400
+    assert widths["eva"] == 185
+    assert widths["nerv"] == 185
+    assert widths["wh40k"] == 185
     assert widths["helldivers"] == 450
-    assert widths["arasaka"] == 880
+    assert widths["arasaka"] == 640
 
 
 if __name__ == "__main__":
     test_eva_header_is_nerv_reference_derived_ascii()
     test_helldivers_header_is_skull_wings_reference_ascii()
-    test_wh40k_header_box_is_tighter_than_previous_wide_box()
+    test_wh40k_uses_square_header_cell_without_asset_changes()
     test_manual_reviewed_header_boxes_are_tight_without_asset_changes()
     print("test_reference_ascii_headers PASS")

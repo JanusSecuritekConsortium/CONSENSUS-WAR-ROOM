@@ -1,0 +1,79 @@
+{
+  "version": "7.13.3",
+  "timestamp": "2026-06-05T17:44:10+00:00",
+  "python_executable": "G:\\CONSENSUS_SYSTEM\\.venv\\Scripts\\python.exe",
+  "summary": {
+    "status": "PASS_WITH_NOTES",
+    "notes": [
+      "Theme/layout targeted validation passed.",
+      "Active compile passed.",
+      "Active manifest verification is CLEAN.",
+      "Runtime snapshot passed.",
+      "Runtime bundle exported.",
+      "Full --fast suite exceeded the outer command timeout after 900 seconds with no failures observed before cutoff; not recorded as a completed PASS."
+    ]
+  },
+  "checks": {
+    "theme_validation": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\boot.py --test-theme",
+      "status": "PASS",
+      "tests": [
+        "test_theme_safe_ui_scaling",
+        "test_theme_header_rendering",
+        "test_header_telemetry_no_overlap_health_badge",
+        "test_top_header_telemetry_layout",
+        "test_status_panel_cleanup",
+        "test_submit_button_visible_all_themes",
+        "test_no_scrambled_ascii_logos",
+        "test_no_placeholder_logos",
+        "test_wh40k_logo_full_visibility",
+        "test_logo_registry"
+      ]
+    },
+    "targeted_layout_tests": {
+      "status": "PASS",
+      "tests": [
+        "tests\\test_arbiter_panel_bounds.py",
+        "tests\\test_header_telemetry_vertical_offset.py",
+        "tests\\test_proposal_panel_not_overlapping_verdict.py"
+      ]
+    },
+    "fast_suite": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\run_tests.py --fast --timeout 180",
+      "status": "TIMEOUT",
+      "outer_timeout_seconds": 900,
+      "observed_failures_before_timeout": 0,
+      "note": "The command produced many PASS results but did not reach a final summary within the external command timeout."
+    },
+    "active_compile": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\compile_active_tree.py",
+      "status": "PASS",
+      "compiled_files": 456
+    },
+    "active_manifest": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\verify_active_manifest.py",
+      "status": "CLEAN",
+      "manifest_path": "G:\\CONSENSUS_SYSTEM\\reports\\active_manifest_7.13.3.json",
+      "current_file_count": 490
+    },
+    "runtime_snapshot": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\runtime_snapshot.py --compact",
+      "status": "PASS"
+    },
+    "runtime_bundle": {
+      "command": ".\\.venv\\Scripts\\python.exe tools\\export_runtime_bundle.py",
+      "status": "PASS",
+      "path": "G:\\CONSENSUS_SYSTEM\\reports\\runtime_bundle_7.13.3_20260605T174337Z.zip"
+    }
+  },
+  "ui_fix_scope": {
+    "arasaka_arbiter_reasoning_clipping": "fixed via tighter verdict panel spacing and bounded reasoning stream height",
+    "system_status_clipping": "fixed via taller header bar and status panel height based on header height",
+    "live_telemetry_size": "increased header telemetry text and graph sizes while preserving bounded line counts",
+    "proposal_panel_idle_space": "reduced fixed proposal region and tightened proposal/verdict gap"
+  },
+  "screenshot_status": "MANUAL_REVIEW_REQUIRED",
+  "screenshot_note": "Automated capture remains non-gating. Manual screenshots are authoritative for this visual pass.",
+  "runtime_bundle_path": "G:\\CONSENSUS_SYSTEM\\reports\\runtime_bundle_7.13.3_20260605T174337Z.zip",
+  "active_manifest_path": "G:\\CONSENSUS_SYSTEM\\reports\\active_manifest_7.13.3.json"
+}

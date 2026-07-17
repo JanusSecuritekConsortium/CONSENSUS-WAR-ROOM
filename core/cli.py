@@ -114,21 +114,39 @@ def resolve_runtime_provider_status(config, nodes) -> dict:
     return health_check(config, nodes)
 
 
+def _endpoint_source_from_payload(payload: dict) -> str:
+    source = payload.get("endpoint_source")
+    if source:
+        return str(source)
+    detailed_source = str(payload.get("source") or "").lower()
+    if detailed_source.startswith("env_"):
+        return "env"
+    if detailed_source.startswith("config_"):
+        return "config"
+    if detailed_source.startswith("default_"):
+        return "default"
+    return "default"
+
+
 def _print_provider_resolution(payload: dict, verbose: bool = False) -> None:
     requested_backend = payload.get("requested_backend") or payload.get("backend") or "--"
     resolved_backend = payload.get("active_backend") or payload.get("backend") or "--"
     requested_endpoint = payload.get("requested_endpoint") or payload.get("base_url") or "--"
     resolved_endpoint = payload.get("base_url") or "--"
+    endpoint_source = _endpoint_source_from_payload(payload)
     fallback_active = bool(payload.get("fallback_active"))
 
     print(f"REQUESTED BACKEND: {requested_backend}")
     print(f"REQUESTED ENDPOINT: {requested_endpoint}")
+    print(f"ENDPOINT SOURCE: {endpoint_source}")
     print(f"REQUESTED BACKEND STATUS: {str(payload.get('requested_backend_status', payload.get('status', 'unknown'))).upper()}")
     print(f"FALLBACK ACTIVATED: {'YES' if fallback_active else 'NO'}")
     if fallback_active:
         print(f"FALLBACK REASON: {payload.get('fallback_reason') or 'endpoint unreachable'}")
     print(f"RESOLVED BACKEND: {resolved_backend}")
     print(f"RESOLVED ENDPOINT: {resolved_endpoint}")
+    print(f"SELECTED BACKEND: {payload.get('selected_backend') or resolved_backend}")
+    print(f"SELECTED ENDPOINT: {payload.get('selected_endpoint') or resolved_endpoint}")
     if not verbose:
         return
     print("RESOLUTION CHAIN:")

@@ -22,7 +22,7 @@ class DummyGlados:
             ok = True
             mode = "rvc"
             audio_path = "arbiter.wav"
-            metadata = {}
+            metadata = {"playback": "winsound", "played": True}
 
         return Result()
 
