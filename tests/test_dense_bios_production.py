@@ -10,9 +10,12 @@ if str(ROOT) not in sys.path:
 
 from config.version import SYSTEM_AUTHOR, SYSTEM_LAST_PATCH_DATE, SYSTEM_VERSION
 from ui.animations.bios_boot import (
+    BootHardwareSnapshot,
     DENSE_READY_LINES,
     _boot_color_values,
+    capture_boot_hardware_snapshot,
     generate_dense_bios_boot_lines,
+    hardware_diagnostic_rows,
 )
 from ui.animations.loading import format_loading_bar, get_loading_style
 
@@ -44,8 +47,12 @@ def test_dense_bios_is_complete_for_every_gui_theme() -> None:
         assert f"BUILD: v{SYSTEM_VERSION}" in text
         assert "SYSTEM DIAGNOSTICS" in text
         assert "CONSENSUS SYSTEM CONFIGURATION" in text
-        assert "MEMORY BANK" in text
-        assert "032768 MB" in text
+        assert "SYSTEM RAM" in text
+        assert "32,768 MB / 32.0 GiB" in text
+        assert "CPU CORES" in text
+        assert "PHYSICAL CORES" in text
+        assert "CPU THREADS" in text
+        assert "LOGICAL THREADS" in text
         assert get_loading_style(theme_key).label in text
         assert format_loading_bar(theme_key, 100) in text
         assert DENSE_READY_LINES[theme_key] in text
@@ -76,3 +83,53 @@ def test_each_theme_loading_bar_has_distinct_geometry() -> None:
     assert "MACHINE-SPIRIT PURITY {" in bars["wh40k"]
     assert "DEMOCRATIC AUTHORIZATION >>>" in bars["helldivers"]
     assert "DUAL-CHANNEL SYNC <" in bars["janus"]
+
+
+def test_hardware_snapshot_is_refreshed_for_each_boot_generation(monkeypatch) -> None:
+    detected = {
+        "memory": (32768, False),
+        "topology": (8, 16, False),
+    }
+    monkeypatch.setattr(
+        "ui.animations.bios_boot._system_memory_mb",
+        lambda: detected["memory"],
+    )
+    monkeypatch.setattr(
+        "ui.animations.bios_boot._system_cpu_topology",
+        lambda: detected["topology"],
+    )
+
+    first = "\n".join(generate_dense_bios_boot_lines("eva", include_logo=False, include_loading=False))
+    detected["memory"] = (65536, False)
+    detected["topology"] = (16, 24, False)
+    second = "\n".join(generate_dense_bios_boot_lines("eva", include_logo=False, include_loading=False))
+
+    assert "8 PHYSICAL CORES" in first
+    assert "16 LOGICAL THREADS" in first
+    assert "32,768 MB / 32.0 GiB" in first
+    assert "16 PHYSICAL CORES" in second
+    assert "24 LOGICAL THREADS" in second
+    assert "65,536 MB / 64.0 GiB" in second
+
+
+def test_hardware_snapshot_accepts_deterministic_memory_override() -> None:
+    snapshot = capture_boot_hardware_snapshot(total_memory_mb=16384)
+
+    assert snapshot.total_memory_mb == 16384
+    assert snapshot.physical_cores >= 1
+    assert snapshot.logical_threads >= snapshot.physical_cores
+
+
+def test_hardware_fallback_values_are_explicitly_marked() -> None:
+    rows = hardware_diagnostic_rows(
+        BootHardwareSnapshot(
+            total_memory_mb=65536,
+            physical_cores=24,
+            logical_threads=24,
+            memory_fallback=True,
+            topology_fallback=True,
+        )
+    )
+
+    assert all(row[-1] == "WARN" for row in rows)
+    assert all("FALLBACK" in row[2] for row in rows)
