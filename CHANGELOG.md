@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.15.0 - Live Boot Hardware Detection
+
+- Added a fresh boot-time hardware snapshot showing usable system RAM, physical CPU cores, and logical CPU threads in every active theme BIOS.
+- Replaced the simulated `CO-CPU / 256 SEGMENTS` diagnostic with explicit, human-readable physical-core and logical-thread rows.
+- Reused the same live hardware rows in the standalone themed BIOS previews, with clearly marked fallback values when direct topology detection is unavailable.
+
 ## 7.14.0 - Dense Interchangeable BIOS Promotion
 
 - Promoted the reviewed dense old-BIOS startup layout into the active console and Flet boot paths for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.
