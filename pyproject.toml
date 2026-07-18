@@ -1,6 +1,6 @@
 [project]
 name = "consensus-war-room"
-version = "7.15.1"
+version = "7.15.2"
 description = "Local multi-agent tribunal for proposal review and auditable consensus decisions."
 authors = [{ name = "Erhardt Von Grupten Mundt" }]
 requires-python = ">=3.10"

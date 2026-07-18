@@ -4,6 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools import runtime_snapshot
+from core.data_sources.rss_store import RSS_INTELLIGENCE_DB_PATH
 
 
 def test_runtime_snapshot_exposes_rss_primary_status() -> None:
@@ -19,7 +20,7 @@ def test_runtime_snapshot_exposes_rss_primary_status() -> None:
         assert status["mode"] == "RSS_PRIMARY"
         assert status["poll_interval_seconds"] == 1200
         assert status["packet_item_limit"] == 12
-        assert status["database_path"].endswith(r"_ARBITER\cache\data_sources\intelligence.db")
+        assert Path(status["database_path"]) == RSS_INTELLIGENCE_DB_PATH
     finally:
         runtime_snapshot.health_check = original_health
         runtime_snapshot.build_dependency_report = original_dependencies
