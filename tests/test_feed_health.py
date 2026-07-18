@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.intelligence.bellator_context_builder import FEED_CACHE_DIR
 from core.intelligence.feed_health import build_feed_health_report, print_env_template
 from config.version import SYSTEM_VERSION
 
@@ -79,9 +80,9 @@ def test_health_output_includes_cache_paths() -> None:
         report = build_feed_health_report(attempt_live=False)
 
         for source in report["sources"]:
-            path = source["cache_file_path"]
-            assert "G:\\CONSENSUS_SYSTEM\\_ARBITER\\cache\\feeds" in path
-            assert path.endswith(f"{source['source']}.json")
+            path = Path(source["cache_file_path"])
+            assert path.parent == FEED_CACHE_DIR
+            assert path.name == f"{source['source']}.json"
     finally:
         _restore_env(previous)
 

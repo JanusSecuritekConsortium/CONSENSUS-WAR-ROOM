@@ -1,0 +1,3638 @@
+{
+  "version": "7.15.1",
+  "created_at": "2026-07-18T07:16:56.344971+00:00",
+  "root": "G:\\CONSENSUS_SYSTEM",
+  "excluded_parts": [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "_ARBITER",
+    "__pycache__",
+    "archive",
+    "build",
+    "cache",
+    "dist",
+    "external",
+    "generated",
+    "htmlcov",
+    "legacy",
+    "logs",
+    "node_modules",
+    "outputs",
+    "reports",
+    "runtime",
+    "rvc_env",
+    "tts_audio",
+    "venv"
+  ],
+  "file_count": 515,
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "ef63de32249a3048c44682d37ee3302dd0fc919450c4a12054fdf8ce62ec4978",
+      "size": 81979,
+      "modified_timestamp": "2026-07-18T07:15:50+00:00",
+      "modified_time_ns": 1784358950000000000
+    },
+    {
+      "path": "CONSENSUS.spec",
+      "sha256": "ca009e916ea1334c1b9f9c211e9e2185ee0b9ce95d51ba6a44dc43bdd3f1b78b",
+      "size": 1259,
+      "modified_timestamp": "2026-05-31T20:43:46+00:00",
+      "modified_time_ns": 1780260226000000000
+    },
+    {
+      "path": "CONSENSUS_ARCHITECTURE.md",
+      "sha256": "1b45573b295b8cbde45b2c3af7280b07cf8b0e034f0c73a5aeab72f51869ebee",
+      "size": 31550,
+      "modified_timestamp": "2026-07-18T06:02:34+00:00",
+      "modified_time_ns": 1784354554000000000
+    },
+    {
+      "path": "MSTY_STUDIO_INTEGRATION.md",
+      "sha256": "51c40e83f28ba1cc3e6bf0b9e1dbebc32af52334b0a5313f6049508f9c54a25a",
+      "size": 9017,
+      "modified_timestamp": "2026-05-12T18:28:24+00:00",
+      "modified_time_ns": 1778610504000000000
+    },
+    {
+      "path": "README.md",
+      "sha256": "6ee64497304cd24dfa6039125d93b22f88b63f9eb1ec7bd36fd1a3e49df67406",
+      "size": 10748,
+      "modified_timestamp": "2026-06-05T19:21:46+00:00",
+      "modified_time_ns": 1780687306000000000
+    },
+    {
+      "path": "READMEe.md",
+      "sha256": "2044b911430285dd58a783fb57ccdfb63ec4c4d145aff75c6d5c257a91051ff9",
+      "size": 3531,
+      "modified_timestamp": "2026-05-18T02:17:00+00:00",
+      "modified_time_ns": 1779070620000000000
+    },
+    {
+      "path": "assistant/__init__.py",
+      "sha256": "243995995964426b76a58ac9d3412d3b483405edf4ea23f7d5a3ef20295ae55e",
+      "size": 166,
+      "modified_timestamp": "2026-05-10T09:44:38+00:00",
+      "modified_time_ns": 1778406278000000000
+    },
+    {
+      "path": "assistant/aurelius_persona.yaml",
+      "sha256": "d44139facd29804034b11da66428a6151f3093e38c8d13259894f67a2498f8f0",
+      "size": 570,
+      "modified_timestamp": "2026-05-10T09:44:38+00:00",
+      "modified_time_ns": 1778406278000000000
+    },
+    {
+      "path": "assistant/aurelius_runtime.py",
+      "sha256": "a4e2c1f74cd6a756674083366463f96a528092ce18a9d48ba2dbb6829351b34d",
+      "size": 7720,
+      "modified_timestamp": "2026-05-19T09:06:28+00:00",
+      "modified_time_ns": 1779181588000000000
+    },
+    {
+      "path": "boot.bat",
+      "sha256": "4133904603cb0d9b1f19725ffb1c7c0b0d2b07e4179ea794a3bf147f61594065",
+      "size": 133,
+      "modified_timestamp": "2026-05-31T14:59:12+00:00",
+      "modified_time_ns": 1780239552000000000
+    },
+    {
+      "path": "boot.ps1",
+      "sha256": "e0db380559972ae8d7d827367d88b555e982617312e628830038cad7c2968749",
+      "size": 560,
+      "modified_timestamp": "2026-06-05T15:48:20+00:00",
+      "modified_time_ns": 1780674500000000000
+    },
+    {
+      "path": "build_exe.bat",
+      "sha256": "d2c45e2b8d5669c04e2d511bb6888cc7df1b5b89f8ffc0ae4775bbb179413ddf",
+      "size": 177,
+      "modified_timestamp": "2026-05-31T16:56:32+00:00",
+      "modified_time_ns": 1780246592000000000
+    },
+    {
+      "path": "build_exe.py",
+      "sha256": "f27bf8ae291f074df05de37f8977dca2720c8737dd828631075f6ace5765fd8d",
+      "size": 2011,
+      "modified_timestamp": "2026-07-18T06:04:38+00:00",
+      "modified_time_ns": 1784354678000000000
+    },
+    {
+      "path": "config/__init__.py",
+      "sha256": "abf4a74f201d09f556c479012cda0cd8db7547b0ac34d464c5cabd89dcdc4b74",
+      "size": 44,
+      "modified_timestamp": "2026-05-06T17:54:22+00:00",
+      "modified_time_ns": 1778090062000000000
+    },
+    {
+      "path": "config/agents.py",
+      "sha256": "29469d04dc62b0fbeb6f16676a4de64bab5b416c534c5ddcaa4f05a6711a7ab2",
+      "size": 3225,
+      "modified_timestamp": "2026-05-07T10:23:56+00:00",
+      "modified_time_ns": 1778149436000000000
+    },
+    {
+      "path": "config/data_sources.json",
+      "sha256": "66c554f72549a783afb016936713daa4611a8dd8ab8c784acedd4d30cfdb7fec",
+      "size": 7032,
+      "modified_timestamp": "2026-06-01T12:06:50+00:00",
+      "modified_time_ns": 1780315610000000000
+    },
+    {
+      "path": "config/names.py",
+      "sha256": "c914426414f8684b570739f68099d6fc324ba047d29767812f13aaaafd764ae3",
+      "size": 506,
+      "modified_timestamp": "2026-05-28T17:41:06+00:00",
+      "modified_time_ns": 1779990066000000000
+    },
+    {
+      "path": "config/nodes.py",
+      "sha256": "7a8b01be52341211f83ec756d832cf55a82e73ec06a27b0be9f1fcd41089df03",
+      "size": 2371,
+      "modified_timestamp": "2026-05-28T17:41:06+00:00",
+      "modified_time_ns": 1779990066000000000
+    },
+    {
+      "path": "config/runtime.py",
+      "sha256": "9ac35dc96b4cca5776832f495a10a730e424c2eebcb90b29d33e908c6c835add",
+      "size": 4083,
+      "modified_timestamp": "2026-05-31T14:58:38+00:00",
+      "modified_time_ns": 1780239518000000000
+    },
+    {
+      "path": "config/version.py",
+      "sha256": "4a4d09c77e49bad4b8f97d7136f6e100b37724703fa42184b2662e024abf6178",
+      "size": 225,
+      "modified_timestamp": "2026-07-18T07:15:48+00:00",
+      "modified_time_ns": 1784358948000000000
+    },
+    {
+      "path": "consensus_launcher.py",
+      "sha256": "3d23567a7e7fd37eacf447d28ce0a4f96cef83614a49f04c02dd4a26a63fe3ef",
+      "size": 122,
+      "modified_timestamp": "2026-05-31T16:56:32+00:00",
+      "modified_time_ns": 1780246592000000000
+    },
+    {
+      "path": "consensus_war_room_genesis.py",
+      "sha256": "d279ce44d05a61fc987fb90f3951723c1771e200fe65d58dfa6bd21215002c2e",
+      "size": 344,
+      "modified_timestamp": "2026-05-06T17:57:38+00:00",
+      "modified_time_ns": 1778090258000000000
+    },
+    {
+      "path": "core/__init__.py",
+      "sha256": "db6faecfc49627d5f0444e57f813846fcdc2e260bebbaae6e36cd66573f136f2",
+      "size": 39,
+      "modified_timestamp": "2026-05-06T17:54:22+00:00",
+      "modified_time_ns": 1778090062000000000
+    },
+    {
+      "path": "core/active_compile.py",
+      "sha256": "3fc9fe12daf7b0f61f019824d8c3738e5ab40c90946f934a79362f7c5b815228",
+      "size": 3840,
+      "modified_timestamp": "2026-05-31T19:39:34+00:00",
+      "modified_time_ns": 1780256374000000000
+    },
+    {
+      "path": "core/cli.py",
+      "sha256": "c108d3c6e5af0905cb1092234af06a1296e2f0b49c889aca02b5016b01b5de53",
+      "size": 26826,
+      "modified_timestamp": "2026-06-18T13:41:34+00:00",
+      "modified_time_ns": 1781790094000000000
+    },
+    {
+      "path": "core/connectors/__init__.py",
+      "sha256": "7171910176fdbbb0db63286430c5505a1cb4ad24632d2a4f486ca9b4af45be60",
+      "size": 50,
+      "modified_timestamp": "2026-05-06T17:59:36+00:00",
+      "modified_time_ns": 1778090376000000000
+    },
+    {
+      "path": "core/data_sources/__init__.py",
+      "sha256": "55426b83463d0effa3f899362dedb812bb22b17325f50b90d1961912ccc4d207",
+      "size": 166,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "core/data_sources/cache.py",
+      "sha256": "17f36ad6ec7e15ac47364274d491ffc3dd7efdd7caa782f38111ccb8078575d7",
+      "size": 2180,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "core/data_sources/enrichment.py",
+      "sha256": "8c353e5f81fe615aac3d2f1689e234bde98a5b73bf59047445cd01297e6deca1",
+      "size": 1210,
+      "modified_timestamp": "2026-05-31T20:43:24+00:00",
+      "modified_time_ns": 1780260204000000000
+    },
+    {
+      "path": "core/data_sources/health.py",
+      "sha256": "4539ac20a5b6d305eea1679f56d450fe8bbbb973231675572e762767c67a6d53",
+      "size": 1935,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "core/data_sources/models.py",
+      "sha256": "ccfa696c6a6535d970b84036d4530731a7360734461691d6c11ae40cac0f027b",
+      "size": 1913,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "core/data_sources/normalization.py",
+      "sha256": "1fd17f8a0d00b5ceea3c1660dc5dc27525faf79e568134844c854f0751e7e9db",
+      "size": 1049,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "core/data_sources/registry.py",
+      "sha256": "38d12a2b953f77b041f7766da23c7dce8247cee1edd1b6844dcc3663a224b8ae",
+      "size": 5200,
+      "modified_timestamp": "2026-06-01T06:33:22+00:00",
+      "modified_time_ns": 1780295602000000000
+    },
+    {
+      "path": "core/data_sources/rss_backbone.py",
+      "sha256": "eee103cb29796509d1438594d4dd21f1b12d2dc7afb7e4a9c04f1dca5fef310f",
+      "size": 7639,
+      "modified_timestamp": "2026-06-01T12:07:38+00:00",
+      "modified_time_ns": 1780315658000000000
+    },
+    {
+      "path": "core/data_sources/rss_store.py",
+      "sha256": "c491707cb6260510254fecb9b07a3cd719014cdf821ed9462e8ff46da0b42237",
+      "size": 14891,
+      "modified_timestamp": "2026-06-01T06:33:22+00:00",
+      "modified_time_ns": 1780295602000000000
+    },
+    {
+      "path": "core/data_sources/source_config.py",
+      "sha256": "154b046d4e815f9541bc5fbb5e49031fcc706e31795f21b35be6078b0e78ba8d",
+      "size": 3276,
+      "modified_timestamp": "2026-05-31T20:54:12+00:00",
+      "modified_time_ns": 1780260852000000000
+    },
+    {
+      "path": "core/decision_trace.py",
+      "sha256": "9299cf2a4df942824e16caf4576a342d555b4635903f7757c74cae45b6d30b13",
+      "size": 1539,
+      "modified_timestamp": "2026-05-24T15:23:38+00:00",
+      "modified_time_ns": 1779636218000000000
+    },
+    {
+      "path": "core/export/__init__.py",
+      "sha256": "ed355ee48be98522c01b8ff6fc5fb207ba282df12148167c978770194fe11b76",
+      "size": 316,
+      "modified_timestamp": "2026-05-27T16:43:10+00:00",
+      "modified_time_ns": 1779900190000000000
+    },
+    {
+      "path": "core/export/dossier.py",
+      "sha256": "71f2342291e1f99c1605492fef87c50c518428292834fecfdb896e6d08f8e4e0",
+      "size": 6778,
+      "modified_timestamp": "2026-05-27T16:43:10+00:00",
+      "modified_time_ns": 1779900190000000000
+    },
+    {
+      "path": "core/export/simulation.py",
+      "sha256": "f148801275378bc96819753d40789174e9b01fd3cff7943b08503dfb68434a48",
+      "size": 4443,
+      "modified_timestamp": "2026-05-31T14:55:54+00:00",
+      "modified_time_ns": 1780239354000000000
+    },
+    {
+      "path": "core/export/verdict.py",
+      "sha256": "03ece39a104b282ba13ecbbec7d6c465c12ffac0853ad0e1eda2bc7fcb76b669",
+      "size": 4272,
+      "modified_timestamp": "2026-05-27T15:10:36+00:00",
+      "modified_time_ns": 1779894636000000000
+    },
+    {
+      "path": "core/health.py",
+      "sha256": "a2bd36aaf4acff3b107be5f4db3ead8bd7e061fe25b9698535f0082a0ba3a612",
+      "size": 9948,
+      "modified_timestamp": "2026-05-31T16:55:30+00:00",
+      "modified_time_ns": 1780246530000000000
+    },
+    {
+      "path": "core/history.py",
+      "sha256": "0ae022a378a95df6ed9705d959ae9c4bbd58759ca1342b51b3552dbcbec54c34",
+      "size": 7494,
+      "modified_timestamp": "2026-05-20T13:21:04+00:00",
+      "modified_time_ns": 1779283264000000000
+    },
+    {
+      "path": "core/intelligence/__init__.py",
+      "sha256": "e992ff4f19cbe392f72c148388dc6f7a866a1dab6bd01678587de4b94ea03eb8",
+      "size": 47,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "core/intelligence/bellator_context_builder.py",
+      "sha256": "4998bf9fdeb2ff3aad4bdedd4dacbd273f47316f5a296764bfe5bd00f7f3fffa",
+      "size": 15474,
+      "modified_timestamp": "2026-06-01T06:33:22+00:00",
+      "modified_time_ns": 1780295602000000000
+    },
+    {
+      "path": "core/intelligence/bellator_feed_normalizer.py",
+      "sha256": "24eb52d70cf46e8f61c90c2a1845e1d26048959e586c4723dcff18533e0fa833",
+      "size": 10466,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "core/intelligence/bellator_risk_scorer.py",
+      "sha256": "930e6b1546bf5be796e852b37a13ae152c1e9d92d8f7a8dacc8340ad3f5c5ac7",
+      "size": 3214,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "core/intelligence/feed_health.py",
+      "sha256": "72b1565c21e1aa6dfeddcf761ef43fdf42325408651beb1f21c6e075dd0590d7",
+      "size": 8514,
+      "modified_timestamp": "2026-05-20T13:16:18+00:00",
+      "modified_time_ns": 1779282978000000000
+    },
+    {
+      "path": "core/intelligence/geospatial_filters.py",
+      "sha256": "f4ae5c3289e8fbe079dcc641ac008229745c09cc23ba311f41adf958b0b5baea",
+      "size": 10474,
+      "modified_timestamp": "2026-05-19T14:19:52+00:00",
+      "modified_time_ns": 1779200392000000000
+    },
+    {
+      "path": "core/intelligence/strategic_regions.py",
+      "sha256": "e90e5ae799098c406a602e0e2bd1ebe1456edf07346c16f620a5ac8909bfa642",
+      "size": 6630,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "core/knowledge/__init__.py",
+      "sha256": "07c441e66375c4806ac9b7279d2eca924a9b14fc4e3e9aaae5cce9d479e78f96",
+      "size": 319,
+      "modified_timestamp": "2026-05-07T10:29:10+00:00",
+      "modified_time_ns": 1778149750000000000
+    },
+    {
+      "path": "core/knowledge/registry.py",
+      "sha256": "5bf9a60a2103f4db5c086136602e80477105a0940af4153a21ef9f9050ab3d4d",
+      "size": 1226,
+      "modified_timestamp": "2026-05-07T10:25:02+00:00",
+      "modified_time_ns": 1778149502000000000
+    },
+    {
+      "path": "core/knowledge/retrieval.py",
+      "sha256": "9322139176455f022643a66fec725c11e60c3d497d41757812b1bee40beed577",
+      "size": 884,
+      "modified_timestamp": "2026-05-07T10:25:02+00:00",
+      "modified_time_ns": 1778149502000000000
+    },
+    {
+      "path": "core/knowledge/source.py",
+      "sha256": "87fc5a245ccd81fa8a48d200aa709a9dcec169ca85e9dd8230a074e21511895c",
+      "size": 458,
+      "modified_timestamp": "2026-05-07T10:25:02+00:00",
+      "modified_time_ns": 1778149502000000000
+    },
+    {
+      "path": "core/llm/__init__.py",
+      "sha256": "17f55a04ed2481e096ab29be96efde3e9e6b49e228b6a0aacde08024a92a5fa6",
+      "size": 41,
+      "modified_timestamp": "2026-05-06T17:54:22+00:00",
+      "modified_time_ns": 1778090062000000000
+    },
+    {
+      "path": "core/llm/backends.py",
+      "sha256": "84663fd59c8b795b65a357f06842eb4c2571849da32a0610e5dc9ff874ca85de",
+      "size": 6738,
+      "modified_timestamp": "2026-05-20T13:06:54+00:00",
+      "modified_time_ns": 1779282414000000000
+    },
+    {
+      "path": "core/llm/prompts.py",
+      "sha256": "910f44e2f74c41cc2a776507a843d079f9b3254ed7db258a65064160c00babd1",
+      "size": 312,
+      "modified_timestamp": "2026-05-09T08:55:52+00:00",
+      "modified_time_ns": 1778316952000000000
+    },
+    {
+      "path": "core/logging.py",
+      "sha256": "85f37d976156afc47aa8978c900b80c1abd82c2fc952652a241714d47b08221a",
+      "size": 2169,
+      "modified_timestamp": "2026-05-28T04:37:26+00:00",
+      "modified_time_ns": 1779943046000000000
+    },
+    {
+      "path": "core/manual_visual_review.py",
+      "sha256": "315ffef4431618b032ade40243d7a5445ae949482dd8f09e1075ad4d66d41254",
+      "size": 5740,
+      "modified_timestamp": "2026-05-28T13:33:50+00:00",
+      "modified_time_ns": 1779975230000000000
+    },
+    {
+      "path": "core/memory/__init__.py",
+      "sha256": "7f4fc8462fae09befd6096236e652966e0f3639fc36c9ec0109fa9a321966206",
+      "size": 70,
+      "modified_timestamp": "2026-05-06T17:59:36+00:00",
+      "modified_time_ns": 1778090376000000000
+    },
+    {
+      "path": "core/memory/context.py",
+      "sha256": "24d399aee66762d9813ed21e78ceb81aa4a9076bf958b61b1f45c276bbe44bae",
+      "size": 478,
+      "modified_timestamp": "2026-05-09T08:55:30+00:00",
+      "modified_time_ns": 1778316930000000000
+    },
+    {
+      "path": "core/memory/retrieval.py",
+      "sha256": "f81fd575b15d8f665588bf9d3e1a4138071dea5a66cdbaeb3bcd305f2e34487d",
+      "size": 4580,
+      "modified_timestamp": "2026-05-09T09:01:08+00:00",
+      "modified_time_ns": 1778317268000000000
+    },
+    {
+      "path": "core/memory/session.py",
+      "sha256": "258752445db615c31eb83e95757466b7fa362acd3a8bcf24b313bb198c27bde3",
+      "size": 5959,
+      "modified_timestamp": "2026-05-09T08:54:44+00:00",
+      "modified_time_ns": 1778316884000000000
+    },
+    {
+      "path": "core/memory/store.py",
+      "sha256": "2d811d1774c15c41eb4e2d6e50c7978dff736edde0c9c3dadd3f7b9dc70ac6ff",
+      "size": 5306,
+      "modified_timestamp": "2026-05-07T10:17:22+00:00",
+      "modified_time_ns": 1778149042000000000
+    },
+    {
+      "path": "core/models.py",
+      "sha256": "1b86281c000a45f6c64e9bee86a03312adf50d7b5c13ae4b38a2478d9ffb74d6",
+      "size": 4003,
+      "modified_timestamp": "2026-05-20T13:04:44+00:00",
+      "modified_time_ns": 1779282284000000000
+    },
+    {
+      "path": "core/paths.py",
+      "sha256": "d3d2ba79f0a3e4c00622d8b0f77a16a181ebbfff0f4da49c1b003def356d2a0b",
+      "size": 1415,
+      "modified_timestamp": "2026-05-31T16:55:10+00:00",
+      "modified_time_ns": 1780246510000000000
+    },
+    {
+      "path": "core/prompting/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "size": 36,
+      "modified_timestamp": "2026-05-09T08:55:46+00:00",
+      "modified_time_ns": 1778316946000000000
+    },
+    {
+      "path": "core/prompting/assembler.py",
+      "sha256": "761f4d3cd6306a7b31029253781abd2e149da5d2b24d22fba73e4231664cab5b",
+      "size": 2955,
+      "modified_timestamp": "2026-05-31T20:43:46+00:00",
+      "modified_time_ns": 1780260226000000000
+    },
+    {
+      "path": "core/proposals/__init__.py",
+      "sha256": "4a3a867d7e953eec2b4079aa6b5ff3726c5b8f76d8e36c47e5f765ca384f8344",
+      "size": 1188,
+      "modified_timestamp": "2026-05-27T16:46:08+00:00",
+      "modified_time_ns": 1779900368000000000
+    },
+    {
+      "path": "core/proposals/lifecycle.py",
+      "sha256": "666e775fa1ff2ac80d6b8017a1898e91600945369d57f6943d1e63f4e693f382",
+      "size": 5174,
+      "modified_timestamp": "2026-05-27T16:42:14+00:00",
+      "modified_time_ns": 1779900134000000000
+    },
+    {
+      "path": "core/proposals/store.py",
+      "sha256": "771e3216371be1b02161426c45f829597c326d326a16f90addf1b2979e09135b",
+      "size": 8590,
+      "modified_timestamp": "2026-05-27T16:41:28+00:00",
+      "modified_time_ns": 1779900088000000000
+    },
+    {
+      "path": "core/proposals/templates.py",
+      "sha256": "0d8a45efd795eeac830cd18252ba5c0f055871c2d8bc4fe0130d4b9bfe17c7a5",
+      "size": 6201,
+      "modified_timestamp": "2026-05-27T15:10:36+00:00",
+      "modified_time_ns": 1779894636000000000
+    },
+    {
+      "path": "core/simulation/__init__.py",
+      "sha256": "38b66d3619b92300d8b758af23e182fc25ce722d37ce6b3018453996e768a606",
+      "size": 1167,
+      "modified_timestamp": "2026-05-31T15:04:26+00:00",
+      "modified_time_ns": 1780239866000000000
+    },
+    {
+      "path": "core/simulation/branches.py",
+      "sha256": "342c6fbf293f0bf9ea668664af07bdbf3d7590b4be47b82c2a634015e537e32d",
+      "size": 2474,
+      "modified_timestamp": "2026-05-31T14:54:42+00:00",
+      "modified_time_ns": 1780239282000000000
+    },
+    {
+      "path": "core/simulation/engine.py",
+      "sha256": "fda2736b36b2db12aca4cb892e8d207dc9683a649a51a14c9f30dbeec79dc4ea",
+      "size": 1148,
+      "modified_timestamp": "2026-05-31T14:55:00+00:00",
+      "modified_time_ns": 1780239300000000000
+    },
+    {
+      "path": "core/simulation/models.py",
+      "sha256": "c8a541266ddc2ecfe345d5d0f7c073ed99684290406cfbaef7a3c591ddfeda02",
+      "size": 1985,
+      "modified_timestamp": "2026-05-31T14:54:32+00:00",
+      "modified_time_ns": 1780239272000000000
+    },
+    {
+      "path": "core/simulation/registry.py",
+      "sha256": "dbc7f4b2cdc9e7dbda683f96d7381e0282bc87428b244fb4118a9b1377d1f044",
+      "size": 1892,
+      "modified_timestamp": "2026-05-27T19:04:26+00:00",
+      "modified_time_ns": 1779908666000000000
+    },
+    {
+      "path": "core/simulation/scenarios.py",
+      "sha256": "378236a7f46aa458cbdf3b715aa761ba6c15d58733ea54e7a3dd2f827627d204",
+      "size": 1619,
+      "modified_timestamp": "2026-05-31T14:54:52+00:00",
+      "modified_time_ns": 1780239292000000000
+    },
+    {
+      "path": "core/simulation/store.py",
+      "sha256": "51689bf36101d9876393ef05260e923be0ec9659091c51f5af19becb922b5182",
+      "size": 6318,
+      "modified_timestamp": "2026-05-31T14:55:20+00:00",
+      "modified_time_ns": 1780239320000000000
+    },
+    {
+      "path": "core/telemetry/__init__.py",
+      "sha256": "15600e9be0babf621116057f056ad9c1f2c6966a021fbbdae96f5900979f2ed6",
+      "size": 12482,
+      "modified_timestamp": "2026-06-23T02:19:10+00:00",
+      "modified_time_ns": 1782181150000000000
+    },
+    {
+      "path": "core/themes.py",
+      "sha256": "6bb136b12c859edd61db833c90d71353c6c8fd25eabe4d09c10f90e765ce8bd9",
+      "size": 225,
+      "modified_timestamp": "2026-05-07T10:18:38+00:00",
+      "modified_time_ns": 1778149118000000000
+    },
+    {
+      "path": "core/tribunal.py",
+      "sha256": "c9377f0b82c74dd6d81778d742f1beed012ba245c55f860ee3c83ef2f47ee947",
+      "size": 5660,
+      "modified_timestamp": "2026-05-28T19:21:48+00:00",
+      "modified_time_ns": 1779996108000000000
+    },
+    {
+      "path": "core/tribunal_events.py",
+      "sha256": "cabfefc284edcb401376bc3547affd1c6cde87c2a255b918b4c8d8f5f68ac375",
+      "size": 8509,
+      "modified_timestamp": "2026-05-28T04:35:32+00:00",
+      "modified_time_ns": 1779942932000000000
+    },
+    {
+      "path": "core/voting/__init__.py",
+      "sha256": "7a783305909d1d09912685e94f37c7ed0cb2c6a3d4d9afddeeaae9eb1086daa7",
+      "size": 235,
+      "modified_timestamp": "2026-05-07T10:25:46+00:00",
+      "modified_time_ns": 1778149546000000000
+    },
+    {
+      "path": "core/voting/classifier.py",
+      "sha256": "18d9fdabc50398fe46d27fc8a650d11c398d372b68d6e0b8445777d4fdd5bd61",
+      "size": 4704,
+      "modified_timestamp": "2026-05-24T14:56:02+00:00",
+      "modified_time_ns": 1779634562000000000
+    },
+    {
+      "path": "core/voting/engine.py",
+      "sha256": "7e425b16bbbcb3efed05d4ad42aaaf5ff8d9ff3bdf986a500afa0ed10bb6027d",
+      "size": 8686,
+      "modified_timestamp": "2026-05-24T14:56:20+00:00",
+      "modified_time_ns": 1779634580000000000
+    },
+    {
+      "path": "core/voting/orchestrator.py",
+      "sha256": "90edeaa993259c5e8135cc3ac1e8b4f0369d52f997ae2d9c12071d8f00f151bf",
+      "size": 5122,
+      "modified_timestamp": "2026-05-31T20:43:46+00:00",
+      "modified_time_ns": 1780260226000000000
+    },
+    {
+      "path": "core/voting/parser.py",
+      "sha256": "df5fd3bb3791abd27152e557b7ea471ef9583ebad34ee5299c69a83945611053",
+      "size": 4667,
+      "modified_timestamp": "2026-05-20T13:13:10+00:00",
+      "modified_time_ns": 1779282790000000000
+    },
+    {
+      "path": "core/voting/rules.py",
+      "sha256": "3bad57aab03415bd8bae5e00498e2d7241b4d1544ce9b3cac0788415aa19c45b",
+      "size": 4848,
+      "modified_timestamp": "2026-05-24T14:56:02+00:00",
+      "modified_time_ns": 1779634562000000000
+    },
+    {
+      "path": "integrations/__init__.py",
+      "sha256": "679d65029d88acf5ca9f73452900ffc4c3df90892ea2319fcb6a5a8d08425eca",
+      "size": 38,
+      "modified_timestamp": "2026-05-06T17:57:04+00:00",
+      "modified_time_ns": 1778090224000000000
+    },
+    {
+      "path": "integrations/acled/__init__.py",
+      "sha256": "aa8fe563b7280c9c720eac67c1808bd09759fb8c94c5277a284a9931d7bf3474",
+      "size": 61,
+      "modified_timestamp": "2026-05-31T20:42:38+00:00",
+      "modified_time_ns": 1780260158000000000
+    },
+    {
+      "path": "integrations/acled/client.py",
+      "sha256": "3e34b5f373084d15e2c98276da290bbe6c66227eb29b7afb22c157da83244d5b",
+      "size": 3665,
+      "modified_timestamp": "2026-05-31T20:54:12+00:00",
+      "modified_time_ns": 1780260852000000000
+    },
+    {
+      "path": "integrations/factal/__init__.py",
+      "sha256": "dbfc9f132c2bd0f972f1e529403dc27befb18a153f9472c9322637e1b0103115",
+      "size": 63,
+      "modified_timestamp": "2026-05-31T20:42:38+00:00",
+      "modified_time_ns": 1780260158000000000
+    },
+    {
+      "path": "integrations/factal/client.py",
+      "sha256": "ebe87f9bf8e2b120b3d41e8b85c8f41ca99f4c57ccdc52279c9aa10dcf346384",
+      "size": 2384,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "integrations/feeds/__init__.py",
+      "sha256": "288e4a82f96e84886068aa814f8b4c74cd7faf511067820e81dc02d9b51c37bb",
+      "size": 64,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "integrations/feeds/abuse_ch_client.py",
+      "sha256": "ee595e6a4065a4a918103a7c1a69dccedfd249680e9a39fecf75f1a34a3b26e8",
+      "size": 2295,
+      "modified_timestamp": "2026-05-19T12:25:14+00:00",
+      "modified_time_ns": 1779193514000000000
+    },
+    {
+      "path": "integrations/feeds/acled_client.py",
+      "sha256": "21d94d782e4a35703ba5d5f94069f66ea0fddc554e5fd4a94e99622d80b2240f",
+      "size": 7479,
+      "modified_timestamp": "2026-05-19T14:31:24+00:00",
+      "modified_time_ns": 1779201084000000000
+    },
+    {
+      "path": "integrations/feeds/cloudflare_radar_client.py",
+      "sha256": "6a8f2603d0bcd363f61e08e5af5eedec5066e66bfa4c573b38cf72cf0a5837a8",
+      "size": 2654,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "integrations/feeds/nasa_firms_client.py",
+      "sha256": "876c15191b5e6ef832bcea896cfd08c0e3de44d56c0222deb0c2254adad80f3c",
+      "size": 2033,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "integrations/gdelt/__init__.py",
+      "sha256": "b25778279b0194f7d7cb3d538211d57ca64082b044a097610d31e1050656ae41",
+      "size": 61,
+      "modified_timestamp": "2026-05-31T20:42:38+00:00",
+      "modified_time_ns": 1780260158000000000
+    },
+    {
+      "path": "integrations/gdelt/client.py",
+      "sha256": "0cc8b6ae99c1c26681c9cbe3d89bc407d25d5ecaafdbeb2c55ac417854f054a6",
+      "size": 2397,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "integrations/ground_news/__init__.py",
+      "sha256": "09f1cd25e5ec822d1d17b842b6f64944d6efa7d83355bf458dcca3c7097a8f13",
+      "size": 71,
+      "modified_timestamp": "2026-05-31T20:42:38+00:00",
+      "modified_time_ns": 1780260158000000000
+    },
+    {
+      "path": "integrations/ground_news/client.py",
+      "sha256": "7df142254b393ec758ade9ef46d3c1a85ed6fe87a8febd54ec2b5cad6cff911f",
+      "size": 1162,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "integrations/ibkr/__init__.py",
+      "sha256": "af499565c6502c8b2f1272f0a1307d7f18de1661b1640391fc53296e26a76f9c",
+      "size": 59,
+      "modified_timestamp": "2026-05-31T20:42:40+00:00",
+      "modified_time_ns": 1780260160000000000
+    },
+    {
+      "path": "integrations/ibkr/client.py",
+      "sha256": "2f99877a5d1b8e0879c3e0f3916f40624aeb69ea345e76eba90ded62e40ba090",
+      "size": 2774,
+      "modified_timestamp": "2026-05-31T21:18:04+00:00",
+      "modified_time_ns": 1780262284000000000
+    },
+    {
+      "path": "integrations/mcp/README.md",
+      "sha256": "87d00a0f310c7595ae33e476534c9c613b53082c0634255c39cf83a548bdd5ca",
+      "size": 1341,
+      "modified_timestamp": "2026-06-06T05:47:36+00:00",
+      "modified_time_ns": 1780724856000000000
+    },
+    {
+      "path": "integrations/mcp/__init__.py",
+      "sha256": "b0e7c3821a27098f4d5e9958e2a3c0d72b362cba9ad68d21eb1913eecf22f19f",
+      "size": 67,
+      "modified_timestamp": "2026-06-05T19:20:52+00:00",
+      "modified_time_ns": 1780687252000000000
+    },
+    {
+      "path": "integrations/mcp/consensus_mcp_server.py",
+      "sha256": "f10f5a31edff7ad9bcffc4a9048448c598fae9c687a3e1d34ab8cde975588103",
+      "size": 17813,
+      "modified_timestamp": "2026-06-06T06:14:28+00:00",
+      "modified_time_ns": 1780726468000000000
+    },
+    {
+      "path": "integrations/mcp/run_consensus_mcp.bat",
+      "sha256": "a2604795f845b702170b81133c3df4ffba1caa7893a40cd238bdf11035318b18",
+      "size": 143,
+      "modified_timestamp": "2026-06-05T19:20:54+00:00",
+      "modified_time_ns": 1780687254000000000
+    },
+    {
+      "path": "integrations/mcp/test_consensus_mcp.py",
+      "sha256": "9d6ac8dd3fa05318841cad8ec4ee7de39cdb9ccf1eca4f5361de3b2c2fbf3181",
+      "size": 4143,
+      "modified_timestamp": "2026-06-06T06:14:44+00:00",
+      "modified_time_ns": 1780726484000000000
+    },
+    {
+      "path": "integrations/msty/__init__.py",
+      "sha256": "69509e3b1117435ef6872df0290406413ab9d2b13a249784e726b2fbb27dddc8",
+      "size": 110,
+      "modified_timestamp": "2026-05-07T10:24:42+00:00",
+      "modified_time_ns": 1778149482000000000
+    },
+    {
+      "path": "integrations/msty/api.py",
+      "sha256": "b65db1cf382788ed0c000ad8fde62f549c09dfafdefe88115b7f9695e75ed959",
+      "size": 69336,
+      "modified_timestamp": "2026-06-18T13:41:18+00:00",
+      "modified_time_ns": 1781790078000000000
+    },
+    {
+      "path": "integrations/msty/aurelius.py",
+      "sha256": "deb1c702b312aa83a0eddc6e460fe2de0703016abda47581941fb63ae0c1cc90",
+      "size": 2577,
+      "modified_timestamp": "2026-05-07T10:27:38+00:00",
+      "modified_time_ns": 1778149658000000000
+    },
+    {
+      "path": "integrations/msty/aurelius_provider.py",
+      "sha256": "49410c726e8715141524e911dd8b7bc555002d20bc8934a6d939c7b64486a1a3",
+      "size": 5163,
+      "modified_timestamp": "2026-06-18T13:40:00+00:00",
+      "modified_time_ns": 1781790000000000000
+    },
+    {
+      "path": "integrations/msty/runtime.py",
+      "sha256": "8f88fccb64620f0a9ac7284c843f6360d8ac5afe6fdfc4db979861f58ee43add",
+      "size": 11996,
+      "modified_timestamp": "2026-05-24T14:57:28+00:00",
+      "modified_time_ns": 1779634648000000000
+    },
+    {
+      "path": "integrations/msty_claw/__init__.py",
+      "sha256": "0807784566c2191d96586e6eca8a69d01dbeff909cdea0129e368a8396338ae6",
+      "size": 113,
+      "modified_timestamp": "2026-05-19T09:04:42+00:00",
+      "modified_time_ns": 1779181482000000000
+    },
+    {
+      "path": "integrations/msty_claw/aurelius_hooks.py",
+      "sha256": "832ab6052baeae823c870dde0c87fafb982440ae8e733341b557bdf0dea8fbcb",
+      "size": 1278,
+      "modified_timestamp": "2026-05-19T09:04:42+00:00",
+      "modified_time_ns": 1779181482000000000
+    },
+    {
+      "path": "integrations/ollama/__init__.py",
+      "sha256": "cc31a9b49bbf2e47820bb0f8a4212ffb1373ced1e6b8f780c20a00afe11bdf47",
+      "size": 50,
+      "modified_timestamp": "2026-05-06T17:57:04+00:00",
+      "modified_time_ns": 1778090224000000000
+    },
+    {
+      "path": "integrations/ollama/backend.py",
+      "sha256": "114b9065c3ad347659a36ad821200f1e719f5c96bda730a49732b37c49e5e1e4",
+      "size": 74,
+      "modified_timestamp": "2026-05-06T17:57:04+00:00",
+      "modified_time_ns": 1778090224000000000
+    },
+    {
+      "path": "integrations/rss/__init__.py",
+      "sha256": "79065b5f618f3890632c02937b56950677dde218e87a13bab6c84486cd04704c",
+      "size": 57,
+      "modified_timestamp": "2026-05-31T20:42:40+00:00",
+      "modified_time_ns": 1780260160000000000
+    },
+    {
+      "path": "integrations/rss/client.py",
+      "sha256": "9a97730c7f728b0d3f63def1a525b636ccba88c46935caadf3356b21c4a33b09",
+      "size": 2441,
+      "modified_timestamp": "2026-06-01T06:36:54+00:00",
+      "modified_time_ns": 1780295814000000000
+    },
+    {
+      "path": "integrations/rss/probe.py",
+      "sha256": "94f24648e3569f42d305e66d720e4534a94626ef24e8a8728a8540875f40d1c4",
+      "size": 9056,
+      "modified_timestamp": "2026-06-01T12:06:50+00:00",
+      "modified_time_ns": 1780315610000000000
+    },
+    {
+      "path": "integrations/search/__init__.py",
+      "sha256": "723401b7d21d5436784d225aabb29e1923825e8f945c51901740024abe011781",
+      "size": 63,
+      "modified_timestamp": "2026-05-31T20:42:40+00:00",
+      "modified_time_ns": 1780260160000000000
+    },
+    {
+      "path": "integrations/search/client.py",
+      "sha256": "98dcc746c755451dbbcc93dfdc01cb54c3b5a287e7664346f7cf58eabf5fc99c",
+      "size": 1693,
+      "modified_timestamp": "2026-05-31T20:42:40+00:00",
+      "modified_time_ns": 1780260160000000000
+    },
+    {
+      "path": "main.py",
+      "sha256": "51515f47ed9a9e13bbcd4db131a8a0f2514f39acf74b4f757c8882ba053d83ac",
+      "size": 67,
+      "modified_timestamp": "2026-05-06T17:57:28+00:00",
+      "modified_time_ns": 1778090248000000000
+    },
+    {
+      "path": "packaging/windows_version_info.txt",
+      "sha256": "7a018aa6dabd76f26e58d1ae87eb47846d94c807d3dc79e82dd93f0a6493339b",
+      "size": 826,
+      "modified_timestamp": "2026-07-18T07:15:50+00:00",
+      "modified_time_ns": 1784358950000000000
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "d63c7f68108bd77351d73ee64fa4b4f7fe994ed877f24bb5e572966fff234eff",
+      "size": 1048,
+      "modified_timestamp": "2026-07-18T07:15:48+00:00",
+      "modified_time_ns": 1784358948000000000
+    },
+    {
+      "path": "requirements-dev.txt",
+      "sha256": "fc19b597e3a3efcc403f960c9b7e62a279a313478e80c241424d83761dceeb32",
+      "size": 49,
+      "modified_timestamp": "2026-05-31T16:56:32+00:00",
+      "modified_time_ns": 1780246592000000000
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "a730b0b075430a9182c6e92068c4b3d686695ab897383ba163758b08d92b70fa",
+      "size": 211,
+      "modified_timestamp": "2026-07-18T07:15:46+00:00",
+      "modified_time_ns": 1784358946000000000
+    },
+    {
+      "path": "tests/__init__.py",
+      "sha256": "34d823e7f0c842c70e98991284a935d22437e557ff66a404bfd49f163bb79e56",
+      "size": 51,
+      "modified_timestamp": "2026-05-27T11:27:26+00:00",
+      "modified_time_ns": 1779881246000000000
+    },
+    {
+      "path": "tests/helpers/__init__.py",
+      "sha256": "4b6787375f6e036261d173661ad3b634953433408d043e97d71183efcc740d72",
+      "size": 61,
+      "modified_timestamp": "2026-05-27T11:27:10+00:00",
+      "modified_time_ns": 1779881230000000000
+    },
+    {
+      "path": "tests/helpers/gui_harness.py",
+      "sha256": "90f2aafb5f802eeeebb0b7f9385404a26f234fb4a8294732b367dd69b9b11880",
+      "size": 4155,
+      "modified_timestamp": "2026-05-27T11:27:10+00:00",
+      "modified_time_ns": 1779881230000000000
+    },
+    {
+      "path": "tests/smoke_test.py",
+      "sha256": "4a64891d52179937f402f6ff897245a2d8885ebf472a2689583993924c360a57",
+      "size": 1435,
+      "modified_timestamp": "2026-05-20T13:12:34+00:00",
+      "modified_time_ns": 1779282754000000000
+    },
+    {
+      "path": "tests/test_acled_adapter_requires_credentials.py",
+      "sha256": "0a3603655939a221b4111f93ccaf3cd651993446adcf89a226840435216bff63",
+      "size": 1265,
+      "modified_timestamp": "2026-05-31T20:54:22+00:00",
+      "modified_time_ns": 1780260862000000000
+    },
+    {
+      "path": "tests/test_acled_oauth_resolution.py",
+      "sha256": "3ed73ff173c2a13e2d98ffb65ce54593f998f59fd114e7796f9b5d801b517c0b",
+      "size": 3874,
+      "modified_timestamp": "2026-05-19T14:30:08+00:00",
+      "modified_time_ns": 1779201008000000000
+    },
+    {
+      "path": "tests/test_active_compile.py",
+      "sha256": "0d81faf4a29fa7969541b327b8e7c2bad26426b2de5597cd0de64ac5016af2d2",
+      "size": 1499,
+      "modified_timestamp": "2026-05-19T13:33:22+00:00",
+      "modified_time_ns": 1779197602000000000
+    },
+    {
+      "path": "tests/test_active_manifest.py",
+      "sha256": "c6d449a06be567f69dbc3687ce3455222b26281ed14a88bed5c22d9e55c02bc5",
+      "size": 1919,
+      "modified_timestamp": "2026-05-24T17:38:54+00:00",
+      "modified_time_ns": 1779644334000000000
+    },
+    {
+      "path": "tests/test_aeternum_data_enrichment.py",
+      "sha256": "bd8df2442116ac0af9f6e5d02a0033a92e3c7d1e78ba5803bc12d073153181f0",
+      "size": 729,
+      "modified_timestamp": "2026-05-31T20:45:28+00:00",
+      "modified_time_ns": 1780260328000000000
+    },
+    {
+      "path": "tests/test_agent_profiles.py",
+      "sha256": "65ff1a867e98df4cc42487db56ab502a88adbbf4497dd06a2c67e33b10baf052",
+      "size": 819,
+      "modified_timestamp": "2026-05-07T10:28:04+00:00",
+      "modified_time_ns": 1778149684000000000
+    },
+    {
+      "path": "tests/test_app_icon_asset_exists.py",
+      "sha256": "f5e942a7fe5204d639326fcbcff9de470c7d222631386a56c1417d465c70d96a",
+      "size": 1266,
+      "modified_timestamp": "2026-05-27T19:48:54+00:00",
+      "modified_time_ns": 1779911334000000000
+    },
+    {
+      "path": "tests/test_app_icon_configured.py",
+      "sha256": "c9fcda3fa2aacc47d8853e81162ed08afb9839a5a51ede0279715037336d15b4",
+      "size": 1252,
+      "modified_timestamp": "2026-05-27T19:49:08+00:00",
+      "modified_time_ns": 1779911348000000000
+    },
+    {
+      "path": "tests/test_app_icon_not_old_default.py",
+      "sha256": "3f37e47fc818701b2fa31e6552817ca3552031bdd43ad3b0a01f0fdece7bef76",
+      "size": 1350,
+      "modified_timestamp": "2026-05-27T19:49:20+00:00",
+      "modified_time_ns": 1779911360000000000
+    },
+    {
+      "path": "tests/test_arasaka_status_readability.py",
+      "sha256": "19f753d45516cd462ba9537d5229b5f698f5e1ea2d25f65e72d03163bed12142",
+      "size": 895,
+      "modified_timestamp": "2026-05-27T19:06:54+00:00",
+      "modified_time_ns": 1779908814000000000
+    },
+    {
+      "path": "tests/test_arbiter_panel_bounds.py",
+      "sha256": "761a2c4f5862fc511d2fd32df8f3ea6263fdb6f9c267e0e1b4bff126373a56bf",
+      "size": 4989,
+      "modified_timestamp": "2026-06-20T16:13:22+00:00",
+      "modified_time_ns": 1781972002000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_announces_classification_failure.py",
+      "sha256": "94fd4ec748be26ba0ce313b7da7af27bb97948441f4c5996910b1a46497038ff",
+      "size": 1303,
+      "modified_timestamp": "2026-05-28T19:20:40+00:00",
+      "modified_time_ns": 1779996040000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_announces_no_consensus.py",
+      "sha256": "a1f5885131a01d6b950ec80c51247843f1009f7b82357d3be1ca94d474374718",
+      "size": 1098,
+      "modified_timestamp": "2026-05-28T19:20:28+00:00",
+      "modified_time_ns": 1779996028000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_dispatch_once_per_proposal.py",
+      "sha256": "f4f822cdadb2985a5960b143f8eeebb5e699445a04c78fd7f8206d8b424d8062",
+      "size": 1905,
+      "modified_timestamp": "2026-06-05T11:16:48+00:00",
+      "modified_time_ns": 1780658208000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_not_on_repaint.py",
+      "sha256": "cea3331567001aa77e33d1d789782f036cb682f29dc93c22401f3fa78c2db24d",
+      "size": 1517,
+      "modified_timestamp": "2026-05-28T19:22:34+00:00",
+      "modified_time_ns": 1779996154000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_playback_confirmation.py",
+      "sha256": "5409c180c2d795021b08d37cd432ff02be9561aeb97613cc35f052527649d3cf",
+      "size": 1751,
+      "modified_timestamp": "2026-06-05T11:17:04+00:00",
+      "modified_time_ns": 1780658224000000000
+    },
+    {
+      "path": "tests/test_arbiter_voice_uses_glados_not_aurelius.py",
+      "sha256": "ba7f91ef339d7fa9b2e4046827240537542283fb63186cf5952307d0d5e650a2",
+      "size": 1127,
+      "modified_timestamp": "2026-05-28T19:21:14+00:00",
+      "modified_time_ns": 1779996074000000000
+    },
+    {
+      "path": "tests/test_ascii_logo_whitespace_preservation.py",
+      "sha256": "ea2258b0bc95773e2e3b0d689de35ad56cbc09884fb1553462930f7b9a26cfeb",
+      "size": 5057,
+      "modified_timestamp": "2026-05-09T21:12:04+00:00",
+      "modified_time_ns": 1778361124000000000
+    },
+    {
+      "path": "tests/test_aurelius_provider_config.py",
+      "sha256": "3e2dbd0548ba6504b659fe07045c6bc61254eea2ea70f92e2a950c8887625185",
+      "size": 6546,
+      "modified_timestamp": "2026-06-18T13:40:50+00:00",
+      "modified_time_ns": 1781790050000000000
+    },
+    {
+      "path": "tests/test_aurelius_runtime.py",
+      "sha256": "60d981652be2db54cec959fc1ad7c0f05c8aa28be2b45efe31caf4048723ae94",
+      "size": 2012,
+      "modified_timestamp": "2026-05-17T09:44:14+00:00",
+      "modified_time_ns": 1779011054000000000
+    },
+    {
+      "path": "tests/test_aurelius_voice_events.py",
+      "sha256": "f9dcbc8ebfb2267bab44c7f343392303f580ed41152ad3c8485561977e954a04",
+      "size": 8178,
+      "modified_timestamp": "2026-05-20T13:12:48+00:00",
+      "modified_time_ns": 1779282768000000000
+    },
+    {
+      "path": "tests/test_backend_override_priority.py",
+      "sha256": "da75d2086ff658bd4937b8adbeb966594f4aa87cecd16e06cad29e07483813c0",
+      "size": 3563,
+      "modified_timestamp": "2026-06-18T13:40:20+00:00",
+      "modified_time_ns": 1781790020000000000
+    },
+    {
+      "path": "tests/test_backend_readiness_retry.py",
+      "sha256": "6610975bdb457caf1f53b333b10d0680fdbce46227eb63adebfaa9343a547797",
+      "size": 2539,
+      "modified_timestamp": "2026-05-13T17:18:36+00:00",
+      "modified_time_ns": 1778692716000000000
+    },
+    {
+      "path": "tests/test_backend_retry_before_fallback.py",
+      "sha256": "758ca1477d3cad7ea3f8ea286e98f40d8e21bbd0885683215c846dd998345446",
+      "size": 2255,
+      "modified_timestamp": "2026-05-13T17:16:18+00:00",
+      "modified_time_ns": 1778692578000000000
+    },
+    {
+      "path": "tests/test_bellator_data_enrichment.py",
+      "sha256": "96fb24d0cd316063fb4ae0426fadb5b4a13fdf4684916492568f7cec5589c8ca",
+      "size": 756,
+      "modified_timestamp": "2026-05-31T20:45:28+00:00",
+      "modified_time_ns": 1780260328000000000
+    },
+    {
+      "path": "tests/test_bellator_feed_intelligence.py",
+      "sha256": "e6d4beabf9304dbbb17839a261bfdfe67980469021bb71c41ca40d0a07af1546",
+      "size": 5685,
+      "modified_timestamp": "2026-05-28T04:45:04+00:00",
+      "modified_time_ns": 1779943504000000000
+    },
+    {
+      "path": "tests/test_bellator_geospatial_filters.py",
+      "sha256": "a41d8bb5301014885e0ac919a1669c7800d3aace4aaa8bd89821b34d87e31470",
+      "size": 4753,
+      "modified_timestamp": "2026-05-19T14:19:52+00:00",
+      "modified_time_ns": 1779200392000000000
+    },
+    {
+      "path": "tests/test_bellator_rss_bounded_packet.py",
+      "sha256": "0ee9b395255d4d936623a6a7e41f4be239bae12871c76a05fce7827b03e2d470",
+      "size": 1343,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_bios_boot.py",
+      "sha256": "988835c7305ea35670a5e87425abf83bf0a53f6745e9416046844efd1d856bba",
+      "size": 8816,
+      "modified_timestamp": "2026-07-16T10:43:20+00:00",
+      "modified_time_ns": 1784198600000000000
+    },
+    {
+      "path": "tests/test_bios_post_formatting.py",
+      "sha256": "d4a86761995ac97b66cf499fde5972cc771a1f5c28102c745d439abf4e284168",
+      "size": 4059,
+      "modified_timestamp": "2026-07-17T07:43:18+00:00",
+      "modified_time_ns": 1784274198000000000
+    },
+    {
+      "path": "tests/test_bios_provider_status_dynamic.py",
+      "sha256": "0b9dfad3d795a96e5aaf32f125f3c3e53ea5abf69e0b5a7f1126a9f492fd4f28",
+      "size": 3518,
+      "modified_timestamp": "2026-05-10T07:04:58+00:00",
+      "modified_time_ns": 1778396698000000000
+    },
+    {
+      "path": "tests/test_boot_entrypoint_resolution.py",
+      "sha256": "5f5fc6f5eac88e2ab55df823cd567210f1ba108faa543a73418eaa4daff5cf4d",
+      "size": 1596,
+      "modified_timestamp": "2026-07-16T10:50:48+00:00",
+      "modified_time_ns": 1784199048000000000
+    },
+    {
+      "path": "tests/test_boot_launcher_exists.py",
+      "sha256": "bae76f301f596c22267906e59288f54a84bf54c0d95b0ad1cbd58ff8209522f7",
+      "size": 618,
+      "modified_timestamp": "2026-06-05T15:48:42+00:00",
+      "modified_time_ns": 1780674522000000000
+    },
+    {
+      "path": "tests/test_boot_logo_text_spacing.py",
+      "sha256": "ec79abaa22184fe5300a78b4a54b8daef0ca10e341097cf3d7994782ba669fbc",
+      "size": 3125,
+      "modified_timestamp": "2026-07-17T07:43:16+00:00",
+      "modified_time_ns": 1784274196000000000
+    },
+    {
+      "path": "tests/test_boot_phrase_randomization.py",
+      "sha256": "5435aecbf921024c6c357401567097e165d8b05cb64013fa7a401f798f9c6985",
+      "size": 1929,
+      "modified_timestamp": "2026-05-27T20:24:52+00:00",
+      "modified_time_ns": 1779913492000000000
+    },
+    {
+      "path": "tests/test_boot_phrase_registry.py",
+      "sha256": "ffa31352f180e08424ba8cb955cabfcb06c1805cefe7e065641966da5214b2fd",
+      "size": 1841,
+      "modified_timestamp": "2026-05-27T20:24:38+00:00",
+      "modified_time_ns": 1779913478000000000
+    },
+    {
+      "path": "tests/test_boot_phrase_variations.py",
+      "sha256": "856cfafc07a0e3b45ea644e19a33a91638331e4e874440e44e2c83456a968794",
+      "size": 2284,
+      "modified_timestamp": "2026-05-17T09:43:26+00:00",
+      "modified_time_ns": 1779011006000000000
+    },
+    {
+      "path": "tests/test_boot_provider_resolution_consistency.py",
+      "sha256": "e8fbc1015c696a8d8f8d37b90966a2e704e5769d0c28175f82232a5770ce8d9d",
+      "size": 3855,
+      "modified_timestamp": "2026-05-10T07:05:20+00:00",
+      "modified_time_ns": 1778396720000000000
+    },
+    {
+      "path": "tests/test_boot_starts_gui.py",
+      "sha256": "16d359acbb9208baae57ae88a88f8cec56ff1c76cd7c1b28eff005cd744423f4",
+      "size": 1484,
+      "modified_timestamp": "2026-05-31T15:02:50+00:00",
+      "modified_time_ns": 1780239770000000000
+    },
+    {
+      "path": "tests/test_boot_theme_override.py",
+      "sha256": "858df615ba9fca834e3ae1eec70e679fa531b7675becd7059d10a91d63ab8854",
+      "size": 529,
+      "modified_timestamp": "2026-05-31T15:02:26+00:00",
+      "modified_time_ns": 1780239746000000000
+    },
+    {
+      "path": "tests/test_boot_validation_modes.py",
+      "sha256": "b1668b2b5bbbf3714a0ca9e572727874ab6f74fffa213d278a98b80b9ffe28aa",
+      "size": 3256,
+      "modified_timestamp": "2026-06-05T15:49:18+00:00",
+      "modified_time_ns": 1780674558000000000
+    },
+    {
+      "path": "tests/test_branch_expansion_deterministic.py",
+      "sha256": "8c93e3b5318d040c585e769711d848d908447d02128b06ddff7232f350c750c2",
+      "size": 1484,
+      "modified_timestamp": "2026-05-31T15:00:50+00:00",
+      "modified_time_ns": 1780239650000000000
+    },
+    {
+      "path": "tests/test_branch_generation.py",
+      "sha256": "1d28569caa136c8682cf5deec9b47046addb28ff8919d3b814674ec549961649",
+      "size": 782,
+      "modified_timestamp": "2026-05-27T19:06:52+00:00",
+      "modified_time_ns": 1779908812000000000
+    },
+    {
+      "path": "tests/test_branch_probability_scoring.py",
+      "sha256": "7f9066b1d072539723e0a9ba6d52aa9f28a713d22d8c456caff8246ad5e65495",
+      "size": 770,
+      "modified_timestamp": "2026-05-27T19:06:52+00:00",
+      "modified_time_ns": 1779908812000000000
+    },
+    {
+      "path": "tests/test_branch_tree_viewer.py",
+      "sha256": "b1939f18bf8dd49626bcf2711876f6db6c0011cd9fb73455e68da221fdff024f",
+      "size": 1725,
+      "modified_timestamp": "2026-05-31T15:00:34+00:00",
+      "modified_time_ns": 1780239634000000000
+    },
+    {
+      "path": "tests/test_command_palette.py",
+      "sha256": "35b8882516e3a57f6b32fc9bbf0ed778f62afc13dddae2fb98273ec5ba89d464",
+      "size": 1907,
+      "modified_timestamp": "2026-05-24T17:18:16+00:00",
+      "modified_time_ns": 1779643096000000000
+    },
+    {
+      "path": "tests/test_consensus_mcp_server.py",
+      "sha256": "1cc1fb69ad5c1f7b92b110e8705a29eb02a06c5081f06b2b7f485c62ee0bd3bb",
+      "size": 1963,
+      "modified_timestamp": "2026-06-05T19:22:24+00:00",
+      "modified_time_ns": 1780687344000000000
+    },
+    {
+      "path": "tests/test_consensus_spec_engine.py",
+      "sha256": "f287159a0bc4b13f78a4945ec03f7082f019da4d882b34385663c8160fb01bc5",
+      "size": 5646,
+      "modified_timestamp": "2026-05-24T14:59:54+00:00",
+      "modified_time_ns": 1779634794000000000
+    },
+    {
+      "path": "tests/test_context_retrieval.py",
+      "sha256": "f16a4707ccaecb038f6ce5795ac15f7c6930cb0c9f4a832ae31caedda1a541f8",
+      "size": 1979,
+      "modified_timestamp": "2026-05-09T08:58:58+00:00",
+      "modified_time_ns": 1778317138000000000
+    },
+    {
+      "path": "tests/test_convergence_visualization.py",
+      "sha256": "40a7b803c8b88c478748e920a35991abb0431b8d4c3e3239e8b8ddde73aa23f1",
+      "size": 631,
+      "modified_timestamp": "2026-05-28T04:40:18+00:00",
+      "modified_time_ns": 1779943218000000000
+    },
+    {
+      "path": "tests/test_data_cache_ttl.py",
+      "sha256": "779ef3253051e6f3bbbdb0fa8bdec14d73b60871c973e6f7589a99df9bf2f3c6",
+      "size": 504,
+      "modified_timestamp": "2026-05-31T20:45:26+00:00",
+      "modified_time_ns": 1780260326000000000
+    },
+    {
+      "path": "tests/test_data_source_adapter_interface.py",
+      "sha256": "93d466384480e2d19f6925aa89045f57728d101bb980dee3db628416d06323d9",
+      "size": 618,
+      "modified_timestamp": "2026-05-31T20:45:26+00:00",
+      "modified_time_ns": 1780260326000000000
+    },
+    {
+      "path": "tests/test_data_source_config_redaction.py",
+      "sha256": "5c4a137424e10441c4fb681fa834a9bb7c487851331eab91027bb6dee956c2b2",
+      "size": 677,
+      "modified_timestamp": "2026-05-31T20:45:26+00:00",
+      "modified_time_ns": 1780260326000000000
+    },
+    {
+      "path": "tests/test_decision_trace_reader.py",
+      "sha256": "296687c8df1242a1b0d26a1dfa6c30da83e03e28b5857cd7a3c3d8f5ca252393",
+      "size": 1682,
+      "modified_timestamp": "2026-05-24T15:25:24+00:00",
+      "modified_time_ns": 1779636324000000000
+    },
+    {
+      "path": "tests/test_decision_trace_viewer.py",
+      "sha256": "f2976fe3eb919d469e0c2e0c4a0a79a301393230dc0341800df488805e1946e4",
+      "size": 2169,
+      "modified_timestamp": "2026-05-24T17:18:42+00:00",
+      "modified_time_ns": 1779643122000000000
+    },
+    {
+      "path": "tests/test_dense_bios_production.py",
+      "sha256": "9e1d4bb4c1f84b3d986e787033f6155ebcd7765c3546a9541297d7ac42d4cf0b",
+      "size": 4556,
+      "modified_timestamp": "2026-07-18T06:03:44+00:00",
+      "modified_time_ns": 1784354624000000000
+    },
+    {
+      "path": "tests/test_dependency_check.py",
+      "sha256": "63a40fba49eff3620c39628db4ec26b6cc4a2c522254040226c2b0c6b23b44a1",
+      "size": 1927,
+      "modified_timestamp": "2026-05-27T09:55:52+00:00",
+      "modified_time_ns": 1779875752000000000
+    },
+    {
+      "path": "tests/test_deterministic_tribunal_event_order.py",
+      "sha256": "18ab00f28d72ec403f15e8b1d6ebe9486f9641baa5461ed031fc15daad277bb5",
+      "size": 962,
+      "modified_timestamp": "2026-05-28T04:45:18+00:00",
+      "modified_time_ns": 1779943518000000000
+    },
+    {
+      "path": "tests/test_diagnostics_button_nonblocking.py",
+      "sha256": "fcfc7fbc92da23b854dd9154c9f615dc34dd48d1e018d69da00c34e433c8bbd6",
+      "size": 1026,
+      "modified_timestamp": "2026-05-28T18:18:30+00:00",
+      "modified_time_ns": 1779992310000000000
+    },
+    {
+      "path": "tests/test_diagnostics_cached_snapshot.py",
+      "sha256": "6b5d4883a571745c09e7adc11a0e972e639eeb9b8248597249ef0ab625b05ab3",
+      "size": 2021,
+      "modified_timestamp": "2026-05-28T18:18:30+00:00",
+      "modified_time_ns": 1779992310000000000
+    },
+    {
+      "path": "tests/test_diagnostics_overlay_reentrant_guard.py",
+      "sha256": "3f6119f8b7b08ef2a75ee7def139a55acf66e4bfbde6d3d0ea7076525dfff289",
+      "size": 1631,
+      "modified_timestamp": "2026-05-28T18:18:30+00:00",
+      "modified_time_ns": 1779992310000000000
+    },
+    {
+      "path": "tests/test_dossier_export_json.py",
+      "sha256": "8cb7a4e901e938bbef0b5eb28c5ad09f32f40bf1f83e495fd3f746944b3e80e7",
+      "size": 2068,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_dossier_export_markdown.py",
+      "sha256": "7de7b23023b1164c9b7e865ad29d293b6b0453aebf4f411c1f3ca7a7dfa40e99",
+      "size": 1338,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_editable_install_package_discovery.py",
+      "sha256": "65a4243ddbf994d326086526548af2de80584560d8badd6bfe97c7f688baa2e5",
+      "size": 3408,
+      "modified_timestamp": "2026-07-18T07:15:52+00:00",
+      "modified_time_ns": 1784358952000000000
+    },
+    {
+      "path": "tests/test_eva_ascii_grid_logo_v71338.py",
+      "sha256": "b834c9c14a33a88892902e2c3620501377d41a85b6d840ca783d17404ac6da53",
+      "size": 4444,
+      "modified_timestamp": "2026-07-14T17:40:18+00:00",
+      "modified_time_ns": 1784050818000000000
+    },
+    {
+      "path": "tests/test_eva_boot_dummy.py",
+      "sha256": "cba1c73a5c80464f4dd2612880691d590f43a1dc0549571769c39e7c00e9829c",
+      "size": 2863,
+      "modified_timestamp": "2026-07-18T06:02:28+00:00",
+      "modified_time_ns": 1784354548000000000
+    },
+    {
+      "path": "tests/test_eva_logo_centered.py",
+      "sha256": "fbb301afc215067ed8ed80086b31a0d91853f3a89dff7248a8ef2fbf42a80f12",
+      "size": 847,
+      "modified_timestamp": "2026-05-27T21:28:00+00:00",
+      "modified_time_ns": 1779917280000000000
+    },
+    {
+      "path": "tests/test_eva_logo_rectangular_alignment.py",
+      "sha256": "1c04ae4f37df4ed0b6e42bda17ad06140d7d529728b0ae9fb30e4438b1f479df",
+      "size": 690,
+      "modified_timestamp": "2026-05-28T12:41:08+00:00",
+      "modified_time_ns": 1779972068000000000
+    },
+    {
+      "path": "tests/test_eva_magi_logo_quality.py",
+      "sha256": "64c5f781cae4a13a0b2b279c01bcd57f43763594434dd92be5084df3a01761aa",
+      "size": 898,
+      "modified_timestamp": "2026-06-20T16:08:54+00:00",
+      "modified_time_ns": 1781971734000000000
+    },
+    {
+      "path": "tests/test_eva_uses_user_ascii_asset.py",
+      "sha256": "790e79e752a83c8883d60bf10841ddff266fe5ffad19e32f005acdf24583488d",
+      "size": 1230,
+      "modified_timestamp": "2026-06-20T16:09:06+00:00",
+      "modified_time_ns": 1781971746000000000
+    },
+    {
+      "path": "tests/test_explicit_reachable_backend_no_silent_fallback.py",
+      "sha256": "7aa19df7343400bb6473b9890d5b8fe51838541a11c5009f8c2ad7025158b95c",
+      "size": 2187,
+      "modified_timestamp": "2026-05-12T18:26:12+00:00",
+      "modified_time_ns": 1778610372000000000
+    },
+    {
+      "path": "tests/test_factal_adapter_disabled_without_key.py",
+      "sha256": "547e9dfb59adc25980c4bbfcbf1d45cf8c1db63c305391ea646133c1764230c1",
+      "size": 534,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_fallback_resolution_chain.py",
+      "sha256": "ef852e5f6c36096c72b07736d37cdc71fd341858e16dfa59cb7043aafd74fa3d",
+      "size": 1718,
+      "modified_timestamp": "2026-05-10T15:38:28+00:00",
+      "modified_time_ns": 1778427508000000000
+    },
+    {
+      "path": "tests/test_feed_health.py",
+      "sha256": "789b912f43ce28c8242fc7618153512b50bc35a968039635e4fd9e3ef0fa8e37",
+      "size": 4149,
+      "modified_timestamp": "2026-05-20T13:16:40+00:00",
+      "modified_time_ns": 1779283000000000000
+    },
+    {
+      "path": "tests/test_final_logo_mapping.py",
+      "sha256": "205e703c9f4716c885f19e094fe168384a541146afeddcf1bef75bbb50229b01",
+      "size": 3333,
+      "modified_timestamp": "2026-07-16T06:23:50+00:00",
+      "modified_time_ns": 1784183030000000000
+    },
+    {
+      "path": "tests/test_flet_app_import.py",
+      "sha256": "6d13e7034a85f140998233311cd6dd972ad890d35384ef510a82f10d3207a691",
+      "size": 545,
+      "modified_timestamp": "2026-05-07T16:54:00+00:00",
+      "modified_time_ns": 1778172840000000000
+    },
+    {
+      "path": "tests/test_flet_desktop_runtime_dependency.py",
+      "sha256": "46d764b67af54ce424835b71ce2d149338eb3fd534cc2ab3d0e84788a862de65",
+      "size": 1629,
+      "modified_timestamp": "2026-05-28T15:53:56+00:00",
+      "modified_time_ns": 1779983636000000000
+    },
+    {
+      "path": "tests/test_footer_diagnostics_visibility.py",
+      "sha256": "896f6e339ab5c483902b5ac3fef9c91ce8471eef2a1c5142d7c471427603a27a",
+      "size": 1547,
+      "modified_timestamp": "2026-07-16T06:44:58+00:00",
+      "modified_time_ns": 1784184298000000000
+    },
+    {
+      "path": "tests/test_footer_shortcuts.py",
+      "sha256": "d0ec1c29da11129f2aeaf1c6a4edb1324a78b2189c31434ef4e976f9b0e59305",
+      "size": 1153,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_footer_shortcuts_centered.py",
+      "sha256": "071392ec209d5029e9469a1f87a91702b41c1e0b3790c5afec5e709e665a14e6",
+      "size": 1086,
+      "modified_timestamp": "2026-07-16T07:01:40+00:00",
+      "modified_time_ns": 1784185300000000000
+    },
+    {
+      "path": "tests/test_footer_shortcuts_no_overlap.py",
+      "sha256": "afcbc6bbfd0e7c2e629ee769a5bd2d3390b769c2a5ef5f1acca6ea58209c4e7f",
+      "size": 882,
+      "modified_timestamp": "2026-05-27T21:26:18+00:00",
+      "modified_time_ns": 1779917178000000000
+    },
+    {
+      "path": "tests/test_frozen_asset_resolution.py",
+      "sha256": "465c0c540803596bef94d51a04f365ae73e0901722f35202761a11838480b64a",
+      "size": 1848,
+      "modified_timestamp": "2026-05-31T16:57:52+00:00",
+      "modified_time_ns": 1780246672000000000
+    },
+    {
+      "path": "tests/test_gdelt_adapter_mock.py",
+      "sha256": "722af44397ca258c879305c9bcf27bad2ceaee9ad75046fd3bb1f988b6547810",
+      "size": 875,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_ground_news_disabled_without_official_access.py",
+      "sha256": "98626ab6c25b61a8b6b4c77c8fb9328cc64c2a6f4266d079564cb8660e29ce8d",
+      "size": 650,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_gui_aurelius_toggle.py",
+      "sha256": "88623f032bff6ae27cea6923bf38f62022619d989dabd5ac3206a0b3e8bbb64c",
+      "size": 1822,
+      "modified_timestamp": "2026-05-28T05:49:04+00:00",
+      "modified_time_ns": 1779947344000000000
+    },
+    {
+      "path": "tests/test_gui_bellator_intelligence_diagnostics.py",
+      "sha256": "333bd79875e9caa541222a0f50a1a534a516e64c14eebc36ae5319d507443783",
+      "size": 2221,
+      "modified_timestamp": "2026-05-19T12:46:46+00:00",
+      "modified_time_ns": 1779194806000000000
+    },
+    {
+      "path": "tests/test_gui_compact_logo_aliases.py",
+      "sha256": "834275d82cb1a2d7842c5262fce13e71811d7b65a408ed6f62fdc75eaf62778f",
+      "size": 2070,
+      "modified_timestamp": "2026-06-23T17:31:16+00:00",
+      "modified_time_ns": 1782235876000000000
+    },
+    {
+      "path": "tests/test_gui_compact_logo_fit.py",
+      "sha256": "56b905e20392d3417dd6524af8593da95554b0d085dc3b1ee35e4d7e0f7b3cac",
+      "size": 4272,
+      "modified_timestamp": "2026-06-29T19:41:48+00:00",
+      "modified_time_ns": 1782762108000000000
+    },
+    {
+      "path": "tests/test_gui_compact_logos.py",
+      "sha256": "cacff47abffd3d6073618064451e4d479773bdf44c1c91137b571e76207d535e",
+      "size": 1575,
+      "modified_timestamp": "2026-06-20T15:09:32+00:00",
+      "modified_time_ns": 1781968172000000000
+    },
+    {
+      "path": "tests/test_gui_data_sources_overlay.py",
+      "sha256": "fc1652a2d18e327fa56ee34423c0ecf752948bbf769865db8b92b31c8d81ad19",
+      "size": 1086,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_gui_deliberation_states.py",
+      "sha256": "a5eaeadee8007b299290242d960029a8f2360405fdbe773aae41f249f7cce13c",
+      "size": 2567,
+      "modified_timestamp": "2026-05-20T13:12:30+00:00",
+      "modified_time_ns": 1779282750000000000
+    },
+    {
+      "path": "tests/test_gui_diagnostic_drawer.py",
+      "sha256": "ac0833af6cbdda481900545ee0e02e04abbb4b7a15e35bc90ba4dbb95d55ce7f",
+      "size": 2132,
+      "modified_timestamp": "2026-06-20T12:49:56+00:00",
+      "modified_time_ns": 1781959796000000000
+    },
+    {
+      "path": "tests/test_gui_empty_states.py",
+      "sha256": "35b32acfa3375d4fbd2d8f353f485aa72f86f52bebb5339a9a0b6dbcc5297e6d",
+      "size": 1169,
+      "modified_timestamp": "2026-05-27T15:20:00+00:00",
+      "modified_time_ns": 1779895200000000000
+    },
+    {
+      "path": "tests/test_gui_harness.py",
+      "sha256": "0888834afa69607d060b7f901815c9e84fa11cf2b9ced8913ac5bd6e0c1fce48",
+      "size": 1651,
+      "modified_timestamp": "2026-06-20T14:37:16+00:00",
+      "modified_time_ns": 1781966236000000000
+    },
+    {
+      "path": "tests/test_gui_header_uses_compact_not_boot_logo.py",
+      "sha256": "2feb836b0a64a750538d7ffa4fa67e8c78f412c808883607108c8c0a910ef23f",
+      "size": 1982,
+      "modified_timestamp": "2026-06-23T17:31:26+00:00",
+      "modified_time_ns": 1782235886000000000
+    },
+    {
+      "path": "tests/test_gui_heartbeat.py",
+      "sha256": "65116eba9cdfcbc8c1db43048907eff813f1bb68bf32dd8e8717093ada69b324",
+      "size": 792,
+      "modified_timestamp": "2026-05-08T09:43:54+00:00",
+      "modified_time_ns": 1778233434000000000
+    },
+    {
+      "path": "tests/test_gui_integrity_status.py",
+      "sha256": "4701906b643aa2a518a6855f27a7c4a00168e4c73a4a3826b1fa7078f50dcd6e",
+      "size": 2362,
+      "modified_timestamp": "2026-05-24T17:39:34+00:00",
+      "modified_time_ns": 1779644374000000000
+    },
+    {
+      "path": "tests/test_gui_launch_smoke.py",
+      "sha256": "f4bee95eea7bfcfa199436af70cc24305cf4e4199ab90bc22a18fc3d35a21646",
+      "size": 482,
+      "modified_timestamp": "2026-05-27T13:49:34+00:00",
+      "modified_time_ns": 1779889774000000000
+    },
+    {
+      "path": "tests/test_gui_launch_smoke_readiness.py",
+      "sha256": "84576578ae7d3df66cf663d3b10f81cd65ba3b03486730439f086d45c0f862a7",
+      "size": 1008,
+      "modified_timestamp": "2026-05-27T13:49:34+00:00",
+      "modified_time_ns": 1779889774000000000
+    },
+    {
+      "path": "tests/test_gui_layout_contract.py",
+      "sha256": "b14b5d2c8b33df1abadcf466f2470b03b7f2b5842d1e3cb4cd4bc4e727f90447",
+      "size": 4987,
+      "modified_timestamp": "2026-07-14T17:42:02+00:00",
+      "modified_time_ns": 1784050922000000000
+    },
+    {
+      "path": "tests/test_gui_logo_source_v71337.py",
+      "sha256": "b9da2ee0eea5a1f28a6baf1221ece4e0ee775212f2dc162af7574dd96c23433a",
+      "size": 3746,
+      "modified_timestamp": "2026-07-14T17:41:00+00:00",
+      "modified_time_ns": 1784050860000000000
+    },
+    {
+      "path": "tests/test_gui_memory_indicators.py",
+      "sha256": "63816a783cf19917a67f6bbcc08d38ce943ec02576e5986358d0c3df21b088d4",
+      "size": 1917,
+      "modified_timestamp": "2026-05-09T08:58:32+00:00",
+      "modified_time_ns": 1778317112000000000
+    },
+    {
+      "path": "tests/test_gui_monolith_naming.py",
+      "sha256": "4779973d0964c86776c356bc33b88d17f8be9aabd7097021442e9f5f3d068660",
+      "size": 2146,
+      "modified_timestamp": "2026-05-28T17:43:10+00:00",
+      "modified_time_ns": 1779990190000000000
+    },
+    {
+      "path": "tests/test_gui_proposal_verdict_status.py",
+      "sha256": "9f4727c48db8e0d990269552313269b36fbdf40441fa138bd0cdf5758d9c644b",
+      "size": 1781,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_gui_provider_recheck.py",
+      "sha256": "d071fe3bfd31f10760deaaa8d16ec140b574276e3edef9ea3dd17309c51fe4df",
+      "size": 2509,
+      "modified_timestamp": "2026-05-08T07:12:24+00:00",
+      "modified_time_ns": 1778224344000000000
+    },
+    {
+      "path": "tests/test_gui_provider_status_panel.py",
+      "sha256": "a0899ebdeaab9914c9ab05631ce77703c51b125db314a537b1285fdb945e26b2",
+      "size": 2547,
+      "modified_timestamp": "2026-05-24T15:00:02+00:00",
+      "modified_time_ns": 1779634802000000000
+    },
+    {
+      "path": "tests/test_gui_readiness_containment.py",
+      "sha256": "2211252333dc8cf843d79d4cfa2ac38ccd9937af0b922304a9f0ebfbfdedbc65",
+      "size": 2494,
+      "modified_timestamp": "2026-05-08T10:23:22+00:00",
+      "modified_time_ns": 1778235802000000000
+    },
+    {
+      "path": "tests/test_gui_refresh_cadence.py",
+      "sha256": "fa61369d2d0e72244e81a4cc66ddf0bd9d72ebe35a1edbb7b18c284f369aaa7e",
+      "size": 1664,
+      "modified_timestamp": "2026-05-17T09:43:38+00:00",
+      "modified_time_ns": 1779011018000000000
+    },
+    {
+      "path": "tests/test_gui_repaint_regression.py",
+      "sha256": "f8def336264357f47812651d7a782d62f16c71ea8b8f95108615c0d4f8227acd",
+      "size": 1218,
+      "modified_timestamp": "2026-05-24T15:00:12+00:00",
+      "modified_time_ns": 1779634812000000000
+    },
+    {
+      "path": "tests/test_gui_responsive_layout.py",
+      "sha256": "60b01ead0fb353992cd23ee784cff55cafb9647c76fdfe151c23f439b4ad9945",
+      "size": 2674,
+      "modified_timestamp": "2026-06-20T12:44:30+00:00",
+      "modified_time_ns": 1781959470000000000
+    },
+    {
+      "path": "tests/test_gui_screenshot_export.py",
+      "sha256": "68ecf7c2362a3b84e534f3da9bd39c08ea9e9999e7b9616023f2effb34347651",
+      "size": 985,
+      "modified_timestamp": "2026-05-24T16:58:42+00:00",
+      "modified_time_ns": 1779641922000000000
+    },
+    {
+      "path": "tests/test_gui_simulation_actions.py",
+      "sha256": "f160eae247ecaa02394191886ba3ea0459e2356c9110baa27a4f14b37e072b22",
+      "size": 1554,
+      "modified_timestamp": "2026-05-31T15:04:26+00:00",
+      "modified_time_ns": 1780239866000000000
+    },
+    {
+      "path": "tests/test_gui_status_colors.py",
+      "sha256": "ac2539c05a6f5e66dace060f4e87df62490400807736b2c1d6f744c58c372e17",
+      "size": 1769,
+      "modified_timestamp": "2026-05-08T09:43:54+00:00",
+      "modified_time_ns": 1778233434000000000
+    },
+    {
+      "path": "tests/test_gui_submission_flow.py",
+      "sha256": "8c1391ff7aaee7e84a9138877c84b54a1b0b596e81553243ddd4c3480ef501a3",
+      "size": 912,
+      "modified_timestamp": "2026-05-07T16:54:00+00:00",
+      "modified_time_ns": 1778172840000000000
+    },
+    {
+      "path": "tests/test_gui_telemetry_degraded_message.py",
+      "sha256": "9310fd7586c0d97c6a6797fe9b0d37ca1335e2831087355f534a743b4f1cff75",
+      "size": 1199,
+      "modified_timestamp": "2026-05-27T09:55:06+00:00",
+      "modified_time_ns": 1779875706000000000
+    },
+    {
+      "path": "tests/test_gui_telemetry_panel.py",
+      "sha256": "cb6d5090f61d852871bd55c4827cac6591b99a1d246abf442697899fb0c28c60",
+      "size": 3174,
+      "modified_timestamp": "2026-07-16T06:44:58+00:00",
+      "modified_time_ns": 1784184298000000000
+    },
+    {
+      "path": "tests/test_gui_theme_binding.py",
+      "sha256": "782878e79eec20c0fb5cdbd8b24787b79bc22d37a837f0f574ff1f0be0bc1805",
+      "size": 1712,
+      "modified_timestamp": "2026-05-07T16:54:00+00:00",
+      "modified_time_ns": 1778172840000000000
+    },
+    {
+      "path": "tests/test_gui_theme_selector.py",
+      "sha256": "a2a8da0783d6fe19dd5a342e31b06279d503efbe8d1f97186e38291cdc5b4ac4",
+      "size": 2920,
+      "modified_timestamp": "2026-05-07T17:40:44+00:00",
+      "modified_time_ns": 1778175644000000000
+    },
+    {
+      "path": "tests/test_gui_visual_invariants.py",
+      "sha256": "9be7665e26d03e07c3e921f11409d2719faf176d8ffa926a1a1f7f1ba01eaf02",
+      "size": 1585,
+      "modified_timestamp": "2026-06-20T12:44:32+00:00",
+      "modified_time_ns": 1781959472000000000
+    },
+    {
+      "path": "tests/test_gui_visual_review_status.py",
+      "sha256": "3220f753f341df8271741298a4f7006b1d9309454271cefa99a2575d76d20fe8",
+      "size": 2748,
+      "modified_timestamp": "2026-06-20T12:49:58+00:00",
+      "modified_time_ns": 1781959798000000000
+    },
+    {
+      "path": "tests/test_gui_window_modes.py",
+      "sha256": "55690aa009d3ccc0fe8910a14dfccb08a39ddb6ec1ae651b7dee890dfff55722",
+      "size": 2491,
+      "modified_timestamp": "2026-05-27T11:29:18+00:00",
+      "modified_time_ns": 1779881358000000000
+    },
+    {
+      "path": "tests/test_header_container_constraints.py",
+      "sha256": "92115989aac7ff52f7f3a46d679fcc11f0f08a24e369badd935abb1c693365ba",
+      "size": 1877,
+      "modified_timestamp": "2026-06-23T09:16:00+00:00",
+      "modified_time_ns": 1782206160000000000
+    },
+    {
+      "path": "tests/test_header_corrections_v71335.py",
+      "sha256": "bed3d37bbff7049a471aadccf39f43a318d27de8be88558ac75622f54a71df37",
+      "size": 5275,
+      "modified_timestamp": "2026-07-16T10:43:24+00:00",
+      "modified_time_ns": 1784198604000000000
+    },
+    {
+      "path": "tests/test_header_logo_alignment.py",
+      "sha256": "9703e86ef2d3bda0a6718d4b13cd1048546a4756f190d89751cabc5e985108e1",
+      "size": 784,
+      "modified_timestamp": "2026-05-27T19:25:12+00:00",
+      "modified_time_ns": 1779909912000000000
+    },
+    {
+      "path": "tests/test_header_logo_geometry_v71334.py",
+      "sha256": "cb92904c85512ef4717bfcabd4a53700ff069e658c41479546a73f2384bfbf59",
+      "size": 2585,
+      "modified_timestamp": "2026-07-16T10:43:24+00:00",
+      "modified_time_ns": 1784198604000000000
+    },
+    {
+      "path": "tests/test_header_logo_layout_modes.py",
+      "sha256": "ded67b62b73bd5852ca74790750de477683fed5c232e9a2326c32b8b88f1f98d",
+      "size": 9173,
+      "modified_timestamp": "2026-07-16T10:43:22+00:00",
+      "modified_time_ns": 1784198602000000000
+    },
+    {
+      "path": "tests/test_header_logo_vertical_offsets.py",
+      "sha256": "815506bf36d420c17a5ae32ca6722baedcd041ca8ced587adfc0c35aeed1b10e",
+      "size": 1925,
+      "modified_timestamp": "2026-07-16T06:45:00+00:00",
+      "modified_time_ns": 1784184300000000000
+    },
+    {
+      "path": "tests/test_header_no_wrap.py",
+      "sha256": "612b73398b7d24c76e63295270efd73730d95433c44989611cb06dd60b804c77",
+      "size": 817,
+      "modified_timestamp": "2026-07-14T17:42:06+00:00",
+      "modified_time_ns": 1784050926000000000
+    },
+    {
+      "path": "tests/test_header_status_margin_spacing.py",
+      "sha256": "ea95e37ea27ded23be4afeb55a3c57af878e606e7bb8e59018437f72a1f04bc2",
+      "size": 767,
+      "modified_timestamp": "2026-05-31T15:01:48+00:00",
+      "modified_time_ns": 1780239708000000000
+    },
+    {
+      "path": "tests/test_header_telemetry_no_overlap_health_badge.py",
+      "sha256": "86fe81fac56daacf92adb60e71b9ad6991ec862d9477e28204f3d261a61e9aff",
+      "size": 874,
+      "modified_timestamp": "2026-05-31T15:01:58+00:00",
+      "modified_time_ns": 1780239718000000000
+    },
+    {
+      "path": "tests/test_header_telemetry_vertical_offset.py",
+      "sha256": "5cab9cbd671731506b012caeac4872ca208e663dcb9b6b03bee0ab70af52567d",
+      "size": 829,
+      "modified_timestamp": "2026-06-05T16:38:16+00:00",
+      "modified_time_ns": 1780677496000000000
+    },
+    {
+      "path": "tests/test_health_badge.py",
+      "sha256": "f421929a2059feaa3ad34a405ea1e9342edf40cae047dbc481318baf0ac85f1f",
+      "size": 2284,
+      "modified_timestamp": "2026-05-28T18:17:40+00:00",
+      "modified_time_ns": 1779992260000000000
+    },
+    {
+      "path": "tests/test_health_uses_model_cache.py",
+      "sha256": "f9d4399609b64e9e2717d563152e118e48565476c5e0b376c04b641f8147807b",
+      "size": 1972,
+      "modified_timestamp": "2026-05-12T18:25:20+00:00",
+      "modified_time_ns": 1778610320000000000
+    },
+    {
+      "path": "tests/test_helldivers_ascii_logo_quality.py",
+      "sha256": "d4ab169965e9f0e3dadb65c81939498695f48c03bd292c7277c7e7b9068107bc",
+      "size": 844,
+      "modified_timestamp": "2026-05-28T12:40:06+00:00",
+      "modified_time_ns": 1779972006000000000
+    },
+    {
+      "path": "tests/test_helldivers_logo_centered.py",
+      "sha256": "35c946141c319126f8ecf260ce4631600e8857b1f03be607314456a1a9c773ad",
+      "size": 882,
+      "modified_timestamp": "2026-05-27T21:27:36+00:00",
+      "modified_time_ns": 1779917256000000000
+    },
+    {
+      "path": "tests/test_helldivers_logo_not_dense_block.py",
+      "sha256": "c096b4642cfb0c341da923cc4b3bc82a226f7972786ed7b2d12ff7ad08ff3947",
+      "size": 774,
+      "modified_timestamp": "2026-05-28T12:47:40+00:00",
+      "modified_time_ns": 1779972460000000000
+    },
+    {
+      "path": "tests/test_helldivers_logo_quality.py",
+      "sha256": "ecc5c073e1ebd59460019f83d9586f545229f552226c2015a1188e7e3a838ee7",
+      "size": 894,
+      "modified_timestamp": "2026-05-28T12:40:06+00:00",
+      "modified_time_ns": 1779972006000000000
+    },
+    {
+      "path": "tests/test_helldivers_uses_user_ascii_asset.py",
+      "sha256": "9e23949fe0bc8f99b63566fef9585eedf1e1ffdfe5c6f45da01bfa242bd52c0a",
+      "size": 1343,
+      "modified_timestamp": "2026-07-16T07:01:38+00:00",
+      "modified_time_ns": 1784185298000000000
+    },
+    {
+      "path": "tests/test_ibkr_read_only_guard.py",
+      "sha256": "62ea370bba82fe975f3c3ab097978f19a2aedaa6151259d0fd6f51409b151bb0",
+      "size": 589,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_integrity_verifier.py",
+      "sha256": "88c1710ec038a8926afa1b242f999dbdae4ed3ed4790e177636bbfcfe6cb1422",
+      "size": 2296,
+      "modified_timestamp": "2026-05-24T17:39:06+00:00",
+      "modified_time_ns": 1779644346000000000
+    },
+    {
+      "path": "tests/test_launcher_env_provider_routing.py",
+      "sha256": "a4b7e7c626d5432de202f066aca3dcbec58fd6d270e6ec3ee836edeb0f3ae66e",
+      "size": 2676,
+      "modified_timestamp": "2026-06-18T13:40:42+00:00",
+      "modified_time_ns": 1781790042000000000
+    },
+    {
+      "path": "tests/test_legacy_visual_identity.py",
+      "sha256": "d7ede58c0b0733a812ba250afb749384259585b7c0965ed4e06311526b26061a",
+      "size": 1829,
+      "modified_timestamp": "2026-05-07T10:59:20+00:00",
+      "modified_time_ns": 1778151560000000000
+    },
+    {
+      "path": "tests/test_lifecycle_audio_hooks.py",
+      "sha256": "eeb7a59ec27d620be02d1321acbb7ed08abea4b77889746eea67222d04d49bc2",
+      "size": 591,
+      "modified_timestamp": "2026-05-13T16:59:28+00:00",
+      "modified_time_ns": 1778691568000000000
+    },
+    {
+      "path": "tests/test_logo_asset_rollback.py",
+      "sha256": "3346dd95efa500bcc58065c9a0918d6caa4b200dea5c59ee9c484f655536b19f",
+      "size": 7705,
+      "modified_timestamp": "2026-07-16T10:43:28+00:00",
+      "modified_time_ns": 1784198608000000000
+    },
+    {
+      "path": "tests/test_logo_corrections_v71336.py",
+      "sha256": "da019c22887357072e49c80a3ace2096c017757c73bd421208433085efb8b1bd",
+      "size": 4993,
+      "modified_timestamp": "2026-07-16T10:43:22+00:00",
+      "modified_time_ns": 1784198602000000000
+    },
+    {
+      "path": "tests/test_logo_normalizer.py",
+      "sha256": "ea18d461017986138534b7df62bffae8f538d05c3f176ffe6ce57456deee09b7",
+      "size": 984,
+      "modified_timestamp": "2026-05-24T17:54:44+00:00",
+      "modified_time_ns": 1779645284000000000
+    },
+    {
+      "path": "tests/test_logo_registry.py",
+      "sha256": "51c0fa16288156056f80d23a2312c70ef12b736b0899ae2e12b7b1bcd3c6d7e1",
+      "size": 1991,
+      "modified_timestamp": "2026-07-16T06:22:48+00:00",
+      "modified_time_ns": 1784182968000000000
+    },
+    {
+      "path": "tests/test_logo_vertical_alignment.py",
+      "sha256": "dd196663748ccbec29987465cc00b3135702b5880311a458565c8e0203a614c0",
+      "size": 848,
+      "modified_timestamp": "2026-07-16T06:45:00+00:00",
+      "modified_time_ns": 1784184300000000000
+    },
+    {
+      "path": "tests/test_logo_whitespace_preserved.py",
+      "sha256": "9939ff64a885611a29866f61f6d364edd5acee56fb59b40766fa54106f22dd10",
+      "size": 987,
+      "modified_timestamp": "2026-05-28T12:41:08+00:00",
+      "modified_time_ns": 1779972068000000000
+    },
+    {
+      "path": "tests/test_lower_right_health_panel_layout.py",
+      "sha256": "5dbe884f53e780a8ac2469463d4e0daa75e795350c7515e5dd0c87c20ae98f4b",
+      "size": 1389,
+      "modified_timestamp": "2026-05-28T18:19:48+00:00",
+      "modified_time_ns": 1779992388000000000
+    },
+    {
+      "path": "tests/test_manual_visual_review_registry.py",
+      "sha256": "f4a466a27836cb18d7de77da143bae66a5bc055976d343743c323575f2371c98",
+      "size": 1879,
+      "modified_timestamp": "2026-05-27T08:33:00+00:00",
+      "modified_time_ns": 1779870780000000000
+    },
+    {
+      "path": "tests/test_memory_cli.py",
+      "sha256": "971189cfc0a00daf42934e6ceea0bb29ee5ca46f2053d3f03f30d94c0d93c070",
+      "size": 1471,
+      "modified_timestamp": "2026-05-09T08:58:06+00:00",
+      "modified_time_ns": 1778317086000000000
+    },
+    {
+      "path": "tests/test_model_assignment_cli.py",
+      "sha256": "3bfe57e87e7cc270b2b8bf99c80a6e7e3ec20496bc23feb26c9e317bf5ede607",
+      "size": 6997,
+      "modified_timestamp": "2026-05-09T08:07:56+00:00",
+      "modified_time_ns": 1778314076000000000
+    },
+    {
+      "path": "tests/test_model_availability.py",
+      "sha256": "c1bc8a576c84a09c20676e4b0b3ff99728db895e9778480579f374bfb3a111be",
+      "size": 2013,
+      "modified_timestamp": "2026-05-08T10:15:50+00:00",
+      "modified_time_ns": 1778235350000000000
+    },
+    {
+      "path": "tests/test_model_remap_fallback.py",
+      "sha256": "60fde30777f8313a3b5af1bfced4d96123dae6551380e7f9a82c6d6f195b8372",
+      "size": 4336,
+      "modified_timestamp": "2026-05-12T18:27:08+00:00",
+      "modified_time_ns": 1778610428000000000
+    },
+    {
+      "path": "tests/test_monolith_identity_enhancement.py",
+      "sha256": "d87f1aad9fecb3870f8712ee4720158397920f7a39c8ab7fe2841afcbd8790d4",
+      "size": 1944,
+      "modified_timestamp": "2026-05-28T17:50:02+00:00",
+      "modified_time_ns": 1779990602000000000
+    },
+    {
+      "path": "tests/test_monolith_idle_pulses.py",
+      "sha256": "5ad00a383654d352246550aa7eba30f14d54ce93e78221166513bff676697fbc",
+      "size": 1503,
+      "modified_timestamp": "2026-05-12T19:03:30+00:00",
+      "modified_time_ns": 1778612610000000000
+    },
+    {
+      "path": "tests/test_monolith_order_contract.py",
+      "sha256": "91a5c545d7c6ed3567a76d3395305b572eeb811b5fd92cf6ab7b5661a682eb48",
+      "size": 734,
+      "modified_timestamp": "2026-05-28T17:43:38+00:00",
+      "modified_time_ns": 1779990218000000000
+    },
+    {
+      "path": "tests/test_monolith_profiles.py",
+      "sha256": "69828a9edcdc4326c687df8cb6ca7cd1d07cd37f051f8a7af9bfc5a90b89cf7f",
+      "size": 1020,
+      "modified_timestamp": "2026-05-09T08:57:54+00:00",
+      "modified_time_ns": 1778317074000000000
+    },
+    {
+      "path": "tests/test_msty_claw_not_default_inference_backend.py",
+      "sha256": "db68d0f2e2e700990605a20aa0e46028540e14310df5206b5e19620bc75c6113",
+      "size": 795,
+      "modified_timestamp": "2026-05-10T15:39:34+00:00",
+      "modified_time_ns": 1778427574000000000
+    },
+    {
+      "path": "tests/test_msty_llama_cpp_inference_preferred.py",
+      "sha256": "2930a8931e5cc985914f4c233038a9d73b064eaa820a6294fd557d4318581956",
+      "size": 1357,
+      "modified_timestamp": "2026-05-10T15:39:34+00:00",
+      "modified_time_ns": 1778427574000000000
+    },
+    {
+      "path": "tests/test_msty_llama_cpp_preferred_over_ollama.py",
+      "sha256": "f85563f7ceab886c4667422df2e295732a0e863c5fa0fe77b73314c48938b279",
+      "size": 1607,
+      "modified_timestamp": "2026-05-10T15:28:10+00:00",
+      "modified_time_ns": 1778426890000000000
+    },
+    {
+      "path": "tests/test_msty_llama_cpp_warmup_state.py",
+      "sha256": "95ceead7e0edbdf9df8c20be57161d632adfb24b126e759f5155549206d5abb3",
+      "size": 1800,
+      "modified_timestamp": "2026-05-13T17:16:18+00:00",
+      "modified_time_ns": 1778692578000000000
+    },
+    {
+      "path": "tests/test_msty_local_does_not_silently_become_llama_cpp.py",
+      "sha256": "6621342bc3ffd6662180461385cb594be9d8d7bdff96d95fe0bf6376c2279b81",
+      "size": 2266,
+      "modified_timestamp": "2026-05-10T15:39:04+00:00",
+      "modified_time_ns": 1778427544000000000
+    },
+    {
+      "path": "tests/test_msty_local_network_url_fallback.py",
+      "sha256": "18b65d116c8ab0889761ae35547bb811e6dff3bc6879dee7703e2af5e83d8ea9",
+      "size": 1367,
+      "modified_timestamp": "2026-05-10T15:39:04+00:00",
+      "modified_time_ns": 1778427544000000000
+    },
+    {
+      "path": "tests/test_msty_local_primary_endpoint.py",
+      "sha256": "c584359a530c77b1bf10ccfc0540e1953a7d391c93e97798572f2c9c0122c7f2",
+      "size": 2092,
+      "modified_timestamp": "2026-05-10T15:39:04+00:00",
+      "modified_time_ns": 1778427544000000000
+    },
+    {
+      "path": "tests/test_msty_runtime.py",
+      "sha256": "5f25b5d51353418dbe6b0e5af068dd364a4005309297216d07e649292ae9ef60",
+      "size": 3919,
+      "modified_timestamp": "2026-05-27T13:48:52+00:00",
+      "modified_time_ns": 1779889732000000000
+    },
+    {
+      "path": "tests/test_msty_runtime_fast_path.py",
+      "sha256": "322871f02506571c3f1b3647533608aa38f40bbf1cf53d7a829daaa3fd38b4fb",
+      "size": 1005,
+      "modified_timestamp": "2026-05-27T13:48:52+00:00",
+      "modified_time_ns": 1779889732000000000
+    },
+    {
+      "path": "tests/test_msty_service_role_classification.py",
+      "sha256": "3d8c90706d482a8a5151b025d5f13746e69ad4b89227cff14fc4f9ccad414997",
+      "size": 1732,
+      "modified_timestamp": "2026-05-10T15:39:34+00:00",
+      "modified_time_ns": 1778427574000000000
+    },
+    {
+      "path": "tests/test_no_codex_generated_bad_logo_tokens.py",
+      "sha256": "cb9f6a6fc011f37c3b4a4c155a300c066da6e39ba3c30ca47429cf65b983331b",
+      "size": 875,
+      "modified_timestamp": "2026-05-28T12:41:08+00:00",
+      "modified_time_ns": 1779972068000000000
+    },
+    {
+      "path": "tests/test_no_duplicate_boot_sequence.py",
+      "sha256": "b388242dabcd631f88d07809f17ba9dc66d29957ffa808f5c638f410ce232d48",
+      "size": 2011,
+      "modified_timestamp": "2026-05-27T20:25:20+00:00",
+      "modified_time_ns": 1779913520000000000
+    },
+    {
+      "path": "tests/test_no_placeholder_logos.py",
+      "sha256": "b55bc7f14ce1c0c52b1440819c9577f937fe8535142b78395ec206378df52d46",
+      "size": 1416,
+      "modified_timestamp": "2026-05-27T08:05:08+00:00",
+      "modified_time_ns": 1779869108000000000
+    },
+    {
+      "path": "tests/test_no_scrambled_ascii_logos.py",
+      "sha256": "a948423a8ee85b0190296412d141c16fbbb9c7c59f22b84c5e5e55573d6c2d23",
+      "size": 1808,
+      "modified_timestamp": "2026-07-16T06:22:50+00:00",
+      "modified_time_ns": 1784182970000000000
+    },
+    {
+      "path": "tests/test_normalized_item_schema.py",
+      "sha256": "142b9761eced5171ea62893ead52c9705d31adf4bf172489d03c76a762393a2b",
+      "size": 524,
+      "modified_timestamp": "2026-05-31T20:45:28+00:00",
+      "modified_time_ns": 1780260328000000000
+    },
+    {
+      "path": "tests/test_ollama_direct_backend.py",
+      "sha256": "497c5e5b0ed7b878087565f692f475ada25b3627d7da69d99a61c173b68be472",
+      "size": 4356,
+      "modified_timestamp": "2026-07-16T07:01:40+00:00",
+      "modified_time_ns": 1784185300000000000
+    },
+    {
+      "path": "tests/test_preview_theme_samples.py",
+      "sha256": "a8790818a2ae37873599d2c96c8064934b110f4543458f04b31745827ee16e8b",
+      "size": 2747,
+      "modified_timestamp": "2026-05-07T13:48:22+00:00",
+      "modified_time_ns": 1778161702000000000
+    },
+    {
+      "path": "tests/test_prompt_assembly.py",
+      "sha256": "9f6c2441883a7bb5a6f1e88769c2793142c6989b5857c681802d83141d4130ed",
+      "size": 1324,
+      "modified_timestamp": "2026-05-20T13:12:22+00:00",
+      "modified_time_ns": 1779282742000000000
+    },
+    {
+      "path": "tests/test_proposal_decision_linking.py",
+      "sha256": "c4a7591d92ec46bba6b2228a7c09a820eaa563117c109b8d5c789981ac110f1b",
+      "size": 1493,
+      "modified_timestamp": "2026-05-27T16:47:10+00:00",
+      "modified_time_ns": 1779900430000000000
+    },
+    {
+      "path": "tests/test_proposal_history_panel.py",
+      "sha256": "8a4437bbd684c258437b31c7698cf2f2a43cc406742f634418bd8d1aa8338f86",
+      "size": 1601,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_proposal_lifecycle_flow.py",
+      "sha256": "e5d6e64be02962205b2626a756d9d92f8a85ebdc164493fe9b30d7161d83417e",
+      "size": 1429,
+      "modified_timestamp": "2026-05-12T19:03:30+00:00",
+      "modified_time_ns": 1778612610000000000
+    },
+    {
+      "path": "tests/test_proposal_panel_ergonomics.py",
+      "sha256": "584f80eb46c981fe5d9ef9dde99c12589bd8f9f801228105e285510add712798",
+      "size": 1720,
+      "modified_timestamp": "2026-06-05T11:33:56+00:00",
+      "modified_time_ns": 1780659236000000000
+    },
+    {
+      "path": "tests/test_proposal_panel_internal_spacing.py",
+      "sha256": "7faf988128b34f7eb0cde9d4f3689fd2d364bcc8f601549f617b073afe11219b",
+      "size": 965,
+      "modified_timestamp": "2026-06-05T16:37:50+00:00",
+      "modified_time_ns": 1780677470000000000
+    },
+    {
+      "path": "tests/test_proposal_panel_not_overlapping_verdict.py",
+      "sha256": "c885ca1f01fcd55074b75317334841cd17d86c6fc23c90ac4ef7757b26e8ca88",
+      "size": 1107,
+      "modified_timestamp": "2026-06-20T12:44:34+00:00",
+      "modified_time_ns": 1781959474000000000
+    },
+    {
+      "path": "tests/test_proposal_panel_spacing.py",
+      "sha256": "fba50c8eba5a910984996d6cadd0d2fc0079dccd911ccdfe988a85c76a5485a0",
+      "size": 701,
+      "modified_timestamp": "2026-05-27T21:25:28+00:00",
+      "modified_time_ns": 1779917128000000000
+    },
+    {
+      "path": "tests/test_proposal_resend_duplicate_archive.py",
+      "sha256": "17efe388735c2f2fa1a38263f1665208df0089ba71a6ba11136ce76b5656118a",
+      "size": 1554,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_proposal_status_transitions.py",
+      "sha256": "9c928b8b88bfc9bbd7be1a02451f714e85b800ce03e99607dad7f4da59839b21",
+      "size": 866,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_proposal_store.py",
+      "sha256": "a47db903063db84d0d198df9446b3dbde8394623583156a821f0c5020deb3895",
+      "size": 1265,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_proposal_template_rendering.py",
+      "sha256": "cd44dcc788026e1f5fc5121f8975003b25c2d46d676102252bf39befc021b482",
+      "size": 1442,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_proposal_templates.py",
+      "sha256": "19d875bc22bdd1c6122dc484e50bc0fa64e87410d934d935e426a3fcb10d9d58",
+      "size": 1275,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_provider_cache_not_used_as_online_if_backend_warming.py",
+      "sha256": "e1cf20e4dcd931be7772a4a9ac56911adf93e6e0c2618582c21b0b73df84ed83",
+      "size": 2349,
+      "modified_timestamp": "2026-05-13T17:16:18+00:00",
+      "modified_time_ns": 1778692578000000000
+    },
+    {
+      "path": "tests/test_provider_cli_offline.py",
+      "sha256": "ca6ba4521aad1d7b4affeb9e4cff3750ff2c6dc7790744cc1dac34207ec91d5c",
+      "size": 3224,
+      "modified_timestamp": "2026-05-12T18:27:08+00:00",
+      "modified_time_ns": 1778610428000000000
+    },
+    {
+      "path": "tests/test_provider_diagnostics.py",
+      "sha256": "c1a29a35c9e8d51a0329a4870905bfd3d51070c492a64744392201bf0e50cc50",
+      "size": 4299,
+      "modified_timestamp": "2026-07-16T06:45:28+00:00",
+      "modified_time_ns": 1784184328000000000
+    },
+    {
+      "path": "tests/test_provider_discovery.py",
+      "sha256": "e4a1e88c5571e4bc7b27f16c4ae498be1f843bbcc40f48d5c68155ed17fdfb60",
+      "size": 3296,
+      "modified_timestamp": "2026-06-19T17:52:50+00:00",
+      "modified_time_ns": 1781891570000000000
+    },
+    {
+      "path": "tests/test_provider_fallback_policy.py",
+      "sha256": "f7c4d30c092c013474149c8803c8f347d011f4d5009bd0ed29599ec570337d75",
+      "size": 2597,
+      "modified_timestamp": "2026-05-08T10:15:50+00:00",
+      "modified_time_ns": 1778235350000000000
+    },
+    {
+      "path": "tests/test_provider_model_cache.py",
+      "sha256": "7243cc1a1bbb967da734e8eb0bbb3a6e7ced76200ece4befe6d92f07934a8a2d",
+      "size": 2124,
+      "modified_timestamp": "2026-05-12T18:25:20+00:00",
+      "modified_time_ns": 1778610320000000000
+    },
+    {
+      "path": "tests/test_provider_model_cache_does_not_mask_backend_failure.py",
+      "sha256": "5e4229d6b5690dcd11176b936953e4d5e7c852469019497907d9f3ec48a9346c",
+      "size": 2071,
+      "modified_timestamp": "2026-05-12T18:25:20+00:00",
+      "modified_time_ns": 1778610320000000000
+    },
+    {
+      "path": "tests/test_provider_model_cache_refresh.py",
+      "sha256": "211aadd5682465346be8d4e69adf50dc0bbdba4c4cce4d9a15a1e9fc55508056",
+      "size": 2084,
+      "modified_timestamp": "2026-05-12T18:25:20+00:00",
+      "modified_time_ns": 1778610320000000000
+    },
+    {
+      "path": "tests/test_provider_resolution_consistency_v761.py",
+      "sha256": "162da954fef764023433917fa3537eea2f5cacf8a33f5eb5f5bbdc4177c1556e",
+      "size": 2570,
+      "modified_timestamp": "2026-07-16T07:01:42+00:00",
+      "modified_time_ns": 1784185302000000000
+    },
+    {
+      "path": "tests/test_pyinstaller_spec_exists.py",
+      "sha256": "8d65fe95d5f0d3e68a2f07650a95d6457b1464e2b7d0b6b43a00bb2707a0aa6f",
+      "size": 1649,
+      "modified_timestamp": "2026-06-20T06:29:02+00:00",
+      "modified_time_ns": 1781936942000000000
+    },
+    {
+      "path": "tests/test_random_theme_selection.py",
+      "sha256": "96e9a3db09d9a6c899012a4343b50873680467e8510a1df66feba69ab20e44f8",
+      "size": 715,
+      "modified_timestamp": "2026-05-31T15:02:18+00:00",
+      "modified_time_ns": 1780239738000000000
+    },
+    {
+      "path": "tests/test_reasoning_stream_bounded.py",
+      "sha256": "1971f32fb457a5e010be57afee1ecd7f85a2d12efc1e670917b2e1d6218e3049",
+      "size": 1065,
+      "modified_timestamp": "2026-05-28T04:40:12+00:00",
+      "modified_time_ns": 1779943212000000000
+    },
+    {
+      "path": "tests/test_record_visual_review.py",
+      "sha256": "d673632712622771d63e8880a37855595bcf0ec50fcfae437c6cd2ee08c5fb88",
+      "size": 2239,
+      "modified_timestamp": "2026-05-27T08:33:00+00:00",
+      "modified_time_ns": 1779870780000000000
+    },
+    {
+      "path": "tests/test_reference_ascii_headers.py",
+      "sha256": "c60d94cbf18c7735ae888ba2129f0c278c52e3d56b34829dc1d2ccbf8375eec4",
+      "size": 1960,
+      "modified_timestamp": "2026-07-14T17:41:04+00:00",
+      "modified_time_ns": 1784050864000000000
+    },
+    {
+      "path": "tests/test_reopen_as_draft.py",
+      "sha256": "fafff3aed5197c106d2f22f79bda87c1b37838b369e9af4042142633fbf3e1ad",
+      "size": 1071,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_root_hygiene.py",
+      "sha256": "912295a070bb7f1762309e8246735bf3c49570be541601515609b3492f89326a",
+      "size": 625,
+      "modified_timestamp": "2026-05-31T19:49:54+00:00",
+      "modified_time_ns": 1780256994000000000
+    },
+    {
+      "path": "tests/test_rss_adapter_mock.py",
+      "sha256": "5de50c3fbef9bcd803d407a318aef344fb607d6d6c94a7ea7393ead7506b3f2b",
+      "size": 968,
+      "modified_timestamp": "2026-06-01T06:44:48+00:00",
+      "modified_time_ns": 1780296288000000000
+    },
+    {
+      "path": "tests/test_rss_cache_fallback.py",
+      "sha256": "66935e6f5f79f62f2e6357bdb2c36c8120b721184318d95f28def81381226673",
+      "size": 1222,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_rss_conditional_headers.py",
+      "sha256": "01c803ea7edf3f7f2987674d8cdd620ad6bdd646cb151a6f8d0cf4671721d499",
+      "size": 1020,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_rss_failure_backoff.py",
+      "sha256": "b78c8714c90b18ebc19d413888ce325f07b8c2e9443276cfd6a6c6b33b6c0bbd",
+      "size": 1497,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_rss_fts_retrieval.py",
+      "sha256": "d38cf8fcd0476d5c91c03e99ac70513b876d505f58a73480c8bfa9bea740f32c",
+      "size": 1089,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_rss_official_directory_discovery.py",
+      "sha256": "8168899774f085e9e45693fc76a7bbee57b00a5d5da76d4296542ce11c401daa",
+      "size": 1458,
+      "modified_timestamp": "2026-06-01T06:38:26+00:00",
+      "modified_time_ns": 1780295906000000000
+    },
+    {
+      "path": "tests/test_rss_probe_validation.py",
+      "sha256": "ed957127dff4159933a795ad120d602b1a14ad54950a4de190dce188917add7e",
+      "size": 1362,
+      "modified_timestamp": "2026-06-01T12:06:50+00:00",
+      "modified_time_ns": 1780315610000000000
+    },
+    {
+      "path": "tests/test_rss_registry_quarantine.py",
+      "sha256": "c4fa9b5bc7b36ee4c34cd84abf49d5e76175bfc303b31b67efb864a84afd1267",
+      "size": 768,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_rss_store_deduplication.py",
+      "sha256": "ca844a49a30084547630d58ba6a09791fe7f059c42f342cb08e86bedd5371e9b",
+      "size": 1089,
+      "modified_timestamp": "2026-06-01T06:34:46+00:00",
+      "modified_time_ns": 1780295686000000000
+    },
+    {
+      "path": "tests/test_run_tests_budget_warning.py",
+      "sha256": "5820387e306f0ffc08c74ddc8d8a1ef0626759526f0d2259129274178739ce55",
+      "size": 828,
+      "modified_timestamp": "2026-05-27T10:15:00+00:00",
+      "modified_time_ns": 1779876900000000000
+    },
+    {
+      "path": "tests/test_run_tests_categories.py",
+      "sha256": "df4cfa238c256004237f7cf377e916a267b3373137fe5e846600af0d0e66e5cc",
+      "size": 1409,
+      "modified_timestamp": "2026-05-27T11:29:50+00:00",
+      "modified_time_ns": 1779881390000000000
+    },
+    {
+      "path": "tests/test_run_tests_duration_report.py",
+      "sha256": "4393f488d86e805d477dce257150272cef89621119e563e03824026a7c77f603",
+      "size": 1191,
+      "modified_timestamp": "2026-05-27T10:15:00+00:00",
+      "modified_time_ns": 1779876900000000000
+    },
+    {
+      "path": "tests/test_run_tests_provider_category.py",
+      "sha256": "dcaabe322d35062f6d08ec7de584a85188fe738b2be1307ed51e51b757fb8984",
+      "size": 1196,
+      "modified_timestamp": "2026-05-27T13:48:52+00:00",
+      "modified_time_ns": 1779889732000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_data_sources_redacted.py",
+      "sha256": "ccedadc0161dbf488c1d6e16f32f185730085daf44102edc0176f2324156eedf",
+      "size": 1792,
+      "modified_timestamp": "2026-05-31T20:53:30+00:00",
+      "modified_time_ns": 1780260810000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_dossiers.py",
+      "sha256": "39418516ac350798463fa024db30dabc2f36d99731984b99bb8531ada5a680bf",
+      "size": 1935,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_export.py",
+      "sha256": "3cf7a362f01a3d47ba9835b00e3965ec345bcfe5277f9660e44b56bece980bf3",
+      "size": 3102,
+      "modified_timestamp": "2026-05-27T09:55:22+00:00",
+      "modified_time_ns": 1779875722000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_integrity.py",
+      "sha256": "8cd68759881a0e95d9356b06031ad64dcb892b0d987f6167823bd5b67ee0440c",
+      "size": 2472,
+      "modified_timestamp": "2026-05-24T17:39:20+00:00",
+      "modified_time_ns": 1779644360000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_proposals.py",
+      "sha256": "767dcaae2404f33a655d574d1b95048a413f312ba467c380bdab04cd7d01291d",
+      "size": 1992,
+      "modified_timestamp": "2026-05-27T15:40:38+00:00",
+      "modified_time_ns": 1779896438000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_rss_backbone.py",
+      "sha256": "cc7e21488043f9bca25e70c33d5c4dcbe4ae32c71890d3b71956de23c498a611",
+      "size": 1766,
+      "modified_timestamp": "2026-06-01T06:38:54+00:00",
+      "modified_time_ns": 1780295934000000000
+    },
+    {
+      "path": "tests/test_runtime_bundle_simulations.py",
+      "sha256": "19f4bab9f0fd2f036bb99ddeccbe6a2573f5d04008e7c365cd879d5c2bb43e36",
+      "size": 2086,
+      "modified_timestamp": "2026-05-31T15:12:12+00:00",
+      "modified_time_ns": 1780240332000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot.py",
+      "sha256": "0bf904adb5ea8bdb516bab6527729a2bdf8eb59ea4fabd3a12803c01ac3c9731",
+      "size": 1914,
+      "modified_timestamp": "2026-06-20T12:49:54+00:00",
+      "modified_time_ns": 1781959794000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_data_sources.py",
+      "sha256": "f0bb6ef218fb4d579beb06f11e17b30877461d6da9d025cd06972f63226ff9be",
+      "size": 478,
+      "modified_timestamp": "2026-05-31T20:45:28+00:00",
+      "modified_time_ns": 1780260328000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_dependencies.py",
+      "sha256": "c4f3f2536d00791078a5f14d4a292b024849d56a4e6d1d39f0dd3db8da3c04f9",
+      "size": 2019,
+      "modified_timestamp": "2026-05-27T09:55:06+00:00",
+      "modified_time_ns": 1779875706000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_lifecycle_counts.py",
+      "sha256": "76bf2c3115bf08e21cb95ad0ce987e9584d10b4110375026220b03efd0f4a1eb",
+      "size": 1436,
+      "modified_timestamp": "2026-05-27T16:47:12+00:00",
+      "modified_time_ns": 1779900432000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_proposal_history.py",
+      "sha256": "54ed3474603881c6dc2d856d782b1255009a7eb121338a2229119a404e16999f",
+      "size": 764,
+      "modified_timestamp": "2026-05-27T15:40:38+00:00",
+      "modified_time_ns": 1779896438000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_rss_backbone.py",
+      "sha256": "bc8527e9302a28895f08815caf3834a69583492733ff7f57b50413063c1cdbc9",
+      "size": 1415,
+      "modified_timestamp": "2026-06-01T06:44:48+00:00",
+      "modified_time_ns": 1780296288000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_simulations.py",
+      "sha256": "19bbe2cbaa4143ffa933f9b1cf56604d363ce6b752003de5c5033fc20f835e29",
+      "size": 746,
+      "modified_timestamp": "2026-05-31T15:04:26+00:00",
+      "modified_time_ns": 1780239866000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_telemetry.py",
+      "sha256": "cded7567d79e37b8a691cc916945cf9e374b433421e9cb9438f7f5071a89c073",
+      "size": 1951,
+      "modified_timestamp": "2026-05-27T08:41:00+00:00",
+      "modified_time_ns": 1779871260000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_tribunal_lifecycle.py",
+      "sha256": "8c65e9baef525d74d8bc3e6620204385c5de774b0d5bfa1b081619bc0119a92a",
+      "size": 1033,
+      "modified_timestamp": "2026-05-28T04:45:26+00:00",
+      "modified_time_ns": 1779943526000000000
+    },
+    {
+      "path": "tests/test_runtime_snapshot_voice_status.py",
+      "sha256": "3b94f2fca27a9c778ed3e8a52cc92751c20bceab14f6b47c5574f3bb39d311eb",
+      "size": 1459,
+      "modified_timestamp": "2026-05-28T19:21:34+00:00",
+      "modified_time_ns": 1779996094000000000
+    },
+    {
+      "path": "tests/test_safe_mode_boot.py",
+      "sha256": "786e2aaf53c943a54175607df773f8801422c68608f309e1dacbeda6e9d060e3",
+      "size": 1914,
+      "modified_timestamp": "2026-05-31T15:02:38+00:00",
+      "modified_time_ns": 1780239758000000000
+    },
+    {
+      "path": "tests/test_search_adapter_disabled_by_default.py",
+      "sha256": "c1be47e54f449a25d86bbd5977952c4f17b29f4d1416aeca647f68ae2311058a",
+      "size": 457,
+      "modified_timestamp": "2026-05-31T20:46:00+00:00",
+      "modified_time_ns": 1780260360000000000
+    },
+    {
+      "path": "tests/test_session_memory.py",
+      "sha256": "47e59f2d3579f150b84617ed5769c6ee8b7eebdad6ea9cf92b816e4fc3f6cbc2",
+      "size": 1826,
+      "modified_timestamp": "2026-05-09T08:58:50+00:00",
+      "modified_time_ns": 1778317130000000000
+    },
+    {
+      "path": "tests/test_session_row_present_all_themes.py",
+      "sha256": "c2d0db2bb2823e461dac4b1003ec32e35fbaa802d957e406e5d65828797f2c1f",
+      "size": 1124,
+      "modified_timestamp": "2026-05-31T15:01:32+00:00",
+      "modified_time_ns": 1780239692000000000
+    },
+    {
+      "path": "tests/test_simulation_create_overlay.py",
+      "sha256": "529d20a5f952b8a1d63a49169e610f3ccd80cda9691658e2e0e4d23f50618278",
+      "size": 1354,
+      "modified_timestamp": "2026-05-31T15:00:10+00:00",
+      "modified_time_ns": 1780239610000000000
+    },
+    {
+      "path": "tests/test_simulation_dossier_export.py",
+      "sha256": "f87975086049fdd147687afdd5fdaff6e1823cdcacb0b230cd7e524d83e69d0a",
+      "size": 1766,
+      "modified_timestamp": "2026-05-31T15:01:02+00:00",
+      "modified_time_ns": 1780239662000000000
+    },
+    {
+      "path": "tests/test_simulation_history_overlay.py",
+      "sha256": "a8a8da64b3e170eb079bb990ea6575e02a7841e9170ae4b27e5009f4b9752831",
+      "size": 1370,
+      "modified_timestamp": "2026-05-31T15:00:22+00:00",
+      "modified_time_ns": 1780239622000000000
+    },
+    {
+      "path": "tests/test_simulation_models.py",
+      "sha256": "289a08680401818285661018155363ec7427c3c92d7cdd69c8a39b0916013e3e",
+      "size": 874,
+      "modified_timestamp": "2026-05-27T19:06:52+00:00",
+      "modified_time_ns": 1779908812000000000
+    },
+    {
+      "path": "tests/test_simulation_registry.py",
+      "sha256": "4b5eb0e0dcbfcd03a8ed9863709771fdf7033bbd93fc6e852f1644afe9d85dd0",
+      "size": 766,
+      "modified_timestamp": "2026-05-27T19:06:52+00:00",
+      "modified_time_ns": 1779908812000000000
+    },
+    {
+      "path": "tests/test_simulation_store.py",
+      "sha256": "52a075de08d930c1af7d6c2a806ee3203fa511cf01df5f9047d71d2e6a061940",
+      "size": 1056,
+      "modified_timestamp": "2026-05-27T19:06:52+00:00",
+      "modified_time_ns": 1779908812000000000
+    },
+    {
+      "path": "tests/test_static_assets.py",
+      "sha256": "19bcae2dea675d91e70f88252f79eb99747551f38ebb5494d70bc14284ddf911",
+      "size": 810,
+      "modified_timestamp": "2026-05-07T10:59:20+00:00",
+      "modified_time_ns": 1778151560000000000
+    },
+    {
+      "path": "tests/test_status_panel_cleanup.py",
+      "sha256": "fd00c7fe13697ae725708c3211be888f9c2b233409d02b1546538119ce607b93",
+      "size": 1343,
+      "modified_timestamp": "2026-05-13T16:59:28+00:00",
+      "modified_time_ns": 1778691568000000000
+    },
+    {
+      "path": "tests/test_submit_button_visible_all_themes.py",
+      "sha256": "ec19f9bb62f702254a0dd41c22d2be5270fb9e68f4baa0973c2506e17b58c3a0",
+      "size": 2675,
+      "modified_timestamp": "2026-06-20T16:13:40+00:00",
+      "modified_time_ns": 1781972020000000000
+    },
+    {
+      "path": "tests/test_telemetry_collector.py",
+      "sha256": "7b689bde3847785e2118004365f6c07e8c38f2da6e89f1a69c29adcea1ada753",
+      "size": 1124,
+      "modified_timestamp": "2026-05-27T08:33:00+00:00",
+      "modified_time_ns": 1779870780000000000
+    },
+    {
+      "path": "tests/test_telemetry_degraded_psutil_missing.py",
+      "sha256": "5086a1fb2051db364182f39b774c440a246f6654385397a09f17a6da2534e3e2",
+      "size": 1556,
+      "modified_timestamp": "2026-05-27T09:55:06+00:00",
+      "modified_time_ns": 1779875706000000000
+    },
+    {
+      "path": "tests/test_telemetry_full_visibility.py",
+      "sha256": "849d7c4da65d390c6f6e8e12351682fb835947efab564e5de217c1351022861c",
+      "size": 1001,
+      "modified_timestamp": "2026-05-27T21:26:44+00:00",
+      "modified_time_ns": 1779917204000000000
+    },
+    {
+      "path": "tests/test_telemetry_history.py",
+      "sha256": "a78842df9248ef29de720768e6bbeef968aaa3a1fe4f3f8281ca343eb658cc4b",
+      "size": 1189,
+      "modified_timestamp": "2026-05-27T08:33:00+00:00",
+      "modified_time_ns": 1779870780000000000
+    },
+    {
+      "path": "tests/test_telemetry_no_footer_overlap.py",
+      "sha256": "baaca4313459b4c1e5dc51f518a743b67c88acdf0519bf2b4fa7820691171371",
+      "size": 1096,
+      "modified_timestamp": "2026-05-28T18:17:40+00:00",
+      "modified_time_ns": 1779992260000000000
+    },
+    {
+      "path": "tests/test_telemetry_no_gpu_available.py",
+      "sha256": "d13e4a984585e1704000c855fbcb3e35b916947e65aea0098a412d6d65449689",
+      "size": 1009,
+      "modified_timestamp": "2026-05-27T08:33:00+00:00",
+      "modified_time_ns": 1779870780000000000
+    },
+    {
+      "path": "tests/test_telemetry_no_header_overlap.py",
+      "sha256": "d6701f3427946b7670a4bf0535d2101897b00e7735d068344f8c9e3c52582395",
+      "size": 1209,
+      "modified_timestamp": "2026-06-20T13:02:24+00:00",
+      "modified_time_ns": 1781960544000000000
+    },
+    {
+      "path": "tests/test_telemetry_no_overlap.py",
+      "sha256": "00b2692a08157e4c78973b8005d8fa3f21db521f0798e66e8638a9a2ab6d8ae7",
+      "size": 1192,
+      "modified_timestamp": "2026-05-27T21:25:24+00:00",
+      "modified_time_ns": 1779917124000000000
+    },
+    {
+      "path": "tests/test_telemetry_no_scroll_required.py",
+      "sha256": "c81a63d7cce20d8692d48925e538229cd9f2ad6529de3d054d0908db7453aba8",
+      "size": 972,
+      "modified_timestamp": "2026-05-27T21:27:00+00:00",
+      "modified_time_ns": 1779917220000000000
+    },
+    {
+      "path": "tests/test_telemetry_temperatures.py",
+      "sha256": "4a4e99fb1a10c303249488ee2b9009766137045b098bc3c46bc5d9feda689b65",
+      "size": 5278,
+      "modified_timestamp": "2026-06-23T02:44:36+00:00",
+      "modified_time_ns": 1782182676000000000
+    },
+    {
+      "path": "tests/test_telemetry_theme_styles.py",
+      "sha256": "c7fab645e30af141188030e0fb4057829145d86f2099127d270b7e0555dce24a",
+      "size": 1311,
+      "modified_timestamp": "2026-05-28T17:43:10+00:00",
+      "modified_time_ns": 1779990190000000000
+    },
+    {
+      "path": "tests/test_theme_ambient_messages.py",
+      "sha256": "e528f8b8496322d622725c81171f82745d6b8fcc65eeae4ac57f07f8c02bfc5a",
+      "size": 968,
+      "modified_timestamp": "2026-05-12T19:03:30+00:00",
+      "modified_time_ns": 1778612610000000000
+    },
+    {
+      "path": "tests/test_theme_ascii_dimensions.py",
+      "sha256": "fe58bddf8a14e18d763e590ceba7ee727fc5cff9889a8a243fd676181f643840",
+      "size": 1188,
+      "modified_timestamp": "2026-07-16T06:22:48+00:00",
+      "modified_time_ns": 1784182968000000000
+    },
+    {
+      "path": "tests/test_theme_boot_phrase_selection.py",
+      "sha256": "d1b4c27e819de867fc576525da899914221b6b829ad412947bee2670db07b5b3",
+      "size": 1926,
+      "modified_timestamp": "2026-05-27T20:25:08+00:00",
+      "modified_time_ns": 1779913508000000000
+    },
+    {
+      "path": "tests/test_theme_canonical_tokens.py",
+      "sha256": "a7c222d6bfa3fa7b688c60c05432b4fea80e57e8b475b994058cad4382aa4ec8",
+      "size": 2106,
+      "modified_timestamp": "2026-07-16T06:22:50+00:00",
+      "modified_time_ns": 1784182970000000000
+    },
+    {
+      "path": "tests/test_theme_colors_unchanged.py",
+      "sha256": "e606306415cefda31ce4359515ed67ec8f84f180bf66ad5b232b0ed3e9d4c9dc",
+      "size": 1632,
+      "modified_timestamp": "2026-05-27T14:30:40+00:00",
+      "modified_time_ns": 1779892240000000000
+    },
+    {
+      "path": "tests/test_theme_completeness.py",
+      "sha256": "8d9f20f281b86d795fcf1c46d77be0408d0a15054eb741ad738352e0cd95441d",
+      "size": 2144,
+      "modified_timestamp": "2026-05-24T15:12:56+00:00",
+      "modified_time_ns": 1779635576000000000
+    },
+    {
+      "path": "tests/test_theme_contrast_readability.py",
+      "sha256": "1efa3dbec33da1db631ebddb90a1e9657431cffa6e83830b2ffd8151cecb9e70",
+      "size": 694,
+      "modified_timestamp": "2026-05-27T19:06:54+00:00",
+      "modified_time_ns": 1779908814000000000
+    },
+    {
+      "path": "tests/test_theme_contrast_tokens.py",
+      "sha256": "9233fe3b40810533cc908ada173e23d91ef338149eb36a4449363bc4fcc9bf60",
+      "size": 3003,
+      "modified_timestamp": "2026-05-08T10:33:46+00:00",
+      "modified_time_ns": 1778236426000000000
+    },
+    {
+      "path": "tests/test_theme_gallery_logos.py",
+      "sha256": "f91118f17c33fac9e276e9475b84ef866e12656a380cff91af6b062e34e2c997",
+      "size": 4748,
+      "modified_timestamp": "2026-07-15T08:21:16+00:00",
+      "modified_time_ns": 1784103676000000000
+    },
+    {
+      "path": "tests/test_theme_header_layout_metadata.py",
+      "sha256": "8ee1054c25bf11b8d141c3cb97a07853043fd4903d22ac06eea523370b7ae113",
+      "size": 2824,
+      "modified_timestamp": "2026-06-23T09:16:10+00:00",
+      "modified_time_ns": 1782206170000000000
+    },
+    {
+      "path": "tests/test_theme_header_presentation.py",
+      "sha256": "68ab8d1334e4144ba71e411228dfeac1f5f375c9741d758f5602871c597c5b3f",
+      "size": 1560,
+      "modified_timestamp": "2026-06-20T15:41:36+00:00",
+      "modified_time_ns": 1781970096000000000
+    },
+    {
+      "path": "tests/test_theme_header_rendering.py",
+      "sha256": "4f3b029b8da2abbe00ad0436d11980781f18583ff36fe491ca914d0bdcdca667",
+      "size": 2534,
+      "modified_timestamp": "2026-07-14T17:42:04+00:00",
+      "modified_time_ns": 1784050924000000000
+    },
+    {
+      "path": "tests/test_theme_loading_bars.py",
+      "sha256": "8a01dc096384e8a4a095efc34fe118125d7d8bc56acbbaa45fdd60cb6eb4c1a1",
+      "size": 2975,
+      "modified_timestamp": "2026-05-07T16:41:38+00:00",
+      "modified_time_ns": 1778172098000000000
+    },
+    {
+      "path": "tests/test_theme_logo_rendering.py",
+      "sha256": "38d9d7e7415f1509c15a07888e28d950dc7ef74d323f661dba8a7fad1dc8c0be",
+      "size": 1507,
+      "modified_timestamp": "2026-07-15T08:07:56+00:00",
+      "modified_time_ns": 1784102876000000000
+    },
+    {
+      "path": "tests/test_theme_panel_labels.py",
+      "sha256": "9598a3f529a83f2d975566273145573365beaade05b8a842eadde80b7613ab8d",
+      "size": 1450,
+      "modified_timestamp": "2026-05-24T20:51:58+00:00",
+      "modified_time_ns": 1779655918000000000
+    },
+    {
+      "path": "tests/test_theme_safe_ui_scaling.py",
+      "sha256": "6ab50e8fd1a21493bd5e8cafefbbb80256d9efe518fd4485d02df463acbc07c2",
+      "size": 6047,
+      "modified_timestamp": "2026-07-14T17:42:06+00:00",
+      "modified_time_ns": 1784050926000000000
+    },
+    {
+      "path": "tests/test_theme_visual_consistency.py",
+      "sha256": "860a1f4050cd248f95b5b1f7e8388bacc0a916d660de471de18b7711820e4712",
+      "size": 844,
+      "modified_timestamp": "2026-05-27T19:25:14+00:00",
+      "modified_time_ns": 1779909914000000000
+    },
+    {
+      "path": "tests/test_themed_header_telemetry_widgets.py",
+      "sha256": "dbb2f957f6dae21cf081097eae19faa5ff32f580ab6277f7f14a48526d5ec48c",
+      "size": 9064,
+      "modified_timestamp": "2026-06-23T02:25:08+00:00",
+      "modified_time_ns": 1782181508000000000
+    },
+    {
+      "path": "tests/test_top_header_telemetry_layout.py",
+      "sha256": "65f1a819e2afed07e28057fca014bdb3fde23a52fda6601b0a82e20c9c80f365",
+      "size": 1716,
+      "modified_timestamp": "2026-06-23T02:28:24+00:00",
+      "modified_time_ns": 1782181704000000000
+    },
+    {
+      "path": "tests/test_tribunal_lifecycle_phases.py",
+      "sha256": "e4047d4687fd859128092104db5ef9e23e7cd9ea9e68f52b054ae44c0806e614",
+      "size": 1791,
+      "modified_timestamp": "2026-05-28T04:40:02+00:00",
+      "modified_time_ns": 1779943202000000000
+    },
+    {
+      "path": "tests/test_typewriter_animation.py",
+      "sha256": "08f826a6c0c4146f218458c3a06983c0ed1eebefdb9f4c1413968201af79dd77",
+      "size": 988,
+      "modified_timestamp": "2026-05-08T07:12:24+00:00",
+      "modified_time_ns": 1778224344000000000
+    },
+    {
+      "path": "tests/test_verdict_export_json.py",
+      "sha256": "f6b65734d0a4d15b5284f27e25022e1b004d41a161466d959e37b9fc6bf2735d",
+      "size": 1155,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_verdict_export_markdown.py",
+      "sha256": "df37c65c913958a87da6099857a5004a05a863b0b203e9db7f76fd27cf0ac2e1",
+      "size": 1112,
+      "modified_timestamp": "2026-05-27T15:16:52+00:00",
+      "modified_time_ns": 1779895012000000000
+    },
+    {
+      "path": "tests/test_verdict_typing_animation.py",
+      "sha256": "b31172538332af69043b0d2ad4d345d3d6411dee7c404342cf9eb9790422e6df",
+      "size": 1009,
+      "modified_timestamp": "2026-05-12T19:03:30+00:00",
+      "modified_time_ns": 1778612610000000000
+    },
+    {
+      "path": "tests/test_verification_manifest_durations.py",
+      "sha256": "0dc43026df8d04c3e765ba1122d8f79398ed36b91a25ff503a3a7809ff6e7a43",
+      "size": 2830,
+      "modified_timestamp": "2026-05-27T11:28:34+00:00",
+      "modified_time_ns": 1779881314000000000
+    },
+    {
+      "path": "tests/test_voice_failure_logged_not_crashing_gui.py",
+      "sha256": "7795864da67f7204ebcc1283cf76e3468ce9bd0a0721cd141aac1b7c117822ae",
+      "size": 1539,
+      "modified_timestamp": "2026-05-28T20:08:46+00:00",
+      "modified_time_ns": 1779998926000000000
+    },
+    {
+      "path": "tests/test_voting_runtime_integration.py",
+      "sha256": "a9d1b2ed462fde6711f940ded23135a3bf207158b035ba3bd5a142b3be630e6d",
+      "size": 3965,
+      "modified_timestamp": "2026-05-20T13:12:16+00:00",
+      "modified_time_ns": 1779282736000000000
+    },
+    {
+      "path": "tests/test_war_room_geometry_contract.py",
+      "sha256": "7285332b2d6bcec4c2d106db6c6294be0a088fa56d9d3797680bf6cc1242f4b2",
+      "size": 6154,
+      "modified_timestamp": "2026-07-16T10:43:26+00:00",
+      "modified_time_ns": 1784198606000000000
+    },
+    {
+      "path": "tests/test_war_room_state_machine.py",
+      "sha256": "8fdc05630fff36cdf91269dc77f6f3d2ed88add0347ca711c05f6bf47c78dac3",
+      "size": 1414,
+      "modified_timestamp": "2026-05-12T19:04:02+00:00",
+      "modified_time_ns": 1778612642000000000
+    },
+    {
+      "path": "tests/test_war_room_visual_hierarchy.py",
+      "sha256": "4de358048935a8de847c9169aad0c1895b3bff0b9e31cb6f8c579121ed370202",
+      "size": 2102,
+      "modified_timestamp": "2026-07-16T06:45:02+00:00",
+      "modified_time_ns": 1784184302000000000
+    },
+    {
+      "path": "tests/test_wh40k_compact_logo_asset.py",
+      "sha256": "c9f903c465c69e3857b0e2ef53817616d3fb1b4de59e438903eb56b2edaa2059",
+      "size": 1148,
+      "modified_timestamp": "2026-05-28T04:38:46+00:00",
+      "modified_time_ns": 1779943126000000000
+    },
+    {
+      "path": "tests/test_wh40k_logo_full_visibility.py",
+      "sha256": "0804d9d78e5529a01732e897f85d20f1588ad9ade4107d6ca9771b0349cf0115",
+      "size": 1939,
+      "modified_timestamp": "2026-06-23T02:39:22+00:00",
+      "modified_time_ns": 1782182362000000000
+    },
+    {
+      "path": "tests/test_wh40k_theme_specific_layout.py",
+      "sha256": "c7dc12e2a6e339b52ad3c1bd3a88cc700bbb9bec91aa0ccd81b9289c867b1f9b",
+      "size": 725,
+      "modified_timestamp": "2026-05-27T21:26:00+00:00",
+      "modified_time_ns": 1779917160000000000
+    },
+    {
+      "path": "tools/boot.py",
+      "sha256": "2fae9c44316bad23c25e1f4c1a2c2679c790317f23f3006ff382cfcfb8db44f9",
+      "size": 10355,
+      "modified_timestamp": "2026-07-18T06:04:38+00:00",
+      "modified_time_ns": 1784354678000000000
+    },
+    {
+      "path": "tools/build_active_manifest.py",
+      "sha256": "9a5a8b4c73db070e73f8cee6edd87592a51a1f1c5265d0b252471c85ea3d6510",
+      "size": 3589,
+      "modified_timestamp": "2026-05-24T17:38:40+00:00",
+      "modified_time_ns": 1779644320000000000
+    },
+    {
+      "path": "tools/capture_gui_snapshot.py",
+      "sha256": "a10cda6042df9cd1689bc05a6f9be50caf12397240844ee801aa443d7bd5328e",
+      "size": 9132,
+      "modified_timestamp": "2026-05-24T17:03:04+00:00",
+      "modified_time_ns": 1779642184000000000
+    },
+    {
+      "path": "tools/check_dependencies.py",
+      "sha256": "e8b4ae9fe76a0788bb132ae48a32a161af68872535f730af890e4a8f879eb16f",
+      "size": 3073,
+      "modified_timestamp": "2026-05-28T15:53:56+00:00",
+      "modified_time_ns": 1779983636000000000
+    },
+    {
+      "path": "tools/compile_active_tree.py",
+      "sha256": "cca73f8079cb59f291e03c99db8861bd065ef0414a2f8c6531b90b4fa687d8af",
+      "size": 451,
+      "modified_timestamp": "2026-05-19T13:33:14+00:00",
+      "modified_time_ns": 1779197594000000000
+    },
+    {
+      "path": "tools/eva_boot_dummy.py",
+      "sha256": "548d0134836ca35361b9e19c9a2f79b007ff5cdf39ef61f53e4481ea5619cc11",
+      "size": 16710,
+      "modified_timestamp": "2026-07-18T06:02:26+00:00",
+      "modified_time_ns": 1784354546000000000
+    },
+    {
+      "path": "tools/export_dossier.py",
+      "sha256": "c1c6a301849e055cfe071487c04d2ed905ff233a02cb107c6542d36f99acced4",
+      "size": 959,
+      "modified_timestamp": "2026-05-27T16:43:10+00:00",
+      "modified_time_ns": 1779900190000000000
+    },
+    {
+      "path": "tools/export_latest_verdict.py",
+      "sha256": "964f85a61a33f512aba28f270a68921a24a1b4a35c81b1af1a344deaf766cb4b",
+      "size": 874,
+      "modified_timestamp": "2026-05-27T15:10:36+00:00",
+      "modified_time_ns": 1779894636000000000
+    },
+    {
+      "path": "tools/export_runtime_bundle.py",
+      "sha256": "30c0438bba197248fd349ed685c658736302c5afa9d0f23a3ebe6b128ccfeeb4",
+      "size": 12227,
+      "modified_timestamp": "2026-06-01T06:33:22+00:00",
+      "modified_time_ns": 1780295602000000000
+    },
+    {
+      "path": "tools/export_simulation_dossier.py",
+      "sha256": "9db5f09a998c1b8297ef699b86f077ab1b135ea2c8e838b86e72ce8178a6d1c8",
+      "size": 693,
+      "modified_timestamp": "2026-05-31T14:56:06+00:00",
+      "modified_time_ns": 1780239366000000000
+    },
+    {
+      "path": "tools/export_theme_gallery.py",
+      "sha256": "f6be7068e917ea0dacadcf56569c6673dbf16125c89e67e4cdb2948fd1fa53dd",
+      "size": 21912,
+      "modified_timestamp": "2026-07-15T08:41:02+00:00",
+      "modified_time_ns": 1784104862000000000
+    },
+    {
+      "path": "tools/gui_smoke_check.py",
+      "sha256": "7b1bfd216d4de0c7aa11f4dce1fe53be62b58c918a9f3c5fd1e7e4520788623e",
+      "size": 5988,
+      "modified_timestamp": "2026-05-27T13:49:34+00:00",
+      "modified_time_ns": 1779889774000000000
+    },
+    {
+      "path": "tools/logo_history_gallery.py",
+      "sha256": "4e911348741ce9af4aa5094b3638008b8fde80687ea1846643a6fee8dd5288d9",
+      "size": 22065,
+      "modified_timestamp": "2026-06-22T14:28:52+00:00",
+      "modified_time_ns": 1782138532000000000
+    },
+    {
+      "path": "tools/poll_rss_feeds.py",
+      "sha256": "98f1c6c12adf26197cb91d10d451727977b3baaae632f5e27200d31d2590ded6",
+      "size": 1482,
+      "modified_timestamp": "2026-06-01T06:38:10+00:00",
+      "modified_time_ns": 1780295890000000000
+    },
+    {
+      "path": "tools/probe_rss_feeds.py",
+      "sha256": "8f37298bedda24bad1f26a26c5ad5eb33394ccd775ca7992c5b659c2eb77d59b",
+      "size": 2433,
+      "modified_timestamp": "2026-06-01T12:04:54+00:00",
+      "modified_time_ns": 1780315494000000000
+    },
+    {
+      "path": "tools/provider_status_report.py",
+      "sha256": "e39742fe786d41bc870c6047c4df184758bad7f04908c20933bc11008773be50",
+      "size": 2378,
+      "modified_timestamp": "2026-06-18T13:41:26+00:00",
+      "modified_time_ns": 1781790086000000000
+    },
+    {
+      "path": "tools/record_visual_review.py",
+      "sha256": "cc01c1b183169f078a275524781a0ff57a0af7147f38b066b70ad615add1e61f",
+      "size": 1238,
+      "modified_timestamp": "2026-05-27T08:26:00+00:00",
+      "modified_time_ns": 1779870360000000000
+    },
+    {
+      "path": "tools/run_tests.py",
+      "sha256": "d0bcffbf08e0c189c8c3cdbced309ffd83153d7710842601271a8deba0dfef93",
+      "size": 14709,
+      "modified_timestamp": "2026-05-27T15:40:38+00:00",
+      "modified_time_ns": 1779896438000000000
+    },
+    {
+      "path": "tools/runtime_snapshot.py",
+      "sha256": "5b1eaf2c110641d9191f7bdee890fb25008c1c7db1117abe72510a48d74d97cb",
+      "size": 6408,
+      "modified_timestamp": "2026-06-20T12:49:30+00:00",
+      "modified_time_ns": 1781959770000000000
+    },
+    {
+      "path": "tools/test_arbiter_voice.py",
+      "sha256": "9353319c2b1a930293a22c96bc4750f194895995c5bb03c057631e63d6b62a4d",
+      "size": 2440,
+      "modified_timestamp": "2026-05-28T19:20:12+00:00",
+      "modified_time_ns": 1779996012000000000
+    },
+    {
+      "path": "tools/theme_boot_dummy.py",
+      "sha256": "c1221f044097985e68de1021446c0f3405896036895082f573bcdadb3665347b",
+      "size": 278,
+      "modified_timestamp": "2026-07-17T07:27:20+00:00",
+      "modified_time_ns": 1784273240000000000
+    },
+    {
+      "path": "tools/verify_active_manifest.py",
+      "sha256": "d780e2e2e6154ad135aa59ab27ce953fa0ca1f68eebbf9b187c2d557980c4193",
+      "size": 3998,
+      "modified_timestamp": "2026-05-24T17:37:50+00:00",
+      "modified_time_ns": 1779644270000000000
+    },
+    {
+      "path": "ui/__init__.py",
+      "sha256": "0764d25f616759a258fdf7e6a4eb50eed28a4268bd70467b441a91c4b732ef23",
+      "size": 53,
+      "modified_timestamp": "2026-05-06T17:55:22+00:00",
+      "modified_time_ns": 1778090122000000000
+    },
+    {
+      "path": "ui/animations/__init__.py",
+      "sha256": "df2cfe477d4f2788d8fa56fb70bb8c126f4ca335de3f0ce40a8cbb4abb6870ae",
+      "size": 39,
+      "modified_timestamp": "2026-05-06T17:59:38+00:00",
+      "modified_time_ns": 1778090378000000000
+    },
+    {
+      "path": "ui/animations/bios_boot.py",
+      "sha256": "c98d2c4faacb44789b685d4065712970db3e9b6ee4dc647445d6359362998564",
+      "size": 34860,
+      "modified_timestamp": "2026-07-18T06:02:24+00:00",
+      "modified_time_ns": 1784354544000000000
+    },
+    {
+      "path": "ui/animations/boot.py",
+      "sha256": "b669997f7d29bd2d90c9b8b9b750b94fb79834a91cf1c79ba36d234b6d07b274",
+      "size": 7696,
+      "modified_timestamp": "2026-05-31T16:55:10+00:00",
+      "modified_time_ns": 1780246510000000000
+    },
+    {
+      "path": "ui/animations/boot_phrases.py",
+      "sha256": "0db2066d7e6ae651732026714564726b6885adb1d59b6df7e09f6e9cf7797840",
+      "size": 431,
+      "modified_timestamp": "2026-05-27T20:23:52+00:00",
+      "modified_time_ns": 1779913432000000000
+    },
+    {
+      "path": "ui/animations/loading.py",
+      "sha256": "28292757010979c9158e5abe116b7113bdbcc652d4b40de6e6ed7dcc36796b9d",
+      "size": 7955,
+      "modified_timestamp": "2026-07-17T07:41:32+00:00",
+      "modified_time_ns": 1784274092000000000
+    },
+    {
+      "path": "ui/animations/typewriter.py",
+      "sha256": "42992c63f77c7b78864650ec4e894d39ab165019257a9ec7572c087a26ae52ef",
+      "size": 3423,
+      "modified_timestamp": "2026-05-12T19:06:04+00:00",
+      "modified_time_ns": 1778612764000000000
+    },
+    {
+      "path": "ui/assets/.gitkeep",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size": 1,
+      "modified_timestamp": "2026-05-06T17:59:38+00:00",
+      "modified_time_ns": 1778090378000000000
+    },
+    {
+      "path": "ui/assets/__init__.py",
+      "sha256": "7846189315f91f3f70a1754e049d87dbf090a048a1d2f1fa9d1b77b07d99f2ff",
+      "size": 49,
+      "modified_timestamp": "2026-05-24T17:51:44+00:00",
+      "modified_time_ns": 1779645104000000000
+    },
+    {
+      "path": "ui/assets/app_icon.py",
+      "sha256": "7fa7f3d1036ed212c86874a01c50ee4b98623db800597a9a7d646a33ffdf1ddf",
+      "size": 2315,
+      "modified_timestamp": "2026-05-31T16:55:10+00:00",
+      "modified_time_ns": 1780246510000000000
+    },
+    {
+      "path": "ui/assets/logo_normalizer.py",
+      "sha256": "bac4bfa717f4e9e48060685bc9c1896367b3f1942da23a2d7a25fccfb7ee1e93",
+      "size": 1109,
+      "modified_timestamp": "2026-05-24T17:51:18+00:00",
+      "modified_time_ns": 1779645078000000000
+    },
+    {
+      "path": "ui/assets/registry.py",
+      "sha256": "e12ca443c1c8c14e7b7b0f55c191510be9168a44a0f16f3e930ed2b134a07a7c",
+      "size": 12949,
+      "modified_timestamp": "2026-07-16T10:43:20+00:00",
+      "modified_time_ns": 1784198600000000000
+    },
+    {
+      "path": "ui/boot/__init__.py",
+      "sha256": "0a38d28991a2ef259d5dec9d64f37989404560814a8d173b1f853416758d96cb",
+      "size": 688,
+      "modified_timestamp": "2026-05-27T20:22:06+00:00",
+      "modified_time_ns": 1779913326000000000
+    },
+    {
+      "path": "ui/boot/phrases.py",
+      "sha256": "3647bafdf5e70cf4b3143fee44078371df81fc39b15d91a97c591f42a11ca710",
+      "size": 9328,
+      "modified_timestamp": "2026-05-28T17:41:06+00:00",
+      "modified_time_ns": 1779990066000000000
+    },
+    {
+      "path": "ui/boot/registry.py",
+      "sha256": "7f393aa7f66dff4a20bb5d7b2d37e201e42f565b9f41e8a1b646b5426b8183ee",
+      "size": 8630,
+      "modified_timestamp": "2026-05-27T20:22:50+00:00",
+      "modified_time_ns": 1779913370000000000
+    },
+    {
+      "path": "ui/components/__init__.py",
+      "sha256": "4eb7a34624aa3b88b12b95f837dd5bddc8a9a4bf2997e077560c2b1b0f512dfb",
+      "size": 36,
+      "modified_timestamp": "2026-05-06T17:59:36+00:00",
+      "modified_time_ns": 1778090376000000000
+    },
+    {
+      "path": "ui/components/ascii_grid_logo.py",
+      "sha256": "f9dd726d1b4366eb65f599f1cb9c92bae232e179a8c3e69be3692e87d047ac7c",
+      "size": 10257,
+      "modified_timestamp": "2026-06-24T11:18:28+00:00",
+      "modified_time_ns": 1782299908000000000
+    },
+    {
+      "path": "ui/components/bellator_intelligence_panel.py",
+      "sha256": "754662be5548bfd31afdbf000986d37b801b5603abaa492ff78c7f92e885555e",
+      "size": 3095,
+      "modified_timestamp": "2026-05-24T15:00:54+00:00",
+      "modified_time_ns": 1779634854000000000
+    },
+    {
+      "path": "ui/components/header.py",
+      "sha256": "548fbdd93a702f49ea7eb1e58fe4f58c37982607feb8b204b580de116b611134",
+      "size": 38962,
+      "modified_timestamp": "2026-07-16T10:42:10+00:00",
+      "modified_time_ns": 1784198530000000000
+    },
+    {
+      "path": "ui/components/log_panel.py",
+      "sha256": "3ad0db6247abeb3dd1fdcb01c86924dc3c7c41a206cad60462eb12f9f0122979",
+      "size": 5480,
+      "modified_timestamp": "2026-06-05T14:57:32+00:00",
+      "modified_time_ns": 1780671452000000000
+    },
+    {
+      "path": "ui/components/monolith_panel.py",
+      "sha256": "c976831ac17d7000136188dc277df459778d51878c913ef0968509cdd80fd183",
+      "size": 12392,
+      "modified_timestamp": "2026-06-20T12:43:52+00:00",
+      "modified_time_ns": 1781959432000000000
+    },
+    {
+      "path": "ui/components/proposal_panel.py",
+      "sha256": "9b6d1acb61aef7dafae68d9476224b1dd8d84f2ccf4ac4129dffebd1bc819c67",
+      "size": 5551,
+      "modified_timestamp": "2026-06-05T16:37:00+00:00",
+      "modified_time_ns": 1780677420000000000
+    },
+    {
+      "path": "ui/components/reasoning_stream.py",
+      "sha256": "4b84f2904adc071f5ae22617040f2d765b9258cb9febf32ff0fcb2c3a10f3115",
+      "size": 2339,
+      "modified_timestamp": "2026-05-28T05:47:08+00:00",
+      "modified_time_ns": 1779947228000000000
+    },
+    {
+      "path": "ui/components/safe_text.py",
+      "sha256": "e43d9c5da30bdd7766cf89c3522db27e9a1bc26318dfa47061b2ad2b39768d17",
+      "size": 988,
+      "modified_timestamp": "2026-06-05T14:55:56+00:00",
+      "modified_time_ns": 1780671356000000000
+    },
+    {
+      "path": "ui/components/status_panel.py",
+      "sha256": "95fefd7b04a3b20e2da4d251478243e378c9c578bcf00b2ce4d19ae7d885948c",
+      "size": 6981,
+      "modified_timestamp": "2026-06-05T14:57:18+00:00",
+      "modified_time_ns": 1780671438000000000
+    },
+    {
+      "path": "ui/components/telemetry.py",
+      "sha256": "184df932f1f0c8a9bb7ade81e3bcc192f5ee04c3f5c7f605f49131cadfdbef03",
+      "size": 497,
+      "modified_timestamp": "2026-05-27T21:23:24+00:00",
+      "modified_time_ns": 1779917004000000000
+    },
+    {
+      "path": "ui/components/telemetry_panel.py",
+      "sha256": "c8a43872e9a987031849f42dbf51f7aff6f43b0d9a981bfd1ae910e43d4bb128",
+      "size": 6783,
+      "modified_timestamp": "2026-05-28T17:44:58+00:00",
+      "modified_time_ns": 1779990298000000000
+    },
+    {
+      "path": "ui/components/telemetry_widgets.py",
+      "sha256": "3f2f7918d866a0f218765f9a559f878aa859fc27f8ad2ed72a3ec70e89402936",
+      "size": 26278,
+      "modified_timestamp": "2026-06-23T06:15:00+00:00",
+      "modified_time_ns": 1782195300000000000
+    },
+    {
+      "path": "ui/components/theme_switcher.py",
+      "sha256": "33ec0421b74a1bf0eb69af97c3975299df68574e4c0f7dc83fa9ebd9cfa1469a",
+      "size": 1594,
+      "modified_timestamp": "2026-06-20T12:42:22+00:00",
+      "modified_time_ns": 1781959342000000000
+    },
+    {
+      "path": "ui/components/verdict_panel.py",
+      "sha256": "579a2736f84e751cebc2ce1f5e49c9d5fef1565884905516cc97ebb91a1946f3",
+      "size": 8233,
+      "modified_timestamp": "2026-06-20T16:10:08+00:00",
+      "modified_time_ns": 1781971808000000000
+    },
+    {
+      "path": "ui/flet_app.py",
+      "sha256": "b0d6b7fdc230ffe4d673b25bbdd992f4a4c5c25d4345d853e921a30cf34f81dd",
+      "size": 113295,
+      "modified_timestamp": "2026-07-16T06:44:56+00:00",
+      "modified_time_ns": 1784184296000000000
+    },
+    {
+      "path": "ui/layout_contract.py",
+      "sha256": "12264a165b757e3bf05e5a53c95c07c7dd3477759b268cd8667f6ad3ea3bae7c",
+      "size": 282,
+      "modified_timestamp": "2026-06-20T14:57:00+00:00",
+      "modified_time_ns": 1781967420000000000
+    },
+    {
+      "path": "ui/rendering.py",
+      "sha256": "df4fc8393300894c4c5d3be64149de0221140d2698c629a77e2c39ceb2134adc",
+      "size": 1741,
+      "modified_timestamp": "2026-05-10T07:04:34+00:00",
+      "modified_time_ns": 1778396674000000000
+    },
+    {
+      "path": "ui/themes/__init__.py",
+      "sha256": "aa645c69ea3bbda6f3099db23c54ca47a4649979148eac2da56abfbacfc77f31",
+      "size": 32,
+      "modified_timestamp": "2026-05-06T17:55:22+00:00",
+      "modified_time_ns": 1778090122000000000
+    },
+    {
+      "path": "ui/themes/boot_profiles.py",
+      "sha256": "0730316e63d73fe61bf8b2987b88dc3bf71680a1e481d72a439b8fdb0a592e51",
+      "size": 5376,
+      "modified_timestamp": "2026-05-07T13:46:50+00:00",
+      "modified_time_ns": 1778161610000000000
+    },
+    {
+      "path": "ui/themes/catalog.py",
+      "sha256": "74194f52e0859651a567c4e99549cbd4eb24b2afb7a0b761b15f5d5bfbf4cfca",
+      "size": 14257,
+      "modified_timestamp": "2026-05-31T18:46:04+00:00",
+      "modified_time_ns": 1780253164000000000
+    },
+    {
+      "path": "ui/visual_checks.py",
+      "sha256": "1e1dbb056acec829f55d4b3aa30b16855ab241de29b4a8056ccfa4f0aca087bd",
+      "size": 2477,
+      "modified_timestamp": "2026-06-20T14:57:02+00:00",
+      "modified_time_ns": 1781967422000000000
+    },
+    {
+      "path": "ui/war_room_runtime.py",
+      "sha256": "c36f71eac0c84cfb6ece3fb4b9b1075fe37fc2571aad6a3f280632382b4501cf",
+      "size": 9700,
+      "modified_timestamp": "2026-05-28T04:37:20+00:00",
+      "modified_time_ns": 1779943040000000000
+    },
+    {
+      "path": "voice/__init__.py",
+      "sha256": "8ad0f802e5a077df6f04bcba66d114c91deb4cbe4cec8ee48141600b4ea5700b",
+      "size": 2439,
+      "modified_timestamp": "2026-05-19T09:31:52+00:00",
+      "modified_time_ns": 1779183112000000000
+    },
+    {
+      "path": "voice/arbiter_verdict_voice.py",
+      "sha256": "ea4097828440982ec324c4b962b56065e1567d52b0c5a25ce35576c7c143d418",
+      "size": 9977,
+      "modified_timestamp": "2026-06-05T11:16:38+00:00",
+      "modified_time_ns": 1780658198000000000
+    },
+    {
+      "path": "voice/attenborough_tts_adapter.py",
+      "sha256": "84a61804409bf972da72d6be0f084061d09a5c59b746e0a1d4fe374ae72ed3ec",
+      "size": 3772,
+      "modified_timestamp": "2026-05-10T09:45:44+00:00",
+      "modified_time_ns": 1778406344000000000
+    },
+    {
+      "path": "voice/aurelius_adapter.py",
+      "sha256": "00061496e0b840c88724484409b905de311918c1bcf95afb411a0fcdc0f75127",
+      "size": 1074,
+      "modified_timestamp": "2026-05-19T09:31:52+00:00",
+      "modified_time_ns": 1779183112000000000
+    },
+    {
+      "path": "voice/aurelius_voice.py",
+      "sha256": "a1ef9ca9d0760bba0de5647a5bfe0564c311f4c4e5f0eec09ef2620ad3a161d6",
+      "size": 14553,
+      "modified_timestamp": "2026-05-20T13:12:02+00:00",
+      "modified_time_ns": 1779282722000000000
+    },
+    {
+      "path": "voice/glados_adapter.py",
+      "sha256": "178f61794bc06551d3632043572f346d52e78a255c7e0ee5cc6f1be1500201bb",
+      "size": 5560,
+      "modified_timestamp": "2026-06-05T11:16:10+00:00",
+      "modified_time_ns": 1780658170000000000
+    },
+    {
+      "path": "voice/model/AURELIUS (Attenborough)RVC.zip",
+      "sha256": "d0b661c018c4028714b1f69fe42987c02b8688a433182789edf2c97220cb3a9a",
+      "size": 134849343,
+      "modified_timestamp": "2026-05-19T09:34:12+00:00",
+      "modified_time_ns": 1779183252000000000
+    },
+    {
+      "path": "voice/model/AURELIUS (Attenborough)RVC/DavidAttenborough/weights/DavidAttenborough.pth",
+      "sha256": "d07e0664911f892a7664980c20b32d3688c71bd1ccbe6612d9ec169f1f53aa7c",
+      "size": 55233441,
+      "modified_timestamp": "2023-08-03T23:13:06+00:00",
+      "modified_time_ns": 1691104386000000000
+    },
+    {
+      "path": "voice/model/GLaDOSPortalRVCEpoch.zip",
+      "sha256": "650b9be3d036319182109d59dde7bffa2b841fa2eee5594c5fc941474bc0b248",
+      "size": 368357162,
+      "modified_timestamp": "2026-05-19T09:36:48+00:00",
+      "modified_time_ns": 1779183408000000000
+    },
+    {
+      "path": "voice/model/GLaDOSPortalRVCEpoch/glados/added_IVF2170_Flat_nprobe_1.index",
+      "sha256": "13729de7b3f739e2947251e97b493ef0672b52b203fed95227abdcd949eb214f",
+      "size": 267365699,
+      "modified_timestamp": "2023-05-17T08:51:20+00:00",
+      "modified_time_ns": 1684313480000000000
+    },
+    {
+      "path": "voice/model/GLaDOSPortalRVCEpoch/glados/glados2333333.pth",
+      "sha256": "bda84b034b24be5e7df58319c027b9f35a8613cf9fc96109d2c70846e0ae1fb9",
+      "size": 55216420,
+      "modified_timestamp": "2023-05-17T08:51:22+00:00",
+      "modified_time_ns": 1684313482000000000
+    },
+    {
+      "path": "voice/model/GLaDOSPortalRVCEpoch/glados/total_fea.npy",
+      "sha256": "c762a4b10e739ebf86d51e9b8ae539c8ac1bc342ea9e810c1cfd85699771c3ee",
+      "size": 260004992,
+      "modified_timestamp": "2023-05-17T08:51:22+00:00",
+      "modified_time_ns": 1684313482000000000
+    },
+    {
+      "path": "voice/models/arbiter_glados/glados/added_IVF2170_Flat_nprobe_1.index",
+      "sha256": "13729de7b3f739e2947251e97b493ef0672b52b203fed95227abdcd949eb214f",
+      "size": 267365699,
+      "modified_timestamp": "2023-05-17T06:51:20+00:00",
+      "modified_time_ns": 1684306280000000000
+    },
+    {
+      "path": "voice/models/arbiter_glados/glados/glados2333333.pth",
+      "sha256": "bda84b034b24be5e7df58319c027b9f35a8613cf9fc96109d2c70846e0ae1fb9",
+      "size": 55216420,
+      "modified_timestamp": "2023-05-17T06:51:22+00:00",
+      "modified_time_ns": 1684306282000000000
+    },
+    {
+      "path": "voice/models/arbiter_glados/glados/total_fea.npy",
+      "sha256": "c762a4b10e739ebf86d51e9b8ae539c8ac1bc342ea9e810c1cfd85699771c3ee",
+      "size": 260004992,
+      "modified_timestamp": "2023-05-17T06:51:22+00:00",
+      "modified_time_ns": 1684306282000000000
+    },
+    {
+      "path": "voice/models/aurelius/DavidAttenborough/weights/DavidAttenborough.pth",
+      "sha256": "d07e0664911f892a7664980c20b32d3688c71bd1ccbe6612d9ec169f1f53aa7c",
+      "size": 55233441,
+      "modified_timestamp": "2023-08-03T17:13:06+00:00",
+      "modified_time_ns": 1691082786000000000
+    },
+    {
+      "path": "voice/riko_adapter.py",
+      "sha256": "d59c821447a11dfd8b03184d4fcb4d574da5ed7e674facbb50a6fbd7cd0a4c3a",
+      "size": 2424,
+      "modified_timestamp": "2026-05-10T09:44:38+00:00",
+      "modified_time_ns": 1778406278000000000
+    },
+    {
+      "path": "voice/rvc_adapter.py",
+      "sha256": "7d1e7c78b2fde313428cc6766cbe92ba058e08ea60d5d4bb0b0b2be51d28d1c0",
+      "size": 8887,
+      "modified_timestamp": "2026-06-05T11:15:40+00:00",
+      "modified_time_ns": 1780658140000000000
+    },
+    {
+      "path": "voice/speech_events.py",
+      "sha256": "eaf8d19db23763af559b5422ad9be0fb0c5a75a311f3eff78a9c6401b871e874",
+      "size": 2120,
+      "modified_timestamp": "2026-05-20T13:11:44+00:00",
+      "modified_time_ns": 1779282704000000000
+    },
+    {
+      "path": "voice/stress_tests/ARBITER_GLADOS/cold_synthetic_deadlock.txt",
+      "sha256": "7e8b45b37a7ec3bbfe4707abf1b1881ec0eb03ae2d90fc040d6738f6be5b213f",
+      "size": 390,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/ARBITER_GLADOS/portal_style_cadence.txt",
+      "sha256": "5621318f0d311c3c0b1dbf2740196f5f3de772eaccd79b5b70a58f6a48e29d48",
+      "size": 382,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/ARBITER_GLADOS/tribunal_verdict.txt",
+      "sha256": "fb211f46e1dfaf99428cec060461b3bd95fb667599fce5f085688cb532557bc2",
+      "size": 518,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/AURELIUS/assistant_briefing.txt",
+      "sha256": "ad81b775bde199a6ad28fa86e07d8824ef3fade95e980c47ca1dbd9038917137",
+      "size": 700,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/AURELIUS/calm_warning_notification.txt",
+      "sha256": "5d9008666d30c018e484ef201d054fa4cc1ad7c244c45177eb59e92ebb8496b0",
+      "size": 424,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/AURELIUS/long_documentary_cadence.txt",
+      "sha256": "bdcb2fe6617a63c774d85c847705b5f5c6c18e05a7b92312d9cdd72e4426017e",
+      "size": 1042,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_tests/manifest.json",
+      "sha256": "d6db9668a2fe57388fb0211b01358e9432f11c05d1cd1d0e0a445ab528baa238",
+      "size": 469,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/stress_texts.py",
+      "sha256": "1808d8db92646ecf2d3f2031baf172905a5bc0936bc74dbcfa17ab3b2ab8b76f",
+      "size": 1046,
+      "modified_timestamp": "2026-05-19T10:02:58+00:00",
+      "modified_time_ns": 1779184978000000000
+    },
+    {
+      "path": "voice/tts_backends.py",
+      "sha256": "9c05c54bfc77d8806d411184707366f5318efac51fc2426b18b60b8634c07316",
+      "size": 8019,
+      "modified_timestamp": "2026-06-05T11:15:30+00:00",
+      "modified_time_ns": 1780658130000000000
+    },
+    {
+      "path": "voice/voice_config.json",
+      "sha256": "356a3c85e8fd7281e3242f3222e5ef24d3279505e595233cf2eda8e403879e17",
+      "size": 3631,
+      "modified_timestamp": "2026-05-19T10:31:04+00:00",
+      "modified_time_ns": 1779186664000000000
+    },
+    {
+      "path": "voice/voice_profiles.py",
+      "sha256": "762824848e0e259188f6adb019eaf5de9992dff4c34f3b7802d200edea274c0b",
+      "size": 1314,
+      "modified_timestamp": "2026-05-19T09:31:50+00:00",
+      "modified_time_ns": 1779183110000000000
+    }
+  ]
+}

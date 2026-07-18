@@ -115,7 +115,7 @@ def run_theme_validation() -> int:
 def run_self_test() -> int:
     from core.simulation.scenarios import create_scenario
     from ui.assets.registry import validate_graphic_registry
-    from ui.animations.bios_boot import _theme_boot_logo_text
+    from ui.animations.bios_boot import _theme_boot_logo_text, capture_boot_hardware_snapshot
     from ui.components.header import logo_runtime_diagnostics
     from voice.voice_profiles import get_voice_profile
 
@@ -155,8 +155,22 @@ def run_self_test() -> int:
     if gui_contract != ("supersampled_square", 162, 162):
         print(f"GUI LOGO SUBSYSTEM: ERROR (received {gui_contract!r})")
         return 1
+    hardware = capture_boot_hardware_snapshot()
+    if (
+        hardware.total_memory_mb < 1
+        or hardware.physical_cores < 1
+        or hardware.logical_threads < hardware.physical_cores
+    ):
+        print(f"HARDWARE SUBSYSTEM: ERROR (received {hardware!r})")
+        return 1
     print(f"SIMULATION SUBSYSTEM: READY ({scenario.generated_branches[0].branch_id})")
     print("ASSET SUBSYSTEM: READY")
+    print(
+        "HARDWARE SUBSYSTEM: READY "
+        f"({hardware.total_memory_mb:,} MB RAM / "
+        f"{hardware.physical_cores} physical cores / "
+        f"{hardware.logical_threads} logical threads)"
+    )
     print("BOOT LOGO SUBSYSTEM: READY (military 38x28)")
     print("GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)")
     return 0

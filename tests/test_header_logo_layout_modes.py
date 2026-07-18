@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import flet as ft
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -225,6 +226,8 @@ def test_military_renderer_uses_supersampled_square_text_settings() -> None:
 
 
 def test_military_consolas_font_covers_all_asset_glyphs() -> None:
+    if not hasattr(ctypes, "windll"):
+        pytest.skip("Consolas glyph coverage requires the Windows GDI API")
     asset_text = THEME_GRAPHIC_ASSETS["military"].logo_path.read_bytes().decode("utf-8")
     supported, missing = _consolas_supports_all_characters(asset_text)
 

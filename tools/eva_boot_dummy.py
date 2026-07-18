@@ -16,7 +16,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config.version import SYSTEM_LAST_PATCH_DATE, SYSTEM_VERSION
-from ui.animations.bios_boot import _bios_header_lines, _boot_color_values, _theme_boot_logo_text
+from ui.animations.bios_boot import (
+    _bios_header_lines,
+    _boot_color_values,
+    _theme_boot_logo_text,
+    capture_boot_hardware_snapshot,
+    hardware_diagnostic_rows,
+)
 from ui.animations.loading import format_loading_bar, get_loading_style
 from ui.boot.registry import boot_registry_for_theme
 from ui.themes.catalog import THEMES, resolve_theme_key
@@ -143,7 +149,7 @@ def _diagnostic_rows(theme_key: str) -> list[tuple[str, str, str, str]]:
     registry = boot_registry_for_theme(theme_key)
     runtime = registry.post_checks[0].removeprefix("[OK] ")
     return [
-        ("CO-CPU", "CHECK", "256 SEGMENTS", "OK"),
+        *hardware_diagnostic_rows(capture_boot_hardware_snapshot()),
         ("I/O VECTORS", "CHECK", theme.boot_profile_id.upper(), "OK"),
         ("CONSOLE DRIVERS", "CHECK", "VT-09 / UTF-8", "OK"),
         ("ROUTING TABLES", "CHECK", "12 CHANNELS", "OK"),
