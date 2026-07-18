@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.15.2 - Cross-Platform CI Test Isolation
+
+- Replaced Windows-only path-string assertions with `pathlib` comparisons so feed, RSS, and validation tests behave consistently on Windows and Linux.
+- Limited the Consolas/GDI glyph-coverage check to Windows while preserving all platform-independent logo contracts on GitHub's Ubuntu runner.
+- Isolated provider-routing tests from ambient endpoint environment variables and model-cache state, keeping their fake runtime selection deterministic.
+
 ## 7.15.1 - GitHub CI Dependency Correction
 
 - Changed GitHub Actions to install the canonical project metadata with the development extra so CI receives Pillow and the supported Flet runtime versions.
