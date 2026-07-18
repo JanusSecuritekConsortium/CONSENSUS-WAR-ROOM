@@ -50,10 +50,9 @@ def test_release_validation_runs_fast_tests_compile_and_gallery() -> None:
     finally:
         boot._run_command = original_run_command
 
-    joined = [" ".join(command) for command in commands]
-    assert any("tools\\run_tests.py" in command and "--fast" in command for command in joined)
-    assert any("tools\\compile_active_tree.py" in command for command in joined)
-    assert any("tools\\export_theme_gallery.py" in command for command in joined)
+    assert any(Path(command[1]).name == "run_tests.py" and "--fast" in command for command in commands)
+    assert any(Path(command[1]).name == "compile_active_tree.py" for command in commands)
+    assert any(Path(command[1]).name == "export_theme_gallery.py" for command in commands)
 
 
 def test_theme_validation_runs_only_theme_layout_scripts() -> None:

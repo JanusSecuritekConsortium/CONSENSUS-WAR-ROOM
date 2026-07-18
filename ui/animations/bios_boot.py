@@ -77,6 +77,17 @@ class BootTerminalPalette:
     reset: str = ""
 
 
+@dataclass(frozen=True)
+class BootHardwareSnapshot:
+    """Hardware capacity detected once for a single boot presentation."""
+
+    total_memory_mb: int
+    physical_cores: int
+    logical_threads: int
+    memory_fallback: bool = False
+    topology_fallback: bool = False
+
+
 def _terminal_width() -> int:
     return max(80, shutil.get_terminal_size((DEFAULT_BOOT_WIDTH, 24)).columns)
 
@@ -155,6 +166,65 @@ def _memory_steps_mb(total_memory_mb: int | None = None) -> tuple[List[int], boo
         if not steps or step != steps[-1]:
             steps.append(step)
     return steps, fallback and total_memory_mb is None
+
+
+def _system_cpu_topology() -> tuple[int, int, bool]:
+    try:
+        import psutil  # type: ignore
+
+        physical = psutil.cpu_count(logical=False)
+        logical = psutil.cpu_count(logical=True)
+        if physical and logical:
+            physical_count = max(1, int(physical))
+            logical_count = max(physical_count, int(logical))
+            return physical_count, logical_count, False
+    except Exception:
+        pass
+
+    logical_count = max(1, int(os.cpu_count() or 1))
+    return logical_count, logical_count, True
+
+
+def capture_boot_hardware_snapshot(total_memory_mb: int | None = None) -> BootHardwareSnapshot:
+    """Read current RAM and CPU topology for one boot-sequence generation."""
+
+    memory_steps, memory_fallback = _memory_steps_mb(total_memory_mb)
+    physical_cores, logical_threads, topology_fallback = _system_cpu_topology()
+    return BootHardwareSnapshot(
+        total_memory_mb=memory_steps[-1],
+        physical_cores=physical_cores,
+        logical_threads=logical_threads,
+        memory_fallback=memory_fallback,
+        topology_fallback=topology_fallback,
+    )
+
+
+def hardware_diagnostic_rows(snapshot: BootHardwareSnapshot) -> List[tuple[str, str, str, str]]:
+    topology_suffix = " FALLBACK" if snapshot.topology_fallback else ""
+    memory_suffix = " FALLBACK" if snapshot.memory_fallback else ""
+    topology_result = "WARN" if snapshot.topology_fallback else "OK"
+    memory_result = "WARN" if snapshot.memory_fallback else "OK"
+    memory_gib = snapshot.total_memory_mb / 1024
+    return [
+        (
+            "CPU CORES",
+            "DETECT",
+            f"{snapshot.physical_cores} PHYSICAL CORES{topology_suffix}",
+            topology_result,
+        ),
+        (
+            "CPU THREADS",
+            "DETECT",
+            f"{snapshot.logical_threads} LOGICAL THREADS{topology_suffix}",
+            topology_result,
+        ),
+        (
+            "SYSTEM RAM",
+            "DETECT",
+            f"{snapshot.total_memory_mb:,} MB / {memory_gib:.1f} GiB{memory_suffix}",
+            memory_result,
+        ),
+    ]
 
 
 def _visible_date() -> str:
@@ -419,8 +489,7 @@ def generate_dense_bios_boot_lines(
     else:
         lines.append(f"LAST PATCH: {SYSTEM_LAST_PATCH_DATE} | BUILD: v{version} | MODE: HIGH")
 
-    memory_steps, memory_fallback = _memory_steps_mb(total_memory_mb)
-    memory_total = memory_steps[-1]
+    hardware = capture_boot_hardware_snapshot(total_memory_mb)
     provider_line = _provider_post_line(provider_status)
     if provider_line.startswith("[OK]"):
         provider_result = "OK"
@@ -430,8 +499,7 @@ def generate_dense_bios_boot_lines(
         provider_result = "WARN"
     provider_detail = _theme_runtime_label(theme_key).upper()
     diagnostic_rows = [
-        ("CO-CPU", "CHECK", "256 SEGMENTS", "OK"),
-        ("MEMORY BANK", "CHECK", f"{memory_total:06d} MB" + (" FALLBACK" if memory_fallback else ""), "OK"),
+        *hardware_diagnostic_rows(hardware),
         ("I/O VECTORS", "CHECK", theme.boot_profile_id.upper(), "OK"),
         ("CONSOLE DRIVERS", "CHECK", "VT-09 / UTF-8", "OK"),
         ("ROUTING TABLES", "CHECK", "12 CHANNELS", "OK"),

@@ -1,5 +1,27 @@
 # Changelog
 
+## 7.15.3 - Provider Preference Test Isolation
+
+- Isolated the dual-runtime provider-preference regression from ambient endpoint variables and model-cache state on GitHub's shared Ubuntu test process.
+
+## 7.15.2 - Cross-Platform CI Test Isolation
+
+- Replaced Windows-only path-string assertions with `pathlib` comparisons so feed, RSS, and validation tests behave consistently on Windows and Linux.
+- Limited the Consolas/GDI glyph-coverage check to Windows while preserving all platform-independent logo contracts on GitHub's Ubuntu runner.
+- Isolated provider-routing tests from ambient endpoint environment variables and model-cache state, keeping their fake runtime selection deterministic.
+
+## 7.15.1 - GitHub CI Dependency Correction
+
+- Changed GitHub Actions to install the canonical project metadata with the development extra so CI receives Pillow and the supported Flet runtime versions.
+- Aligned `requirements.txt` with the packaged Pillow, Flet, and Flet Desktop constraints to prevent local and CI dependency drift.
+- Added regression coverage ensuring the CI workflow continues to install `.[dev]` and the legacy requirements file retains the GUI dependencies used by screenshot tests.
+
+## 7.15.0 - Live Boot Hardware Detection
+
+- Added a fresh boot-time hardware snapshot showing usable system RAM, physical CPU cores, and logical CPU threads in every active theme BIOS.
+- Replaced the simulated `CO-CPU / 256 SEGMENTS` diagnostic with explicit, human-readable physical-core and logical-thread rows.
+- Reused the same live hardware rows in the standalone themed BIOS previews, with clearly marked fallback values when direct topology detection is unavailable.
+
 ## 7.14.0 - Dense Interchangeable BIOS Promotion
 
 - Promoted the reviewed dense old-BIOS startup layout into the active console and Flet boot paths for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.

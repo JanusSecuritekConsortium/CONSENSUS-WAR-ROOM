@@ -30,6 +30,11 @@ def test_eva_dummy_preserves_identity_and_adds_dense_startup_sections() -> None:
     assert "Chief Architect: Erhardt Von Grupten Mundt" in text
     assert f"LAST PATCH: 2026-07-16 | BUILD: v{SYSTEM_VERSION}" in text
     assert "SYSTEM DIAGNOSTICS" in text
+    assert "CPU CORES" in text
+    assert "PHYSICAL CORES" in text
+    assert "CPU THREADS" in text
+    assert "LOGICAL THREADS" in text
+    assert "SYSTEM RAM" in text
     assert "CONSENSUS SYSTEM CONFIGURATION" in text
     assert "MAGI CONSENSUS ARRAY" in text
     assert "MELCHIOR-1" in text
