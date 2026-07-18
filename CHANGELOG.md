@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.15.3 - Provider Preference Test Isolation
+
+- Isolated the dual-runtime provider-preference regression from ambient endpoint variables and model-cache state on GitHub's shared Ubuntu test process.
+
 ## 7.15.2 - Cross-Platform CI Test Isolation
 
 - Replaced Windows-only path-string assertions with `pathlib` comparisons so feed, RSS, and validation tests behave consistently on Windows and Linux.

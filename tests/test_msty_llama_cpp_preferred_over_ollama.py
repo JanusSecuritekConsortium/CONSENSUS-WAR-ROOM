@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -33,15 +34,24 @@ class DualFallbackBackend:
 
 def test_msty_llama_cpp_is_preferred_when_both_fallbacks_are_reachable() -> None:
     original_backend = api_module.OllamaBackend
+    env_names = ("CONSENSUS_MSTY_BASE_URL", "MSTY_BASE_URL", "MSTY_LLAMA_CPP_BASE_URL", "OLLAMA_BASE_URL")
+    original_env = {name: os.environ.get(name) for name in env_names}
     try:
+        for name in env_names:
+            os.environ.pop(name, None)
         api_module.OllamaBackend = DualFallbackBackend
-        payload = api_module.list_models(RuntimeConfig(backend="msty-local"))
+        payload = api_module.list_models(RuntimeConfig(backend="msty-local", refresh_model_cache=True))
 
         assert payload["active_backend"] == "msty-llama-cpp"
         assert payload["base_url"] == "http://localhost:11454"
         assert "mistral:latest" not in payload["models"]
     finally:
         api_module.OllamaBackend = original_backend
+        for name, value in original_env.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 if __name__ == "__main__":
