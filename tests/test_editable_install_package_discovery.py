@@ -6,6 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
+REQUIREMENTS = ROOT / "requirements.txt"
+CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 
 def _array_values(section: str, key: str) -> set[str]:
@@ -76,9 +78,26 @@ def test_runtime_dependencies_remain_declared() -> None:
     assert "ib_insync" not in text
 
 
+def test_legacy_requirements_match_gui_runtime_constraints() -> None:
+    text = REQUIREMENTS.read_text(encoding="utf-8")
+
+    assert "flet>=0.28.3,<0.29" in text
+    assert "flet-desktop>=0.28.3,<0.29" in text
+    assert "Pillow>=10.0" in text
+
+
+def test_ci_installs_canonical_project_with_dev_dependencies() -> None:
+    workflow = CI_WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'python -m pip install -e ".[dev]"' in workflow
+    assert "python -m pip install -r requirements-dev.txt" not in workflow
+
+
 if __name__ == "__main__":
     test_editable_install_has_explicit_setuptools_package_discovery()
     test_active_packages_are_included_for_editable_install()
     test_non_package_roots_are_excluded_from_editable_install()
     test_runtime_dependencies_remain_declared()
+    test_legacy_requirements_match_gui_runtime_constraints()
+    test_ci_installs_canonical_project_with_dev_dependencies()
     print("test_editable_install_package_discovery PASS")

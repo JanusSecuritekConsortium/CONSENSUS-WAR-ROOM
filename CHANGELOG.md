@@ -1,5 +1,11 @@
 # Changelog
 
+## 7.15.1 - GitHub CI Dependency Correction
+
+- Changed GitHub Actions to install the canonical project metadata with the development extra so CI receives Pillow and the supported Flet runtime versions.
+- Aligned `requirements.txt` with the packaged Pillow, Flet, and Flet Desktop constraints to prevent local and CI dependency drift.
+- Added regression coverage ensuring the CI workflow continues to install `.[dev]` and the legacy requirements file retains the GUI dependencies used by screenshot tests.
+
 ## 7.15.0 - Live Boot Hardware Detection
 
 - Added a fresh boot-time hardware snapshot showing usable system RAM, physical CPU cores, and logical CPU threads in every active theme BIOS.
