@@ -18,6 +18,7 @@ from ui.animations.bios_boot import (
     hardware_diagnostic_rows,
 )
 from ui.animations.loading import format_loading_bar, get_loading_style
+from tools.eva_boot_dummy import HANDOFF_LINES
 
 
 GUI_THEMES = ("eva", "arasaka", "military", "wh40k", "helldivers", "janus")
@@ -31,6 +32,14 @@ READY_PROVIDER = {
 
 
 def test_dense_bios_is_complete_for_every_gui_theme() -> None:
+    identity_markers = {
+        "eva": "SYSTEM DIAGNOSTICS",
+        "military": "EXCOMM TACTICAL AMIBIOS",
+        "arasaka": "ARASAKA SYSTEM CONFIGURATION / EXECUTIVE SECURITY GRID",
+        "helldivers": "SUPER EARTH COMMAND BASIC",
+        "janus": "JANUS DUAL-FRONT INITIALIZATION",
+        "wh40k": "LITANY OF AWAKENING / SANCTIFIED COGITATOR RITE",
+    }
     for theme_key in GUI_THEMES:
         text = "\n".join(
             generate_dense_bios_boot_lines(
@@ -45,20 +54,20 @@ def test_dense_bios_is_complete_for_every_gui_theme() -> None:
 
         assert f"Chief Architect: {SYSTEM_AUTHOR}" in text
         assert f"BUILD: v{SYSTEM_VERSION}" in text
-        assert "SYSTEM DIAGNOSTICS" in text
-        assert "CONSENSUS SYSTEM CONFIGURATION" in text
-        assert "SYSTEM RAM" in text
-        assert "32,768 MB / 32.0 GiB" in text
-        assert "CPU CORES" in text
-        assert "PHYSICAL CORES" in text
-        assert "CPU THREADS" in text
-        assert "LOGICAL THREADS" in text
+        assert identity_markers[theme_key] in text
+        assert "32,768" in text
+        if theme_key == "wh40k":
+            assert "CORES /" in text
+            assert "THREADS" in text
+        else:
+            assert "PHYSICAL" in text
+            assert "LOGICAL" in text
+        assert "[OK]" in text
         assert get_loading_style(theme_key).label in text
         assert format_loading_bar(theme_key, 100) in text
         assert DENSE_READY_LINES[theme_key] in text
-        assert text.endswith("HANDOFF TO MAIN INTERFACE")
-        if theme_key != "wh40k":
-            assert f"LAST PATCH: {SYSTEM_LAST_PATCH_DATE}" in text
+        assert text.endswith(HANDOFF_LINES[theme_key])
+        assert SYSTEM_LAST_PATCH_DATE in text
 
 
 def test_terminal_palette_overrides_fix_requested_contrast() -> None:
