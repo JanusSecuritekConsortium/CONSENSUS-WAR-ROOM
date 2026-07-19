@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.0.0 - Theme-Native Production Boot System
+
+- Replaced the shared legacy dense boot screen with six distinct production layouts for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.
+- Added live privacy-safe CPU, GPU, RAM, core/thread, operating-system, and system-drive telemetry.
+- Added responsive full/compact layouts, balanced boot durations, theme-native animation choreography, reduced-motion rendering, and console controls.
+- Added theme-specific colour hierarchy, loading geometry, provider status, authorship, and final handoff messages across console and Flet startup.
+
 ## 7.15.3 - Provider Preference Test Isolation
 
 - Isolated the dual-runtime provider-preference regression from ambient endpoint variables and model-cache state on GitHub's shared Ubuntu test process.

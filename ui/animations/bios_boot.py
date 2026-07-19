@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import os
 import random
+import re
 import shutil
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -461,7 +462,7 @@ def _dense_subsystem_rows(theme_id: str) -> List[tuple[str, str, str, str]]:
     return rows
 
 
-def generate_dense_bios_boot_lines(
+def _generate_legacy_dense_bios_boot_lines(
     theme_id: str,
     version: str = SYSTEM_VERSION,
     include_logo: bool = True,
@@ -472,7 +473,7 @@ def generate_dense_bios_boot_lines(
     seed: int | None = None,
     width: int = DEFAULT_BOOT_WIDTH,
 ) -> List[str]:
-    """Build the active dense BIOS layout used by console and Flet startup."""
+    """Build the retired shared dense layout retained for compatibility audits."""
 
     theme_key = resolve_theme_key(theme_id)
     theme = THEMES.get(theme_key, THEMES["nerv"])
@@ -547,6 +548,58 @@ def generate_dense_bios_boot_lines(
                 "HANDOFF TO MAIN INTERFACE",
             ]
         )
+    return lines
+
+
+def generate_dense_bios_boot_lines(
+    theme_id: str,
+    version: str = SYSTEM_VERSION,
+    include_logo: bool = True,
+    include_loading: bool = True,
+    center_logo: bool = False,
+    total_memory_mb: int | None = None,
+    provider_status: Dict[str, Any] | None = None,
+    seed: int | None = None,
+    width: int = DEFAULT_BOOT_WIDTH,
+) -> List[str]:
+    """Build the approved v8 theme-specific production boot layout."""
+
+    del center_logo, seed
+    from tools.eva_boot_dummy import (
+        _logo_prefix as approved_logo_prefix,
+        build_theme_dummy_lines,
+        capture_extended_boot_telemetry,
+    )
+
+    theme_key = resolve_theme_key(theme_id)
+    preview_theme = "eva" if theme_key == "nerv" else theme_key
+    active_width = max(64, width)
+    telemetry = capture_extended_boot_telemetry()
+    if total_memory_mb is not None:
+        telemetry = replace(
+            telemetry,
+            total_memory_mb=max(1, total_memory_mb),
+            available_memory_mb=min(telemetry.available_memory_mb, max(1, total_memory_mb)),
+            memory_fallback=False,
+        )
+    lines = build_theme_dummy_lines(
+        preview_theme,
+        width=active_width,
+        patch_date=SYSTEM_LAST_PATCH_DATE,
+        unicode=True,
+        layout="auto",
+        telemetry=telemetry,
+        provider_status=provider_status,
+    )
+    if version != SYSTEM_VERSION:
+        lines = [line.replace(f"v{SYSTEM_VERSION}", f"v{version}") for line in lines]
+    if not include_logo:
+        lines = lines[len(approved_logo_prefix(preview_theme, active_width)) :]
+    if not include_loading:
+        loading_label = get_loading_style(preview_theme).label
+        lines = lines[: lines.index(loading_label)]
+        while lines and not lines[-1].strip():
+            lines.pop()
     return lines
 
 
@@ -839,13 +892,47 @@ def _flet_dense_line_color(theme_id: str, line: str) -> str:
     stripped = line.strip()
     if "BIOS v" in stripped or stripped.startswith("-"):
         return colors["primary"]
-    if stripped.endswith(("ONLINE", "OK", " READY", " AWAKENED")) or stripped == "HANDOFF TO MAIN INTERFACE":
+    if stripped.endswith(("ONLINE", "OK", " READY", " AWAKENED", "WAR ROOM...", "INTERFACE...")) or stripped == "HANDOFF TO MAIN INTERFACE":
         return colors["success"]
     if "WARN" in stripped or "ERROR" in stripped:
         return colors["warning"]
     if stripped.startswith(("DEVICE", "ADDR", "NODE", "Copyright", "DATE", "SERIAL", "Chief", "Janus", "LAST PATCH")):
         return colors["text"]
     return colors["data"]
+
+
+def _flet_boot_segments(theme_id: str, line: str) -> List[tuple[str, str]]:
+    theme_key = resolve_theme_key(theme_id)
+    colors = _boot_color_values(theme_key)
+    stripped = line.strip()
+    if theme_key == "wh40k":
+        if stripped.startswith(("╔", "╚", "╠", "+")):
+            return [(line, colors["primary"])]
+        if stripped.startswith(("║", "|")) and stripped.endswith(("║", "|")):
+            left_at = line.find(stripped[0])
+            right_at = line.rfind(stripped[-1])
+            return [
+                (line[:left_at], colors["text"]),
+                (line[left_at : left_at + 1], colors["primary"]),
+                (line[left_at + 1 : right_at], colors["text"]),
+                (line[right_at : right_at + 1], colors["primary"]),
+                (line[right_at + 1 :], colors["text"]),
+            ]
+    if theme_key == "arasaka" and stripped.startswith(("|", "+")):
+        if stripped.startswith("+"):
+            return [(line, colors["primary"])]
+        segments: List[tuple[str, str]] = []
+        cursor = 0
+        for match in re.finditer(r"\|", line):
+            segments.append((line[cursor : match.start()], colors["text"]))
+            segments.append(("|", colors["primary"]))
+            cursor = match.end()
+        segments.append((line[cursor:], colors["text"]))
+        return segments
+    if theme_key == "janus" and " || " in line:
+        left, right = line.split(" || ", 1)
+        return [(left, colors["primary"]), (" || ", colors["text"]), (right, colors["success"])]
+    return [(line, _flet_dense_line_color(theme_key, line))]
 
 
 def _render_runtime_diagnostics(theme_id: str, delay: float, rng: random.Random) -> None:
@@ -881,29 +968,25 @@ def render_bios_boot_console(
     seed: int | None = None,
     provider_status: Dict[str, Any] | None = None,
 ) -> None:
-    rng = random.Random(seed)
-    delay = _delay_for(speed, rng)
-    _clear_console()
-    logo = _center_block(_theme_boot_logo_text(theme_id))
-    dense_lines = generate_dense_bios_boot_lines(
-        theme_id,
-        SYSTEM_VERSION,
-        include_logo=False,
-        include_loading=False,
-        provider_status=provider_status,
-        seed=seed,
-        width=_terminal_width(),
-    )
+    from tools.eva_boot_dummy import render_theme_dummy
 
-    _print_logo_with_cursor(logo, theme_id, delay)
-    time.sleep(max(0.4, delay * 12))
-    _clear_console()
-    _render_dense_lines(dense_lines, theme_id, delay)
-    print()
-    render_loading_console(theme_id, speed=speed, seed=seed)
-    _render_dense_lines((DENSE_READY_LINES[resolve_theme_key(theme_id)],), theme_id, delay)
+    theme_key = resolve_theme_key(theme_id)
+    preview_theme = "eva" if theme_key == "nerv" else theme_key
+    normalized_speed = speed.lower()
+    if normalized_speed not in {"fast", "normal", "slow"}:
+        normalized_speed = random.Random(seed).choice(("fast", "normal", "slow"))
+    render_theme_dummy(
+        preview_theme,
+        speed=normalized_speed,
+        width=_terminal_width(),
+        clear=True,
+        color=True,
+        layout="auto",
+        reduced_motion=False,
+        interactive=True,
+        provider_status=provider_status,
+    )
     await_user_interaction()
-    _render_dense_lines(("HANDOFF TO MAIN INTERFACE",), theme_id, delay)
 
 
 def render_bios_boot_flet(
@@ -913,6 +996,10 @@ def render_bios_boot_flet(
     seed: int | None = None,
     provider_status: Dict[str, Any] | None = None,
 ) -> None:
+    from tools.eva_boot_dummy import HANDOFF_LINES, _logo_prefix as approved_logo_prefix
+
+    theme_key = resolve_theme_key(theme_id)
+    preview_theme = "eva" if theme_key == "nerv" else theme_key
     lines = generate_dense_bios_boot_lines(
         theme_id,
         SYSTEM_VERSION,
@@ -920,29 +1007,45 @@ def render_bios_boot_flet(
         provider_status=provider_status,
         seed=seed,
     )
-    if "HANDOFF TO MAIN INTERFACE" in lines:
-        handoff_index = lines.index("HANDOFF TO MAIN INTERFACE")
+    handoff_line = HANDOFF_LINES[preview_theme]
+    if handoff_line in lines:
+        handoff_index = lines.index(handoff_line)
         lines.insert(handoff_index, "PRESS ENTER TO ENTER THE WAR ROOM")
     else:
         lines.append("PRESS ENTER TO ENTER THE WAR ROOM")
-    theme_key = resolve_theme_key(theme_id)
     theme = THEMES.get(theme_key, THEMES["nerv"])
     boot_colors = _boot_color_values(theme_key)
-    delay = _delay_for(speed, random.Random(seed))
+    normalized_speed = speed.lower()
+    if normalized_speed not in {"fast", "normal", "slow"}:
+        normalized_speed = random.Random(seed).choice(("fast", "normal", "slow"))
+    target_duration = {"fast": 7.0, "normal": 13.0, "slow": 21.0}[normalized_speed]
+    delay = target_duration / max(1, len(lines))
+    logo_line_count = len(approved_logo_prefix(preview_theme, DEFAULT_BOOT_WIDTH)) - 1
     try:
         import flet as ft  # type: ignore
 
         for index, line in enumerate(lines):
-            page.add(
-                ft.Text(
-                    line,
-                    font_family=theme.font_family,
-                    color=boot_colors["logo"] if index == 0 else _flet_dense_line_color(theme_key, line),
-                    text_align=ft.TextAlign.CENTER if index == 0 else ft.TextAlign.LEFT,
-                    selectable=False,
-                    no_wrap=False,
-                )
-            )
+            common = {
+                "font_family": theme.font_family,
+                "text_align": ft.TextAlign.CENTER if index < logo_line_count else ft.TextAlign.LEFT,
+                "selectable": False,
+                "no_wrap": False,
+            }
+            if index < logo_line_count:
+                control = ft.Text(line, color=boot_colors["logo"], **common)
+            else:
+                segments = _flet_boot_segments(theme_key, line)
+                if len(segments) == 1:
+                    control = ft.Text(line, color=segments[0][1], **common)
+                else:
+                    control = ft.Text(
+                        spans=[
+                            ft.TextSpan(text, style=ft.TextStyle(color=color))
+                            for text, color in segments
+                        ],
+                        **common,
+                    )
+            page.add(control)
             page.update()
             time.sleep(delay)
     except Exception:
