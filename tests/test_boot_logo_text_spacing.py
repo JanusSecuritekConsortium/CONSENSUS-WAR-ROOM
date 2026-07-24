@@ -32,41 +32,40 @@ def test_other_boot_logos_keep_standard_one_blank_gap() -> None:
         assert "ARASAKA EXECUTIVE SECURITY BIOS" not in lines[bios_index], theme_key
 
 
-def test_arasaka_console_boot_clears_logo_before_dense_bios() -> None:
-    printed: list[str] = []
-    original_clear = bios_boot._clear_console
-    original_logo = bios_boot._print_logo_with_cursor
-    original_render = bios_boot._render_dense_lines
-    original_loading = bios_boot.render_loading_console
+def test_arasaka_console_boot_uses_approved_theme_renderer() -> None:
+    import tools.eva_boot_dummy as approved_boot
+
+    rendered: list[tuple[str, dict[str, object]]] = []
+    original_render = approved_boot.render_theme_dummy
     original_await = bios_boot.await_user_interaction
-    original_sleep = bios_boot.time.sleep
     try:
-        bios_boot._clear_console = lambda: printed.append("CLEAR")
-        bios_boot._print_logo_with_cursor = lambda _logo, _theme_id, _delay: printed.append("LOGO")
-        bios_boot._render_dense_lines = lambda lines, _theme_id, _delay: printed.append(next(iter(lines)))
-        bios_boot.render_loading_console = lambda *_args, **_kwargs: None
+        approved_boot.render_theme_dummy = lambda theme_id, **kwargs: rendered.append((theme_id, kwargs))
         bios_boot.await_user_interaction = lambda *_args, **_kwargs: None
-        bios_boot.time.sleep = lambda _delay: None
 
-        render_bios_boot_console("ARASAKA", speed="fast", seed=1)
+        render_bios_boot_console("ARASAKA", speed="fast", seed=1, provider_status={"status": "ready"})
     finally:
-        bios_boot._clear_console = original_clear
-        bios_boot._print_logo_with_cursor = original_logo
-        bios_boot._render_dense_lines = original_render
-        bios_boot.render_loading_console = original_loading
+        approved_boot.render_theme_dummy = original_render
         bios_boot.await_user_interaction = original_await
-        bios_boot.time.sleep = original_sleep
 
-    assert printed[:4] == [
-        "CLEAR",
-        "LOGO",
-        "CLEAR",
-        "ARASAKA EXECUTIVE SECURITY BIOS v" + bios_boot.SYSTEM_VERSION,
+    assert rendered == [
+        (
+            "arasaka",
+            {
+                "speed": "fast",
+                "width": bios_boot._terminal_width(),
+                "clear": True,
+                "color": True,
+                "layout": "auto",
+                "reduced_motion": False,
+                "interactive": True,
+                "provider_status": {"status": "ready"},
+            },
+        )
     ]
 
 
 if __name__ == "__main__":
     test_arasaka_boot_has_explicit_logo_to_bios_gap()
     test_other_boot_logos_keep_standard_one_blank_gap()
-    test_arasaka_console_boot_clears_logo_before_dense_bios()
+    test_arasaka_console_boot_uses_approved_theme_renderer()
     print("test_boot_logo_text_spacing PASS")

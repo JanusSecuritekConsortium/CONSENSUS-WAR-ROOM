@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, Dict, Optional
 
 from core.paths import ARBITER_DIR
+from voice.text_normalization import normalize_for_speech
 
 
 @dataclass
@@ -19,7 +20,7 @@ class TTSRenderResult:
 
 
 class AttenboroughTTSAdapter:
-    """Calm documentary-style TTS adapter; it does not clone a living person's voice."""
+    """Legacy documentary-style system-TTS adapter with a diagnostic manifest fallback."""
 
     def __init__(
         self,
@@ -32,7 +33,7 @@ class AttenboroughTTSAdapter:
         self.manifest_factory = manifest_factory
 
     def synthesize(self, text: str) -> TTSRenderResult:
-        cleaned = text.strip()
+        cleaned = normalize_for_speech(text)
         if not cleaned:
             return TTSRenderResult(ok=False, mode="empty", metadata={"error": "empty_text"})
         if self.script_path and self.script_path.exists():
@@ -88,4 +89,9 @@ class AttenboroughTTSAdapter:
             "fallback_metadata": fallback_metadata,
         }
         target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        return TTSRenderResult(ok=True, audio_path=str(target), mode="dry_run", metadata={"manifest": str(target)})
+        return TTSRenderResult(
+            ok=False,
+            audio_path=str(target),
+            mode="dry_run",
+            metadata={"manifest": str(target), "error": "audio_backend_unavailable"},
+        )

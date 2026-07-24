@@ -50,13 +50,14 @@
       "index_rate": 0.78,
       "protect": 0.4,
       "filter_radius": 3,
+      "max_chunk_chars": 360,
       "output_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio",
       "fallback": "windows_sapi",
       "rate": 145,
       "volume": 0.9
     },
     "ARBITER_GLADOS": {
-      "backend": "rvc",
+      "backend": "glados_tts",
       "voice": "glados",
       "display_name": "ARBITER",
       "base_tts": "windows_sapi",
@@ -71,6 +72,7 @@
       "rvc_index_path": "G:/CONSENSUS_SYSTEM/voice/models/arbiter_glados/glados/added_IVF2170_Flat_nprobe_1.index",
       "rvc_workdir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
       "rvc_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
+      "native_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
       "rvc_ffmpeg_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/VoiceConversionWebUI",
       "rvc_env": {
         "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"
@@ -99,13 +101,14 @@
         "--protect",
         "{protect}"
       ],
-      "transpose": -3,
-      "index_rate": 0.9,
-      "protect": 0.05,
-      "filter_radius": 7,
+      "transpose": 0,
+      "index_rate": 0.72,
+      "protect": 0.33,
+      "filter_radius": 3,
+      "max_chunk_chars": 360,
       "output_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio",
-      "fallback": "windows_sapi",
-      "rate": 135,
+      "fallback": "rvc",
+      "rate": 155,
       "volume": 0.95
     }
   }

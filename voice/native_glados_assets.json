@@ -1,0 +1,22 @@
+{
+  "source": "https://github.com/R2D2FISH/glados-tts",
+  "license": "MIT",
+  "required": {
+    "models/en_us_cmudict_ipa_forward.pt": {
+      "bytes": 65637046,
+      "sha256": "cadce3d77597b55e772799cb46994ab29a460f1a62a87207b52f3cdb29894e02"
+    },
+    "models/glados-new.pt": {
+      "bytes": 116160936,
+      "sha256": "e75a18e03517bd204130dfa7bd37e200be342219af1e1b537aa818401c041ed4"
+    },
+    "models/vocoder-gpu.pt": {
+      "bytes": 55753209,
+      "sha256": "16aedb72be562822126bf155b43612ceb2836dd5e8ed5b241617aa322f30c4ce"
+    },
+    "models/emb/glados_p2.pt": {
+      "bytes": 1777,
+      "sha256": "ec519ed9ae6612dd6606d59f856d0c471b034752df770365fa0c0e50e1f05fb1"
+    }
+  }
+}
