@@ -6,12 +6,50 @@ arbiter combines their votes into an auditable verdict.
 
 Author: Erhardt Von Grupten Mundt, Janus Securitek Consortium.
 
+## Project Status
+
+The current codebase is **v8.0.0 — Theme-Native Production Boot System**,
+last patched on 2026-07-19.
+CONSENSUS is an actively developed, Windows-first local application with a Flet
+desktop interface, CLI and API entrypoints, a deterministic offline backend,
+and adapters for local Msty/Ollama-compatible inference runtimes.
+
+| Area | Current state |
+| --- | --- |
+| Tribunal | Operational deterministic classification, quorum, confidence, review triggers, voting, and auditable decision traces |
+| Desktop operator UI | Operational Flet War Room with proposal lifecycle, verdict export, diagnostics, telemetry, themes, and command palette |
+| Provider layer | Msty-first local routing with Ollama-compatible options, explicit readiness/degraded states, model checks, and controlled mock fallback |
+| Data layer | RSS-first, cache-backed enrichment is implemented; credentialed sources are opt-in and unavailable data is reported rather than invented |
+| Simulations | Operator-driven deterministic scenario scaffolding is implemented; autonomous forecasting is not |
+| Packaging | PyInstaller-based standalone Windows executable and packaged self-test are implemented |
+| Verification | Active-source compilation, categorized regression tooling, and Python 3.10 GitHub Actions coverage are configured |
+
+### What changed in v8.0.0
+
+- Six production startup layouts now match the EVA/MAGI, Arasaka, Military,
+  WH40K, Helldivers, and Janus interface families instead of sharing one legacy
+  boot screen.
+- Startup captures a fresh, privacy-safe hardware snapshot: CPU identity and
+  topology, GPU/display identity when available, RAM, operating system, and
+  system-drive capacity. User, network, and serial identifiers are suppressed.
+- Boot rendering supports full and compact terminal layouts, theme-specific
+  animation and loading geometry, balanced timing, reduced-motion rendering,
+  and interactive preview controls.
+- The same theme identity and provider status carry through console startup,
+  Flet startup, and the main War Room handoff.
+
+See [CHANGELOG.md](CHANGELOG.md) for the release history and
+[CONSENSUS_ARCHITECTURE.md](CONSENSUS_ARCHITECTURE.md) for module ownership.
+
 ## Current System
 
 - `RATIONALIS`: logic, consistency, and acceptance criteria
 - `AETERNUM`: finance, precedent, and long-range risk
 - `BELLATOR`: security, tactical exposure, and operational risk
 - `ARBITER`: quorum, confidence, review triggers, and final synthesis
+
+`AURELIUS` is an optional operator-assistant/integration layer. It is not a
+tribunal voter and does not independently resolve providers or verdicts.
 
 The active implementation lives in `core/`, `config/`, `integrations/`, `ui/`,
 and `monoliths/`. Legacy experiments and prototypes are preserved separately in
@@ -39,6 +77,10 @@ Normal boot runs only lightweight dependency/provider health checks, selects the
 configured or random startup theme, runs BIOS/POST, and launches the GUI. It
 does not run `tools\run_tests.py`, active-tree compilation, or screenshot
 regression checks.
+
+The six selectable GUI theme families are EVA/MAGI, Arasaka, Military/EXCOMM,
+WH40K/Cogitator, Helldivers/Super Earth, and Janus. `NERV` remains a CLI/config
+compatibility alias in the EVA/MAGI family.
 
 Diagnostics-only recovery mode:
 
@@ -186,11 +228,11 @@ state signals, not hidden chain-of-thought.
 
 ## Simulation Layer
 
-The simulation layer is deterministic scaffolding for future geopolitical,
-economic, cyber, and security branch analysis. It defines scenario and branch
-records, a simulation type registry, bounded probability/risk scoring helpers,
-and append-only local JSONL history. This pass does not generate autonomous
-forecasts or invented geopolitical predictions.
+The simulation layer is deterministic scaffolding for geopolitical, economic,
+cyber, and security branch analysis. It defines scenario and branch records, a
+simulation type registry, bounded probability/risk scoring helpers, and
+append-only local JSONL history. It does not generate autonomous forecasts or
+invented geopolitical predictions.
 
 GUI command palette actions:
 
@@ -204,11 +246,11 @@ forecasts or invented intelligence.
 
 ## Real Data Layer
 
-The v7.13 data-source foundation supplies normalized, cache-backed external
-context for `BELLATOR` and `AETERNUM`. RSS is the primary Bellator intelligence
-layer. APIs are enrichment only. Tribunal prompt enrichment explicitly reports
-unavailable data; it never invents intelligence when a source is disabled,
-unconfigured, stale, or empty.
+The current data-source foundation, introduced in v7.13, supplies normalized,
+cache-backed external context for `BELLATOR` and `AETERNUM`. RSS is the primary
+Bellator intelligence layer. APIs are enrichment only. Tribunal prompt
+enrichment explicitly reports unavailable data; it never invents intelligence
+when a source is disabled, unconfigured, stale, or empty.
 
 The RSS cache is `_ARBITER/cache/data_sources/intelligence.db`. It uses SQLite
 FTS5 retrieval, GUID/URL/content-hash deduplication, conditional HTTP requests,
@@ -273,21 +315,22 @@ Common backend choices:
 CONSENSUS exposes a read-only local MCP server for MstyClaw at:
 
 ```text
-G:\CONSENSUS_SYSTEM\integrations\mcp\consensus_mcp_server.py
+integrations\mcp\consensus_mcp_server.py
 ```
 
-Register it in MstyClaw as a local command:
+Register it in MstyClaw as a local command, replacing `<repo>` with this
+repository's absolute path:
 
 ```text
 Name: CONSENSUS MCP
-Command: G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe
-Arguments: G:\CONSENSUS_SYSTEM\integrations\mcp\consensus_mcp_server.py
+Command: <repo>\.venv\Scripts\python.exe
+Arguments: <repo>\integrations\mcp\consensus_mcp_server.py
 ```
 
 Fallback launcher:
 
 ```text
-G:\CONSENSUS_SYSTEM\integrations\mcp\run_consensus_mcp.bat
+integrations\mcp\run_consensus_mcp.bat
 ```
 
 The MCP server exposes read-only status, AURELIUS logs, Msty model discovery,
@@ -297,14 +340,16 @@ commands, write files, delete files, or access external network targets.
 ## Repository Map
 
 - `core/`: tribunal logic, voting, memory, health checks, CLI
+- `_ARBITER/`: local runtime configuration and ignored logs, cache, exports, and decision state
 - `config/`: agent identities, node defaults, runtime config
 - `integrations/`: Msty/Ollama-compatible provider adapters
 - `ui/`: Flet GUI and themed terminal rendering
 - `monoliths/`: active monolith profile registry
 - `assistant/`: Aurelius assistant persona/runtime helpers
-- `voice/`: optional voice adapter experiments
+- `voice/`: optional operator voice adapters and ARBITER verdict announcements
 - `static/`: ASCII logo and theme assets
 - `tests/`: focused regression tests
+- `tools/`: boot, validation, export, data-source, and packaging utilities
 - `docs/`: maintenance and architecture notes
 - `future_implementations/`: Riko and Flet prototype material for later work
 - `archive/`: historical code snapshots and imported demos

@@ -202,11 +202,11 @@ def _default_manifest_path() -> Path:
 def get_aurelius_runtime() -> AureliusRuntime:
     global _RUNTIME
     if _RUNTIME is None:
-        from voice.attenborough_tts_adapter import AttenboroughTTSAdapter
+        from voice.aurelius_adapter import AureliusAdapter
         from voice.riko_adapter import RikoVoiceAdapter
 
         _RUNTIME = AureliusRuntime(
-            tts_adapter=AttenboroughTTSAdapter(manifest_factory=_default_manifest_path),
+            tts_adapter=AureliusAdapter(),
             voice_adapter=RikoVoiceAdapter(),
         )
     return _RUNTIME

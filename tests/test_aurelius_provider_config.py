@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import importlib.util
+import logging
 import sys
 import types
 from pathlib import Path
@@ -161,6 +162,46 @@ def test_aurelius_bot_missing_telegram_token_is_clear() -> None:
         raise AssertionError("missing Telegram token must fail startup validation")
 
 
+def test_aurelius_polling_retries_with_bounded_backoff(caplog) -> None:
+    bot_module = _load_aurelius_bot()
+    attempts = []
+    sleeps = []
+
+    class RecoveringBot:
+        def get_me(self):
+            attempts.append("get_me")
+            if len(attempts) < 3:
+                raise ConnectionError("getaddrinfo failed")
+            return object()
+
+        def polling(self, **kwargs):
+            attempts.append(("polling", kwargs))
+
+    with caplog.at_level(logging.INFO, logger="aurelius.telegram"):
+        bot_module.poll_telegram(RecoveringBot(), "123:secret", sleep=sleeps.append)
+
+    assert sleeps == [3, 6]
+    assert attempts[-1] == (
+        "polling",
+        {"non_stop": True, "logger_level": logging.NOTSET},
+    )
+    assert "Telegram connectivity restored" in caplog.text
+
+
+def test_aurelius_polling_error_redacts_token() -> None:
+    bot_module = _load_aurelius_bot()
+    token = "123456:super-secret"
+    error = ConnectionError(
+        f"HTTPSConnectionPool failed for /bot{token}/getMe: connection refused"
+    )
+
+    detail = bot_module.sanitize_telegram_error(error, token)
+
+    assert token not in detail
+    assert "super-secret" not in detail
+    assert "/bot<redacted>/getMe" in detail
+
+
 def test_active_telegram_dependencies_are_declared_without_ibkr() -> None:
     requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
 
@@ -189,6 +230,7 @@ if __name__ == "__main__":
     test_aurelius_bot_has_no_direct_ibkr_import()
     test_anima_bot_is_archived_and_launchers_use_aurelius()
     test_aurelius_bot_missing_telegram_token_is_clear()
+    test_aurelius_polling_error_redacts_token()
     test_active_telegram_dependencies_are_declared_without_ibkr()
     test_aurelius_bot_compiles()
     print("test_aurelius_provider_config PASS")
