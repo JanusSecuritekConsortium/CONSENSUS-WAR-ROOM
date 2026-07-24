@@ -167,18 +167,22 @@ def test_voice_profiles_load_identity_layer_config() -> None:
     assert aurelius.settings["rvc_python"].endswith("rvc_env/Scripts/python.exe")
     assert aurelius.settings["rvc_env"]["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] == "1"
     assert aurelius.fallback == "windows_sapi"
-    assert glados.backend == "rvc"
+    assert glados.backend == "glados_tts"
     assert glados.voice == "glados"
     assert glados.settings["display_name"] == "ARBITER"
     assert glados.settings["base_voice_name"] == ["Microsoft Zira", "Microsoft Hazel"]
     assert glados.settings["base_voice_gender"] == "Female"
     assert glados.settings["base_voice_language"] == "en-US,en-GB"
-    assert glados.settings["transpose"] == -3
-    assert glados.settings["index_rate"] == 0.9
-    assert glados.settings["protect"] == 0.05
-    assert glados.settings["filter_radius"] == 7
+    assert glados.settings["transpose"] == 0
+    assert glados.settings["index_rate"] == 0.72
+    assert glados.settings["protect"] == 0.33
+    assert glados.settings["filter_radius"] == 3
+    assert glados.settings["max_chunk_chars"] == 360
     assert glados.settings["rvc_model_name"] == "arbiter_glados.pth"
     assert glados.settings["rvc_python"].endswith("rvc_env/Scripts/python.exe")
+    assert glados.settings["native_python"].endswith("rvc_env/Scripts/python.exe")
+    assert glados.rate == 155
+    assert glados.fallback == "rvc"
 
 
 def test_voice_stress_fixtures_are_available() -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 import threading
 import time
@@ -29,6 +30,8 @@ MODEL = os.getenv("AURELIUS_MODEL", "mistral")
 CHAT_ID: Optional[str] = os.getenv("AURELIUS_TELEGRAM_CHAT_ID") or os.getenv("TELEGRAM_CHAT_ID")
 BOT: Any = None
 provider_error_gate = ProviderErrorGate()
+TELEGRAM_INITIAL_RETRY_SECONDS = 3
+TELEGRAM_MAX_RETRY_SECONDS = 60
 
 BRIEF_PROMPTS = {
     "Morning Brief": (
@@ -201,6 +204,43 @@ def create_bot(token: str) -> Any:
     return bot
 
 
+def sanitize_telegram_error(error: Exception, token: str) -> str:
+    """Return a concise polling error without exposing the bot token."""
+    detail = str(error)
+    if token:
+        detail = detail.replace(token, "<redacted>")
+    detail = re.sub(r"/bot[^/\s\"']+", "/bot<redacted>", detail)
+    if "NameResolutionError" in detail or "getaddrinfo failed" in detail:
+        return "DNS resolution failed for api.telegram.org"
+    return " ".join(detail.split())[:500]
+
+
+def poll_telegram(bot: Any, token: str, sleep: Any = time.sleep) -> None:
+    """Poll Telegram with concise logging and bounded exponential backoff."""
+    retry_seconds = TELEGRAM_INITIAL_RETRY_SECONDS
+    waiting_for_network = False
+    while True:
+        try:
+            bot.get_me()
+            if waiting_for_network:
+                LOGGER.info("Telegram connectivity restored; polling resumed.")
+            retry_seconds = TELEGRAM_INITIAL_RETRY_SECONDS
+            bot.polling(non_stop=True, logger_level=logging.NOTSET)
+            return
+        except KeyboardInterrupt:
+            raise
+        except Exception as exc:
+            detail = sanitize_telegram_error(exc, token)
+            LOGGER.warning(
+                "Telegram polling unavailable; retrying in %ss: %s",
+                retry_seconds,
+                detail,
+            )
+            waiting_for_network = True
+            sleep(retry_seconds)
+            retry_seconds = min(retry_seconds * 2, TELEGRAM_MAX_RETRY_SECONDS)
+
+
 def run_scheduler() -> None:
     import schedule
 
@@ -223,7 +263,7 @@ def main() -> int:
     BOT = create_bot(token)
     threading.Thread(target=run_scheduler, daemon=True, name="aurelius-scheduler").start()
     LOGGER.info("AURELIUS Telegram assistant started with Msty provider routing.")
-    BOT.infinity_polling()
+    poll_telegram(BOT, token)
     return 0
 
 

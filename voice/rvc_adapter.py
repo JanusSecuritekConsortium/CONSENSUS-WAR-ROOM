@@ -5,14 +5,19 @@ import shlex
 import subprocess
 import sys
 import time
+import wave
 from pathlib import Path
 from typing import Any, List, Optional
 
 try:
+    from .audio_quality import polish_wav
     from .tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from .text_normalization import split_speech_text
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
+    from voice.audio_quality import polish_wav
     from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from voice.text_normalization import split_speech_text
     from voice.voice_profiles import VoiceProfile, get_voice_profile
 
 
@@ -37,12 +42,14 @@ class RVCAdapter:
         self.index_rate = float(self.settings.get("index_rate", 0.66))
         self.protect = float(self.settings.get("protect", 0.33))
         self.filter_radius = int(self.settings.get("filter_radius", 3))
+        self.max_chunk_chars = int(self.settings.get("max_chunk_chars", 360))
         self.base_tts = WindowsSAPIBackend(
             rate=self.profile.rate,
             volume=self.profile.volume,
             voice_names=[str(item) for item in self.settings.get("base_voice_name", [])],
             voice_gender=str(self.settings.get("base_voice_gender", "")),
             voice_language=str(self.settings.get("base_voice_language", "")),
+            strict_voice_selection=True,
         )
 
     def synthesize(self, text: str) -> TTSBackendResult:
@@ -65,11 +72,79 @@ class RVCAdapter:
         return self.convert_text(text, play=False)
 
     def convert_text(self, text: str, play: bool = True) -> TTSBackendResult:
-        cleaned = text.strip()
-        if not cleaned:
+        chunks = split_speech_text(text, max_chars=self.max_chunk_chars)
+        if not chunks:
             return TTSBackendResult(ok=False, text=text, mode="rvc", metadata={"error": "empty_text"})
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        stamp = time.strftime("%Y%m%d_%H%M%S")
+        stamp = f"{time.strftime('%Y%m%d_%H%M%S')}_{time.time_ns() % 1_000_000:06d}"
+        slug = self.profile.name.lower()
+        if len(chunks) == 1:
+            return self._convert_single(chunks[0], stamp=stamp, play=play)
+
+        converted_parts: List[Path] = []
+        temporary_paths: List[Path] = []
+        for index, chunk in enumerate(chunks, start=1):
+            part = self._convert_single(chunk, stamp=f"{stamp}_part{index:03d}", play=False)
+            if not part.ok or not part.audio_path:
+                part.metadata["chunk"] = index
+                part.metadata["chunk_count"] = len(chunks)
+                return part
+            converted_path = Path(part.audio_path)
+            converted_parts.append(converted_path)
+            temporary_paths.extend(
+                [
+                    converted_path,
+                    self.output_dir / f"{slug}_base_{stamp}_part{index:03d}.wav",
+                ]
+            )
+
+        converted_wav = self.output_dir / f"{slug}_rvc_{stamp}.wav"
+        try:
+            self._concatenate_wavs(converted_parts, converted_wav)
+        except Exception as exc:
+            return TTSBackendResult(
+                ok=False,
+                text=" ".join(chunks),
+                mode="rvc",
+                metadata={"error": f"failed to concatenate RVC chunks: {exc}", "chunk_count": len(chunks)},
+            )
+        finally:
+            for path in temporary_paths:
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+        if not play:
+            return TTSBackendResult(
+                ok=True,
+                text=" ".join(chunks),
+                mode="rvc",
+                audio_path=str(converted_wav),
+                metadata={"playback": "skipped", "chunk_count": len(chunks)},
+            )
+        played = self._play_wav(converted_wav)
+        if not played.ok:
+            return TTSBackendResult(
+                ok=False,
+                text=" ".join(chunks),
+                mode="rvc",
+                audio_path=str(converted_wav),
+                metadata={
+                    "error": "converted WAV playback failed",
+                    "playback_error": played.metadata.get("error", "converted WAV playback failed"),
+                    "chunk_count": len(chunks),
+                },
+            )
+        return TTSBackendResult(
+            ok=True,
+            text=" ".join(chunks),
+            mode="rvc",
+            audio_path=str(converted_wav),
+            metadata={"playback": played.metadata.get("playback", "unknown"), "played": True, "chunk_count": len(chunks)},
+        )
+
+    def _convert_single(self, cleaned: str, *, stamp: str, play: bool) -> TTSBackendResult:
         slug = self.profile.name.lower()
         base_wav = self.output_dir / f"{slug}_base_{stamp}.wav"
         converted_wav = self.output_dir / f"{slug}_rvc_{stamp}.wav"
@@ -121,13 +196,23 @@ class RVCAdapter:
         if completed.returncode != 0 or not converted_wav.exists():
             error = (completed.stderr or completed.stdout or "RVC conversion failed").strip()
             return TTSBackendResult(ok=False, text=cleaned, mode="rvc", audio_path=str(base_wav), metadata={"error": error[-1000:]})
+        try:
+            quality = polish_wav(converted_wav).as_dict()
+        except Exception as exc:
+            return TTSBackendResult(
+                ok=False,
+                text=cleaned,
+                mode="rvc",
+                audio_path=str(converted_wav),
+                metadata={"error": f"RVC WAV post-processing failed: {exc}"},
+            )
         if not play:
             return TTSBackendResult(
                 ok=True,
                 text=cleaned,
                 mode="rvc",
                 audio_path=str(converted_wav),
-                metadata={"playback": "skipped"},
+                metadata={"playback": "skipped", "quality": quality},
             )
 
         played = self._play_wav(converted_wav)
@@ -147,8 +232,33 @@ class RVCAdapter:
             text=cleaned,
             mode="rvc",
             audio_path=str(converted_wav),
-            metadata={"playback": played.metadata.get("playback", "unknown"), "played": played.metadata.get("played", False)},
+            metadata={
+                "playback": played.metadata.get("playback", "unknown"),
+                "played": played.metadata.get("played", False),
+                "quality": quality,
+            },
         )
+
+    @staticmethod
+    def _concatenate_wavs(parts: List[Path], target: Path) -> None:
+        if not parts:
+            raise ValueError("no WAV parts supplied")
+        parameters = None
+        frames: List[bytes] = []
+        for path in parts:
+            with wave.open(str(path), "rb") as source:
+                current = (source.getnchannels(), source.getsampwidth(), source.getframerate(), source.getcomptype())
+                if parameters is None:
+                    parameters = current
+                elif current != parameters:
+                    raise ValueError(f"incompatible WAV parameters in {path.name}")
+                frames.append(source.readframes(source.getnframes()))
+        assert parameters is not None
+        with wave.open(str(target), "wb") as output:
+            output.setnchannels(parameters[0])
+            output.setsampwidth(parameters[1])
+            output.setframerate(parameters[2])
+            output.writeframes(b"".join(frames))
 
     def _build_command(self, input_wav: Path, output_wav: Path) -> List[str]:
         raw: Any = self.settings.get("rvc_command", [])
