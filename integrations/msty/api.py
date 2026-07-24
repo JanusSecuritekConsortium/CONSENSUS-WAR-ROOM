@@ -4,13 +4,17 @@ import json
 import os
 import time
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
+
+from pydantic import BaseModel, Field
 
 from config.agents import AGENT_PROFILES
 from config.names import ARBITER
 from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
+from core.analytics.decision_metrics import build_decision_summary, summary_to_csv
 from core.history import migrate_legacy_history, result_to_dict
 from core.llm.backends import OllamaBackend, ProviderRequestError
 from core.logging import log_event
@@ -33,6 +37,58 @@ DEFAULT_MODEL_CACHE_TTL_SECONDS = 120
 READINESS_RETRY_BACKENDS = {"msty-llama-cpp"}
 DEFAULT_READINESS_RETRY_ATTEMPTS = 3
 DEFAULT_READINESS_RETRY_DELAY_SECONDS = 2.0
+
+
+class TribunalEventHub:
+    """Small in-process broadcaster for bounded public tribunal lifecycle events."""
+
+    def __init__(self) -> None:
+        self._connections: list[Any] = []
+
+    @property
+    def connection_count(self) -> int:
+        return len(self._connections)
+
+    async def connect(self, websocket: Any) -> None:
+        await websocket.accept()
+        if websocket not in self._connections:
+            self._connections.append(websocket)
+
+    def disconnect(self, websocket: Any) -> None:
+        self._connections = [item for item in self._connections if item is not websocket]
+
+    async def broadcast(self, event: Dict[str, Any]) -> None:
+        failed: list[Any] = []
+        for websocket in list(self._connections):
+            try:
+                await websocket.send_json(event)
+            except Exception:
+                failed.append(websocket)
+        for websocket in failed:
+            self.disconnect(websocket)
+
+
+def _api_event(event_type: str, **payload: Any) -> Dict[str, Any]:
+    return {
+        "type": event_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        **payload,
+    }
+
+
+class ConsensusRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    theme: Optional[str] = None
+    backend: Optional[str] = None
+    sequential: Optional[bool] = None
+    minimum_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
+
+
+class MstyLiveContextRequest(BaseModel):
+    query: str = Field(..., min_length=1)
+    theme: Optional[str] = None
+    backend: Optional[str] = None
+    sequential: Optional[bool] = None
 
 
 def _canonical_backend(backend: str) -> str:
@@ -1342,8 +1398,8 @@ def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Di
 
 def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
     try:
-        from fastapi import FastAPI, HTTPException
-        from pydantic import BaseModel, Field
+        from fastapi import FastAPI, HTTPException, Response, WebSocket, WebSocketDisconnect
+        from starlette.concurrency import run_in_threadpool
     except ImportError as exc:  # pragma: no cover - optional runtime dependency
         raise RuntimeError("FastAPI API mode requires fastapi and uvicorn.") from exc
 
@@ -1352,19 +1408,8 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
         version=SYSTEM_VERSION,
         description="Three-monolith tribunal API for Logic, Finance, and Security consensus.",
     )
-
-    class ConsensusRequest(BaseModel):
-        query: str = Field(..., min_length=1)
-        theme: Optional[str] = None
-        backend: Optional[str] = None
-        sequential: Optional[bool] = None
-        minimum_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-
-    class MstyLiveContextRequest(BaseModel):
-        query: str = Field(..., min_length=1)
-        theme: Optional[str] = None
-        backend: Optional[str] = None
-        sequential: Optional[bool] = None
+    event_hub = TribunalEventHub()
+    app.state.tribunal_event_hub = event_hub
 
     def run_consensus_from_payload(
         query: str,
@@ -1401,6 +1446,52 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             sequential=config.sequential if sequential is None else sequential,
         )
 
+    async def run_consensus_with_events(
+        query: str,
+        theme: Optional[str],
+        backend_name: Optional[str],
+        sequential: Optional[bool],
+        minimum_confidence: Optional[float],
+        source: str,
+    ) -> TribunalResult:
+        await event_hub.broadcast(
+            _api_event(
+                "consensus_started",
+                source=source,
+                query_preview=query[:240],
+                query_length=len(query),
+            )
+        )
+        try:
+            result = await run_in_threadpool(
+                run_consensus_from_payload,
+                query,
+                theme,
+                backend_name,
+                sequential,
+                minimum_confidence,
+            )
+        except Exception as exc:
+            await event_hub.broadcast(
+                _api_event(
+                    "consensus_failed",
+                    source=source,
+                    error_type=type(exc).__name__,
+                )
+            )
+            raise
+        await event_hub.broadcast(
+            _api_event(
+                "consensus_complete",
+                source=source,
+                session_id=result.session_id,
+                verdict=result.verdict.value,
+                confidence=result.confidence,
+                terminal_branch=result.terminal_branch,
+            )
+        )
+        return result
+
     @app.get("/health")
     def health() -> Dict[str, Any]:
         return {
@@ -1408,6 +1499,7 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             "version": SYSTEM_VERSION,
             "themes": sorted(THEMES),
             "history_path": str(HISTORY_PATH),
+            "websocket_clients": event_hub.connection_count,
         }
 
     @app.get("/provider/status")
@@ -1436,24 +1528,26 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
         return {key: asdict(node) for key, node in nodes.items()}
 
     @app.post("/consensus")
-    def consensus(request: ConsensusRequest) -> Dict[str, Any]:
-        result = run_consensus_from_payload(
+    async def consensus(request: ConsensusRequest) -> Dict[str, Any]:
+        result = await run_consensus_with_events(
             request.query,
             request.theme,
             request.backend,
             request.sequential,
             request.minimum_confidence,
+            "api",
         )
         return result_to_dict(result)
 
     @app.post("/msty/live-context")
-    def msty_live_context(request: MstyLiveContextRequest) -> Dict[str, Any]:
-        result = run_consensus_from_payload(
+    async def msty_live_context(request: MstyLiveContextRequest) -> Dict[str, Any]:
+        result = await run_consensus_with_events(
             request.query,
             request.theme or config.msty_live_context_default_theme,
             request.backend,
             request.sequential,
             None,
+            "msty_live_context",
         )
         vote_lines = [
             f"{key}: {vote.vote.value} confidence={vote.confidence:.0%} evidence={vote.evidence_quality:.0%} critical_risk={vote.critical_risk}"
@@ -1473,6 +1567,55 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
             "audit_path": str(HISTORY_PATH),
             "raw": result_to_dict(result),
         }
+
+    @app.get("/analytics/summary")
+    def analytics_summary() -> Dict[str, Any]:
+        return build_decision_summary(HISTORY_PATH)
+
+    @app.get("/analytics/summary.csv")
+    def analytics_summary_csv() -> Response:
+        csv_text = summary_to_csv(build_decision_summary(HISTORY_PATH))
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        return Response(
+            content=csv_text,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="consensus_summary_{stamp}.csv"'},
+        )
+
+    async def tribunal_websocket(websocket: Any) -> None:
+        await event_hub.connect(websocket)
+        try:
+            await websocket.send_json(
+                _api_event(
+                    "connected",
+                    version=SYSTEM_VERSION,
+                    channel="tribunal",
+                )
+            )
+            while True:
+                message = await websocket.receive_json()
+                message_type = str(message.get("type", "")) if isinstance(message, dict) else ""
+                if message_type == "ping":
+                    await websocket.send_json(
+                        _api_event(
+                            "pong",
+                            websocket_clients=event_hub.connection_count,
+                        )
+                    )
+                else:
+                    await websocket.send_json(
+                        _api_event(
+                            "unsupported_message",
+                            supported=["ping"],
+                        )
+                    )
+        except WebSocketDisconnect:
+            pass
+        finally:
+            event_hub.disconnect(websocket)
+
+    tribunal_websocket.__annotations__["websocket"] = WebSocket
+    app.websocket("/ws/tribunal")(tribunal_websocket)
 
     @app.get("/msty/system-prompt")
     def msty_system_prompt() -> Dict[str, str]:
@@ -1508,6 +1651,9 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
                 "health": f"http://{config.api_host}:{config.api_port}/health",
                 "live_context": f"http://{config.api_host}:{config.api_port}/msty/live-context",
                 "consensus": f"http://{config.api_host}:{config.api_port}/consensus",
+                "analytics": f"http://{config.api_host}:{config.api_port}/analytics/summary",
+                "analytics_csv": f"http://{config.api_host}:{config.api_port}/analytics/summary.csv",
+                "websocket": f"ws://{config.api_host}:{config.api_port}/ws/tribunal",
             },
         }
 

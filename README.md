@@ -185,6 +185,25 @@ API:
 python consensus_war_room_genesis.py --api
 ```
 
+The API binds to `127.0.0.1:8888` by default. Its primary operational routes are:
+
+- `POST /consensus`: run a tribunal decision.
+- `GET /analytics/summary`: bounded aggregate decision metrics.
+- `GET /analytics/summary.csv`: download the same summary as flat CSV rows.
+- `WS /ws/tribunal`: receive `consensus_started`, `consensus_complete`, and
+  `consensus_failed` lifecycle events. Clients may send `{"type":"ping"}` and
+  receive a `pong` health response.
+
+The real-time stream intentionally excludes raw model responses and internal
+reasoning. Expose the API beyond localhost only behind an authenticated reverse
+proxy or equivalent trusted deployment boundary.
+
+Example CSV download:
+
+```powershell
+curl.exe -o consensus_summary.csv http://127.0.0.1:8888/analytics/summary.csv
+```
+
 Provider diagnostics:
 
 ```powershell

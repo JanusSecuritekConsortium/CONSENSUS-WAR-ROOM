@@ -5,7 +5,7 @@ description = "Local multi-agent tribunal for proposal review and auditable cons
 authors = [{ name = "Erhardt Von Grupten Mundt" }]
 requires-python = ">=3.10"
 readme = "README.md"
-dependencies = ["psutil>=5.9", "requests>=2.31", "flet>=0.28.3,<0.29", "flet-desktop>=0.28.3,<0.29", "Pillow>=10.0", "openai>=1.0", "python-dotenv>=1.0", "schedule>=1.2", "pyTelegramBotAPI>=4.20"]
+dependencies = ["psutil>=5.9", "requests>=2.31", "flet>=0.28.3,<0.29", "flet-desktop>=0.28.3,<0.29", "Pillow>=10.0", "fastapi>=0.115", "uvicorn>=0.30", "pydantic>=2.7", "websockets>=13,<16", "openai>=1.0", "python-dotenv>=1.0", "schedule>=1.2", "pyTelegramBotAPI>=4.20"]
 
 [project.urls]
 Organization = "https://github.com/JanusSecuritekConsortium"

@@ -71,6 +71,10 @@ def test_runtime_dependencies_remain_declared() -> None:
     assert "flet>=0.28.3,<0.29" in text
     assert "flet-desktop>=0.28.3,<0.29" in text
     assert "Pillow>=10.0" in text
+    assert "fastapi>=0.115" in text
+    assert "uvicorn>=0.30" in text
+    assert "pydantic>=2.7" in text
+    assert "websockets>=13,<16" in text
     assert "openai>=1.0" in text
     assert "python-dotenv>=1.0" in text
     assert "schedule>=1.2" in text
@@ -84,6 +88,10 @@ def test_legacy_requirements_match_gui_runtime_constraints() -> None:
     assert "flet>=0.28.3,<0.29" in text
     assert "flet-desktop>=0.28.3,<0.29" in text
     assert "Pillow>=10.0" in text
+    assert "fastapi>=0.115" in text
+    assert "uvicorn>=0.30" in text
+    assert "pydantic>=2.7" in text
+    assert "websockets>=13,<16" in text
 
 
 def test_ci_installs_canonical_project_with_dev_dependencies() -> None:
