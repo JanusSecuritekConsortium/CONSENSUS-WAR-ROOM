@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SPEC_PATH = ROOT / "CONSENSUS.spec"
-OUTPUT_PATH = ROOT / "dist" / "CONSENSUS.exe"
+OUTPUT_PATH = ROOT / "dist" / ("CONSENSUS.exe" if sys.platform == "win32" else "CONSENSUS")
 PACKAGED_SELF_TEST_MARKERS = (
     "ASSET SUBSYSTEM: READY",
     "HARDWARE SUBSYSTEM: READY",
@@ -37,7 +37,7 @@ def build_executable() -> Path:
     if importlib.util.find_spec("PyInstaller") is None:
         raise RuntimeError(
             "PyInstaller is not installed. Run: "
-            r".\.venv\Scripts\python.exe -m pip install pyinstaller"
+            "python -m pip install pyinstaller"
         )
     subprocess.run(
         [sys.executable, "-m", "PyInstaller", "--clean", "--noconfirm", str(SPEC_PATH)],

@@ -316,7 +316,18 @@ def search_project_text(arguments: dict[str, Any] | None = None) -> dict[str, An
     return {"tool": "search_project_text", "query": query, "matches": matches, "truncated": False}
 
 
+def aurelius_report(arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Collect fresh report evidence before Msty's source-aware reminder runs."""
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from integrations.msty.aurelius_reports import collect_report
+
+    kind = (arguments or {}).get('kind', 'morning')
+    return {'tool': 'aurelius_report', 'kind': kind, 'body_text': collect_report(kind)}
+
+
 TOOL_HANDLERS = {
+    "aurelius_report": aurelius_report,
     "consensus_status": consensus_status,
     "aurelius_status": aurelius_status,
     "aurelius_recent_logs": aurelius_recent_logs,
@@ -329,6 +340,17 @@ TOOL_HANDLERS = {
 
 
 TOOLS = [
+    {
+        "name": "aurelius_report",
+        "description": "Collect a dated AURELIUS report: morning reads fixed public news RSS feeds, evening reads Msty scheduling records. Returns ready-to-deliver body_text. No arbitrary URLs, shell execution, writes, or Telegram credentials.",
+        "annotations": {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+        "inputSchema": {
+            "type": "object",
+            "properties": {"kind": {"type": "string", "enum": ["morning", "evening"]}},
+            "required": ["kind"],
+            "additionalProperties": False,
+        },
+    },
     {
         "name": "consensus_status",
         "description": "Return CONSENSUS project status, provider settings, key file presence, and Msty reachability.",
@@ -471,6 +493,8 @@ def serve_stdio() -> None:
 
 
 def main() -> None:
+    sys.stdin.reconfigure(encoding='utf-8')
+    sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description="CONSENSUS read-only MCP server for MstyClaw.")
     parser.add_argument("--tool", help="Run a single tool and print JSON, for local diagnostics.")
     parser.add_argument("--args", default="{}", help="JSON arguments for --tool.")

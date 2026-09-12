@@ -15,6 +15,7 @@ ACTIVE_COMPILE_TARGETS = (
     "build_exe.bat",
     "boot.bat",
     "boot.ps1",
+    "boot.sh",
     "CONSENSUS.spec",
     "packaging",
     "config",

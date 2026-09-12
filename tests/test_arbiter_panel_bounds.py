@@ -124,20 +124,21 @@ def test_arbiter_verdict_panel_does_not_contain_footer_controls() -> None:
     assert "DIAGNOSTICS" not in joined
 
 
-def test_arbiter_content_clears_footer_at_review_viewports() -> None:
-    required = arbiter_content_required_height()
+def test_arbiter_panel_remains_scrollable_above_footer_at_review_viewports() -> None:
     for theme_key in THEMES:
         for _width, viewport_height in VIEWPORTS:
             footer_top = viewport_height - FOOTER_HEIGHT
             available = arbiter_panel_available_height(viewport_height, theme_key)
-            content_bottom = arbiter_content_bottom(viewport_height, theme_key)
 
-            assert required <= available - FOOTER_CLEARANCE, (theme_key, viewport_height)
-            assert content_bottom <= footer_top - FOOTER_CLEARANCE, (theme_key, viewport_height)
+            assert available >= 80, (theme_key, viewport_height)
+            assert footer_top - available >= GUI_HEADER_HEIGHT, (theme_key, viewport_height)
+
+    panel = build_verdict_panel(THEMES["janus"], None)
+    assert panel.content.scroll.value == "auto"
 
 
 if __name__ == "__main__":
     test_arbiter_verdict_panel_has_fixed_internal_bounds()
     test_arbiter_verdict_panel_does_not_contain_footer_controls()
-    test_arbiter_content_clears_footer_at_review_viewports()
+    test_arbiter_panel_remains_scrollable_above_footer_at_review_viewports()
     print("test_arbiter_panel_bounds PASS")

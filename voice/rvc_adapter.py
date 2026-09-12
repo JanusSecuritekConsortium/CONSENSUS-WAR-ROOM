@@ -11,12 +11,12 @@ from typing import Any, List, Optional
 
 try:
     from .audio_quality import polish_wav
-    from .tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from .tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from .text_normalization import split_speech_text
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
     from voice.audio_quality import polish_wav
-    from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from voice.text_normalization import split_speech_text
     from voice.voice_profiles import VoiceProfile, get_voice_profile
 
@@ -31,7 +31,8 @@ class RVCAdapter:
         self.profile = profile or get_voice_profile("AURELIUS")
         self.timeout = timeout
         self.settings = self.profile.settings
-        self.output_dir = Path(str(self.settings.get("output_dir", "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio")))
+        from core.paths import SYSTEM_ROOT
+        self.output_dir = Path(str(self.settings.get("output_dir", SYSTEM_ROOT / "_ARBITER" / "tts_audio")))
         self.model_path = Path(str(self.settings.get("rvc_model_path", "")))
         self.index_path = Path(str(self.settings.get("rvc_index_path", ""))) if self.settings.get("rvc_index_path") else None
         self.model_name = str(self.settings.get("rvc_model_name", self.model_path.name))
@@ -43,7 +44,7 @@ class RVCAdapter:
         self.protect = float(self.settings.get("protect", 0.33))
         self.filter_radius = int(self.settings.get("filter_radius", 3))
         self.max_chunk_chars = int(self.settings.get("max_chunk_chars", 360))
-        self.base_tts = WindowsSAPIBackend(
+        self.base_tts = create_system_backend(
             rate=self.profile.rate,
             volume=self.profile.volume,
             voice_names=[str(item) for item in self.settings.get("base_voice_name", [])],
@@ -150,7 +151,7 @@ class RVCAdapter:
         converted_wav = self.output_dir / f"{slug}_rvc_{stamp}.wav"
 
         base = self.base_tts.synthesize_to_wav(cleaned, base_wav)
-        print("Base TTS backend: windows_sapi")
+        print(f"Base TTS backend: {base.mode}")
         print(f"Base TTS python: {sys.executable}")
         print(f"Base WAV path: {base_wav}")
         if base.metadata.get("voice"):
@@ -301,6 +302,9 @@ class RVCAdapter:
         print(f"RVC command: {' '.join(command)}")
 
     def _play_wav(self, path: Path) -> TTSBackendResult:
+        if sys.platform.startswith("linux"):
+            from voice.linux_audio import play_wav
+            return play_wav(path)
         if os.name != "nt":
             return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported", "played": False})
         try:

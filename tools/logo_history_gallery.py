@@ -26,7 +26,7 @@ SEARCH_TERM_PATTERN = re.compile(r"(^|[^a-z0-9])(eva|nerv|magi|wh40k|warhammer|c
 EVA_TERM_PATTERN = re.compile(r"(^|[^a-z0-9])(eva|nerv|magi)([^a-z0-9]|$)", re.IGNORECASE)
 WH40K_TERM_PATTERN = re.compile(r"(^|[^a-z0-9])(wh40k|warhammer|cogitator|omnissiah)([^a-z0-9]|$)", re.IGNORECASE)
 TEXT_EXTENSIONS = {".txt", ".asc", ".ansi", ".py", ".json", ".md"}
-SEARCH_ROOTS = ("static", "assets", "archive", "backups", "future_implementations", "legacy", "themes", "ui")
+SEARCH_ROOTS = ("static", "assets", "themes", "ui")
 WORKTREE_SKIP_DIRS = {
     ".git",
     ".venv",

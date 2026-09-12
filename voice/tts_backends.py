@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -14,6 +15,14 @@ class TTSBackendResult:
     mode: str = "unknown"
     audio_path: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+def create_system_backend(**kwargs):
+    if sys.platform.startswith("linux"):
+        from .linux_audio import EspeakBackend
+
+        return EspeakBackend(**kwargs)
+    return WindowsSAPIBackend(**kwargs)
 
 
 def _list_sapi_voices_result() -> tuple[List[Dict[str, str]], str]:

@@ -95,6 +95,11 @@ def run_release_validation() -> int:
         [sys.executable, str(ROOT / "tools" / "export_theme_gallery.py"), "--timeout", "90"],
     ]
     for command in commands:
+        if sys.platform != "win32" and "export_theme_gallery.py" in command[1]:
+            print("INCOMPLETE: automated theme screenshots require Windows. "
+                  "Tests and compilation passed; manually validate the Linux desktop. "
+                  "See docs/LINUX_MIGRATION.md.")
+            return 2
         print(f"VALIDATE: {' '.join(command)}")
         code = _run_command(command)
         if code != 0:

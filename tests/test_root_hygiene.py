@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_ROOT_PY = {
-    "__init__.py",
     "main.py",
     "consensus_war_room_genesis.py",
     "consensus_launcher.py",

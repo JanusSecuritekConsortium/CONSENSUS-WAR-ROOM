@@ -32,10 +32,7 @@ dist/
 
 # Consensus runtime artifacts
 memory/
-reports/verdicts/latest_verdict_*
-reports/logo_audit/current/
-reports/theme_gallery/current/
-reports/logo_history_candidates/
+reports/
 _ARBITER/backups/
 _ARBITER/Bot/Ext/
 _ARBITER/Bot/Voice/
@@ -50,8 +47,8 @@ _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json
 
 # Heavy/generated historical backups
-archive/pre_modular_backups/
-archive/old_experiments/tts_audio/
+archive/
+future_implementations/
 
 # Nested repositories and model/artifact blobs
 **/.git/

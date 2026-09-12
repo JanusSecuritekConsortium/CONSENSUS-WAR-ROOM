@@ -20,12 +20,11 @@ REPORTS_DIR = ROOT / "reports"
 ACTIVE_METADATA_FILES = (
     "CHANGELOG.md",
     "README.md",
-    "READMEe.md",
     "pyproject.toml",
     "requirements.txt",
     "requirements-dev.txt",
-    "CONSENSUS_ARCHITECTURE.md",
-    "MSTY_STUDIO_INTEGRATION.md",
+    "docs/ARCHITECTURE.md",
+    "docs/MSTY_STUDIO_INTEGRATION.md",
 )
 MANIFEST_EXCLUDED_PARTS = {
     *EXCLUDED_PARTS,

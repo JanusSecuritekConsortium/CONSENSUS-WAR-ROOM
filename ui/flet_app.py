@@ -898,10 +898,13 @@ def export_session_logs() -> Path:
 
 
 def open_theme_preview_folder() -> Path:
-    path = Path("_ARBITER") / "theme_previews"
+    path = SYSTEM_ROOT / "_ARBITER" / "theme_previews"
     path.mkdir(parents=True, exist_ok=True)
     try:
-        os.startfile(path)  # type: ignore[attr-defined]
+        if sys.platform == "win32":
+            os.startfile(path)  # type: ignore[attr-defined]
+        else:
+            subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(path)])
     except Exception:
         pass
     log_event("gui_open_theme_preview_folder", {"path": str(path)})

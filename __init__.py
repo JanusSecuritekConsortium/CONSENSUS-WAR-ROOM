@@ -1,1 +1,0 @@
-"""CONSENSUS_SYSTEM package."""

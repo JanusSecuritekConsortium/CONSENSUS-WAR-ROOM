@@ -8,6 +8,7 @@ from core.models import Theme
 
 
 EMPTY_PROPOSAL_HINT = "Awaiting proposal. Select a template or enter a tribunal query."
+PROPOSAL_INPUT_LINES = 9
 
 
 def build_proposal_panel(
@@ -42,8 +43,8 @@ def build_proposal_panel(
         hint_text="Enter tribunal proposal...",
         dense=True,
         multiline=True,
-        min_lines=5,
-        max_lines=7,
+        min_lines=PROPOSAL_INPUT_LINES,
+        max_lines=PROPOSAL_INPUT_LINES,
         border_color=theme.primary_color,
         focused_border_color=theme.accent_color,
         cursor_color=theme.accent_color,
@@ -120,9 +121,9 @@ def build_proposal_panel(
                     bgcolor=theme.background_color,
                     side=ft.BorderSide(1, theme.primary_color),
                     shape=ft.RoundedRectangleBorder(radius=0),
-                    padding=ft.padding.symmetric(horizontal=16, vertical=8),
+                    padding=ft.padding.symmetric(horizontal=16, vertical=6),
                 ),
-                height=36,
+                height=32,
                 data={"role": "submit_to_tribunal_button"},
             ),
         ]
@@ -142,4 +143,4 @@ def build_proposal_panel(
     )
 
 
-__all__ = ["EMPTY_PROPOSAL_HINT", "build_proposal_panel"]
+__all__ = ["EMPTY_PROPOSAL_HINT", "PROPOSAL_INPUT_LINES", "build_proposal_panel"]

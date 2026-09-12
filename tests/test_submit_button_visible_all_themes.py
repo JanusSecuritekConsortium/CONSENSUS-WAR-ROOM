@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for
+from ui.components.proposal_panel import PROPOSAL_INPUT_LINES
 from ui.flet_app import PROPOSAL_HEIGHT
 from ui.themes.catalog import GUI_THEME_KEYS
 
@@ -18,9 +19,9 @@ PROPOSAL_PANEL_VERTICAL_PADDING = 16
 PROPOSAL_PANEL_SPACING = 5
 PROPOSAL_TITLE_HEIGHT = 14
 PROPOSAL_DROPDOWN_HEIGHT = 48
-PROPOSAL_INPUT_HEIGHT = 90
+PROPOSAL_INPUT_HEIGHT = 153
 PROPOSAL_HELPER_HEIGHT = 12
-PROPOSAL_BUTTON_HEIGHT = 36
+PROPOSAL_BUTTON_HEIGHT = 32
 
 
 def proposal_submit_button_bottom_margin() -> int:
@@ -73,7 +74,8 @@ def test_submit_button_is_visible_inside_proposal_panel_for_all_themes() -> None
         assert region.height == PROPOSAL_HEIGHT
         assert PROPOSAL_HEIGHT >= 270
         assert getattr(submit_buttons[0], "height", None) <= 40
-        assert getattr(proposal_inputs[0], "min_lines", None) >= 5
+        assert getattr(proposal_inputs[0], "min_lines", None) == PROPOSAL_INPUT_LINES
+        assert getattr(proposal_inputs[0], "max_lines", None) == PROPOSAL_INPUT_LINES
         assert proposal_submit_button_bottom_margin() >= PROPOSAL_BOTTOM_CLEARANCE
 
 

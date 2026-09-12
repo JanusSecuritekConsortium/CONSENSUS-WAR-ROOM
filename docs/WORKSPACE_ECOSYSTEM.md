@@ -13,7 +13,7 @@ Kiwix archives, caches, or local runtime state.
 | Msty Studio | `G:\Msty\MstyStudio` | Installed Msty Studio app and bundled local runtime | Document only |
 | AI models | `G:\AI_MODELS` | Local model storage for Hugging Face, GGUF, Ollama, Clawd, and related runtimes | Inventory only |
 | TARS | `G:\.TARS` | Robot/control code and large STEP model | Source snippets only if intentionally imported |
-| Flet prototype | `G:\Flet Server` | Earlier Flet-based Consensus UI prototype | Imported under `future_implementations/` |
+| Flet prototype | `G:\Flet Server` | Earlier Flet-based Consensus UI prototype | Local reference only; not tracked |
 | Kiwix/Msty knowledge stack | `G:\Kiwix\Kowledge Stack Msty` | Local knowledge corpus and exported project/context vaults | Index only |
 | Obsidian vault | `G:\Obsidian\CONSENSUS_SYSTEM` | Local Obsidian notes for Consensus | Index only unless specific notes are approved |
 
