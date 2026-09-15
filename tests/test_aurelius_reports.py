@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from email.utils import format_datetime
 import sqlite3
+import json
 from tempfile import TemporaryDirectory
 from pathlib import Path
 import unittest
@@ -56,6 +57,39 @@ class ReportTests(unittest.TestCase):
             body = evening_report(path, self.now)
             self.assertIn('Morning Brief: completed', body)
             self.assertIn('Telegram delivery: delivered', body)
+            self.assertEqual(before, path.read_bytes())
+
+    def test_relevance_dedup_and_summary(self):
+        def story(title, url, hours=0):
+            return {'title': title, 'url': url, 'published': self.now-timedelta(hours=hours), 'summary': 'Publisher context about this development.'}
+        results = [{'category': 'World', 'name': 'Publisher', 'error': None, 'items': [
+            story('Actor wins Emmy awards', 'https://example.org/entertainment'),
+            story('Energy regulation changes announced', 'https://example.org/policy', 1),
+            story('Energy regulation changes announced today', 'https://example.org/policy?source=rss'),
+            story('Ceasefire agreement signed', 'https://example.org/ceasefire', 2)]}]
+        body = morning_report(results, self.now)
+        self.assertNotIn('Actor wins', body)
+        self.assertEqual(body.count('reports:'), 2)
+        self.assertIn('Publisher summary:', body)
+
+    def test_evening_saved_tasks_and_no_self_report(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory)/'test.db'
+            with sqlite3.connect(path) as db:
+                db.execute('CREATE TABLE scheduled_job_dispatches(id,label,status,scheduled_for)')
+                db.execute('CREATE TABLE scheduled_job_delivery_attempts(dispatch_id,destination_kind,status)')
+                db.execute('CREATE TABLE memory_packs(id,current_revision_id,archived)')
+                db.execute('CREATE TABLE memory_pack_revisions(id,pack_id,state_json)')
+                pack = 'aurelius-shared-persistent-memory'
+                db.execute('INSERT INTO memory_packs VALUES(?,?,0)', (pack,'rev'))
+                db.execute('INSERT INTO memory_pack_revisions VALUES(?,?,?)', ('rev',pack,json.dumps({'open_tasks':[{'title':'Review proposal','status':'blocked'}]})))
+                db.execute('INSERT INTO scheduled_job_dispatches VALUES(?,?,?,?)', ('self','End-of-Day Shutdown','running','2026-09-12T05:00:00Z'))
+            db.close()
+            before = path.read_bytes()
+            body = evening_report(path, self.now)
+            self.assertIn('Review proposal (recorded status: blocked)', body)
+            self.assertNotIn('End-of-Day Shutdown', body)
+            self.assertNotIn('not recorded yet', body)
             self.assertEqual(before, path.read_bytes())
 
     def test_mcp_handoff(self):
