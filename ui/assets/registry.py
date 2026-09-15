@@ -36,8 +36,8 @@ class HeaderLogoLayout:
     logo_box_max_width: int | None = None
     logo_box_height: int | None = None
     header_height: int | None = None
-    logo_offset_x: int = 0
-    logo_offset_y: int = 0
+    logo_offset_x: float = 0
+    logo_offset_y: float = 0
 
 
 @dataclass(frozen=True)
@@ -106,6 +106,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         max_width=88,
         header_layout=HeaderLogoLayout(
             logo_font_size=10,
+            logo_offset_y=-4,
             logo_line_height=0.85,
             logo_visual_scale=1.0,
             logo_top_padding=0,
@@ -131,6 +132,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         max_width=88,
         header_layout=HeaderLogoLayout(
             logo_font_size=10,
+            logo_offset_y=-4,
             logo_line_height=0.85,
             logo_visual_scale=1.0,
             logo_top_padding=0,
@@ -161,7 +163,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_side_padding=0,
             logo_box_width=185,
             logo_box_height=168,
-            logo_offset_x=6,
+            logo_offset_y=-1,
             logo_box_scroll_enabled=False,
         ),
         header_profile=LOGO_PROFILES["wh40k"],
@@ -184,11 +186,11 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
         expected_max_lines=19,
         expected_min_width=80,
         header_layout=HeaderLogoLayout(
-            logo_font_size=7,
+            logo_font_size=10,
             logo_top_padding=8,
             logo_bottom_padding=8,
             logo_side_padding=2,
-            logo_box_width=450,
+            logo_box_width=380,
             logo_box_height=154,
             logo_box_scroll_enabled=False,
         ),
@@ -211,6 +213,8 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_bottom_padding=4,
             logo_side_padding=4,
             logo_visual_scale=1.12,
+            logo_offset_x=-4,
+            logo_offset_y=8,
             logo_box_width=640,
         ),
         header_profile=LOGO_PROFILES["arasaka"],
@@ -230,8 +234,8 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_top_padding=22,
             logo_bottom_padding=22,
             logo_box_width=328,
-            logo_offset_x=-20,
-            logo_offset_y=2,
+            logo_offset_x=-38,
+            logo_offset_y=12,
         ),
         header_profile=LOGO_PROFILES["janus"],
     ),
@@ -280,6 +284,7 @@ THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
         logo_font_size=9,
         logo_top_padding=0,
         logo_bottom_padding=0,
+        logo_offset_y=-1.5,
         logo_box_width=162,
         logo_box_scroll_enabled=False,
     ),

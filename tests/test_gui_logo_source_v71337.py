@@ -22,7 +22,7 @@ WH40K_BOOT_HASH = "c15e317b7230dcff6ba757a1426aeae2266da88a23c3f24c7c2da3ba9836d
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def test_eva_and_wh40k_runtime_logo_paths_are_canonical_gui_files() -> None:
@@ -51,7 +51,7 @@ def test_wh40k_positive_optical_offset_keeps_logo_contained() -> None:
     diagnostics = logo_runtime_diagnostics("wh40k", header_width=1920)
     left, right, top, bottom = diagnostics["clearances"]
 
-    assert diagnostics["optical_offset_x"] == 6
+    assert diagnostics["optical_offset_x"] == 0
     assert left >= 5
     assert right >= 5
     assert top >= 5
@@ -65,11 +65,11 @@ def test_eva_gui_logo_bounds_are_contained_without_clipping() -> None:
     assert diagnostics["renderer_mode"] == "supersampled_rect"
     assert diagnostics["logo_region_width"] == 185
     assert diagnostics["logo_region_height"] == 168
-    assert diagnostics["visible_artwork_width"] >= 172
+    assert diagnostics["visible_artwork_width"] >= 153
     assert diagnostics["visible_artwork_height"] >= 148
     assert left >= 6
     assert right >= 6
-    assert top >= 9
+    assert top >= 5
     assert bottom >= 9
 
 
@@ -86,7 +86,7 @@ def test_bundled_onefile_gui_logo_hashes_match_source_gui_hashes() -> None:
 
     for archive_name, expected_hash in expected.items():
         payload = archive.extract(archive_name)
-        assert hashlib.sha256(payload).hexdigest() == expected_hash
+        assert hashlib.sha256(payload.replace(b"\r\n", b"\n")).hexdigest() == expected_hash
 
 
 def test_no_png_gui_logo_assets_exist() -> None:

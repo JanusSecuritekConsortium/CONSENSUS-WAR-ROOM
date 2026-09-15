@@ -57,3 +57,35 @@ def test_diagnostics_overlay_replaces_existing_overlay_without_stacking() -> Non
 if __name__ == "__main__":
     test_diagnostics_overlay_replaces_existing_overlay_without_stacking()
     print("test_diagnostics_overlay_reentrant_guard PASS")
+
+
+def test_diagnostics_closes_by_cross_and_footer_toggle():
+    from ui.flet_app import FOOTER_HEIGHT
+
+    state = make_gui_state("janus")
+    page = FakePage()
+    _render_page(page, state)
+
+    def diagnostics_button():
+        footer = page.controls[0].content.controls[2].content
+        return footer.controls[2].content.controls[0]
+
+    def drawer():
+        return next(c for c in page.overlay if c.data == "diagnostics_drawer")
+
+    diagnostics_button().on_click(None)
+    assert state.diagnostics_drawer_open
+    panel = drawer()
+    assert panel.bottom > FOOTER_HEIGHT  # Overlay cannot intercept the footer.
+    assert panel.top is not None and panel.right is not None and panel.width == 380
+    close = panel.content.controls[0].controls[0]
+    assert close.tooltip == "Close diagnostics"
+    close.on_click(None)
+    assert not state.diagnostics_drawer_open
+    assert not any(c.data == "diagnostics_drawer" for c in page.overlay)
+
+    diagnostics_button().on_click(None)
+    assert state.diagnostics_drawer_open
+    diagnostics_button().on_click(None)
+    assert not state.diagnostics_drawer_open
+    assert not any(c.data == "diagnostics_drawer" for c in page.overlay)

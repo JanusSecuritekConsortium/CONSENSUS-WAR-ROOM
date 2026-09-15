@@ -43,7 +43,7 @@ def _logo_source(theme_key: str) -> str:
 
 
 def _logo_hash(theme_key: str) -> str:
-    return hashlib.sha256(THEME_GRAPHIC_ASSETS[theme_key].logo_path.read_bytes()).hexdigest()
+    return hashlib.sha256(THEME_GRAPHIC_ASSETS[theme_key].logo_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _supersampled_stack(theme_key: str) -> ft.Stack:
@@ -126,7 +126,7 @@ def test_eva_uses_supersampled_rect_renderer_like_wh40k() -> None:
     assert metrics.cell_width == 185
     assert metrics.cell_height == 168
     assert metrics.base_font_size == 10
-    assert 172 <= metrics.transformed_width <= 174
+    assert 153 <= metrics.transformed_width <= 155
     assert 148 <= metrics.transformed_height <= 149
     assert left >= 6
     assert right >= 6

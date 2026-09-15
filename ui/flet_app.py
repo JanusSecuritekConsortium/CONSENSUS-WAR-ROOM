@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import threading
 import sys
 import time
 import uuid
@@ -213,6 +214,8 @@ class GuiState:
     ui_interaction_hold_until: float = 0.0
     bellator_intelligence_diagnostics: Dict[str, object] = field(default_factory=dict)
     render_in_progress: bool = False
+    render_lock: Any = field(default_factory=threading.RLock, repr=False)
+    live_panels: Dict[str, Any] = field(default_factory=dict, repr=False)
     diagnostics_drawer_open: bool = False
     command_palette_open: bool = False
     trace_viewer_open: bool = False
@@ -833,13 +836,15 @@ def submit_proposal_live_for_gui(
         state.recent_decisions = read_recent_decisions()
         log_event("gui_verdict_update", {"session_id": result.session_id, "verdict": result.verdict.value})
         return result
-    except Exception:
+    except Exception as exc:
         _set_lifecycle(state, LIFECYCLE_ERROR_DEGRADED, None)
         for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
             state.monolith_activity_states[agent_id] = "ERROR"
-        append_timeline(state.timeline_events, "ERROR", "proposal lifecycle degraded")
-        log_war_room_runtime("proposal_lifecycle_error", {"theme": state.theme_key}, level="ERROR")
-        state.provider_warning = state.provider_warning or "PROVIDER DEGRADED - MOCK FALLBACK ACTIVE"
+        error = f"{type(exc).__name__}: {exc}"
+        append_timeline(state.timeline_events, "ERROR", f"Submission failed: {error}")
+        log_war_room_runtime("proposal_lifecycle_error", {"theme": state.theme_key, "error": error}, level="ERROR")
+        state.displayed_synthesis = f"SUBMISSION FAILED\n{error}"
+        state.provider_warning = state.provider_warning or f"SUBMISSION FAILED: {error}"
         _notify(on_update)
         raise
 
@@ -1756,6 +1761,27 @@ def _key_value_pairs(value: str | None) -> Dict[str, str]:
     return pairs
 
 
+def _register_live_panel(state: GuiState, name: str, builder: Callable[[], ft.Control]) -> ft.Control:
+    panel = builder()
+    state.live_panels[name] = (panel, builder)
+    return panel
+
+
+def _refresh_live_page(page: ft.Page, state: GuiState) -> None:
+    """Refresh display regions without unmounting inputs, menus or overlays."""
+    with state.render_lock:
+        panels = []
+        for panel, builder in state.live_panels.values():
+            fresh = builder()
+            if isinstance(panel, ft.Column):
+                panel.controls = fresh.controls
+            else:
+                panel.content = fresh.content
+            panels.append(panel)
+        if panels:
+            page.update(*panels)
+
+
 def build_gui_layout(
     state: GuiState,
     submit,
@@ -1770,6 +1796,7 @@ def build_gui_layout(
     open_trace_viewer=None,
     on_template_select=None,
     on_proposal_change=None,
+    on_footer_command=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -1791,16 +1818,26 @@ def build_gui_layout(
     def hold_footer_interaction() -> None:
         state.ui_interaction_hold_until = time.monotonic() + GUI_INTERACTION_HOLD_SECONDS
 
-    shortcut_text = "Ctrl+K Command   Ctrl+D Diagnostics   Ctrl+T Theme   Ctrl+H History   Ctrl+E Export"
     footer_shortcuts = ft.Container(
-        content=ft.Text(
-            shortcut_text,
-            color=theme.secondary_text or theme.secondary_color,
-            size=10,
-            max_lines=1,
-            overflow=ft.TextOverflow.ELLIPSIS,
-            text_align=ft.TextAlign.CENTER,
-            data="footer_shortcuts_text",
+        content=ft.Row(
+            [
+                ft.TextButton(
+                    f"Ctrl+{key} {label}",
+                    on_click=(lambda _, key=key: on_footer_command(key)) if on_footer_command else None,
+                    tooltip=f"{label} (Ctrl+{key})",
+                    height=36,
+                    style=ft.ButtonStyle(
+                        color=theme.secondary_text or theme.secondary_color,
+                        padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                        text_style=ft.TextStyle(size=10, font_family=theme.font_family),
+                        shape=ft.RoundedRectangleBorder(radius=0),
+                    ),
+                )
+                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("T", "Theme"), ("H", "History"), ("E", "Export"))
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=0,
+            scroll=ft.ScrollMode.AUTO,
         ),
         alignment=ft.alignment.center,
         expand=True,
@@ -1844,22 +1881,22 @@ def build_gui_layout(
     session_id = state.current_result.session_id if state.current_result else "--"
     layout_meta = get_theme_layout_metadata(theme.key)
     left = ft.Container(
-            build_monolith_panel(
+            _register_live_panel(state, "build_monolith_panel", lambda: build_monolith_panel(
                 theme,
                 state.nodes,
                 state.monolith_statuses,
                 vote_details=state.monolith_vote_details,
                 memory_status=state.memory_status,
                 provider_status=str(state.provider_status.get("status", "unknown")),
-                last_verdict=last_verdict,
-                session_id=session_id,
+                last_verdict=state.current_result.verdict.value if state.current_result else "--",
+                session_id=state.current_result.session_id if state.current_result else "--",
                 lifecycle_state=state.lifecycle_state,
                 runtime_details=build_runtime_details(
                     state.monolith_activity_states,
                     state.monolith_latencies_ms,
                     state.pulse_index,
                 ),
-        ),
+        )),
         expand=LEFT_COLUMN_FLEX,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
@@ -1881,7 +1918,7 @@ def build_gui_layout(
                     data={"role": "proposal_panel_region"},
                 ),
                 ft.Container(
-                    build_verdict_panel(
+                    _register_live_panel(state, "build_verdict_panel", lambda: build_verdict_panel(
                         theme,
                         state.current_result,
                         state.current_proposal,
@@ -1896,7 +1933,7 @@ def build_gui_layout(
                         reasoning_events=state.reasoning_stream,
                         convergence_percent=state.convergence_percent,
                         phase_durations=state.phase_durations,
-                    ),
+                    )),
                     expand=True,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={"role": "verdict_panel_region"},
@@ -1913,7 +1950,7 @@ def build_gui_layout(
                 ft.Container(
                     ft.Column(
                         [
-                            build_status_panel(
+                            _register_live_panel(state, "build_status_panel", lambda: build_status_panel(
                                 theme,
                                 state.provider_status,
                                 state.memory_status,
@@ -1924,7 +1961,7 @@ def build_gui_layout(
                                 context_retrieval_status=state.context_retrieval_status,
                                 prior_decisions_used=state.prior_decisions_used,
                                 current_session_id=state.current_result.session_id if state.current_result else "--",
-                            ),
+                            )),
                         ],
                         spacing=8,
                         tight=True,
@@ -1932,14 +1969,14 @@ def build_gui_layout(
                     ),
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 ),
-                build_log_panel(
+                _register_live_panel(state, "build_log_panel", lambda: build_log_panel(
                     theme,
                     state.logs,
                     state.recent_decisions,
                     timeline_events=state.timeline_events,
                     bellator_intelligence=state.bellator_intelligence_diagnostics,
                     refresh_bellator_intelligence=refresh_bellator_intelligence,
-                ),
+                )),
             ],
             spacing=12,
             expand=True,
@@ -1965,7 +2002,7 @@ def build_gui_layout(
     shell = ft.Container(
         content=ft.Column(
             [
-                build_header(
+                _register_live_panel(state, "build_header", lambda: build_header(
                     theme,
                     str(state.provider_status.get("status", "unknown")),
                     state.memory_status,
@@ -1974,7 +2011,7 @@ def build_gui_layout(
                     ambient_status=state.heartbeat_text,
                     health_badge=state.runtime_snapshot_cache.get("health_badge"),
                     telemetry=state.telemetry_snapshot,
-                ),
+                )),
                 ft.Container(body, expand=True, padding=8, clip_behavior=ft.ClipBehavior.HARD_EDGE),
                 footer,
             ],
@@ -2121,6 +2158,11 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
 
 
 def _render_page(page: ft.Page, state: GuiState) -> None:
+    with state.render_lock:
+        _render_page_locked(page, state)
+
+
+def _render_page_locked(page: ft.Page, state: GuiState) -> None:
     if state.render_in_progress:
         log_war_room_runtime("ui_render_skipped_reentrant", {"theme": state.theme_key}, level="WARN")
         return
@@ -2132,14 +2174,14 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
         def submit(proposal: str) -> None:
             def worker() -> None:
                 def update() -> None:
-                    _render_page(page, state)
+                    _refresh_live_page(page, state)
 
                 try:
                     submit_proposal_live_for_gui(state, proposal, on_update=update)
                 except Exception as exc:
                     log_error("gui_submission_error", exc, {"theme": state.theme_key})
                     state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
-                _render_page(page, state)
+                _refresh_live_page(page, state)
 
             page.run_thread(worker)
 
@@ -2172,6 +2214,10 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
         def run_health(_: ft.ControlEvent | None = None) -> None:
             report = run_health_check()
             state.logs = [f"HEALTH {report['status'].upper()}", *state.logs[:10]]
+            _render_page(page, state)
+
+        def close_diagnostics(_: ft.ControlEvent | None = None) -> None:
+            set_diagnostics_drawer_open(state, False)
             _render_page(page, state)
 
         def toggle_diagnostics(_: ft.ControlEvent | None = None) -> None:
@@ -2301,30 +2347,33 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             state.trace_filter = value
             _render_page(page, state)
 
-        def on_keyboard_event(event) -> None:
-            key = str(getattr(event, "key", "") or "").upper()
-            ctrl = bool(getattr(event, "ctrl", False) or getattr(event, "meta", False))
-            if ctrl and key == "K":
+        def handle_footer_command(key: str) -> None:
+            if key == "K":
                 state.command_palette_open = not state.command_palette_open
                 log_event(
                     "gui_command_palette",
                     {"open": state.command_palette_open, "theme": state.theme_key},
                 )
                 _render_page(page, state)
-            elif ctrl and key == "D":
+            elif key == "D":
                 toggle_diagnostics(None)
-            elif ctrl and key == "T":
+            elif key == "T":
                 execute_command_palette_action(state, "Toggle Theme")
                 _render_page(page, state)
-            elif ctrl and key == "H":
+            elif key == "H":
                 state.proposal_history_open = not state.proposal_history_open
                 _render_page(page, state)
-            elif ctrl and key == "E":
+            elif key == "E":
                 try:
                     execute_command_palette_action(state, "Export Latest Verdict")
                 except Exception:
                     pass
                 _render_page(page, state)
+
+        def on_keyboard_event(event) -> None:
+            key = str(getattr(event, "key", "") or "").upper()
+            if getattr(event, "ctrl", False) or getattr(event, "meta", False):
+                handle_footer_command(key)
 
         if hasattr(page, "on_keyboard_event"):
             page.on_keyboard_event = on_keyboard_event
@@ -2343,6 +2392,7 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             open_trace_viewer=open_trace_viewer,
             on_template_select=handle_template_select,
             on_proposal_change=handle_proposal_change,
+            on_footer_command=handle_footer_command,
         )
         page.controls.clear()
         page.add(layout)
@@ -2365,15 +2415,34 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
             if state.diagnostics_drawer_open:
                 overlay.append(
                     ft.Container(
-                        content=ft.Container(
-                            build_diagnostics_drawer(state),
-                            width=380,
-                            padding=10,
-                            border=ft.border.all(1, state.theme.accent_color),
-                            bgcolor=state.theme.surface_color,
-                            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                        content=ft.Column(
+                            [
+                                ft.Row(
+                                    [ft.IconButton(
+                                        icon=ft.Icons.CLOSE,
+                                        icon_color=state.theme.accent_color,
+                                        tooltip="Close diagnostics",
+                                        on_click=close_diagnostics,
+                                        data="close_diagnostics",
+                                    )],
+                                    alignment=ft.MainAxisAlignment.END,
+                                ),
+                                ft.Container(
+                                    build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer),
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=0,
+                            expand=True,
                         ),
-                        alignment=ft.alignment.center_right,
+                        width=380,
+                        top=8,
+                        right=8,
+                        bottom=FOOTER_HEIGHT + 8,
+                        padding=10,
+                        border=ft.border.all(1, state.theme.accent_color),
+                        bgcolor=state.theme.surface_color,
+                        clip_behavior=ft.ClipBehavior.HARD_EDGE,
                         data="diagnostics_drawer",
                     )
                 )
@@ -2475,13 +2544,11 @@ def _start_status_polling(page: ft.Page, state: GuiState, interval: float = GUI_
             try:
                 advance_war_room_activity(state)
                 now = time.monotonic()
-                if now < state.ui_interaction_hold_until:
-                    continue
                 if now - last_status_refresh >= GUI_PROVIDER_REFRESH_INTERVAL_SECONDS:
                     refresh_gui_status(state)
                     last_status_refresh = now
                 refresh_telemetry_for_gui(state)
-                _render_page(page, state)
+                _refresh_live_page(page, state)
             except Exception as exc:
                 log_error("gui_status_poll_error", exc)
                 log_war_room_runtime("ui_refresh_error", {"error": str(exc)}, level="ERROR")
