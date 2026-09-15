@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent
 SPEC_PATH = ROOT / "CONSENSUS.spec"
 OUTPUT_PATH = ROOT / "dist" / ("CONSENSUS.exe" if sys.platform == "win32" else "CONSENSUS")
 PACKAGED_SELF_TEST_MARKERS = (
+    "PROMPT SUBSYSTEM: READY",
     "ASSET SUBSYSTEM: READY",
     "HARDWARE SUBSYSTEM: READY",
     "BOOT LOGO SUBSYSTEM: READY (military 38x28)",

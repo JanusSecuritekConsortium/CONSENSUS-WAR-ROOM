@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Any, Dict
 
 from core.models import NodeIdentity
-from core.paths import SYSTEM_ROOT
+from core.paths import RESOURCE_ROOT
 
 
-PROFILE_DIR = SYSTEM_ROOT / "monoliths" / "profiles"
+PROFILE_DIR = RESOURCE_ROOT / "monoliths" / "profiles"
 
 
 def load_monolith_profile(agent_id: str) -> Dict[str, Any]:

@@ -8,6 +8,7 @@ from PyInstaller.utils.hooks import collect_submodules
 ROOT = Path(SPECPATH)
 hiddenimports = sorted(set(collect_submodules("flet") + collect_submodules("flet_desktop")))
 datas = [
+    (str(ROOT / "monoliths" / "profiles"), "monoliths/profiles"),
     (str(ROOT / "static"), "static"),
     (str(ROOT / "_ARBITER" / "genesis_config.json"), "_ARBITER"),
     (str(ROOT / "voice" / "voice_config.json"), "voice"),
