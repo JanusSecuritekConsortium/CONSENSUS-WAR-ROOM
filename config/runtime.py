@@ -51,6 +51,9 @@ class RuntimeConfig:
     mock_fallback_enabled: bool = True
     strict_provider_mode: bool = False
     use_available_model_fallback: bool = False
+    real_model_fallback_enabled: bool = True
+    base_model: str = "Hermes-3-Llama-3.1-8B"
+    agent_model_fallbacks: Dict[str, list[str]] = field(default_factory=dict)
     refresh_model_cache: bool = False
     model_cache_ttl_seconds: int = 120
     msty_live_context_default_theme: str = "eva"

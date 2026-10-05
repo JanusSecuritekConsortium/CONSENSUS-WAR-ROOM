@@ -557,6 +557,33 @@ def resolve_required_model_aliases(
     return missing, resolved, alias_matches
 
 
+def real_model_candidates(
+    agent_id: str, preferred: str, models: Iterable[str], config: RuntimeConfig,
+) -> list[str]:
+    """Resolve real provider models in preferred, role fallback, base, available order."""
+    available = list(dict.fromkeys(
+        model for model in normalize_model_names(models)
+        if model.strip().lower() not in {"mock", "mock-fallback"}
+    ))
+    candidates: list[str] = []
+    configured = [preferred]
+    if config.real_model_fallback_enabled and not config.strict_provider_mode:
+        configured.extend(config.agent_model_fallbacks.get(agent_id, []))
+        configured.append(config.base_model)
+    for model in configured:
+        if model:
+            matched, _ = match_model_alias(model, available)
+            if matched and matched not in candidates:
+                candidates.append(matched)
+    if config.real_model_fallback_enabled and not config.strict_provider_mode:
+        # Prefer conversational models over specialized encoders or routers.
+        ordered = sorted(available, key=lambda model: any(
+            token in model.lower() for token in ("embed", "rerank", "router", "ui-tars")
+        ))
+        candidates.extend(model for model in ordered if model not in candidates)
+    return candidates
+
+
 def model_availability_report(
     required: Dict[str, str],
     available_models: Iterable[str],
@@ -1300,6 +1327,10 @@ def health_check(
             "base_url": model_payload["base_url"],
             "selected_endpoint": model_payload["base_url"],
             "models": models,
+            "real_model_fallback_candidates": {
+                agent_id: real_model_candidates(agent_id, model, models, runtime_config)
+                for agent_id, model in required.items()
+            },
             "latency_ms": model_payload["latency_ms"],
             "model_count": len(models),
             "required_models": required,

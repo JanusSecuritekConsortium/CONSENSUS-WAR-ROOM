@@ -21,10 +21,22 @@ Ollama generation requests are translated to OpenAI chat requests when the same
 provider explicitly rejects the Ollama route with HTTP 404 or 405. The model and
 generation settings are preserved; timeout/server failures are not replayed.
 
-Real-provider tribunal calls never fall back to simulated responses or silently
-remap a missing assigned model. A failed, empty, or malformed response stops
-the remaining rounds and returns NO_CONSENSUS with an incomplete-deliberation
-reason. Explicit mock mode remains available and labels its result SIMULATION
+Real-provider tribunal calls use the preferred model, then any configured
+`agent_model_fallbacks` for that role, then `base_model` (default
+`Hermes-3-Llama-3.1-8B`), then other available real provider models. The same
+monolith instructions, doctrine, mission, temperature and output limit apply
+to every candidate. Missing, failed, empty or malformed candidates are skipped;
+each attempt and substitution is recorded. A working model stays assigned to
+that role for the rest of the deliberation. All three roles may use one model,
+but still exchange distinct role assessments and critiques; the audit flags
+`shared_model_roles` because this reduces model diversity.
+
+`real_model_fallback_enabled` defaults to true. Setting it false, or explicitly
+enabling `strict_provider_mode`, requires the preferred model. Fallback uses
+models listed by the selected real provider and does not download new models.
+If no candidate produces a valid response, the remaining rounds stop and return
+NO_CONSENSUS with an incomplete-deliberation reason. Real tribunals never use
+simulated replacement votes. Explicit mock mode labels its result SIMULATION
 ONLY. Three rounds require nine model calls, so latency is higher than the
 previous single-round flow. Running source processes need a reload; packaged
 executables need a rebuild to include the changes.

@@ -286,10 +286,10 @@ def _fallback_warning(state: GuiState, runtime: MstyRuntime) -> str:
     if state.config.backend == "mock":
         return "SIMULATION ONLY - NO REAL MODEL CALLS"
     policy = state.provider_status.get("fallback_policy", {}) if isinstance(state.provider_status, dict) else {}
-    if _provider_is_degraded(state.provider_status) and runtime.fallback_enabled:
-        return "PROVIDER DEGRADED - REAL DELIBERATION REQUIRES ALL ASSIGNED MODELS"
-    if isinstance(policy, dict) and policy.get("mode") in {"degraded", "offline"} and policy.get("fallback_enabled"):
-        return "PROVIDER DEGRADED - REAL DELIBERATION REQUIRES ALL ASSIGNED MODELS"
+    if isinstance(policy, dict) and policy.get("mode") == "real_model_fallback":
+        return "PREFERRED MODELS UNAVAILABLE - REAL FALLBACK MODELS WILL KEEP EACH MONOLITH'S ROLE"
+    if _provider_is_degraded(state.provider_status):
+        return "PROVIDER DEGRADED - DELIBERATION REQUIRES AN AVAILABLE REAL MODEL"
     return ""
 
 
@@ -638,6 +638,9 @@ def submit_proposal_live_for_gui(
             state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
             append_reasoning_event(state.reasoning_stream, f"{agent_id} {phase}: {vote.reasoning}")
             append_timeline(state.timeline_events, agent_id, f"{phase}: {vote.vote.value.lower()} confidence {vote.confidence:.0%}")
+            execution = runtime.last_execution.get(agent_id, {})
+            if execution.get("model_fallback"):
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} uses fallback model {vote.model} with its assigned role and settings")
             if vote.validation_errors:
                 state.provider_warning = f"DELIBERATION INCOMPLETE: {agent_id} {phase} failed. {vote.reasoning}"
         _notify(on_update)

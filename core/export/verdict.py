@@ -53,10 +53,13 @@ def deliberation_markdown(payload: Dict[str, Any]) -> str:
         lines.extend([
             f"\n### Round {entry['round']}: {entry['phase']} — {entry['agent_id']}\n",
             f"Model: {entry.get('model')}; backend: {entry.get('backend')}; temperature: {entry.get('temperature')}; vote: {entry.get('vote')}.\n",
+            f"Preferred model: {entry.get('requested_model')}; fallback: {bool(entry.get('model_fallback'))}; reason: {entry.get('model_fallback_reason', '')}.\n",
             str(entry.get("reasoning", "")) + "\n",
             "Risks: " + "; ".join(entry.get("risks", [])) + "\n",
             "Conditions: " + "; ".join(entry.get("conditions", [])) + "\n",
         ])
+        for attempt in entry.get("model_attempts", []):
+            lines.append(f"Model attempt: {attempt.get('model')}; status: {attempt.get('status')}; error: {attempt.get('error', '')}.\n")
     return "\n".join(lines)
 
 
