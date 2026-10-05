@@ -64,6 +64,7 @@ def apply_node_overrides(
         "symbol",
         "model",
         "temperature",
+        "max_output_tokens",
         "mission",
         "prompt",
     }

@@ -17,6 +17,7 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str) 
     validation_errors: List[str] = []
     active_field: Optional[str] = None
     saw_vote = False
+    saw_confidence = False
 
     for line in raw.splitlines():
         stripped = line.strip()
@@ -44,11 +45,12 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str) 
             else:
                 validation_errors.append(f"invalid or arbiter-only vote result: {value}")
         elif active_field == "CONFIDENCE":
-            found = re.search(r"([01](?:\.\d+)?|\.\d+|100%|\d{1,2}%)", value)
-            if found:
-                token = found.group(1)
-                confidence = float(token.rstrip("%")) / 100.0 if token.endswith("%") else float(token)
-                confidence = max(0.0, min(1.0, confidence))
+            saw_confidence = True
+            parsed_confidence = parse_unit_float(value)
+            if parsed_confidence is None:
+                validation_errors.append(f"invalid confidence: {value}")
+            else:
+                confidence = parsed_confidence
         elif active_field == "EVIDENCE_QUALITY":
             evidence_quality = parse_unit_float(value)
             if evidence_quality is None:
@@ -65,10 +67,13 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str) 
             conditions.extend(split_list(value))
 
     if not reasoning_lines:
+        validation_errors.append("missing rationale")
         reasoning_lines = ["No explicit reasoning was returned by the model."]
 
     if not saw_vote:
         validation_errors.append("missing vote result")
+    if not saw_confidence:
+        validation_errors.append("missing confidence")
     if evidence_quality is None:
         validation_errors.append("missing evidence_quality")
     if critical_risk is None:
@@ -116,11 +121,11 @@ def split_list(value: str) -> List[str]:
 
 
 def parse_unit_float(value: str) -> Optional[float]:
-    found = re.search(r"([01](?:\.\d+)?|\.\d+|100%|\d{1,2}%)", value)
+    found = re.search(r"(?<![\w.])([+-]?(?:\d+(?:\.\d+)?|\.\d+))\s*(%)?(?![\w.])", value)
     if not found:
         return None
     token = found.group(1)
-    parsed = float(token.rstrip("%")) / 100.0 if token.endswith("%") else float(token)
+    parsed = float(token) / 100.0 if found.group(2) else float(token)
     if parsed < 0.0 or parsed > 1.0:
         return None
     return parsed

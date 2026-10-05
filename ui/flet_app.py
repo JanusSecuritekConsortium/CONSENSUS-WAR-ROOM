@@ -28,9 +28,7 @@ from core.intelligence.bellator_context_builder import (
     build_bellator_context_packet,
     build_bellator_diagnostics_payload,
 )
-from core.data_sources.enrichment import build_aeternum_data_enrichment
 from core.data_sources.health import build_data_sources_status
-from core.llm.prompts import build_node_prompt
 from core.logging import log_decision_trace, log_error, log_event
 from core.manual_visual_review import manual_visual_review_summary
 from core.memory.context import build_context_packet, context_status
@@ -65,12 +63,11 @@ from core.tribunal_events import (
     append_reasoning_event,
     build_phase_event,
     convergence_percent,
-    monolith_activity_phrase,
     phase_for_verdict,
     theme_reasoning_phrase,
 )
 from core.voting.engine import ConsensusEngine
-from core.voting.parser import parse_vote
+from core.voting.orchestrator import VotingOrchestrator
 from core.voting.rules import ConsensusRules
 from integrations.msty.runtime import MstyRuntime
 from core.export.dossier import export_dossier, latest_dossier_export_status
@@ -286,11 +283,13 @@ def _provider_is_degraded(provider_status: Dict[str, object]) -> bool:
 
 
 def _fallback_warning(state: GuiState, runtime: MstyRuntime) -> str:
+    if state.config.backend == "mock":
+        return "SIMULATION ONLY - NO REAL MODEL CALLS"
     policy = state.provider_status.get("fallback_policy", {}) if isinstance(state.provider_status, dict) else {}
     if _provider_is_degraded(state.provider_status) and runtime.fallback_enabled:
-        return "PROVIDER DEGRADED - MOCK FALLBACK ACTIVE"
+        return "PROVIDER DEGRADED - REAL DELIBERATION REQUIRES ALL ASSIGNED MODELS"
     if isinstance(policy, dict) and policy.get("mode") in {"degraded", "offline"} and policy.get("fallback_enabled"):
-        return "PROVIDER DEGRADED - MOCK FALLBACK ACTIVE"
+        return "PROVIDER DEGRADED - REAL DELIBERATION REQUIRES ALL ASSIGNED MODELS"
     return ""
 
 
@@ -470,6 +469,8 @@ def _vote_detail(vote: Vote) -> Dict[str, object]:
         "validation_errors": list(vote.validation_errors),
         "reasoning": vote.reasoning,
         "response_time": vote.response_time,
+        "model": vote.model,
+        "backend": vote.backend,
     }
 
 
@@ -590,7 +591,6 @@ def submit_proposal_live_for_gui(
     state.prior_decisions_used = int(memory_context.get("prior_decisions_used", 0) or 0)
     state.context_retrieval_status = context_status(memory_context)
     state.context_summary = str(memory_context.get("summary", "No prior decisions retrieved."))
-    context: Dict[str, object] = {"session_id": session_id, "theme": state.theme_key, "memory_context": memory_context}
     votes: Dict[str, Vote] = {}
     state.monolith_statuses = {
         **{key: "THINKING" for key in TRIBUNAL_AGENT_IDS},
@@ -610,96 +610,45 @@ def submit_proposal_live_for_gui(
         {"session_id": session_id, "theme": state.theme_key, "sequential": state.config.sequential, "query": clean_proposal},
     )
 
-    try:
-        for agent_id in TRIBUNAL_AGENT_IDS:
+    orchestrator = VotingOrchestrator(state.nodes, runtime)
+    current_round_votes: Dict[str, Vote] = {}
+
+    def on_deliberation_event(event: Dict[str, Any]) -> None:
+        phase = str(event["phase"])
+        event_type = event["type"]
+        if event_type == "round_started":
+            current_round_votes.clear()
+            if phase == "critique":
+                _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
+            append_reasoning_event(state.reasoning_stream, f"Round {event['round']}/3: {phase}")
+        elif event_type == "agent_started":
+            agent_id = str(event["agent_id"])
             state.monolith_statuses[agent_id] = "THINKING"
-            transition_state(
-                state.monolith_activity_states,
-                agent_id,
-                "ANALYZING",
-                state.timeline_events,
-                monolith_activity_phrase(agent_id, len(votes)),
-            )
-            _notify(on_update)
-            node = state.nodes[agent_id]
-            runtime_context = context if state.config.sequential else {
-                "session_id": session_id,
-                "theme": state.theme_key,
-                "memory_context": memory_context,
-            }
-            if agent_id == BELLATOR:
-                runtime_context = dict(runtime_context)
-            runtime_context["model"] = node.model
-            if agent_id == BELLATOR:
-                packet = build_bellator_context_packet(clean_proposal)
-                runtime_context["bellator_context_packet"] = packet
+            transition_state(state.monolith_activity_states, agent_id, "ANALYZING", state.timeline_events, f"{phase} round")
+            packet = event["context"].get("bellator_context_packet")
+            if agent_id == BELLATOR and isinstance(packet, dict):
                 state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
-            if agent_id == AETERNUM:
-                runtime_context["aeternum_data_packet"] = build_aeternum_data_enrichment(clean_proposal, live=False)
-            prompt = build_node_prompt(node, clean_proposal, runtime_context)
-            vote_started = time.perf_counter()
-            try:
-                transition_state(
-                    state.monolith_activity_states,
-                    agent_id,
-                    "VOTING",
-                    state.timeline_events,
-                    "casting tribunal vote",
-                )
-                raw = runtime.send_to_agent(agent_id, prompt, runtime_context)
-                elapsed = time.perf_counter() - vote_started
-                vote = parse_vote(raw, node, elapsed, "msty-runtime")
-                vote.node_key = agent_id
-            except Exception as exc:
-                elapsed = time.perf_counter() - vote_started
-                log_error("vote_error", exc, {"session_id": session_id, "agent_id": agent_id, "model": node.model, "elapsed": elapsed})
-                vote = Vote(
-                    node_key=agent_id,
-                    role=node.role,
-                    vote=VoteValue.ABSTAIN,
-                    confidence=0.0,
-                    reasoning=f"Runtime failure: {exc}",
-                    evidence_quality=0.0,
-                    critical_risk=False,
-                    validation_errors=[f"runtime_failure:{exc.__class__.__name__}"],
-                    model=node.model,
-                    response_time=elapsed,
-                )
-            votes[agent_id] = vote
-            state.convergence_percent = convergence_percent(votes)
-            append_reasoning_event(
-                state.reasoning_stream,
-                f"{agent_id} vote registered; convergence {state.convergence_percent:.0%}",
-            )
-            state.monolith_statuses[agent_id] = vote.vote.value
+        elif event_type == "vote_received":
+            agent_id = str(event["agent_id"])
+            vote = event["vote"]
+            current_round_votes[agent_id] = vote
+            state.convergence_percent = convergence_percent(current_round_votes)
+            state.monolith_statuses[agent_id] = "ERROR" if vote.validation_errors else vote.vote.value
             state.monolith_vote_details[agent_id] = _vote_detail(vote)
             state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
-            append_timeline(state.timeline_events, agent_id, f"vote {vote.vote.value.lower()} confidence {vote.confidence:.0%}")
-            log_event(
-                "vote",
-                {
-                    "session_id": session_id,
-                    "agent_id": agent_id,
-                    "vote": vote.vote.value,
-                    "confidence": vote.confidence,
-                    "evidence_quality": vote.evidence_quality,
-                    "critical_risk": vote.critical_risk,
-                    "validation_errors": vote.validation_errors,
-                    "model": vote.model,
-                    "response_time": vote.response_time,
-                },
-                level="ERROR" if vote.validation_errors else "INFO",
-            )
-            if state.config.sequential:
-                context[agent_id] = {
-                    "vote": vote.vote.value,
-                    "confidence": vote.confidence,
-                    "reasoning": vote.reasoning,
-                }
-            state.logs = read_recent_log_events()
-            _notify(on_update)
+            append_reasoning_event(state.reasoning_stream, f"{agent_id} {phase}: {vote.reasoning}")
+            append_timeline(state.timeline_events, agent_id, f"{phase}: {vote.vote.value.lower()} confidence {vote.confidence:.0%}")
+            if vote.validation_errors:
+                state.provider_warning = f"DELIBERATION INCOMPLETE: {agent_id} {phase} failed. {vote.reasoning}"
+        _notify(on_update)
 
-        _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
+    try:
+        votes = orchestrator.cast_votes(
+            clean_proposal, session_id, state.theme_key, state.config.sequential,
+            memory_context, on_event=on_deliberation_event,
+        )
+        if state.lifecycle_state != LIFECYCLE_DELIBERATING:
+            _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
         state.monolith_statuses[ARBITER] = "THINKING"
         transition_state(
             state.monolith_activity_states,
@@ -710,6 +659,7 @@ def submit_proposal_live_for_gui(
         )
         _set_lifecycle(state, LIFECYCLE_SYNTHESIZING, on_update)
         result = ConsensusEngine(rules, state.theme_key).calculate_result(clean_proposal, votes, session_id)
+        orchestrator.attach_audit(result)
         terminal_phase = phase_for_verdict(result.verdict, result.terminal_branch, result.review_triggers)
         _set_lifecycle(state, terminal_phase, on_update)
         state.current_result = result
@@ -801,6 +751,9 @@ def submit_proposal_live_for_gui(
                     "arbiter_verdict": result.verdict.value,
                     "verdict": result.verdict.value,
                     "synthesis_summary": result.reason,
+                    "deliberation_transcript": result.deliberation_transcript,
+                    "deliberation_complete": result.deliberation_complete,
+                    "simulation": result.simulation,
                     "terminal_branch": result.terminal_branch,
                     "proposal_classification": result.proposal_classification,
                     "provider_backend": provider_payload.get("active_backend") if isinstance(provider_payload, dict) else None,

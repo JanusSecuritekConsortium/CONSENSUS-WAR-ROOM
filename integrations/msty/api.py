@@ -1157,6 +1157,8 @@ def send_prompt(
     system_prompt: Optional[str] = None,
     config: Optional[RuntimeConfig] = None,
     base_url: Optional[str] = None,
+    temperature: float = 0.2,
+    max_output_tokens: int = 900,
 ) -> str:
     runtime_config = config or RuntimeConfig()
     backend = OllamaBackend(base_url=base_url or resolve_provider_base_url(runtime_config))
@@ -1165,7 +1167,7 @@ def send_prompt(
         "model": model,
         "prompt": full_prompt,
         "stream": False,
-        "options": {"temperature": 0.2, "num_predict": 900},
+        "options": {"temperature": temperature, "num_predict": max_output_tokens},
     }
     response = backend_requests_post(backend, payload)
     return response.get("response", "")
@@ -1386,6 +1388,27 @@ def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Di
             json=payload,
             timeout=backend.timeout,
         )
+        # Msty's llama.cpp service exposes the OpenAI chat API. A route rejection
+        # occurs before generation, so translating this request cannot duplicate it.
+        if response.status_code in {404, 405}:
+            options = payload.get("options", {})
+            response = backends.requests.post(
+                f"{backend.base_url}/v1/chat/completions",
+                json={
+                    "model": payload["model"],
+                    "messages": [{"role": "user", "content": payload["prompt"]}],
+                    "stream": False,
+                    "temperature": options.get("temperature", 0.2),
+                    "max_tokens": options.get("num_predict", 900),
+                },
+                timeout=backend.timeout,
+            )
+            response.raise_for_status()
+            body = response.json()
+            choices = body.get("choices", [])
+            if not choices:
+                raise ProviderRequestError("Provider chat response contained no choices")
+            return {"response": choices[0].get("message", {}).get("content", "")}
         response.raise_for_status()
         return response.json()
     except (
