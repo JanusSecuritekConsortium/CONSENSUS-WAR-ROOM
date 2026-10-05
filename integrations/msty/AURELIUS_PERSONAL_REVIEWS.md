@@ -38,7 +38,7 @@ to a cloud model for analysis. Store passwords only in the OS credential store.
    00:00, Europe/Madrid, with date, local time, account, place/link, RSVP state,
    and preparation required when documented.
 3. Weekly recap: decisions, resolved requests, and remaining commitments,
-   separated into personal, work, Rotary, and secondary accounts.
+   separated into personal, work, community accounts, and secondary accounts.
 
 Morning reports prioritize imminent appointments and possible misses. The
 weekly review includes the complete next-week calendar and unresolved items.
@@ -71,7 +71,7 @@ Its schedule must be installed in Msty after source access has been tested.
   retrieval have not completed.
 - The Ground News reader is newsletter-only; it is not a personal-email review
   connector. Broader review must be implemented separately within this scope.
-- Gmail, Outlook, Rotary and secondary accounts mailbox/calendar connections still
+- Gmail, Outlook, community accounts and secondary accounts mailbox/calendar connections still
   need local configuration and source-by-source verification.
 - Calendar provider/location is awaiting the user's answer.
 

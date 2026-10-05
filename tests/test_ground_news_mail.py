@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from email.message import EmailMessage
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from integrations.msty.ground_news_mail import fetch_newsletters, allowed_sender
 
@@ -37,8 +37,9 @@ def test_read_only_and_filtered_body_fetch():
         return 'OK', [(b'BODY[]', raw)]
 
     client.uid.side_effect = command
-    result = fetch_newsletters(datetime(2026, 9, 16, 10, tzinfo=timezone.utc),
-                               credential_reader=lambda: ('user', 'password'), imap_factory=fake)
+    with patch('integrations.msty.ground_news_mail.HOST', 'imap.example.invalid'):
+        result = fetch_newsletters(datetime(2026, 9, 16, 10, tzinfo=timezone.utc),
+                                   credential_reader=lambda: ('user', 'password'), imap_factory=fake)
     assert len(result) == 1
     assert result[0]['subject'] == 'Daily Ground'
     client.select.assert_called_once_with('INBOX', readonly=True)

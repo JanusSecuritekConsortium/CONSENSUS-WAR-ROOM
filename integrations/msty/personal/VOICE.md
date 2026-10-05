@@ -29,6 +29,11 @@ The privacy filter remains enabled. Tool-bearing intermediate replies are withhe
 
 ## Run and reconnect
 
+Agent/channel identifiers are private configuration, not source defaults. Set
+`msty_bot_id` and `msty_channel_id` in the local account store, or use
+`AURELIUS_MSTY_BOT_ID` and `AURELIUS_MSTY_CHANNEL_ID`. Existing installations
+retain their identifiers locally. Never commit the populated store.
+
 - `G:\Tools\Aurelius Voice Receiver.cmd` starts the receiver; a single-instance
   lock prevents competing copies. A Windows Startup shortcut runs it at sign-in.
 - `python -m integrations.msty.personal.voice_relay status` reports health;

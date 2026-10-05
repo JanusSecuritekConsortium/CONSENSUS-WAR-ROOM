@@ -26,6 +26,12 @@ dist/
 *.tmp
 *.bak
 *.swp
+*.dpapi
+*.sqlite
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+integrations/msty/ground_news_setup_status.json
 .env
 .env.*
 !.env.example

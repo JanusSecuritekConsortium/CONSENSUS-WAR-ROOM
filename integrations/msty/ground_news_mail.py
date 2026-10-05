@@ -11,13 +11,17 @@ from email.parser import BytesParser
 from email.utils import parseaddr, parsedate_to_datetime
 import imaplib
 import json
+import os
 from pathlib import Path
 import re
 import ssl
 
-HOST = 'imap.example.invalid'
+from .personal import store
+
+_local_settings = store.load()
+HOST = os.environ.get('AURELIUS_NEWS_IMAP_HOST', _local_settings.get('newsletter_imap_host', ''))
 PORT = 993
-USERNAME = 'account@example.invalid'
+USERNAME = os.environ.get('AURELIUS_NEWS_USERNAME', _local_settings.get('newsletter_username', ''))
 CREDENTIAL = 'Aurelius/GroundNews/Dinahosting'
 DOMAINS = ('ground.news', 'groundnews.co', 'groundnews.com', 'groundnews.app')
 MAX_MESSAGE = 1_500_000
@@ -47,6 +51,8 @@ def recent_date(message, now):
 
 
 def fetch_newsletters(now=None, credential_reader=read_credential, imap_factory=imaplib.IMAP4_SSL):
+    if not HOST:
+        raise ValueError('Configure the newsletter IMAP host locally')
     now = now or datetime.now(timezone.utc)
     username, password = credential_reader()
     newsletters = []

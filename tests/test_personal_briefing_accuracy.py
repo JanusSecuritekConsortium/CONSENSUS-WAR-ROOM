@@ -73,12 +73,12 @@ def test_each_review_collects_again_with_unique_consultation_id():
 
 
 def test_english_report_preserves_sources_and_rejects_receipt_tasks():
-    results=[{'id':'work','kind':'imap','label':'Example work','status':'ok','messages':[
+    results=[{'id':'work','kind':'imap','label':'Example work account','status':'ok','messages':[
         mail('Tu pedido de Example Store','Please review the terms.')], 'warnings':['A message was skipped (size/metadata limit)']},
         {'id':'outlook','kind':'outlook','label':'Outlook personal','status':'not configured'}]
     body=render_english(results,NOW,'morning')
     assert '27/09/2026 10:00:00' in body
-    assert 'Example work: read successfully: 1 Inbox + 0 Sent = 1 messages' in body
+    assert 'Example work account: read successfully: 1 Inbox + 0 Sent = 1 messages' in body
     assert 'Outlook personal: excluded or not configured' in body
     assert 'A message was skipped' in body
     assert 'Tu pedido de Example Store' not in body

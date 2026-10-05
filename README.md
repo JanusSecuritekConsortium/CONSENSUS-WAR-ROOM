@@ -9,7 +9,7 @@ local API entry points, deterministic offline operation, Msty/Ollama-compatible
 provider adapters, real-data enrichment, simulations, voice integrations, and
 Windows packaging.
 
-Author: Project contributors, CONSENSUS project.
+Maintained by the CONSENSUS project contributors.
 
 ## Status
 

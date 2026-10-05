@@ -17,8 +17,8 @@ from .msty_local import Client
 from .publication import database_path, telegram_route
 from .telegram_audio import transcribe_message
 
-BOT_ID = 'LOCAL_AGENT_ID'
-CHANNEL_ID = 'LOCAL_CHANNEL_ID'
+BOT_ID = os.environ.get('AURELIUS_MSTY_BOT_ID', store.load().get('msty_bot_id', ''))
+CHANNEL_ID = os.environ.get('AURELIUS_MSTY_CHANNEL_ID', store.load().get('msty_channel_id', ''))
 
 
 def database():
