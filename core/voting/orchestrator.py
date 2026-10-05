@@ -78,16 +78,18 @@ class VotingOrchestrator:
                     if not self.simulation and backend in {"mock", "mock-fallback"}:
                         raise RuntimeError("Simulated response cannot count as real-model deliberation")
                 except Exception as exc:
+                    execution = getattr(self.runtime, "last_execution", {}).get(agent_id, {})
                     log_error("vote_error", exc, {"session_id": session_id, "agent_id": agent_id, "model": node.model, "round": number, "phase": phase})
                     vote = Vote(
                         node_key=agent_id, role=node.role, vote=VoteValue.ABSTAIN, confidence=0.0,
                         reasoning=f"Model call failed during {phase}: {exc}",
-                        validation_errors=[f"runtime_failure:{type(exc).__name__}"], model=node.model,
-                        response_time=time.perf_counter() - started, raw_response=raw, backend="failed",
+                        validation_errors=[f"runtime_failure:{type(exc).__name__}"], model=str(execution.get("model") or node.model),
+                        response_time=time.perf_counter() - started, raw_response=raw, backend=str(execution.get("backend") or "failed"),
                     )
                 round_votes[agent_id] = vote
                 entry = {
                     "round": number, "phase": phase, "agent_id": agent_id,
+                    "status": "failed" if vote.validation_errors else ("simulation" if self.simulation else "completed"),
                     "model": vote.model, "requested_model": node.model, "backend": vote.backend,
                     "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
                     "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
@@ -116,9 +118,10 @@ class VotingOrchestrator:
         # Bound prompt growth; the local audit transcript retains the full response.
         return {
             "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
-            "critical_risk": vote.critical_risk, "reasoning": vote.reasoning[:2400],
-            "risks": [risk[:300] for risk in vote.risks[:8]],
-            "conditions": [condition[:300] for condition in vote.conditions[:8]],
+            "critical_risk": vote.critical_risk, "reasoning": vote.reasoning[:900],
+            "risks": [risk[:120] for risk in vote.risks[:2]],
+            "conditions": [condition[:120] for condition in vote.conditions[:2]],
+            "excerpted": len(vote.reasoning) > 900 or len(vote.risks) > 2 or len(vote.conditions) > 2 or any(len(item) > 120 for item in [*vote.risks, *vote.conditions]),
         }
 
     @staticmethod
