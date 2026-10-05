@@ -82,6 +82,7 @@ class MstyRuntime:
         started = time.perf_counter()
         rendered_prompt = self._render_prompt(session, prompt, context)
         self.last_execution[session.agent_id] = {"status": "pending"}
+        provider = self.config.backend
 
         try:
             requested_model = str(
@@ -96,6 +97,7 @@ class MstyRuntime:
                 from integrations.msty import api as api_module
 
                 health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
+                provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
                 provider_state = str(health.get("status", "offline"))
                 if provider_state == "offline":
                     raise RuntimeError(f"Provider offline at {health.get('base_url')}")
@@ -125,7 +127,7 @@ class MstyRuntime:
             self._record_telemetry(session, prompt, response, started, provider, "ready")
             return response
         except Exception as exc:
-            self.last_execution[session.agent_id] = {"status": "failed", "model": requested_model, "backend": self.config.backend, "error_type": type(exc).__name__}
+            self.last_execution[session.agent_id] = {"status": "failed", "model": requested_model, "backend": provider, "error_type": type(exc).__name__}
             log_error(
                 "msty_runtime_send_error",
                 exc,
@@ -263,7 +265,9 @@ class MstyRuntime:
         prompt: str,
         context: Optional[Dict[str, Any]],
     ) -> str:
-        context_block = f"\n\nContext:\n{context}" if context else ""
+        # Monolith prompts already contain the complete machine context. Repeating
+        # peer rounds here can exceed the local model's context window.
+        context_block = f"\n\nContext:\n{context}" if context and "Shared machine context:" not in prompt else ""
         return (
             f"Agent: {session.agent_id}\n"
             f"Session: {session.session_id}\n"

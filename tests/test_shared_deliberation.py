@@ -191,3 +191,41 @@ def test_out_of_range_or_invalid_vote_values_are_rejected(broken):
 def test_missing_required_vote_fields_are_rejected(missing):
     from core.voting.parser import parse_vote
     assert parse_vote(response("Valid reason").replace(missing, ""), DEFAULT_NODES[BELLATOR], 0, "test-provider").validation_errors
+
+
+def test_monolith_prompt_does_not_duplicate_peer_context():
+    from core.prompting.assembler import assemble_monolith_prompt
+    runtime = MstyRuntime()
+    context = {"marker": "unique-peer-assessment"}
+    prompt = assemble_monolith_prompt(DEFAULT_NODES[BELLATOR], "Analyze a prototype", context)
+    session = runtime.session_registry.get_or_create(BELLATOR)
+    assert runtime._render_prompt(session, prompt, context).count("unique-peer-assessment") == 1
+
+
+def test_large_discussion_excerpts_are_bounded_but_full_audit_is_retained():
+    from core.models import Vote, VoteValue
+    vote = Vote(BELLATOR, "Security", VoteValue.APPROVE, 0.9, "r" * 10000, critical_risk=True, risks=["x" * 1000] * 20, conditions=["y" * 1000] * 20)
+    discussion = VotingOrchestrator._discussion_view(vote)
+    assert discussion["excerpted"] is True
+    assert discussion["critical_risk"] is True
+    assert len(json.dumps(discussion)) < 1800
+    assert len(vote.reasoning) == 10000
+
+
+@pytest.mark.parametrize("entry_point", ["desktop", "api"])
+def test_desktop_and_api_submissions_return_the_same_three_round_contract(monkeypatch, entry_point):
+    monkeypatch.setattr("core.tribunal.build_context_packet", lambda q: {})
+    if entry_point == "desktop":
+        from ui import flet_app as gui
+        monkeypatch.setattr(gui, "build_context_packet", lambda q: {})
+        state = gui.create_gui_state("military", RuntimeConfig(backend="mock"))
+        payload = result_to_dict(gui.submit_proposal_live_for_gui(state, "Analyze a reversible prototype", skip_animations=True))
+    else:
+        from fastapi.testclient import TestClient
+        with TestClient(api.create_api_app(RuntimeConfig(backend="mock"), DEFAULT_NODES)) as client:
+            result = client.post("/consensus", json={"query": "Analyze a reversible prototype"})
+            assert result.status_code == 200
+            payload = result.json()
+    assert payload["deliberation_complete"]
+    assert payload["simulation"]
+    assert [turn["phase"] for turn in payload["deliberation_transcript"]] == ["assessment"] * 3 + ["critique"] * 3 + ["revision"] * 3
