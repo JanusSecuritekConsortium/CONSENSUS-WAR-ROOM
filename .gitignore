@@ -31,7 +31,7 @@ dist/
 !.env.example
 
 # Consensus runtime artifacts
-memory/
+/memory/
 reports/
 _ARBITER/backups/
 _ARBITER/Bot/Ext/
@@ -75,3 +75,17 @@ future_implementations/
 *.parquet
 *.mp3
 *.wav
+
+# Runtime data and model artifacts (source directories remain trackable)
+/logs/
+/cache/
+/caches/
+/embeddings/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.gguf
+*.ggml
+*.exe

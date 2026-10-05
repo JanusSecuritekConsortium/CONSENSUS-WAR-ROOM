@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "msty_api_url": "http://127.0.0.1:11454",
+  "consensus_exe_path": "G:\\CONSENSUS_SYSTEM\\dist\\CONSENSUS.exe",
+  "log_dir": "G:\\Msty\\logs",
+  "startup_delay_min_seconds": 20,
+  "startup_delay_max_seconds": 90,
+  "stale_recovery_timeout_seconds": 240,
+  "stale_relaunch_delay_min_seconds": 3,
+  "stale_relaunch_delay_max_seconds": 5,
+  "msty_window_mode": "minimized",
+  "known_msty_process_names": [
+    "MstyGo",
+    "MstyClaw",
+    "MstyStudio",
+    "msty-llama-server"
+  ],
+  "enable_stale_recovery": true,
+  "log_retention_days": 14,
+  "max_log_files": 30,
+  "fallback_msty_api_urls": [
+    "http://127.0.0.1:11964"
+  ],
+  "allow_fallback_api": true,
+  "consensus_environment_variables": {
+    "CONSENSUS_MSTY_BASE_URL": "{selected_msty_api_url}",
+    "AURELIUS_MSTY_BASE_URL": "{selected_msty_api_url}",
+    "MSTY_BASE_URL": "{selected_msty_api_url}"
+  },
+  "enable_consensus_environment_injection": true
+}
