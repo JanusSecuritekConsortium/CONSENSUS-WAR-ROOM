@@ -46,6 +46,7 @@ _ARBITER/aurelius_agent/
 _ARBITER/aurelius_odysseus/
 _ARBITER/aurelius_odysseus_token.txt
 _ARBITER/decision_history*.json
+_ARBITER/decision_history*.json.lock
 _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json
 

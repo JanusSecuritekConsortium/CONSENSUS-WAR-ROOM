@@ -119,6 +119,7 @@ def test_connector_failure_does_not_expose_secret():
 
 
 def test_dpapi_round_trip_and_no_plaintext(tmp_path):
+    pytest.importorskip('win32crypt', reason='DPAPI is a Windows-only credential store')
     with patch.object(store,'ROOT',tmp_path):
         store.secret_write('test',{'password':'test-dummy-secret'})
         assert store.secret_read('test')['password']=='test-dummy-secret'

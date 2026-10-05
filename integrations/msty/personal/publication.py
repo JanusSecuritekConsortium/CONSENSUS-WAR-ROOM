@@ -40,7 +40,10 @@ def atomic(path, text):
 
 @contextmanager
 def publication_lock(vault):
-    import msvcrt
+    if os.name == 'nt':
+        import msvcrt
+    else:
+        import fcntl
     vault.mkdir(parents=True, exist_ok=True)
     with (vault/'.publication.lock').open('a+b') as lock:
         if lock.tell() == 0:
@@ -48,14 +51,20 @@ def publication_lock(vault):
             lock.flush()
         lock.seek(0)
         try:
-            msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+            if os.name == 'nt':
+                msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
             raise RuntimeError('Another briefing publication is running') from None
         try:
             yield
         finally:
             lock.seek(0)
-            msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+            if os.name == 'nt':
+                msvcrt.locking(lock.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
 
 def telegram_route(db_path=None):
