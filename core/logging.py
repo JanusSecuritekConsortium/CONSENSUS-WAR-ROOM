@@ -40,6 +40,9 @@ def log_decision_trace(result: Any) -> None:
             "critical_risk": vote.critical_risk,
             "model": vote.model,
             "backend": vote.backend,
+            "argument": vote.argument, "peer_responses": vote.peer_responses,
+            "review_required": vote.review_required, "review_reason": vote.review_reason,
+            "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": vote.unresolved_disagreements,
         }
         for agent_id, vote in result.votes.items()
     }

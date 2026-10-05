@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 from typing import Any, Dict, List
 
 from config.runtime import RuntimeConfig
@@ -75,6 +76,30 @@ class MockBackend:
             risk = "Proposal requires clear success criteria."
             condition = "Define measurable acceptance criteria."
 
+        argument = {
+            "claim": f"{node.codename}: {vote.value} from the {node.role} perspective.",
+            "evidence": [{"source": "proposal", "detail": self._proposal_text(query)[:180]}],
+            "assumptions": ["Explicit simulation; proposal assertions are not independently verified."],
+            "strongest_objection": risk, "change_condition": condition,
+        }
+        previous_rounds = context.get("deliberation", {}).get("previous_rounds", [])
+        peers = []
+        disagreements = []
+        change_reason = ""
+        if previous_rounds:
+            latest = previous_rounds[-1]
+            for peer, assessment in latest["assessments"].items():
+                if peer == node.codename:
+                    if assessment["vote"] != vote.value:
+                        change_reason = "Simulation re-evaluated the explicit proposal under this role's rules."
+                    continue
+                peers.append({
+                    "peer": peer, "round": latest["round"], "claim": assessment["argument"]["claim"],
+                    "stance": "support" if assessment["vote"] == vote.value else "challenge",
+                    "reason": f"Simulation retains the {node.role} criteria: {node.mission}.",
+                })
+                if assessment["vote"] != vote.value:
+                    disagreements.append(f"{peer} votes {assessment['vote']}; this role retains {vote.value}.")
         return (
             f"VOTE: {vote.value}\n"
             f"CONFIDENCE: {confidence:.2f}\n"
@@ -84,6 +109,11 @@ class MockBackend:
             f"The proposal appears {vote.value.lower()} from this perspective.\n"
             f"RISKS: {risk}\n"
             f"CONDITIONS: {condition}\n"
+            f"ARGUMENT: {json.dumps(argument)}\n"
+            f"PEER_RESPONSES: {json.dumps(peers)}\n"
+            "REVIEW_REQUIRED: false\nREVIEW_REASON: \n"
+            f"VOTE_CHANGE_REASON: {change_reason}\n"
+            f"UNRESOLVED_DISAGREEMENTS: {json.dumps(disagreements)}\n"
         )
 
     @staticmethod
@@ -92,7 +122,7 @@ class MockBackend:
         if marker not in prompt:
             return prompt
         section = prompt.split(marker, 1)[1]
-        for stop in ("\n\nRELEVANT MEMORY CONTEXT:", "\n\nShared machine context:", "\n\nShared context:"):
+        for stop in ("\n\nDELIBERATION ROUND:", "\n\nRELEVANT MEMORY CONTEXT:", "\n\nShared machine context:", "\n\nShared context:"):
             if stop in section:
                 return section.split(stop, 1)[0].strip()
         return section.strip()

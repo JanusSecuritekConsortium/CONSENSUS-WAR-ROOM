@@ -126,6 +126,12 @@ class Vote:
     raw_response: str = ""
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     backend: str = "unknown"
+    argument: Dict[str, Any] = field(default_factory=dict)
+    peer_responses: List[Dict[str, Any]] = field(default_factory=list)
+    review_required: bool = False
+    review_reason: str = ""
+    vote_change_reason: str = ""
+    unresolved_disagreements: List[str] = field(default_factory=list)
 
 
 @dataclass

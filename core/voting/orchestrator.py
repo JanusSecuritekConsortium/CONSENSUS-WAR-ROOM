@@ -12,6 +12,7 @@ from core.llm.prompts import build_node_prompt
 from core.logging import log_error, log_event
 from core.models import NodeIdentity, Vote, VoteValue
 from core.voting.parser import parse_vote
+from core.voting.arguments import evidence_source_ids
 
 
 DELIBERATION_PHASES = ("assessment", "critique", "revision")
@@ -44,6 +45,7 @@ class VotingOrchestrator:
             "session_id": session_id, "theme": theme_key,
             "memory_context": memory_context or {"prior_decisions_used": 0, "items": [], "summary": "No prior decisions retrieved."},
             "require_real_model": not self.simulation,
+            "require_traceable_argument": True,
         }
         packets = {
             BELLATOR: {"bellator_context_packet": self._build_bellator_context_packet(query)},
@@ -64,6 +66,7 @@ class VotingOrchestrator:
                     "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(DELIBERATION_PHASES), "previous_rounds": deepcopy(previous_rounds)},
                 })
+                runtime_context["evidence_source_ids"] = evidence_source_ids(runtime_context)
                 self._emit(on_event, {"type": "agent_started", "round": number, "phase": phase, "agent_id": agent_id, "context": deepcopy(runtime_context)})
                 started = time.perf_counter()
                 raw = ""
@@ -72,7 +75,7 @@ class VotingOrchestrator:
                     raw = self.runtime.send_to_agent(agent_id, prompt, runtime_context)
                     execution = getattr(self.runtime, "last_execution", {}).get(agent_id, {})
                     backend = str(execution.get("backend") or ("mock" if self.simulation else "msty-runtime"))
-                    vote = parse_vote(raw, node, time.perf_counter() - started, backend)
+                    vote = parse_vote(raw, node, time.perf_counter() - started, backend, runtime_context)
                     vote.node_key = agent_id
                     vote.backend = backend
                     vote.model = str(execution.get("model") or vote.model)
@@ -95,6 +98,9 @@ class VotingOrchestrator:
                     "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
                     "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
                     "critical_risk": vote.critical_risk, "reasoning": vote.reasoning,
+                    "argument": deepcopy(vote.argument), "peer_responses": deepcopy(vote.peer_responses),
+                    "review_required": vote.review_required, "review_reason": vote.review_reason,
+                    "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": list(vote.unresolved_disagreements),
                     "risks": list(vote.risks), "conditions": list(vote.conditions),
                     "validation_errors": list(vote.validation_errors), "raw_response": vote.raw_response,
                     "response_time": vote.response_time,
@@ -120,13 +126,25 @@ class VotingOrchestrator:
     @staticmethod
     def _discussion_view(vote: Vote) -> Dict[str, Any]:
         # Bound prompt growth; the local audit transcript retains the full response.
+        argument = deepcopy(vote.argument)
+        for key in ("claim", "strongest_objection", "change_condition"):
+            if isinstance(argument.get(key), str):
+                argument[key] = argument[key][:320]
+        argument["evidence"] = [{"source": item["source"], "detail": item["detail"][:180]} for item in argument.get("evidence", [])[:2]]
+        argument["assumptions"] = [item[:120] for item in argument.get("assumptions", [])[:2]]
+        peers = [{**item, "claim": item["claim"][:320], "reason": item["reason"][:180]} for item in vote.peer_responses[:2]]
+        excerpted = argument != vote.argument or peers != vote.peer_responses or len(vote.review_reason) > 240 or len(vote.vote_change_reason) > 240 or len(vote.unresolved_disagreements) > 2 or any(len(item) > 120 for item in vote.unresolved_disagreements)
         return {
             "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
             "model": vote.model, "backend": vote.backend,
+            "argument": argument, "review_required": vote.review_required, "review_reason": vote.review_reason[:240],
+            "peer_responses": peers,
+            "vote_change_reason": vote.vote_change_reason[:240],
+            "unresolved_disagreements": [item[:120] for item in vote.unresolved_disagreements[:2]],
             "critical_risk": vote.critical_risk, "reasoning": vote.reasoning[:900],
             "risks": [risk[:120] for risk in vote.risks[:2]],
             "conditions": [condition[:120] for condition in vote.conditions[:2]],
-            "excerpted": len(vote.reasoning) > 900 or len(vote.risks) > 2 or len(vote.conditions) > 2 or any(len(item) > 120 for item in [*vote.risks, *vote.conditions]),
+            "excerpted": excerpted or len(vote.reasoning) > 900 or len(vote.risks) > 2 or len(vote.conditions) > 2 or any(len(item) > 120 for item in [*vote.risks, *vote.conditions]),
         }
 
     @staticmethod

@@ -13,10 +13,11 @@ from core.voting.orchestrator import VotingOrchestrator
 from core.voting.rules import ConsensusRules
 from integrations.msty import api
 from integrations.msty.runtime import MstyRuntime
+from tests.argument_fixture import argument_fields
 
 
-def valid_response(reason):
-    return f"VOTE: APPROVE\nCONFIDENCE: 0.90\nEVIDENCE_QUALITY: 0.80\nCRITICAL_RISK: false\nRATIONALE: {reason}\nRISKS: resource assumptions\nCONDITIONS: audit and rollback"
+def valid_response(reason, agent=None, context=None):
+    return f"VOTE: APPROVE\nCONFIDENCE: 0.90\nEVIDENCE_QUALITY: 0.80\nCRITICAL_RISK: false\nRATIONALE: {reason}\nRISKS: resource assumptions\nCONDITIONS: audit and rollback" + argument_fields(reason, agent, context)
 
 
 @pytest.fixture(autouse=True)
@@ -51,6 +52,8 @@ def test_one_available_model_completes_real_exchange_with_three_role_parameters(
     provider(monkeypatch, ["base:latest"])
     calls = []
     def send(model, prompt, **kwargs):
+        import json
+        context = json.JSONDecoder().raw_decode(prompt.split("Shared machine context:\n", 1)[1])[0]
         calls.append((model, prompt, kwargs))
         role = next(role for role in TRIBUNAL_AGENT_IDS if f"Agent: {role}\n" in prompt)
         if "DELIBERATION ROUND: CRITIQUE" in prompt:
@@ -61,7 +64,7 @@ def test_one_available_model_completes_real_exchange_with_three_role_parameters(
             reason = f"{role} accepts the peer audit condition, retaining resource concerns"
         else:
             reason = f"{role} initial assessment of resources"
-        return valid_response(reason)
+        return valid_response(reason, role, context)
     monkeypatch.setattr(api, "send_prompt", send)
     runtime = MstyRuntime(RuntimeConfig(base_model="base"))
     monkeypatch.setattr(runtime, "_fallback_response", lambda *a: pytest.fail("Must use a real model"))

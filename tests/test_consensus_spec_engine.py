@@ -60,7 +60,7 @@ def test_parser_rejects_arbiter_only_monolith_result() -> None:
     assert parsed.validation_errors
 
 
-def test_majority_short_circuits_tie_break_even_with_low_evidence() -> None:
+def test_majority_cannot_override_domain_critical_risk() -> None:
     result = resolve(
         {
             RATIONALIS: vote(RATIONALIS, VoteValue.APPROVE, evidence=0.1),
@@ -69,11 +69,12 @@ def test_majority_short_circuits_tie_break_even_with_low_evidence() -> None:
         }
     )
 
-    assert result.verdict == FinalVerdict.APPROVE
-    assert result.terminal_branch == "majority"
+    assert result.verdict == FinalVerdict.ESCALATE
+    assert result.terminal_branch == "domain_critical_risk_review"
+    assert "critical_risk_reported:BELLATOR" in result.review_triggers
 
 
-def test_unresolved_critical_risk_returns_caution() -> None:
+def test_unresolved_domain_critical_risk_requests_review() -> None:
     result = resolve(
         {
             RATIONALIS: vote(RATIONALIS, VoteValue.APPROVE),
@@ -82,8 +83,8 @@ def test_unresolved_critical_risk_returns_caution() -> None:
         }
     )
 
-    assert result.verdict == FinalVerdict.CAUTION
-    assert result.terminal_branch == "tie_break_caution"
+    assert result.verdict == FinalVerdict.ESCALATE
+    assert result.terminal_branch == "domain_critical_risk_review"
 
 
 def test_unresolved_domain_critical_low_evidence_returns_no_consensus() -> None:
@@ -159,8 +160,8 @@ def test_closed_taxonomy_rejects_unknown_classifier_class() -> None:
 
 if __name__ == "__main__":
     test_parser_rejects_arbiter_only_monolith_result()
-    test_majority_short_circuits_tie_break_even_with_low_evidence()
-    test_unresolved_critical_risk_returns_caution()
+    test_majority_cannot_override_domain_critical_risk()
+    test_unresolved_domain_critical_risk_requests_review()
     test_unresolved_domain_critical_low_evidence_returns_no_consensus()
     test_unresolved_high_evidence_uses_priority()
     test_classification_failure_blocks_clean_majority()

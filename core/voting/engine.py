@@ -40,6 +40,8 @@ class ConsensusEngine:
             elif vote.confidence < self.rules.minimum_confidence:
                 review_triggers.append(f"confidence_below_threshold:{vote.node_key}")
 
+        requested_reviews = [vote.node_key for vote in voting_votes if vote.review_required]
+        review_triggers.extend(f"review_requested:{key}" for key in requested_reviews)
         classification_result = classify_proposal(
             query,
             taxonomy=self.rules.proposal_taxonomy,
@@ -47,13 +49,15 @@ class ConsensusEngine:
         )
 
         if not classification_result.ok:
-            branch = "classification_failure_critical_risk" if any(v.critical_risk for v in voting_votes) else "classification_failure"
+            has_critical_risk = any(v.critical_risk for v in voting_votes)
+            branch = "classification_failure_review_requested" if requested_reviews else ("classification_failure_critical_risk" if has_critical_risk else "classification_failure")
             review_triggers.append(branch)
+            review_reason = " | ".join(f"{vote.node_key}: {vote.review_reason}" for vote in voting_votes if vote.review_required)
             return TribunalResult(
                 query=query,
-                verdict=FinalVerdict.ESCALATE if branch == "classification_failure_critical_risk" else FinalVerdict.NO_CONSENSUS,
+                verdict=FinalVerdict.ESCALATE if has_critical_risk or requested_reviews else FinalVerdict.NO_CONSENSUS,
                 confidence=average_confidence(voting_votes),
-                reason=f"Proposal classification failed: {classification_result.failure_reason}.",
+                reason=f"Proposal classification failed: {classification_result.failure_reason}." + (f" Human review requested: {review_reason}." if review_reason else ""),
                 votes=votes,
                 vote_distribution=dict(distribution),
                 quorum_met=True,
@@ -71,6 +75,8 @@ class ConsensusEngine:
             classification.proposal_classes if classification else (),
             self.rules.monolith_domain_map,
         )
+        critical_agents = [vote.node_key for vote in voting_votes if vote.critical_risk and vote.critical_domain_relevance]
+        review_triggers.extend(f"critical_risk_reported:{key}" for key in critical_agents)
 
         qualified_votes = confidence_qualified_votes(voting_votes, self.rules.minimum_confidence)
         if len(qualified_votes) < self.rules.quorum:
@@ -92,6 +98,42 @@ class ConsensusEngine:
             )
 
         decided = majority_result(qualified_votes)
+        # A denial remains a denial. Approval (including a priority tie-break)
+        # must first clear explicit review requests, relevant risks and evidence.
+        if decided != VoteValue.DENY:
+            if requested_reviews or (self.rules.high_risk_review and critical_agents):
+                branch = "explicit_review_requested" if requested_reviews else "domain_critical_risk_review"
+                review_triggers.append(branch)
+                reasons = [f"{vote.node_key}: {vote.review_reason or '; '.join(vote.risks) or vote.reasoning}"
+                           for vote in voting_votes if vote.review_required or (vote.critical_risk and vote.critical_domain_relevance)]
+                return self._terminal_result(
+                    query, FinalVerdict.ESCALATE,
+                    "Human review required before approval. " + " | ".join(reasons),
+                    votes, distribution, review_triggers, session_id, branch, classification_payload,
+                )
+            if critical_agents:
+                review_triggers.append("domain_critical_risk_review_disabled")
+            if decided is None and any(vote.critical_risk for vote in voting_votes):
+                review_triggers.append("unresolved_critical_risk")
+                return self._terminal_result(
+                    query, FinalVerdict.CAUTION, "UNRESOLVED tribunal with critical risk reported.",
+                    votes, distribution, review_triggers, session_id, "tie_break_caution", classification_payload,
+                )
+            mean_evidence = mean(vote.evidence_quality for vote in qualified_votes) if qualified_votes else 0.0
+            domain_critical_starved = any(
+                vote.critical_domain_relevance and vote.evidence_quality < self.rules.evidence_threshold
+                for vote in voting_votes
+            )
+            if mean_evidence < self.rules.evidence_threshold or domain_critical_starved:
+                review_triggers.append("insufficient_evidence")
+                if domain_critical_starved:
+                    review_triggers.append("domain_critical_evidence_starved")
+                return self._terminal_result(
+                    query, FinalVerdict.NO_CONSENSUS,
+                    "Approval withheld: insufficient evidence quality.", votes, distribution,
+                    review_triggers, session_id,
+                    "evidence_gate_no_consensus" if decided else "tie_break_no_consensus", classification_payload,
+                )
         if decided is not None:
             verdict = FinalVerdict.APPROVE if decided == VoteValue.APPROVE else FinalVerdict.DENY
             matching_count = sum(1 for vote in qualified_votes if vote.vote == decided)
@@ -125,41 +167,6 @@ class ConsensusEngine:
                 theme=self.theme_key,
                 terminal_branch="majority",
                 proposal_classification=classification_payload,
-            )
-
-        if any(vote.critical_risk for vote in voting_votes):
-            review_triggers.append("unresolved_critical_risk")
-            return self._terminal_result(
-                query,
-                FinalVerdict.CAUTION,
-                "UNRESOLVED tribunal with critical risk reported.",
-                votes,
-                distribution,
-                review_triggers,
-                session_id,
-                "tie_break_caution",
-                classification_payload,
-            )
-
-        mean_evidence = mean(vote.evidence_quality for vote in qualified_votes) if qualified_votes else 0.0
-        domain_critical_starved = any(
-            vote.critical_domain_relevance and vote.evidence_quality < self.rules.evidence_threshold
-            for vote in qualified_votes
-        )
-        if mean_evidence < self.rules.evidence_threshold or domain_critical_starved:
-            review_triggers.append("insufficient_evidence")
-            if domain_critical_starved:
-                review_triggers.append("domain_critical_evidence_starved")
-            return self._terminal_result(
-                query,
-                FinalVerdict.NO_CONSENSUS,
-                "UNRESOLVED tribunal with insufficient evidence quality.",
-                votes,
-                distribution,
-                review_triggers,
-                session_id,
-                "tie_break_no_consensus",
-                classification_payload,
             )
 
         for vote in priority_ordered_votes(qualified_votes, self.rules.tie_break_priority):

@@ -187,7 +187,7 @@ class MstyRuntime:
                     raise RuntimeError("Provider returned an empty response")
                 if real_tribunal and configured_node:
                     from core.voting.parser import parse_vote
-                    parsed = parse_vote(response, configured_node, time.perf_counter() - started, str(attempt["backend"]))
+                    parsed = parse_vote(response, configured_node, time.perf_counter() - started, str(attempt["backend"]), context)
                     if parsed.validation_errors:
                         attempt["raw_response"] = response
                         raise ValueError("Invalid deliberation response: " + ", ".join(parsed.validation_errors))
