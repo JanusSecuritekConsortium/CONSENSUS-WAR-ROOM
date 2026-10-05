@@ -35,3 +35,29 @@ def test_footer_lists_operator_shortcuts() -> None:
 if __name__ == "__main__":
     test_footer_lists_operator_shortcuts()
     print("test_footer_shortcuts PASS")
+
+
+def test_footer_clicks_and_keyboard_share_actions(monkeypatch):
+    from types import SimpleNamespace
+    from tests.helpers.gui_harness import make_gui_state
+    from tests.test_diagnostics_overlay_reentrant_guard import FakePage
+    from ui import flet_app as gui
+
+    state = make_gui_state("janus")
+    page = FakePage()
+    gui._render_page(page, state)
+    buttons = page.controls[0].content.controls[2].content.controls[1].content.controls
+    assert len(buttons) == 5
+    actions = []
+    monkeypatch.setattr(gui, "_render_page", lambda *args: None)
+    monkeypatch.setattr(gui, "execute_command_palette_action", lambda state, action: actions.append(action))
+    for button, key, attribute in zip(buttons, ("K", "D", "T", "H", "E"),
+                                      ("command_palette_open", "diagnostics_drawer_open", None, "proposal_history_open", None)):
+        assert button.on_click is not None
+        button.on_click(None)
+        if attribute:
+            assert getattr(state, attribute) is True
+        page.on_keyboard_event(SimpleNamespace(key=key, ctrl=True))
+        if attribute:
+            assert getattr(state, attribute) is False
+    assert actions == ["Toggle Theme", "Toggle Theme", "Export Latest Verdict", "Export Latest Verdict"]

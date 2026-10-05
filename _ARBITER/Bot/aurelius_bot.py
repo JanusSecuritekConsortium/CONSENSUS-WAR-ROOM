@@ -29,6 +29,7 @@ LOG_DIR = Path(os.getenv("AURELIUS_LOG_DIR", str(Path(__file__).resolve().parent
 MODEL = os.getenv("AURELIUS_MODEL", "mistral")
 CHAT_ID: Optional[str] = os.getenv("AURELIUS_TELEGRAM_CHAT_ID") or os.getenv("TELEGRAM_CHAT_ID")
 BOT: Any = None
+AGENT_OPERATOR: Any = None
 provider_error_gate = ProviderErrorGate()
 TELEGRAM_INITIAL_RETRY_SECONDS = 3
 TELEGRAM_MAX_RETRY_SECONDS = 60
@@ -108,6 +109,22 @@ def send_telegram_message(message: str, chat_id: Optional[str] = None) -> bool:
 
 
 def call_msty(prompt: str, context: str, scheduled: bool = False) -> Optional[str]:
+    if not scheduled:
+        try:
+            from integrations.odysseus.client import OdysseusConfig
+            from assistant.agent.config import AgentConfig
+            odysseus_enabled = OdysseusConfig.from_env().enabled
+            agent_enabled = False if odysseus_enabled else AgentConfig.from_env().enabled
+            if odysseus_enabled or agent_enabled:
+                global AGENT_OPERATOR
+                if AGENT_OPERATOR is None:
+                    from integrations.msty.aurelius import AureliusOperator
+                    AGENT_OPERATOR = AureliusOperator()
+                return (AGENT_OPERATOR.run_odysseus(prompt).text if odysseus_enabled
+                        else AGENT_OPERATOR.run_agent(prompt).text)
+        except Exception as error:
+            log_once(context, 'Agent unavailable: ' + type(error).__name__)
+            return None
     provider_config = resolve_aurelius_provider_config()
     if not provider_config.ready:
         log_once(context, scheduled_provider_error_message(provider_config))
@@ -143,11 +160,11 @@ def call_msty(prompt: str, context: str, scheduled: bool = False) -> Optional[st
 
 def generate_brief(label: str, scheduled: bool = False) -> Optional[str]:
     # Keep legacy outbound schedules factual too; never ask an ungrounded model for news.
-    from integrations.msty.aurelius_reports import collect_report
+    from assistant.agent.service import scheduled_report
 
     kind = {'Morning Brief': 'morning', 'End-of-Day Shutdown': 'evening'}[label]
     try:
-        return collect_report(kind)
+        return scheduled_report(kind)
     except Exception as exc:
         log_once(label, 'Report source collection failed: ' + type(exc).__name__)
         return None
@@ -257,9 +274,9 @@ def poll_telegram(bot: Any, token: str, sleep: Any = time.sleep) -> None:
 
 def run_scheduler() -> None:
     import schedule
+    from assistant.agent.jobs import register_legacy_schedule
 
-    schedule.every().day.at("08:00").do(send_morning_brief)
-    schedule.every().day.at("18:00").do(send_end_of_day_shutdown)
+    register_legacy_schedule(schedule, send_morning_brief, send_end_of_day_shutdown)
     while True:
         schedule.run_pending()
         time.sleep(60)

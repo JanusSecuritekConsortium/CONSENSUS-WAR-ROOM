@@ -11,7 +11,8 @@ dependencies = ["psutil>=5.9", "requests>=2.31", "flet>=0.28.3,<0.29", "flet-des
 Organization = "https://github.com/JanusSecuritekConsortium"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pyinstaller>=6.0"]
+dev = ["pytest>=8.0", "pyinstaller>=6.0", "jsonschema>=4.18,<5"]
+agent = ["jsonschema>=4.18,<5"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

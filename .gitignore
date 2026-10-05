@@ -42,6 +42,9 @@ _ARBITER/logs/
 _ARBITER/memory/
 _ARBITER/tmp_votes/
 _ARBITER/tts_audio/
+_ARBITER/aurelius_agent/
+_ARBITER/aurelius_odysseus/
+_ARBITER/aurelius_odysseus_token.txt
 _ARBITER/decision_history*.json
 _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json

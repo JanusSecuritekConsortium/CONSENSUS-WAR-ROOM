@@ -124,6 +124,20 @@ def run_self_test() -> int:
     from ui.components.header import logo_runtime_diagnostics
     from voice.voice_profiles import get_voice_profile
 
+    from config.names import ARBITER
+    from config.nodes import DEFAULT_NODES
+    from core.prompting.assembler import load_monolith_profile, assemble_monolith_prompt
+
+    try:
+        for agent_id in (*DEFAULT_NODES, ARBITER):
+            load_monolith_profile(agent_id)
+        for node in DEFAULT_NODES.values():
+            assemble_monolith_prompt(node, "Runtime self-test proposal", {})
+    except Exception as exc:
+        print(f"PROMPT SUBSYSTEM: ERROR ({exc})")
+        return 1
+    print("PROMPT SUBSYSTEM: READY")
+
     failures = validate_graphic_registry()
     if failures:
         print(f"ASSET SUBSYSTEM: ERROR ({'; '.join(failures)})")

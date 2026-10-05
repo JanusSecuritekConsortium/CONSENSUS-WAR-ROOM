@@ -217,3 +217,15 @@ Git history remains the source for retired implementations.
 `boot.bat` is the canonical operator entry point.
 `consensus_war_room_genesis.py` remains the stable compatibility entry point for
 CLI, API, and older Msty workflows.
+
+## Optional AURELIUS Agent Runtime
+
+An opt-in operator execution layer adds bounded tool rounds, context handling,
+tool retrieval, exact host approvals, MCP clients and durable background jobs.
+The existing UI, voice route, tribunal models and live briefing schedules remain
+the defaults. Install the optional dependency with `python -m pip install -e ".[agent]"`
+and read [AURELIUS agent operations](docs/AURELIUS_AGENT.md) before enabling it.
+`python -m assistant.agent --self-test` exercises the runtime offline.
+Real Odysseus can complement AURELIUS over a separate local service:
+[setup and permissions](docs/AURELIUS_ODYSSEUS.md). This route uses the actual
+Odysseus agent API and preserves CONSENSUS reasoning and existing briefing owners.

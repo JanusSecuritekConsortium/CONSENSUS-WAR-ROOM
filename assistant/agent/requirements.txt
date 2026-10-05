@@ -1,0 +1,2 @@
+# Optional execution layer; the disabled legacy runtime does not import it.
+jsonschema>=4.18,<5
