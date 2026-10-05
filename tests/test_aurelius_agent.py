@@ -48,6 +48,10 @@ def call(name, **args):
 
 class AgentTests(unittest.TestCase):
     def setUp(self):
+        # Test the agent route independently of the developer's live integration.
+        environment = patch.dict('os.environ', {'AURELIUS_ODYSSEUS_ENABLED': 'false'})
+        environment.start()
+        self.addCleanup(environment.stop)
         self.registry = ToolRegistry()
         self.config = AgentConfig(enabled=True)
 
