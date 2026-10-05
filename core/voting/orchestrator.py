@@ -61,6 +61,7 @@ class VotingOrchestrator:
                 runtime_context.update(deepcopy(packets.get(agent_id, {})))
                 runtime_context.update({
                     "model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
+                    "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(DELIBERATION_PHASES), "previous_rounds": deepcopy(previous_rounds)},
                 })
                 self._emit(on_event, {"type": "agent_started", "round": number, "phase": phase, "agent_id": agent_id, "context": deepcopy(runtime_context)})
@@ -97,6 +98,9 @@ class VotingOrchestrator:
                     "risks": list(vote.risks), "conditions": list(vote.conditions),
                     "validation_errors": list(vote.validation_errors), "raw_response": vote.raw_response,
                     "response_time": vote.response_time,
+                    "model_fallback": bool(execution.get("model_fallback", False)),
+                    "model_fallback_reason": str(execution.get("model_fallback_reason", "")),
+                    "model_attempts": deepcopy(execution.get("model_attempts", [])),
                 }
                 self.transcript.append(entry)
                 log_event("deliberation_turn", {"session_id": session_id, **entry}, level="ERROR" if vote.validation_errors else "INFO")
@@ -118,6 +122,7 @@ class VotingOrchestrator:
         # Bound prompt growth; the local audit transcript retains the full response.
         return {
             "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
+            "model": vote.model, "backend": vote.backend,
             "critical_risk": vote.critical_risk, "reasoning": vote.reasoning[:900],
             "risks": [risk[:120] for risk in vote.risks[:2]],
             "conditions": [condition[:120] for condition in vote.conditions[:2]],
@@ -133,6 +138,11 @@ class VotingOrchestrator:
         result.deliberation_transcript = deepcopy(self.transcript)
         result.deliberation_complete = self.complete
         result.simulation = self.simulation
+        if any(turn.get("model_fallback") for turn in self.transcript):
+            result.review_triggers.append("real_model_fallback")
+        final_models = [vote.model for vote in result.votes.values()]
+        if not self.simulation and self.complete and len(set(final_models)) < len(final_models):
+            result.review_triggers.append("shared_model_roles")
         if self.simulation:
             result.review_triggers.append("simulation_only")
             result.reason = "SIMULATION ONLY: " + result.reason

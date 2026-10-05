@@ -94,13 +94,13 @@ def test_failed_or_malformed_turn_blocks_majority_and_stops_later_rounds(phase, 
     assert not result.simulation
 
 
-def test_real_tribunal_never_uses_mock_fallback_or_another_available_model(monkeypatch):
+def test_strict_real_tribunal_never_uses_mock_fallback_or_another_available_model(monkeypatch):
     monkeypatch.setattr(api, "health_check", lambda *a, **kw: {
         "status": "degraded", "models": ["other-model"], "base_url": "http://localhost:1",
         "model_remap_active": True, "model_remap_model": "other-model",
     })
     monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: pytest.fail("Missing assigned model must not generate"))
-    runtime = MstyRuntime(RuntimeConfig(mock_fallback_enabled=True, use_available_model_fallback=True))
+    runtime = MstyRuntime(RuntimeConfig(mock_fallback_enabled=True, use_available_model_fallback=True, strict_provider_mode=True))
     monkeypatch.setattr(runtime, "_fallback_response", lambda *a: pytest.fail("Tribunal must not simulate failure"))
     with pytest.raises(RuntimeError, match="Required model unavailable"):
         runtime.send_to_agent(RATIONALIS, "review", {"model": "assigned-model", "require_real_model": True})
@@ -116,7 +116,9 @@ def test_assigned_parameters_reach_generation_payload_and_actual_model_is_record
     runtime = MstyRuntime(RuntimeConfig())
     runtime.send_to_agent(agent, "review", {"model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens, "require_real_model": True})
     assert sent[0]["options"] == {"temperature": node.temperature, "num_predict": 321}
-    assert runtime.last_execution[agent] == {"status": "ready", "model": node.model, "backend": "test-provider"}
+    execution = runtime.last_execution[agent]
+    assert {key: execution[key] for key in ("status", "model", "backend")} == {"status": "ready", "model": node.model, "backend": "test-provider"}
+    assert not execution["model_fallback"]
 
 
 def test_context_model_overrides_provider_roster_and_records_alias(monkeypatch):
