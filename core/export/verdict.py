@@ -37,8 +37,27 @@ def _verdict_payload(trace: Dict[str, Any], source_trace_path: Path = SYSTEM_LOG
         "final_verdict": trace.get("final_verdict") or trace.get("verdict"),
         "terminal_branch": trace.get("terminal_branch"),
         "review_triggers": trace.get("review_triggers", []),
+        "deliberation_transcript": trace.get("deliberation_transcript", []),
+        "deliberation_complete": trace.get("deliberation_complete", False),
+        "simulation": trace.get("simulation", False),
         "source_trace_path": str(source_trace_path),
     }
+
+
+def deliberation_markdown(payload: Dict[str, Any]) -> str:
+    entries = payload.get("deliberation_transcript", [])
+    if not entries:
+        return ""
+    lines = ["\n\n## Deliberation exchange\n", f"Simulation: {bool(payload.get('simulation'))}. Completed: {bool(payload.get('deliberation_complete'))}.\n"]
+    for entry in entries:
+        lines.extend([
+            f"\n### Round {entry['round']}: {entry['phase']} — {entry['agent_id']}\n",
+            f"Model: {entry.get('model')}; backend: {entry.get('backend')}; temperature: {entry.get('temperature')}; vote: {entry.get('vote')}.\n",
+            str(entry.get("reasoning", "")) + "\n",
+            "Risks: " + "; ".join(entry.get("risks", [])) + "\n",
+            "Conditions: " + "; ".join(entry.get("conditions", [])) + "\n",
+        ])
+    return "\n".join(lines)
 
 
 def _markdown(payload: Dict[str, Any]) -> str:
@@ -60,6 +79,7 @@ def _markdown(payload: Dict[str, Any]) -> str:
         "## Votes\n\n"
         + "\n".join(vote_lines)
         + "\n"
+        + deliberation_markdown(payload)
     )
 
 

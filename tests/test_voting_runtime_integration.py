@@ -56,7 +56,9 @@ def test_voting_uses_runtime() -> None:
     result = tribunal.deliberate("runtime integration vote")
 
     assert result.verdict.value == "APPROVE"
-    assert [call["agent_id"] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS)
+    assert [call["agent_id"] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS) * 3
+    assert result.deliberation_complete
+    assert len(result.deliberation_transcript) == 9
     assert set(result.votes) == set(TRIBUNAL_AGENT_IDS)
     bellator_call = next(call for call in runtime.calls if call["agent_id"] == BELLATOR)
     assert "bellator_context_packet" in bellator_call["context"]

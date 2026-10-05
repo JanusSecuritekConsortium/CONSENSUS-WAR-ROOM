@@ -134,7 +134,7 @@ class OllamaBackend:
             "stream": False,
             "options": {
                 "temperature": node.temperature,
-                "num_predict": 900,
+                "num_predict": node.max_output_tokens,
             },
         }
         try:

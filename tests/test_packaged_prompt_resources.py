@@ -47,7 +47,9 @@ def test_submission_file_error_does_not_claim_mock_fallback(monkeypatch):
     monkeypatch.setattr(gui, "build_bellator_diagnostics_payload", lambda *args: {})
     def missing(*args):
         raise FileNotFoundError("Missing monolith profile: bellator.json")
-    monkeypatch.setattr(gui, "build_node_prompt", missing)
+    monkeypatch.setattr("core.voting.orchestrator.build_node_prompt", missing)
+    monkeypatch.setattr("core.voting.orchestrator.build_bellator_context_packet", lambda *args: {})
+    monkeypatch.setattr("core.voting.orchestrator.build_aeternum_data_enrichment", lambda *args, **kwargs: {})
     with pytest.raises(FileNotFoundError):
         gui.submit_proposal_live_for_gui(state, "Is consensus online and ready?", skip_animations=True)
     assert "bellator.json" in state.displayed_synthesis

@@ -49,6 +49,7 @@ class Tribunal:
         started = time.perf_counter()
         votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
+        self.orchestrator.attach_audit(result)
         record_result(result)
         log_decision_trace(result)
         self._record_session_memory(result, memory_context, provider_context)
@@ -119,6 +120,9 @@ class Tribunal:
             "arbiter_verdict": result.verdict.value,
             "verdict": result.verdict.value,
             "synthesis_summary": result.reason,
+            "deliberation_transcript": result.deliberation_transcript,
+            "deliberation_complete": result.deliberation_complete,
+            "simulation": result.simulation,
             "terminal_branch": result.terminal_branch,
             "proposal_classification": result.proposal_classification,
             "provider_backend": provider_context.get("active_backend") or provider_context.get("backend"),

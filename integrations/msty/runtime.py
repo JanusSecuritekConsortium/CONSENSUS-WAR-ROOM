@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from config.agents import AgentProfile, get_agent_profile
 from config.names import AETERNUM, AURELIUS, BELLATOR, RATIONALIS
-from config.nodes import DEFAULT_NODES
+from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.llm.backends import MockBackend
 from core.logging import log_error, log_event
@@ -69,6 +69,7 @@ class MstyRuntime:
         self.fallback_enabled = self.config.mock_fallback_enabled if fallback_enabled is None else fallback_enabled
         self.fallback_hooks = fallback_hooks or []
         self.telemetry_hooks = telemetry_hooks or []
+        self.last_execution: Dict[str, Dict[str, Any]] = {}
 
     def send_to_agent(
         self,
@@ -80,6 +81,7 @@ class MstyRuntime:
         session.turns += 1
         started = time.perf_counter()
         rendered_prompt = self._render_prompt(session, prompt, context)
+        self.last_execution[session.agent_id] = {"status": "pending"}
 
         try:
             requested_model = str(
@@ -93,19 +95,15 @@ class MstyRuntime:
             else:
                 from integrations.msty import api as api_module
 
-                health = self._provider_health(api_module)
+                health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
                 provider_state = str(health.get("status", "offline"))
                 if provider_state == "offline":
                     raise RuntimeError(f"Provider offline at {health.get('base_url')}")
-                resolved_models = health.get("resolved_required_models", {})
-                if isinstance(resolved_models, dict) and session.agent_id in resolved_models:
-                    requested_model = str(resolved_models[session.agent_id])
-                else:
-                    matched_model, _match_type = api_module.match_model_alias(requested_model, health.get("models", []))
-                    if matched_model:
-                        requested_model = matched_model
+                matched_model, _match_type = api_module.match_model_alias(requested_model, health.get("models", []))
+                if matched_model:
+                    requested_model = matched_model
                 if requested_model not in set(health.get("models", [])):
-                    if health.get("model_remap_active") and health.get("model_remap_model"):
+                    if not (context or {}).get("require_real_model") and health.get("model_remap_active") and health.get("model_remap_model"):
                         requested_model = str(health["model_remap_model"])
                     else:
                         raise RuntimeError(f"Required model unavailable for {session.agent_id}: {requested_model}")
@@ -115,11 +113,19 @@ class MstyRuntime:
                     system_prompt=session.profile.system_prompt,
                     config=self.config,
                     base_url=health.get("base_url"),
+                    temperature=float((context or {}).get("temperature", 0.2)),
+                    max_output_tokens=int((context or {}).get("max_output_tokens", 900)),
                 )
                 provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
+            if not response.strip():
+                raise RuntimeError("Provider returned an empty response")
+            self.last_execution[session.agent_id] = {
+                "status": "ready", "model": "mock" if provider == "mock" else requested_model, "backend": provider,
+            }
             self._record_telemetry(session, prompt, response, started, provider, "ready")
             return response
         except Exception as exc:
+            self.last_execution[session.agent_id] = {"status": "failed", "model": requested_model, "backend": self.config.backend, "error_type": type(exc).__name__}
             log_error(
                 "msty_runtime_send_error",
                 exc,
@@ -129,7 +135,7 @@ class MstyRuntime:
                     "backend": self.config.backend,
                 },
             )
-            if self.config.strict_provider_mode or not self.fallback_enabled:
+            if (context or {}).get("require_real_model") or self.config.strict_provider_mode or not self.fallback_enabled:
                 raise
             log_event(
                 "provider_degraded_fallback",
@@ -143,6 +149,7 @@ class MstyRuntime:
                 level="WARNING",
             )
             response = self._fallback_response(session.agent_id, prompt, context, exc)
+            self.last_execution[session.agent_id] = {"status": "degraded", "model": "mock", "backend": "mock-fallback"}
             self._record_telemetry(session, prompt, response, started, "mock-fallback", "degraded")
             return response
 

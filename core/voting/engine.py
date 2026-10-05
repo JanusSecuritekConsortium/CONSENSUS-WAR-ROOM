@@ -26,6 +26,14 @@ class ConsensusEngine:
         review_triggers: List[str] = []
         voting_votes = list(votes.values())
         distribution = Counter(v.vote.value for v in voting_votes)
+        failed_agents = [vote.node_key for vote in voting_votes if vote.validation_errors]
+        if failed_agents:
+            return self._terminal_result(
+                query, FinalVerdict.NO_CONSENSUS,
+                "Deliberation incomplete: failed or malformed model responses from " + ", ".join(failed_agents) + ". No normal verdict was issued.",
+                votes, distribution, ["deliberation_incomplete", *[f"vote_validation_failed:{key}" for key in failed_agents]],
+                session_id, "deliberation_incomplete", {}, quorum_met=False,
+            )
         for vote in voting_votes:
             if vote.validation_errors:
                 review_triggers.append(f"vote_validation_failed:{vote.node_key}")

@@ -4,6 +4,31 @@ CONSENSUS War Room is a Windows-first, local multi-agent tribunal for proposal
 review. RATIONALIS, AETERNUM, and BELLATOR assess a proposal from different
 perspectives; the ARBITER combines their votes into an auditable verdict.
 
+Each proposal now runs three rounds. All monoliths first assess it independently;
+then each critiques the complete set of initial assessments; finally each reads
+all critiques and submits a revised final vote. Dissent is preserved. The ARBITER
+still applies deterministic voting rules rather than generating another model
+opinion. The legacy sequential option is accepted for compatibility; it does not
+disable these shared rounds.
+
+The default temperatures are Rationalis 0.1, Aeternum 0.3, and Bellator 0.6.
+Each node can override its temperature and maximum output tokens (900 by
+default) through node overrides. These values reach the provider request.
+The audit transcript records each round, actual model/backend, settings,
+decision reasons, risks, conditions and failures. It is included in API results,
+local history, session memory, decision traces and verdict/dossier exports.
+Ollama generation requests are translated to OpenAI chat requests when the same
+provider explicitly rejects the Ollama route with HTTP 404 or 405. The model and
+generation settings are preserved; timeout/server failures are not replayed.
+
+Real-provider tribunal calls never fall back to simulated responses or silently
+remap a missing assigned model. A failed, empty, or malformed response stops
+the remaining rounds and returns NO_CONSENSUS with an incomplete-deliberation
+reason. Explicit mock mode remains available and labels its result SIMULATION
+ONLY. Three rounds require nine model calls, so latency is higher than the
+previous single-round flow. Running source processes need a reload; packaged
+executables need a rebuild to include the changes.
+
 The current release is **v8.0.0**. It includes a Flet desktop interface, CLI and
 local API entry points, deterministic offline operation, Msty/Ollama-compatible
 provider adapters, real-data enrichment, simulations, voice integrations, and
