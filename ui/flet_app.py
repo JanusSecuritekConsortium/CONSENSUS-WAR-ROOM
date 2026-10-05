@@ -461,6 +461,9 @@ def _notify(on_update: GuiUpdateCallback | None) -> None:
 
 def _vote_detail(vote: Vote) -> Dict[str, object]:
     return {
+        "argument": vote.argument, "peer_responses": vote.peer_responses,
+        "review_required": vote.review_required, "review_reason": vote.review_reason,
+        "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": vote.unresolved_disagreements,
         "vote": vote.vote.value,
         "confidence": vote.confidence,
         "evidence_quality": vote.evidence_quality,
@@ -637,6 +640,17 @@ def submit_proposal_live_for_gui(
             state.monolith_vote_details[agent_id] = _vote_detail(vote)
             state.monolith_activity_states[agent_id] = "ERROR" if vote.validation_errors else "IDLE"
             append_reasoning_event(state.reasoning_stream, f"{agent_id} {phase}: {vote.reasoning}")
+            if vote.argument:
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} claim: {vote.argument['claim']}")
+                for evidence in vote.argument.get("evidence", []):
+                    append_reasoning_event(state.reasoning_stream, f"{agent_id} evidence ({evidence['source']}): {evidence['detail']}")
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} strongest objection: {vote.argument['strongest_objection']}")
+            for peer in vote.peer_responses:
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} {peer['stance']} {peer['peer']} claim: {peer['reason']}")
+            if vote.review_required:
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} requests review: {vote.review_reason}")
+            if vote.vote_change_reason:
+                append_reasoning_event(state.reasoning_stream, f"{agent_id} decision change: {vote.vote_change_reason}")
             append_timeline(state.timeline_events, agent_id, f"{phase}: {vote.vote.value.lower()} confidence {vote.confidence:.0%}")
             execution = runtime.last_execution.get(agent_id, {})
             if execution.get("model_fallback"):

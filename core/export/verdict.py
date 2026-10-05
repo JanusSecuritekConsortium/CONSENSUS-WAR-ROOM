@@ -58,6 +58,23 @@ def deliberation_markdown(payload: Dict[str, Any]) -> str:
             "Risks: " + "; ".join(entry.get("risks", [])) + "\n",
             "Conditions: " + "; ".join(entry.get("conditions", [])) + "\n",
         ])
+        argument = entry.get("argument", {})
+        if argument:
+            lines.extend([
+                "Claim: " + str(argument.get("claim", "")) + "\n",
+                "Assumptions: " + "; ".join(argument.get("assumptions", [])) + "\n",
+                "Strongest objection: " + str(argument.get("strongest_objection", "")) + "\n",
+                "Decision-change condition: " + str(argument.get("change_condition", "")) + "\n",
+            ])
+            for evidence in argument.get("evidence", []):
+                lines.append(f"Evidence ({evidence.get('source')}): {evidence.get('detail')}\n")
+        for response in entry.get("peer_responses", []):
+            lines.append(f"Peer {response.get('peer')}, round {response.get('round')}, {response.get('stance')}: {response.get('claim')} — {response.get('reason')}\n")
+        lines.extend([
+            f"Review required: {bool(entry.get('review_required'))}; reason: {entry.get('review_reason', '')}.\n",
+            "Vote/risk change reason: " + str(entry.get("vote_change_reason", "")) + "\n",
+            "Unresolved disagreements: " + "; ".join(entry.get("unresolved_disagreements", [])) + "\n",
+        ])
         for attempt in entry.get("model_attempts", []):
             lines.append(f"Model attempt: {attempt.get('model')}; status: {attempt.get('status')}; error: {attempt.get('error', '')}.\n")
     return "\n".join(lines)

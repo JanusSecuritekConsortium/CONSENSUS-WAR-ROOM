@@ -15,10 +15,11 @@ from core.voting.orchestrator import VotingOrchestrator
 from core.voting.rules import ConsensusRules
 from integrations.msty import api
 from integrations.msty.runtime import MstyRuntime
+from tests.argument_fixture import argument_fields
 
 
-def response(reason, value="APPROVE"):
-    return f"VOTE: {value}\nCONFIDENCE: 0.90\nEVIDENCE_QUALITY: 0.85\nCRITICAL_RISK: false\nRATIONALE: {reason}\nRISKS: residual risk\nCONDITIONS: audit and rollback"
+def response(reason, value="APPROVE", agent=None, context=None):
+    return f"VOTE: {value}\nCONFIDENCE: 0.90\nEVIDENCE_QUALITY: 0.85\nCRITICAL_RISK: false\nRATIONALE: {reason}\nRISKS: residual risk\nCONDITIONS: audit and rollback" + argument_fields(reason, agent, context, value)
 
 
 class DiscussionRuntime:
@@ -36,10 +37,10 @@ class DiscussionRuntime:
                 return "I approve without the required vote schema."
             raise TimeoutError("Controlled provider timeout")
         if phase == "assessment":
-            return response(f"{agent_id} initial independent assessment")
+            return response(f"{agent_id} initial independent assessment", agent=agent_id, context=context)
         if phase == "critique":
-            return response(f"{agent_id} challenges BELLATOR and AETERNUM cost assumptions; require audit and rollback")
-        return response(f"{agent_id} accepts peer audit condition, rejects unsupported cost claim, and revises vote", "DENY" if agent_id == BELLATOR else "APPROVE")
+            return response(f"{agent_id} challenges BELLATOR and AETERNUM cost assumptions; require audit and rollback", agent=agent_id, context=context)
+        return response(f"{agent_id} accepts peer audit condition, rejects unsupported cost claim, and revises vote", "DENY" if agent_id == BELLATOR else "APPROVE", agent_id, context)
 
 
 @pytest.fixture(autouse=True)

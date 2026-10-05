@@ -14,6 +14,7 @@ from config.nodes import DEFAULT_NODES
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION
 from core.tribunal import Tribunal
 from core.voting.rules import ConsensusRules
+from tests.argument_fixture import argument_fields
 
 
 class RecordingRuntime:
@@ -41,6 +42,7 @@ class RecordingRuntime:
             f"RATIONALE: {reasoning}\n"
             "RISKS: test risk\n"
             "CONDITIONS: test condition\n"
+            + argument_fields(reasoning, agent_id, context, vote)
         )
 
 

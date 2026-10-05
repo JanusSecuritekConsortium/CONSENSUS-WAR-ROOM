@@ -11,6 +11,24 @@ still applies deterministic voting rules rather than generating another model
 opinion. The legacy sequential option is accepted for compatibility; it does not
 disable these shared rounds.
 
+Every new tribunal turn must include a structured argument: one claim, supplied
+source identities and supporting details, assumptions, the strongest genuine
+objection, and evidence or mitigation that would change the decision. Critique
+and revision turns must quote and address each peer's exact claim from the
+latest completed round. Changed votes and cleared risk/review flags need an
+explanation. Agreement and empty unresolved-disagreement lists are valid;
+agents must not manufacture dissent. Citations are checked against supplied
+source identities; this establishes traceability, not automatic fact checking.
+
+Monolith votes remain APPROVE, DENY or ABSTAIN. Conditions are prerequisites;
+an unresolved requirement needing human judgment uses a separate review flag
+and reason. With high-risk review enabled (the default), a domain-relevant
+critical risk or an explicit review request returns ESCALATE before an approval
+can be issued. Evidence gaps return NO_CONSENSUS before majority or priority
+approval, including gaps reported by a relevant role below the confidence
+threshold. Majority denial remains DENY with review flags preserved. Explicitly
+disabling high-risk review is recorded. Historical records remain readable.
+
 The default temperatures are Rationalis 0.1, Aeternum 0.3, and Bellator 0.6.
 Each node can override its temperature and maximum output tokens (900 by
 default) through node overrides. These values reach the provider request.
