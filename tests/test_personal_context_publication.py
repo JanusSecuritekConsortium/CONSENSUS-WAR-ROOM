@@ -115,7 +115,8 @@ def test_publish_archives_links_and_delivers_once(tmp_path):
     route={'chat_id':'123','token':'dummy'}
     def api(route,method,data):
         return {'id':123,'type':'private'} if method=='getChat' else {'message_id':42,'chat':{'id':123}}
-    with patch('integrations.msty.personal.review.build',return_value=report) as build, \
+    with patch('integrations.msty.personal.store.load',return_value={'telegram_briefing_format':'text'}), \
+         patch('integrations.msty.personal.review.build',return_value=report) as build, \
          patch.object(p,'news_section',return_value='5. NOTICIAS\nNone'), \
          patch.object(p,'telegram_route',return_value=route), \
          patch.object(p,'telegram_call',side_effect=api) as call, \

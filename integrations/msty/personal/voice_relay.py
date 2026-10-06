@@ -159,6 +159,11 @@ def process(row, route):
     uid=row['update_id'];message=json.loads(row['message'])
     marker=receipt_marker(message,route)
     if row['state']=='queued':
+        from .spoken_briefing import handle_choice
+        choice_reply = handle_choice(message, route)
+        if choice_reply is not None:
+            set_state(uid, 'reply_ready' if choice_reply else 'delivered', reply=choice_reply)
+            return
         try:prompt=prompt_for(message,route)
         except Exception:
             set_state(uid,'reply_ready',reply='I could not process that audio. Send a clear voice note under ten minutes, or type your message.',error='audio_processing_failed')

@@ -18,7 +18,19 @@ class AureliusAdapter:
         if self.profile.backend == "rvc":
             self.backend = RVCAdapter(profile=self.profile)
         else:
-            self.backend = create_system_backend(rate=self.profile.rate, volume=self.profile.volume)
+            self.backend = create_system_backend(
+                rate=self.profile.rate, volume=self.profile.volume,
+                voice_names=self.profile.settings.get('base_voice_name', []),
+                voice_gender=self.profile.settings.get('base_voice_gender', ''),
+                voice_language=self.profile.settings.get('base_voice_language', ''),
+                strict_voice_selection=True)
+
+    def save_only(self, text: str) -> TTSBackendResult:
+        """Use the assigned profile without playing audio on the host."""
+        if self.profile.backend == 'rvc':
+            return self.backend.save_only(text)
+        from pathlib import Path
+        return self.backend.synthesize_to_wav(text, Path(self.profile.settings['output_dir'])/'aurelius.wav')
 
     def synthesize(self, text: str) -> TTSBackendResult:
         return self.backend.synthesize(text)

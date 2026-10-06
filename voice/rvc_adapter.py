@@ -186,6 +186,7 @@ class RVCAdapter:
             self._print_diagnostics(command)
             completed = subprocess.run(
                 command,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
                 cwd=str(self.workdir) if self.workdir else None,
                 env=env,
                 capture_output=True,

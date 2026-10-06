@@ -40,6 +40,7 @@ def _list_sapi_voices_result() -> tuple[List[Dict[str, str]], str]:
     )
     completed = subprocess.run(
         ["powershell", "-NoProfile", "-Command", command],
+        creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
         capture_output=True,
         text=True,
         timeout=30,
@@ -108,6 +109,7 @@ class WindowsSAPIBackend:
         )
         completed = subprocess.run(
             ["powershell", "-NoProfile", "-Command", command],
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
             capture_output=True,
             text=True,
             timeout=60,
@@ -150,6 +152,7 @@ class WindowsSAPIBackend:
         )
         completed = subprocess.run(
             ["powershell", "-NoProfile", "-Command", command],
+            creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
             capture_output=True,
             text=True,
             timeout=60,

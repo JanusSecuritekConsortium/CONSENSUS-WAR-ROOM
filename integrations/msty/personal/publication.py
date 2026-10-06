@@ -229,6 +229,11 @@ def publish(mode='morning', send=False, *, vault=None, db_path=None, edition=Non
         if send:
             if 'telegram_text' not in receipt:
                 raise ValueError('Legacy prepared report requires regeneration as a plain-text digest')
-            deliver(receipt['telegram_text'], receipt, state_path, route)
+            from . import store
+            if store.load().get('telegram_briefing_format', 'text') == 'ask':
+                from .spoken_briefing import offer
+                offer(receipt, state_path, route, mode)
+            else:
+                deliver(receipt['telegram_text'], receipt, state_path, route)
         return {'status': receipt['status'], 'note': str(vault/receipt['note']), 'memory': memory,
                 'consultation_id': receipt['consultation_id'], 'message_ids': receipt['message_ids']}
