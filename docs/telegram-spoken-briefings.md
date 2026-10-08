@@ -10,7 +10,9 @@ formats use the same concise digest; speech removes URLs, not factual qualifiers
 
 The sole Telegram receiver consumes choices locally, without invoking the agent
 or interpreting a number as an email/calendar action. Reply directly to the
-offer if more than one is pending. Offers expire after 18 hours. No choice means
+offer to select that specific briefing; a plain number selects the latest pending
+offer. Reply to a delivered digest with `read it aloud` or `1` to request its
+spoken version. Offers expire after 18 hours. No choice means
 no briefing payload is sent. Forwarded choices and other senders are ignored.
 
 Narration uses `AureliusAdapter` and the assigned `AURELIUS` profile, including
@@ -25,5 +27,30 @@ falls back to the exact text digest and records `local_narration_failed` in the
 private receipt. A receiver restart loads code changes; do not enable a second
 Telegram poller. Existing conversational replies continue to match the incoming
 language, while scheduled briefings use English.
+
+For user-session recovery, launch `pythonw -m integrations.msty.personal.voice_watchdog`
+from the repository directory through the existing Windows startup shortcut.
+The supervisor restarts the receiver after exits and both enforce singleton locks.
+It uses hidden processes and requires no administrator service. A startup database
+failure is retried. Pending agent requests no longer prevent polling new format
+choices. Old non-choice requests recovered after an outage require resubmission
+before any agent action. The computer must be on and the user logged in.
+
+## Optional shared news folder
+
+Install `integrations/msty/personal/requirements-news.txt` for PDF extraction.
+In the private account configuration, `shared_news_folders` is a list of objects
+with `label`, `path`, and `enabled`. Use an explicitly shared local, synced, or
+UNC folder path; a website sharing link must first be made available locally.
+No folders are discovered or enabled automatically.
+
+The evening publisher reads Markdown and text PDFs without modifying them. It
+includes up to three attributed excerpts from files modified within 36 hours,
+separate from current news. Modification times are not asserted as event dates.
+Detailed provenance and hashes stay in the private briefing vault; Telegram gets
+bounded excerpts where space permits. Each folder scan is limited to 500 files,
+10 MB per document and the first 10 PDF pages. Scanned PDFs need OCR and produce
+a visible coverage warning. Missing or unreadable sources are reported. Folder
+contents are reference data, never executable instructions.
 
 Validation: `python -m pytest tests/test_spoken_briefing.py tests/test_voice_relay.py tests/test_personal_context_publication.py -q`.

@@ -106,3 +106,34 @@ def test_redacted_receipt_requires_unique_new_turn(tmp_path,monkeypatch):
     with sqlite3.connect(path) as db:
         db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',3,'user',content,None,'3',metadata))
     assert relay.final_reply('opaque',prompt,0) is None
+
+
+def test_receiver_polls_choices_while_agent_waits(isolated,monkeypatch):
+    from contextlib import nullcontext
+    relay.enqueue([update()],'42');relay.set_state(100,'prepared',prompt='waiting')
+    choices=update(101);choices['message']['text']='1'
+    configs=iter([{'telegram_voice_relay_enabled':True},{'telegram_voice_relay_enabled':False}])
+    monkeypatch.setattr(relay.store,'load',lambda:next(configs))
+    monkeypatch.setattr(relay,'single_instance',nullcontext)
+    monkeypatch.setattr(relay,'enabled',lambda:True)
+    monkeypatch.setattr(relay,'telegram_route',lambda:{'chat_id':'42'})
+    class Client:
+        def initialize(self):raise RuntimeError()
+        def close(self):pass
+    monkeypatch.setattr(relay,'Client',Client)
+    calls=[]
+    def api(route,method,data):calls.append(data);return [choices]
+    monkeypatch.setattr(relay,'api',api)
+    processed=[];monkeypatch.setattr(relay,'process',lambda row,route:processed.append(row['update_id']))
+    monkeypatch.setattr(relay.time,'sleep',lambda seconds:None)
+    relay.run()
+    assert processed==[101] and calls[0]['timeout']==0
+
+def test_stale_command_not_dispatched(isolated,monkeypatch):
+    old=update();old['message']['date']=1
+    relay.enqueue([old],'42')
+    with relay.database() as db:row=dict(db.execute('SELECT * FROM inbox').fetchone())
+    relay.process(row,{'chat_id':'42'})
+    with relay.database() as db:
+        row=dict(db.execute('SELECT * FROM inbox').fetchone())
+    assert row['error']=='stale_request' and row['state']=='reply_ready'

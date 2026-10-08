@@ -197,6 +197,17 @@ def publish(mode='morning', send=False, *, vault=None, db_path=None, edition=Non
                 news = news_section(now)
                 report = {'body_text': 'AURELIUS — NEWS\n'+now.astimezone(TZ).strftime('%d/%m/%Y %H:%M')+'\n\n'+news,
                           'telegram_text': news_digest(news), 'generated_at': now.isoformat(), 'coverage': []}
+                from . import store, shared_news
+                entries, warnings = shared_news.collect(store.load(), now)
+                shared = shared_news.render(entries, warnings, detailed=True)
+                if shared:
+                    report['body_text'] += '\n\n'+shared
+                    brief = shared_news.render(entries, warnings)
+                    combined = report['telegram_text']+'\n\n'+brief
+                    if len(combined.encode('utf-16-le'))//2 <= 4096:
+                        report['telegram_text'] = combined
+                    else:
+                        report['telegram_text'] += '\nShared-source excerpts are available in the local vault.'
             else:
                 report = build(mode)
             consultation = uuid4().hex[:12]

@@ -164,6 +164,9 @@ def process(row, route):
         if choice_reply is not None:
             set_state(uid, 'reply_ready' if choice_reply else 'delivered', reply=choice_reply)
             return
+        if message.get('date') and time.time()-message['date'] > 1200:
+            set_state(uid, 'reply_ready', reply='This message arrived while Aurelius was offline. Please resend the request if it is still needed; no action was taken.', error='stale_request')
+            return
         try:prompt=prompt_for(message,route)
         except Exception:
             set_state(uid,'reply_ready',reply='I could not process that audio. Send a clear voice note under ten minutes, or type your message.',error='audio_processing_failed')
@@ -203,10 +206,10 @@ def process(row, route):
 
 
 @contextmanager
-def single_instance():
+def single_instance(lock_name='voice-relay.lock'):
     import msvcrt
     store.ROOT.mkdir(parents=True,exist_ok=True)
-    with (store.ROOT/'voice-relay.lock').open('a+b') as lock:
+    with (store.ROOT/lock_name).open('a+b') as lock:
         if lock.tell()==0:lock.write(b'0');lock.flush()
         lock.seek(0);msvcrt.locking(lock.fileno(),msvcrt.LK_NBLCK,1)
         try:yield
@@ -224,11 +227,15 @@ def enabled():
 
 def run():
     with single_instance():
-        route=telegram_route()
         last_check=0
         msty_ready=False
-        while enabled():
+        while store.load().get('telegram_voice_relay_enabled'):
             try:
+                # Startup can precede Msty/database readiness. Retry instead of exiting.
+                if not enabled():
+                    time.sleep(10)
+                    continue
+                route=telegram_route()
                 if time.monotonic()-last_check>60:
                     client=Client()
                     try:
@@ -236,13 +243,15 @@ def run():
                     except Exception:msty_ready=False
                     finally:client.close();last_check=time.monotonic()
                 with database() as db:
-                    row=db.execute("SELECT * FROM inbox WHERE state IN ('queued','prepared','dispatching','awaiting_reply','reply_ready') ORDER BY update_id LIMIT 1").fetchone()
                     offset=db.execute('SELECT offset FROM cursor WHERE id=1').fetchone()[0]
+                # Continue receiving format choices even while an agent request waits.
+                    pending=db.execute("SELECT count(*) FROM inbox WHERE state IN ('queued','prepared','dispatching','awaiting_reply','reply_ready')").fetchone()[0]
+                updates=api(route,'getUpdates',{'offset':offset,'timeout':0 if pending else 25,'allowed_updates':['message']})
+                enqueue(updates,route['chat_id'])
+                with database() as db:
+                    row=db.execute("SELECT * FROM inbox WHERE state IN ('queued','prepared','dispatching','awaiting_reply','reply_ready') ORDER BY CASE WHEN state='queued' THEN 0 WHEN state='reply_ready' THEN 1 ELSE 2 END,update_id LIMIT 1").fetchone()
                 if row:
                     process(dict(row),route);time.sleep(1)
-                else:
-                    updates=api(route,'getUpdates',{'offset':offset,'timeout':25,'allowed_updates':['message']})
-                    enqueue(updates,route['chat_id'])
                 (store.ROOT/'voice-relay-health.json').write_text(json.dumps({'status':'running' if msty_ready else 'waiting_for_msty','telegram_receiver':True,'msty_ready':msty_ready,'at':datetime.now(timezone.utc).isoformat()}))
             except Exception as error:
                 (store.ROOT/'voice-relay-health.json').write_text(json.dumps({'status':'retrying','error_type':type(error).__name__,'at':datetime.now(timezone.utc).isoformat()}))

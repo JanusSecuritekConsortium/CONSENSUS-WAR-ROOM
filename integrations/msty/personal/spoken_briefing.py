@@ -84,7 +84,11 @@ def offer(receipt, path, route, mode):
 
 def handle_choice(message, route, *, vault=None):
     """Return None for ordinary messages; otherwise a local delivery outcome."""
-    choice = message.get('text', '').strip()
+    choice = message.get('text', '').strip().casefold().rstrip('.!')
+    if choice in ('read it aloud', 'read this aloud', 'read it out loud', 'read this out loud',
+                  'send voice', 'voice', 'read the briefing aloud', 'léelo en voz alta',
+                  'lee esto en voz alta', 'leelo en voz alta'):
+        choice = '1'
     if choice not in ('1', '2'):
         return None
     if (message.get('forward_origin') or message.get('forward_from') or
@@ -101,7 +105,10 @@ def handle_choice(message, route, *, vault=None):
         for path in (vault/'Deliveries').glob('*.json'):
             if path.name.endswith('.choice.json'):
                 continue
-            receipt = json.loads(path.read_text(encoding='utf-8'))
+            try:
+                receipt = json.loads(path.read_text(encoding='utf-8'))
+            except (ValueError, OSError):
+                continue
             if receipt.get('target_hash') != target:
                 continue
             if receipt.get('choice_update_message') == message['message_id']:
@@ -109,6 +116,15 @@ def handle_choice(message, route, *, vault=None):
                     return 'Delivery is unconfirmed. Please check Telegram before requesting another copy.'
                 if receipt['status'] == 'delivered':
                     return ''  # Crash after acknowledgement: do not send twice.
+            # An explicit reply to a previously delivered digest can request narration.
+            if choice == '1' and receipt.get('status') == 'delivered' and reply_id in receipt.get('message_ids', []):
+                replay_path = path.with_name(path.stem+'-voice-'+str(message['message_id'])+'.json')
+                if replay_path.exists():
+                    continue  # Its durable receipt is evaluated in this same scan.
+                receipt = {**receipt, 'status':'awaiting_choice', 'message_ids':[],
+                           'choice_message_id':reply_id, 'offered_at':datetime.now(timezone.utc).isoformat()}
+                receipt.pop('choice_update_message', None)
+                path = replay_path
             if receipt.get('status') not in ('awaiting_choice', 'selected'):
                 continue
             if reply_id and receipt.get('choice_message_id') != reply_id:
@@ -117,6 +133,8 @@ def handle_choice(message, route, *, vault=None):
             if age > 18*3600:
                 continue
             candidates.append((path, receipt))
+        if not reply_id and candidates:
+            candidates = [max(candidates, key=lambda item:item[1]['offered_at'])]
         if len(candidates) != 1:
             return 'Reply directly to a current briefing offer: 1 for voice or 2 for text. Old offers expire after 18 hours.'
         path, receipt = candidates[0]

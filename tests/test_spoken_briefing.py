@@ -82,3 +82,25 @@ def test_expiry_wrong_reply_and_forwarded(setup):
 
 def test_narration_preserves_qualifiers():
     assert s.narration('- Possible conflict at 09:00. https://example.com/a')=='Possible conflict at 09:00.'
+
+
+def test_plain_choice_uses_latest_offer(setup):
+    vault,path,route,message,calls=setup
+    other=json.loads(path.read_text());other['offered_at']=(datetime.now(timezone.utc)-__import__('datetime').timedelta(minutes=1)).isoformat()
+    s.save(path.with_name('older.json'),other)
+    assert s.handle_choice(message,route,vault=vault)==''
+    assert len(calls)==2
+
+def test_read_delivered_text_aloud(setup,monkeypatch):
+    vault,path,route,message,calls=setup
+    s.handle_choice(message,route,vault=vault)
+    message.update(message_id=202,text='read it aloud',reply_to_message={'message_id':102})
+    @contextmanager
+    def audio(text):yield vault/'fake.ogg'
+    monkeypatch.setattr(s,'audio_file',audio)
+    uploads=[]
+    def send(*args):uploads.append(1);return {'message_id':104}
+    monkeypatch.setattr(s,'send_voice',send)
+    assert s.handle_choice(message,route,vault=vault)==''
+    assert s.handle_choice(message,route,vault=vault)==''
+    assert uploads==[1]
