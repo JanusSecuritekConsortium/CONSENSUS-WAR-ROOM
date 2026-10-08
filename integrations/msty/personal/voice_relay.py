@@ -167,6 +167,12 @@ def process(row, route):
         if message.get('date') and time.time()-message['date'] > 1200:
             set_state(uid, 'reply_ready', reply='This message arrived while Aurelius was offline. Please resend the request if it is still needed; no action was taken.', error='stale_request')
             return
+        if message.get('text') and not (message.get('forward_origin') or message.get('forward_from')):
+            from .agenda_query import answer
+            agenda_reply = answer(message['text'])
+            if agenda_reply is not None:
+                set_state(uid, 'reply_ready', reply=plain_reply(agenda_reply))
+                return
         try:prompt=prompt_for(message,route)
         except Exception:
             set_state(uid,'reply_ready',reply='I could not process that audio. Send a clear voice note under ten minutes, or type your message.',error='audio_processing_failed')
@@ -174,8 +180,9 @@ def process(row, route):
         set_state(uid,'prepared',prompt=prompt)
         return
     if row['state']=='prepared':
-        client=Client()
+        client=None
         try:
+            client=Client()
             client.initialize()  # A connection failure before dispatch is safely retryable.
             with sqlite3.connect(database_path().resolve().as_uri()+'?mode=ro',uri=True) as db:
                 watermark=db.execute('SELECT coalesce(max(rowid),0) FROM messages').fetchone()[0]
@@ -186,8 +193,12 @@ def process(row, route):
             # No blind repeat after dispatch: the agent might have accepted the prompt.
             with database() as db:state=db.execute('SELECT state FROM inbox WHERE update_id=?',(uid,)).fetchone()[0]
             if state=='dispatching':set_state(uid,'awaiting_reply',error='dispatch_confirmation_uncertain')
+            elif state=='prepared':
+                set_state(uid,'reply_ready',reply='My agent connection is currently offline, so I could not carry out that request. No action was dispatched. You can still ask me to check your schedule for today or tomorrow, or choose briefing voice/text.',error='agent_unavailable')
+                return
             raise
-        finally:client.close()
+        finally:
+            if client:client.close()
         return
     if row['state'] in ('dispatching','awaiting_reply'):
         reply=final_reply(marker,row['prompt'],row.get('dispatch_after'))
@@ -237,11 +248,14 @@ def run():
                     continue
                 route=telegram_route()
                 if time.monotonic()-last_check>60:
-                    client=Client()
+                    client=None
                     try:
+                        client=Client()
                         client.initialize();msty_ready=True
                     except Exception:msty_ready=False
-                    finally:client.close();last_check=time.monotonic()
+                    finally:
+                        if client:client.close()
+                        last_check=time.monotonic()
                 with database() as db:
                     offset=db.execute('SELECT offset FROM cursor WHERE id=1').fetchone()[0]
                 # Continue receiving format choices even while an agent request waits.

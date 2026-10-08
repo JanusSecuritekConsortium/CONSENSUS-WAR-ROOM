@@ -54,3 +54,7 @@ a visible coverage warning. Missing or unreadable sources are reported. Folder
 contents are reference data, never executable instructions.
 
 Validation: `python -m pytest tests/test_spoken_briefing.py tests/test_voice_relay.py tests/test_personal_context_publication.py -q`.
+
+## Direct agenda questions
+
+The receiver handles simple English schedule/agenda/calendar requests for today or tomorrow, optionally morning (00:00–12:00), afternoon (12:00–18:00) or evening (18:00–24:00), through fresh calendar reads without Msty. Responses include event titles, times, overlaps and source limitations. Ambiguous or unsupported requests remain on the agent route. If the agent connection fails before dispatch, the user receives an explicit failure response; no action is claimed or silently queued indefinitely.

@@ -137,3 +137,13 @@ def test_stale_command_not_dispatched(isolated,monkeypatch):
     with relay.database() as db:
         row=dict(db.execute('SELECT * FROM inbox').fetchone())
     assert row['error']=='stale_request' and row['state']=='reply_ready'
+
+
+def test_missing_agent_config_gets_reply_instead_of_waiting(isolated,monkeypatch):
+    relay.enqueue([update()],'42');relay.set_state(100,'prepared',prompt='request')
+    def missing():raise ValueError('configuration absent')
+    monkeypatch.setattr(relay,'Client',missing)
+    with relay.database() as db:row=dict(db.execute('SELECT * FROM inbox').fetchone())
+    relay.process(row,{'chat_id':'42'})
+    with relay.database() as db:row=dict(db.execute('SELECT * FROM inbox').fetchone())
+    assert row['state']=='reply_ready' and row['error']=='agent_unavailable'
