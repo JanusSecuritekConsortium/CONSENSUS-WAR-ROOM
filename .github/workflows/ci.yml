@@ -24,6 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
           python -m pip install -r integrations/msty/personal/requirements.txt
+          python -m pip install -r integrations/msty/personal/requirements-news.txt
 
       - name: Compile active sources
         run: python consensus_war_room_genesis.py --compile-active

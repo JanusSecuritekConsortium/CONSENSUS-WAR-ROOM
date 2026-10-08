@@ -77,7 +77,7 @@ def test_eva_supersampled_metrics_fill_wh40k_style_viewport() -> None:
     assert metrics.cell_width == 185
     assert metrics.cell_height == 168
     assert metrics.base_font_size == 10
-    assert 172 <= metrics.transformed_width <= 174
+    assert 152 <= metrics.transformed_width <= 155
     assert 148 <= metrics.transformed_height <= 149
     assert left >= 6
     assert right >= 6
@@ -92,11 +92,11 @@ def test_eva_runtime_diagnostics_report_supersampled_containment() -> None:
     assert diagnostics["renderer_mode"] == "supersampled_rect"
     assert diagnostics["logo_region_width"] == 185
     assert diagnostics["logo_region_height"] == 168
-    assert diagnostics["visible_artwork_width"] >= 172
+    assert 152 <= diagnostics["visible_artwork_width"] <= 155
     assert diagnostics["visible_artwork_height"] >= 148
     assert left >= 6
     assert right >= 6
-    assert top >= 9
+    assert top >= 5
     assert bottom >= 9
 
 

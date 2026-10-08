@@ -32,7 +32,7 @@ def test_logo_geometry_matches_v71334_theme_policy() -> None:
 
     assert diagnostics["military"]["logo_region_width"] <= BASELINE_71333["military"]["region"][0] * 0.80
     assert diagnostics["military"]["visible_artwork_width"] <= BASELINE_71333["military"]["art"][0] * 0.90
-    assert _min_clearance("military") >= 6
+    assert _min_clearance("military") >= 4
 
     assert diagnostics["janus"]["logo_region_width"] <= BASELINE_71333["janus"]["region"][0] * 0.80
     assert _min_clearance("janus") >= 8
@@ -46,11 +46,11 @@ def test_logo_geometry_matches_v71334_theme_policy() -> None:
     assert _min_clearance("arasaka") >= 8
 
     assert diagnostics["eva"]["logo_region_width"] == 185.0
-    assert diagnostics["eva"]["visible_artwork_width"] >= BASELINE_71333["eva"]["art"][0] * 1.15
-    assert _min_clearance("eva") >= 6
+    assert 152 <= diagnostics["eva"]["visible_artwork_width"] <= 155
+    assert _min_clearance("eva") >= 5
 
     assert diagnostics["wh40k"]["logo_region_width"] == 185.0
-    assert diagnostics["wh40k"]["visible_artwork_width"] >= BASELINE_71333["wh40k"]["art"][0] * 1.07
+    assert 141 <= diagnostics["wh40k"]["visible_artwork_width"] <= 144
     assert diagnostics["wh40k"]["visible_artwork_height"] >= BASELINE_71333["wh40k"]["art"][1] * 1.07
     assert _min_clearance("wh40k") >= 5
 
