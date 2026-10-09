@@ -27,6 +27,7 @@ def test_live_refresh_keeps_editor_footer_and_overlays_mounted(monkeypatch):
     updates = []
     page = SimpleNamespace(controls=[layout], overlay=[overlay], update=lambda *controls: updates.append(controls))
     old_log_content = state.live_panels["build_log_panel"][0].content
+    old_log_rows = tuple(old_log_content.controls)
     for tick in range(3):
         state.timeline_events.append(f"tick {tick}")
         gui._refresh_live_page(page, state)
@@ -35,7 +36,9 @@ def test_live_refresh_keeps_editor_footer_and_overlays_mounted(monkeypatch):
     assert layout.content.controls[1].content.controls[1].content.controls[0] is editor_region
     assert editor.value == "An unfinished query"
     assert page.overlay == [overlay]
-    assert state.live_panels["build_log_panel"][0].content is not old_log_content
+    # Keep the scroll container mounted while replacing its refreshed rows.
+    assert state.live_panels["build_log_panel"][0].content is old_log_content
+    assert tuple(old_log_content.controls) != old_log_rows
     assert all(len(update) == 5 for update in updates)
     assert all(editor_region not in update and footer not in update for update in updates)
 
