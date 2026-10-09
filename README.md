@@ -66,6 +66,12 @@ Windows packaging.
 
 Maintained by the CONSENSUS project contributors.
 
+The Flet desktop includes [DIRECTORATE](docs/DIRECTORATE.md): a teletype dispatch
+desk with numbered decisions, public justifications, dissent, conditions and
+source references. Open it from Ctrl+P or the bottom command bar; reports can be
+copied or exported locally. Startup checks and movement preferences are under
+Diagnostics → System Checks.
+
 ## Status
 
 | Area | State |

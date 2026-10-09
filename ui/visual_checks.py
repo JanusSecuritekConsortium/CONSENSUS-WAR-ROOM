@@ -38,7 +38,8 @@ def evaluate_visual_invariants(layout: object) -> Dict[str, Any]:
     return {
         "layout_proportions_25_54_21": expands == [25, 54, 21],
         "layout_expands": expands,
-        "proposal_height_fixed": getattr(proposal_region, "height", None) == PROPOSAL_HEIGHT,
+        "proposal_size_bounded": (getattr(proposal_region, "height", None) == PROPOSAL_HEIGHT
+                                  or (proposal_region.expand is True and proposal_region.height in (None, ""))),
         "diagnostics_overlay_not_layout_mutation": hasattr(layout, "diagnostics_drawer") and "DIAGNOSTICS" not in joined,
         "provider_status_block_visible": "SYSTEM STATUS" in texts and "PROVIDER" in texts,
         "active_model_list_visible": "ACTIVE MODELS" in texts,

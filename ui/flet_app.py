@@ -22,6 +22,10 @@ from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
 from core.history import record_result
+from core.directorate import Directorate, STARTUP_COMPONENTS, provider_observation, read_preferences, write_preferences
+from core.export.cable import export_cable, export_dispatch, render_cable, retrieved_sources
+from ui.directorate import add_cable_controls, build_activity, build_boot, build_dispatch_desk, build_dispatch_roll, build_dispatch_actions
+from ui.deliberation import assessment_record, build_assessments
 from core.decision_trace import list_recent_traces, read_latest_trace
 from core.health import run_health_check
 from core.intelligence.bellator_context_builder import (
@@ -82,8 +86,9 @@ from ui.assets.app_icon import apply_app_icon_to_page
 from ui.assets.registry import get_theme_layout_metadata
 from ui.components.header import build_header
 from ui.components.log_panel import build_log_panel
-from ui.components.monolith_panel import build_monolith_panel
+from ui.components.monolith_panel import build_monolith_panel, card_border, VERDICT_FEEDBACK_SECONDS
 from ui.components.proposal_panel import build_proposal_panel
+from ui.components.proposal_panel import EMPTY_PROPOSAL_HINT
 from ui.components.status_panel import build_status_panel
 from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph_lines, telemetry_summary_lines
 from ui.components.theme_switcher import build_theme_switcher
@@ -135,6 +140,7 @@ COMMAND_PALETTE_ACTIONS = (
     "Provider Status",
     "Latest Verdict",
     "Open Diagnostics",
+    "Open DIRECTORATE",
     "Export Runtime Bundle",
     "Run Verification",
     "Verify Integrity",
@@ -231,6 +237,33 @@ class GuiState:
     operator_status: str = "OPERATOR READY"
     runtime_snapshot_cache: Dict[str, Any] = field(default_factory=dict)
     telemetry_snapshot: Dict[str, Any] = field(default_factory=dict)
+    directorate: Directorate = field(default_factory=Directorate, repr=False)
+    directorate_boot_open: bool = False
+    directorate_open: bool = False
+    directorate_busy: bool = False
+    directorate_initialized: bool = False
+    directorate_config_failed: bool = False
+    directorate_config_path: Path | None = None
+    directorate_config_loader: Callable[[], RuntimeConfig] | None = field(default=None, repr=False)
+    directorate_animation: bool = True
+    reduced_motion: bool = False
+    directorate_collapsed: bool = True
+    directorate_cable: bool = False
+    directorate_session_id: str = ""
+    directorate_sources: List[Dict[str, str]] = field(default_factory=list)
+    submission_lock: Any = field(default_factory=threading.Lock, repr=False)
+    ui_stopped: Any = field(default_factory=threading.Event, repr=False)
+    narrow_layout: bool = False
+    proposal_expanded: bool = False
+    proposal_regions: tuple[Any, Any] | None = field(default=None, repr=False)
+    proposal_input_focused: bool = False
+    proposal_actions_hovered: bool = False
+    submission_message: str = ""
+    watch_deliberation: bool = False
+    deliberation_viewer_open: bool = False
+    deliberation_records: List[Dict[str, Any]] = field(default_factory=list)
+    deliberation_pending: Dict[str, str] = field(default_factory=dict)
+    monolith_feedback: Dict[str, tuple[str, float]] = field(default_factory=dict)
 
     @property
     def theme(self):
@@ -243,6 +276,7 @@ def create_gui_state(
     nodes: Dict[str, NodeIdentity] | None = None,
     compact_header: bool = True,
     window_mode: GuiWindowMode = "maximized",
+    initialize: bool = True,
 ) -> GuiState:
     resolved = resolve_theme_key(theme_key)
     if resolved not in THEMES:
@@ -255,10 +289,19 @@ def create_gui_state(
         nodes=active_nodes,
         compact_header=compact_header,
         window_mode=window_mode,
-        aurelius_runtime=get_aurelius_runtime(),
     )
-    refresh_gui_status(state)
-    refresh_telemetry_for_gui(state)
+    preferences = read_preferences()
+    state.directorate_animation = preferences.get("animation", True)
+    state.reduced_motion = preferences.get("reduced_motion", False)
+    # Start folded on every launch; unfold only when the operator requests it.
+    state.directorate_collapsed = True
+    state.directorate_cable = preferences.get("cable", False)
+    state.watch_deliberation = preferences.get("watch_deliberation", False)
+    for component in STARTUP_COMPONENTS:
+        state.directorate.emit(component, "STARTUP_CHECK", "PENDING", "Awaiting check", check=True)
+    state.directorate.emit("CONFIG", "STARTUP_CHECK", "AVAILABLE", "Runtime configuration loaded", check=True)
+    if initialize:
+        initialize_directorate(state)
     state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
     state.timeline_events = [
         append_timeline([], "SYSTEM", f"{state.theme.display_name} interface online")[0]
@@ -266,6 +309,72 @@ def create_gui_state(
     refresh_bellator_intelligence_status(state)
     log_war_room_runtime("gui_state_created", {"theme": state.theme_key, "window_mode": window_mode})
     return state
+
+
+def initialize_directorate(state: GuiState, on_update: GuiUpdateCallback | None = None) -> None:
+    """Run on a worker in the desktop entry point; never delay for animation."""
+    state.directorate_busy = True
+    def check(component: str, status: str, summary: str) -> None:
+        state.directorate.emit(component, "STARTUP_CHECK", status, summary, check=True)
+        _notify(on_update)
+    try:
+        if state.directorate_config_failed:
+            check("CONFIG", "RUNNING", "Retrying configuration load")
+            try:
+                from config.runtime import load_runtime_config
+                config = state.directorate_config_loader() if state.directorate_config_loader else load_runtime_config(state.directorate_config_path)
+                if str(config.startup_theme).upper() != "RANDOM" and resolve_theme_key(config.startup_theme) not in THEMES:
+                    raise ValueError("Unknown startup theme")
+                config.theme = state.theme_key
+                state.nodes = apply_node_overrides(DEFAULT_NODES, config.node_overrides)
+                state.config = config
+                state.directorate_config_failed = False
+                check("CONFIG", "AVAILABLE", "Runtime configuration loaded")
+            except Exception as exc:
+                check("CONFIG", "FAILED", f"Configuration unreadable ({type(exc).__name__}); correct it locally and retry")
+                return
+        check("PROVIDER", "RUNNING", "Querying provider health and model inventory")
+        try:
+            refresh_gui_status(state)
+            status, summary = provider_observation(state.provider_status, state.config.backend == "mock")
+            check("PROVIDER", status, summary)
+        except Exception as exc:
+            check("PROVIDER", "FAILED", f"Provider check failed ({type(exc).__name__}); retry available")
+        check("MEMORY", "RUNNING", "Reading local decision and session stores")
+        try:
+            from core.paths import SESSION_MEMORY_PATH
+            stores = ((HISTORY_PATH, list), (SESSION_MEMORY_PATH, dict))
+            present = 0
+            for path, shape in stores:
+                if path.exists():
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    if not isinstance(payload, shape):
+                        raise ValueError("Invalid memory shape")
+                    present += 1
+            check("MEMORY", "AVAILABLE" if present == 2 else "DEGRADED",
+                  "Local decision/session stores readable" if present == 2 else "Local stores not yet complete; no external MNEMOSYNE connection")
+        except Exception as exc:
+            check("MEMORY", "FAILED", f"Local memory unreadable ({type(exc).__name__}); existing data preserved")
+        check("AURELIUS", "RUNNING", "Inspecting local runtime capabilities")
+        try:
+            state.aurelius_runtime = get_aurelius_runtime()
+            capabilities = state.aurelius_runtime.status()
+            check("AURELIUS", "DEGRADED" if capabilities.get("agent_setup_error") else "AVAILABLE",
+                  f"Local runtime constructed; agent enabled: {bool(capabilities.get('agent_enabled'))}; "
+                  f"voice input: {bool(capabilities.get('voice_adapter_available'))}; TTS: {bool(capabilities.get('tts_available'))}")
+        except Exception as exc:
+            check("AURELIUS", "FAILED", f"Local runtime unavailable ({type(exc).__name__})")
+        refresh_telemetry_for_gui(state)
+        state.directorate_initialized = True
+    finally:
+        state.directorate_busy = False
+        _notify(on_update)
+
+
+def save_directorate_preferences(state: GuiState) -> None:
+    write_preferences({"animation": state.directorate_animation, "reduced_motion": state.reduced_motion,
+                       "cable": state.directorate_cable,
+                       "watch_deliberation": state.watch_deliberation})
 
 
 def set_aurelius_voice_loop(state: GuiState, enabled: bool) -> None:
@@ -378,7 +487,7 @@ def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) ->
             base_statuses[agent_id] = "DEGRADED"
     if preserve_monolith_state:
         for key, value in state.monolith_statuses.items():
-            if value in {"THINKING", *VOTE_STATUS_VALUES}:
+            if value in {"THINKING", "QUEUED", *VOTE_STATUS_VALUES}:
                 base_statuses[key] = value
     state.monolith_statuses = base_statuses
     missing_models = provider_payload.get("missing_required_models", {}) if isinstance(provider_payload, dict) else {}
@@ -390,6 +499,11 @@ def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) ->
                 "reasoning": f"Required model unavailable: {model}",
             }
     state.provider_warning = _fallback_warning(state, runtime)
+    if state.directorate_initialized:
+        status, summary = provider_observation(state.provider_status, state.config.backend == "mock")
+        previous = next((e for e in state.directorate.checks() if e.component == "PROVIDER"), None)
+        if previous is None or previous.status != status:
+            state.directorate.emit("PROVIDER", "PROVIDER_STATUS_CHANGED", status, summary, check=True)
     state.runtime_snapshot_cache = runtime_snapshot_from_gui_state(state)
     state.logs = read_recent_log_events()
     state.recent_decisions = read_recent_decisions()
@@ -431,14 +545,17 @@ def advance_gui_heartbeat(state: GuiState) -> str:
 
 
 def advance_war_room_activity(state: GuiState) -> None:
-    state.pulse_index += 1
-    state.cursor_visible = cursor_frame(state.pulse_index) == "_"
+    if state.reduced_motion or not state.directorate_animation:
+        state.cursor_visible = False
+    else:
+        state.pulse_index += 1
+        state.cursor_visible = cursor_frame(state.pulse_index) == "_"
     state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
     state.monolith_latencies_ms = {
         agent_id: default_latencies(state.pulse_index)[agent_id]
         for agent_id in state.monolith_activity_states
     }
-    if state.pulse_index % 8 == 0:
+    if state.directorate_animation and not state.reduced_motion and state.pulse_index % 8 == 0:
         append_timeline(state.timeline_events, "SYSTEM", state.heartbeat_text)
         log_war_room_runtime("ambient_heartbeat", {"theme": state.theme_key, "message": state.heartbeat_text})
     changed, next_mtime = detect_proposal_file_change(state.proposal_file_mtime)
@@ -535,9 +652,16 @@ def submit_proposal_live_for_gui(
     clean_proposal = proposal.strip()
     if not clean_proposal:
         raise ValueError("Proposal is empty.")
+    skip_animations = skip_animations or state.reduced_motion or not state.directorate_animation
+    state.directorate_session_id = uuid.uuid4().hex[:12]
+    state.directorate_sources = []
+    state.directorate.emit("TRIBUNAL", "PROPOSAL_RECEIVED", "RUNNING", "Proposal accepted for deliberation", state.directorate_session_id)
     state.current_proposal = clean_proposal
     state.proposal_input_text = clean_proposal
     state.current_result = None
+    state.deliberation_records = []
+    state.deliberation_pending = {}
+    state.monolith_feedback = {}
     state.monolith_vote_details = {}
     state.displayed_synthesis = ""
     state.displayed_confidence = 0.0
@@ -587,23 +711,29 @@ def submit_proposal_live_for_gui(
         proposal_taxonomy=state.config.proposal_taxonomy,
         monolith_domain_map=state.config.monolith_domain_map,
     )
-    session_id = uuid.uuid4().hex[:12]
+    session_id = state.directorate_session_id
     started = time.perf_counter()
     memory_context = build_context_packet(clean_proposal)
     _set_lifecycle(state, LIFECYCLE_DISPATCHING, on_update)
     state.prior_decisions_used = int(memory_context.get("prior_decisions_used", 0) or 0)
     state.context_retrieval_status = context_status(memory_context)
     state.context_summary = str(memory_context.get("summary", "No prior decisions retrieved."))
+    state.directorate_sources = retrieved_sources(memory_context)
+    if state.prior_decisions_used:
+        state.directorate.emit("MEMORY", "MEMORY_RECALLED", "AVAILABLE",
+                              f"Retrieved {state.prior_decisions_used} local prior decisions", session_id)
+    for reference in state.directorate_sources:
+        state.directorate.emit("REFERENCES", "SOURCE_FOUND", "AVAILABLE", "Attributed reference retrieved", session_id)
     votes: Dict[str, Vote] = {}
     state.monolith_statuses = {
-        **{key: "THINKING" for key in TRIBUNAL_AGENT_IDS},
+        **{key: "QUEUED" for key in TRIBUNAL_AGENT_IDS},
         ARBITER: "ONLINE" if state.provider_status.get("status") == "ready" else "DEGRADED",
     }
     for agent_id in TRIBUNAL_AGENT_IDS:
         transition_state(
             state.monolith_activity_states,
             agent_id,
-            "THINKING",
+            "IDLE",
             state.timeline_events,
             "loaded vote package",
         )
@@ -615,25 +745,54 @@ def submit_proposal_live_for_gui(
 
     orchestrator = VotingOrchestrator(state.nodes, runtime)
     current_round_votes: Dict[str, Vote] = {}
+    reported_substitutions: set[tuple[str, str]] = set()
 
     def on_deliberation_event(event: Dict[str, Any]) -> None:
         phase = str(event["phase"])
         event_type = event["type"]
         if event_type == "round_started":
+            state.directorate.emit("TRIBUNAL", "ROUND_STARTED", "RUNNING", f"Round {event['round']}/3: {phase}", session_id)
             current_round_votes.clear()
             if phase == "critique":
                 _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
             append_reasoning_event(state.reasoning_stream, f"Round {event['round']}/3: {phase}")
         elif event_type == "agent_started":
             agent_id = str(event["agent_id"])
+            state.deliberation_pending = {**state.deliberation_pending, agent_id: f"round {event['round']} / {phase}"}
+            state.directorate.emit(agent_id, "MODEL_STARTED", "RUNNING", f"{phase} role execution started", session_id)
             state.monolith_statuses[agent_id] = "THINKING"
             transition_state(state.monolith_activity_states, agent_id, "ANALYZING", state.timeline_events, f"{phase} round")
             packet = event["context"].get("bellator_context_packet")
+            for reference in retrieved_sources(event["context"]):
+                if reference not in state.directorate_sources:
+                    state.directorate_sources.append(reference)
+                    state.directorate.emit("REFERENCES", "SOURCE_FOUND", "AVAILABLE", "Attributed reference retrieved", session_id)
             if agent_id == BELLATOR and isinstance(packet, dict):
                 state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
         elif event_type == "vote_received":
             agent_id = str(event["agent_id"])
             vote = event["vote"]
+            preferred = state.nodes[agent_id].model
+            substitution = (agent_id, vote.model)
+            if (not vote.validation_errors and vote.model != preferred
+                    and state.config.backend != "mock" and vote.backend != "mock"
+                    and substitution not in reported_substitutions):
+                reported_substitutions.add(substitution)
+                state.directorate.emit(agent_id, "MODEL_SUBSTITUTED", "DEGRADED",
+                    f"Preferred model {preferred}; executing with {vote.model}. Role instructions retained.", session_id)
+            state.deliberation_records = [*state.deliberation_records,
+                assessment_record(vote, int(event["round"]), phase,
+                                  simulation=state.config.backend == "mock" or vote.backend == "mock")][-12:]
+            state.deliberation_pending = {key: value for key, value in state.deliberation_pending.items() if key != agent_id}
+            state.monolith_feedback = {**state.monolith_feedback, agent_id:
+                ("ERROR" if vote.validation_errors else vote.vote.value, time.monotonic() + VERDICT_FEEDBACK_SECONDS)}
+            state.directorate.emit(agent_id, "ASSESSMENT_FAILED" if vote.validation_errors else "ASSESSMENT_RECEIVED",
+                                  "FAILED" if vote.validation_errors else "AVAILABLE",
+                                  f"{phase}: {vote.vote.value}" + ("; response validation failed" if vote.validation_errors else ""), session_id)
+            if vote.unresolved_disagreements or any(peer.get("stance") in {"challenge", "reject"} for peer in vote.peer_responses):
+                state.directorate.emit(agent_id, "DISSENT_FILED", "AVAILABLE", f"Explicit peer dissent recorded in {phase}", session_id)
+            if vote.review_required:
+                state.directorate.emit(agent_id, "REVIEW_REQUESTED", "DEGRADED", "Explicit review request recorded", session_id)
             current_round_votes[agent_id] = vote
             state.convergence_percent = convergence_percent(current_round_votes)
             state.monolith_statuses[agent_id] = "ERROR" if vote.validation_errors else vote.vote.value
@@ -677,10 +836,15 @@ def submit_proposal_live_for_gui(
         _set_lifecycle(state, LIFECYCLE_SYNTHESIZING, on_update)
         result = ConsensusEngine(rules, state.theme_key).calculate_result(clean_proposal, votes, session_id)
         orchestrator.attach_audit(result)
+        state.directorate.record_decision(result, list(state.directorate_sources))
         terminal_phase = phase_for_verdict(result.verdict, result.terminal_branch, result.review_triggers)
+        state.directorate.emit(ARBITER, terminal_phase, "AVAILABLE" if terminal_phase == "CONSENSUS_REACHED" else "DEGRADED",
+                              f"Explicit final verdict: {result.verdict.value}" + (" / SIMULATION ONLY" if result.simulation else ""), session_id)
         _set_lifecycle(state, terminal_phase, on_update)
         state.current_result = result
         state.monolith_statuses[ARBITER] = result.verdict.value
+        state.monolith_feedback = {key: (status, time.monotonic() + VERDICT_FEEDBACK_SECONDS)
+                                   for key, status in state.monolith_statuses.items()}
         _animate_confidence(
             state,
             result.confidence,
@@ -698,16 +862,18 @@ def submit_proposal_live_for_gui(
             on_update=update_synthesis,
             speed=0 if skip_animations else 0.012,
             skip=skip_animations,
+            lock_text="[CONSENSUS LOCKED]" if terminal_phase == "CONSENSUS_REACHED" else "[VERDICT RECORDED]",
         )
         state.displayed_synthesis = result.reason
-        state.consensus_locked = True
+        state.consensus_locked = terminal_phase == "CONSENSUS_REACHED"
         state.monolith_activity_states[ARBITER] = "IDLE"
-        append_timeline(state.timeline_events, ARBITER, "consensus locked")
+        append_timeline(state.timeline_events, ARBITER, "consensus locked" if state.consensus_locked else "verdict recorded without consensus lock")
         setattr(result, "lifecycle_events", list(state.lifecycle_events))
         setattr(result, "phase_durations", dict(state.phase_durations))
         setattr(result, "reasoning_stream", list(state.reasoning_stream))
         setattr(result, "convergence_percent", state.convergence_percent)
         record_result(result)
+        state.directorate.emit("LOCAL ARCHIVE", "DECISION_SAVED", "AVAILABLE", "Decision saved in local history", session_id)
         log_decision_trace(result)
         try:
             trace = read_latest_trace()
@@ -785,8 +951,10 @@ def submit_proposal_live_for_gui(
                     },
                 }
             )
+            state.directorate.emit("MEMORY", "SESSION_SAVED", "AVAILABLE", "Local session memory updated", session_id)
         except Exception as exc:
             log_event("gui_session_memory_write_failed", {"session_id": result.session_id, "error": str(exc)}, level="WARN")
+            state.directorate.emit("MEMORY", "SESSION_SAVE_FAILED", "FAILED", "Local session write failed; decision history remains separate", session_id)
         log_event(
             "verdict",
             {
@@ -807,9 +975,14 @@ def submit_proposal_live_for_gui(
         log_event("gui_verdict_update", {"session_id": result.session_id, "verdict": result.verdict.value})
         return result
     except Exception as exc:
+        state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", f"Submission failed ({type(exc).__name__})", session_id)
         _set_lifecycle(state, LIFECYCLE_ERROR_DEGRADED, None)
         for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]:
             state.monolith_activity_states[agent_id] = "ERROR"
+        state.monolith_statuses = {agent_id: "ERROR" for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]}
+        state.monolith_feedback = {agent_id: ("ERROR", time.monotonic() + VERDICT_FEEDBACK_SECONDS)
+                                   for agent_id in state.monolith_statuses}
+        state.deliberation_pending = {}
         error = f"{type(exc).__name__}: {exc}"
         append_timeline(state.timeline_events, "ERROR", f"Submission failed: {error}")
         log_war_room_runtime("proposal_lifecycle_error", {"theme": state.theme_key, "error": error}, level="ERROR")
@@ -921,6 +1094,9 @@ def execute_command_palette_action(state: GuiState, action: str) -> str:
         elif action == "Open Diagnostics":
             state.diagnostics_drawer_open = True
             message = "Diagnostics opened"
+        elif action == "Open DIRECTORATE":
+            state.directorate_open = True
+            message = "DIRECTORATE dispatch desk opened"
         elif action == "Export Runtime Bundle":
             target = export_runtime_bundle()
             message = f"Runtime bundle exported: {target}"
@@ -1737,14 +1913,69 @@ def _register_live_panel(state: GuiState, name: str, builder: Callable[[], ft.Co
     return panel
 
 
+def _set_proposal_editing(page: ft.Page, state: GuiState, editing: bool) -> None:
+    """Resize mounted regions without replacing the input or its selection."""
+    if state.ui_stopped.is_set():
+        return
+    with state.render_lock:
+        if state.proposal_expanded == editing:
+            return
+        state.proposal_expanded = editing
+        if state.proposal_regions is None:
+            return
+        proposal, verdict = state.proposal_regions
+        proposal.height = None if editing else PROPOSAL_HEIGHT
+        proposal.expand = True if editing else None
+        verdict.visible = not editing
+        verdict.expand = None if editing else True
+        page.update(proposal, verdict)
+
+
+def _set_submission_feedback(page: ft.Page, state: GuiState, message: str) -> None:
+    state.submission_message = message
+    if state.ui_stopped.is_set() or state.proposal_regions is None:
+        return
+    with state.render_lock:
+        for control in state.proposal_regions[0].content.content.controls:
+            if control.data == {"role": "proposal_submission_feedback"}:
+                control.value = message or f"{EMPTY_PROPOSAL_HINT}  CTRL+ENTER = Submit."
+                control.tooltip = message or None
+                page.update(control)
+                break
+
+
 def _refresh_live_page(page: ft.Page, state: GuiState) -> None:
     """Refresh display regions without unmounting inputs, menus or overlays."""
+    if state.ui_stopped.is_set():
+        return
     with state.render_lock:
         panels = []
-        for panel, builder in state.live_panels.values():
+        for name, (panel, builder) in state.live_panels.items():
             fresh = builder()
-            if isinstance(panel, ft.Column):
+            if name == "build_monolith_panel":
+                # Preserve card controls so Flutter can interpolate their border colours.
+                for old, new in zip(panel.controls[1:5], fresh.controls[1:5]):
+                    old.content, old.border, old.animate, old.opacity = new.content, new.border, new.animate, new.opacity
+                panel.controls[-1] = fresh.controls[-1]
+            elif isinstance(panel, ft.Column):
                 panel.controls = fresh.controls
+            elif name == "build_log_panel":
+                # Keep the unfolded paper and its scroll position mounted while
+                # routine log/status updates replace the surrounding rows.
+                old_activity = panel.content.controls[0]
+                new_activity = fresh.content.controls[0]
+                if (getattr(old_activity, "data", None) == getattr(new_activity, "data", None)
+                        and isinstance(old_activity.data, dict)
+                        and old_activity.data.get("role") == "directorate_activity"):
+                    if len(old_activity.content.controls) > 1 and len(new_activity.content.controls) > 1:
+                        paper = old_activity.content.controls[1]
+                        fresh_paper = new_activity.content.controls[1]
+                        paper.height = fresh_paper.height
+                        paper.content.controls = fresh_paper.content.controls
+                        new_activity.content.controls[1] = paper
+                    old_activity.content.controls = new_activity.content.controls
+                    fresh.content.controls[0] = old_activity
+                panel.content.controls = fresh.content.controls
             else:
                 panel.content = fresh.content
             panels.append(panel)
@@ -1767,6 +1998,19 @@ def build_gui_layout(
     on_template_select=None,
     on_proposal_change=None,
     on_footer_command=None,
+    toggle_directorate=None,
+    open_directorate_boot=None,
+    open_directorate=None,
+    toggle_cable=None,
+    copy_cable=None,
+    save_cable=None,
+    viewport_width: float | None = None,
+    on_proposal_focus=None,
+    on_proposal_blur=None,
+    on_proposal_tap_outside=None,
+    on_proposal_actions_hover=None,
+    change_watch_deliberation=None,
+    open_deliberation=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -1791,19 +2035,20 @@ def build_gui_layout(
     footer_shortcuts = ft.Container(
         content=ft.Row(
             [
-                ft.TextButton(
-                    f"Ctrl+{key} {label}",
+                ft.Container(
+                    ft.Text(f"Ctrl+{key} {label}", size=11,
+                            color=theme.secondary_text or theme.secondary_color,
+                            font_family=theme.font_family),
                     on_click=(lambda _, key=key: on_footer_command(key)) if on_footer_command else None,
                     tooltip=f"{label} (Ctrl+{key})",
-                    height=36,
-                    style=ft.ButtonStyle(
-                        color=theme.secondary_text or theme.secondary_color,
-                        padding=ft.padding.symmetric(horizontal=8, vertical=4),
-                        text_style=ft.TextStyle(size=10, font_family=theme.font_family),
-                        shape=ft.RoundedRectangleBorder(radius=0),
-                    ),
+                    height=40,
+                    padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                    alignment=ft.alignment.center,
+                    ink=True,
+                    bgcolor=theme.surface_color,
+                    data={"role": "footer_command", "key": key},
                 )
-                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("T", "Theme"), ("H", "History"), ("E", "Export"))
+                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"))
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=0,
@@ -1866,6 +2111,8 @@ def build_gui_layout(
                     state.monolith_latencies_ms,
                     state.pulse_index,
                 ),
+                feedback=state.monolith_feedback,
+                reduced_motion=state.reduced_motion or not state.directorate_animation,
         )),
         expand=LEFT_COLUMN_FLEX,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -1882,13 +2129,23 @@ def build_gui_layout(
                         selected_template_id=state.proposal_template_id,
                         on_template_select=on_template_select,
                         on_change=on_proposal_change,
+                        expanded=state.proposal_expanded,
+                        on_focus=on_proposal_focus,
+                        on_blur=on_proposal_blur,
+                        on_tap_outside=on_proposal_tap_outside,
+                        watch_deliberation=state.watch_deliberation,
+                        on_watch_change=change_watch_deliberation,
+                        on_open_deliberation=open_deliberation,
+                        on_actions_hover=on_proposal_actions_hover,
+                        submission_message=state.submission_message,
                     ),
-                    height=PROPOSAL_HEIGHT,
+                    height=None if state.proposal_expanded else PROPOSAL_HEIGHT,
+                    expand=True if state.proposal_expanded else None,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={"role": "proposal_panel_region"},
                 ),
                 ft.Container(
-                    _register_live_panel(state, "build_verdict_panel", lambda: build_verdict_panel(
+                    _register_live_panel(state, "build_verdict_panel", lambda: add_cable_controls(build_verdict_panel(
                         theme,
                         state.current_result,
                         state.current_proposal,
@@ -1903,8 +2160,11 @@ def build_gui_layout(
                         reasoning_events=state.reasoning_stream,
                         convergence_percent=state.convergence_percent,
                         phase_durations=state.phase_durations,
-                    )),
-                    expand=True,
+                    ), theme, render_cable(state.current_result, state.directorate_sources),
+                        state.directorate_cable, toggle_cable, copy_cable, save_cable,
+                        has_result=state.current_result is not None)),
+                    expand=True if not state.proposal_expanded else None,
+                    visible=not state.proposal_expanded,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={"role": "verdict_panel_region"},
                 ),
@@ -1914,6 +2174,7 @@ def build_gui_layout(
         ),
         expand=CENTER_COLUMN_FLEX,
     )
+    state.proposal_regions = tuple(center.content.controls)
     right = ft.Container(
         ft.Column(
             [
@@ -1935,8 +2196,10 @@ def build_gui_layout(
                         ],
                         spacing=8,
                         tight=True,
+                        scroll=ft.ScrollMode.AUTO,
                         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     ),
+                    height=240,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                 ),
                 _register_live_panel(state, "build_log_panel", lambda: build_log_panel(
@@ -1946,6 +2209,8 @@ def build_gui_layout(
                     timeline_events=state.timeline_events,
                     bellator_intelligence=state.bellator_intelligence_diagnostics,
                     refresh_bellator_intelligence=refresh_bellator_intelligence,
+                    directorate_panel=build_activity(theme, state.directorate, state.directorate_collapsed,
+                                                    toggle_directorate, open_directorate),
                 )),
             ],
             spacing=12,
@@ -1954,12 +2219,18 @@ def build_gui_layout(
         ),
         expand=RIGHT_COLUMN_FLEX,
     )
+    narrow = viewport_width is not None and viewport_width < 1150
+    if narrow:
+        for region, width in zip((left, center, right), (340, 640, 340)):
+            region.expand = None
+            region.width = width
     body = ft.Row(
         [left, center, right],
         alignment=ft.MainAxisAlignment.START,
         vertical_alignment=ft.CrossAxisAlignment.STRETCH,
         spacing=10,
         expand=True,
+        scroll=ft.ScrollMode.AUTO if narrow else None,
     )
     footer = ft.Container(
         footer_controls,
@@ -1993,17 +2264,13 @@ def build_gui_layout(
     )
     shell.diagnostics_drawer = build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer)  # type: ignore[attr-defined]
     shell.command_palette = build_command_palette(state)  # type: ignore[attr-defined]
-    shell.decision_trace_viewer = build_decision_trace_viewer(state)  # type: ignore[attr-defined]
-    shell.proposal_history_viewer = build_proposal_history_viewer(state)  # type: ignore[attr-defined]
-    shell.visual_review_status_viewer = build_visual_review_status_viewer(state)  # type: ignore[attr-defined]
-    shell.telemetry_snapshot_viewer = build_telemetry_snapshot_viewer(state)  # type: ignore[attr-defined]
-    shell.simulation_viewer = build_simulation_viewer(state)  # type: ignore[attr-defined]
-    shell.simulation_create_overlay = build_simulation_create_overlay(state)  # type: ignore[attr-defined]
-    shell.branch_tree_viewer = build_branch_tree_viewer(state)  # type: ignore[attr-defined]
+    # Data-backed viewers are built only when opened in _render_page_locked.
+    # Preparing invisible copies rescanned the complete decision log on every
+    # footer click and kept the UI waiting for unrelated disk-backed history.
     return shell
 
 
-def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Control:
+def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None, open_system_checks=None) -> ft.Control:
     theme = state.theme
     provider_payload = state.provider_status.get("provider", state.provider_status)
     if not isinstance(provider_payload, dict):
@@ -2077,6 +2344,8 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
             text(f"PROVIDER BACKEND: {provider_payload.get('active_backend') or provider_payload.get('backend') or '--'}"),
+            ft.TextButton("SYSTEM CHECKS", on_click=open_system_checks,
+                          style=ft.ButtonStyle(color=theme.text_color), height=40),
             text(f"ENDPOINT STATUS: {endpoint_status}", theme.warning_color if degraded_reason != "--" else theme.text_color),
             text("ACTIVE MODELS", theme.accent_color, bold=True),
             *[text(line, theme.panel_value or theme.text_color) for line in active_model_lines[:5]],
@@ -2128,6 +2397,8 @@ def build_diagnostics_drawer(state: GuiState, open_trace_viewer=None) -> ft.Cont
 
 
 def _render_page(page: ft.Page, state: GuiState) -> None:
+    if state.ui_stopped.is_set():
+        return
     with state.render_lock:
         _render_page_locked(page, state)
 
@@ -2138,22 +2409,57 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
         return
     state.render_in_progress = True
     try:
+        state.proposal_input_focused = False
+        state.proposal_actions_hovered = False
+        state.proposal_expanded = False
         _apply_page_theme(page, state)
         apply_gui_window_mode(page, state.window_mode)
 
         def submit(proposal: str) -> None:
+            if not proposal.strip():
+                _set_submission_feedback(page, state, "Enter a proposal before submitting.")
+                return
+            if state.directorate_config_failed:
+                _set_submission_feedback(page, state, "Configuration needs attention. Open DIRECTORATE (Ctrl+P) to retry.")
+                return
+            if not state.submission_lock.acquire(blocking=False):
+                _set_submission_feedback(page, state, "A proposal is already being reviewed. Open LIVE DELIBERATION for progress.")
+                return
+            state.proposal_expanded = False
+            state.deliberation_viewer_open = state.watch_deliberation
+            state.deliberation_records = []
+            state.deliberation_pending = {}
+            state.current_result = None
+            state.current_proposal = proposal.strip()
+            state.submission_message = "Proposal accepted. Tribunal starting..."
             def worker() -> None:
                 def update() -> None:
                     _refresh_live_page(page, state)
 
                 try:
                     submit_proposal_live_for_gui(state, proposal, on_update=update)
+                    _set_submission_feedback(page, state, "Verdict recorded. See the result below.")
                 except Exception as exc:
                     log_error("gui_submission_error", exc, {"theme": state.theme_key})
+                    state.deliberation_pending = {}
+                    state.monolith_statuses = {agent_id: "ERROR" for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]}
+                    state.monolith_feedback = {agent_id: ("ERROR", time.monotonic() + VERDICT_FEEDBACK_SECONDS)
+                                               for agent_id in state.monolith_statuses}
                     state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
+                    state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Submission failed; local diagnostics available", state.directorate_session_id)
+                    _set_submission_feedback(page, state, "Submission failed. Review DIRECTORATE or Diagnostics, then retry.")
+                finally:
+                    state.submission_lock.release()
                 _refresh_live_page(page, state)
 
-            page.run_thread(worker)
+            try:
+                _render_page(page, state)
+                page.run_thread(worker)
+            except Exception as exc:
+                state.submission_lock.release()
+                log_error("gui_submission_dispatch_error", exc, {"theme": state.theme_key})
+                state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Could not start submission; retry available")
+                _set_submission_feedback(page, state, "Could not start submission. Please retry or open Diagnostics.")
 
         def switch_theme(next_theme: str) -> None:
             resolved = resolve_theme_key(next_theme)
@@ -2162,16 +2468,153 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 state.config.theme = resolved
                 state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
                 append_timeline(state.timeline_events, "SYSTEM", f"theme switched to {state.theme.display_name}")
-                refresh_gui_status(state)
                 _render_page(page, state)
 
         def refresh(_: ft.ControlEvent | None = None) -> None:
-            refresh_gui_status(state)
-            _render_page(page, state)
+            retry_directorate()
 
         def recheck_provider(_: ft.ControlEvent | None = None) -> None:
-            recheck_provider_for_gui(state)
+            retry_directorate()
+
+        def retry_directorate(_: ft.ControlEvent | None = None) -> None:
+            if state.directorate_busy:
+                return
+            state.directorate_busy = True
             _render_page(page, state)
+            page.run_thread(initialize_directorate, state, lambda: _refresh_live_page(page, state))
+
+        def preference_update() -> None:
+            try:
+                save_directorate_preferences(state)
+            except OSError:
+                state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Preferences apply for this session; local save failed")
+            _render_page(page, state)
+
+        def toggle_directorate(_=None) -> None:
+            state.directorate_collapsed = not state.directorate_collapsed
+            _render_page(page, state)
+
+        def toggle_cable(_=None) -> None:
+            state.directorate_cable = not state.directorate_cable
+            preference_update()
+
+        def handle_proposal_focus(_=None) -> None:
+            state.proposal_input_focused = True
+            state.proposal_actions_hovered = False
+            _set_proposal_editing(page, state, True)
+
+        def handle_proposal_blur(_=None) -> None:
+            state.proposal_input_focused = False
+            if not state.proposal_actions_hovered:
+                _set_proposal_editing(page, state, False)
+
+        def handle_proposal_tap_outside(event) -> None:
+            # Flutter emits this on pointer down. Keep the action target fixed
+            # until its click is delivered; blank/action-row space is outside.
+            if state.proposal_actions_hovered:
+                return
+            state.proposal_input_focused = False
+            event.control.blur()
+            _set_proposal_editing(page, state, False)
+
+        def handle_proposal_actions_hover(event) -> None:
+            state.proposal_actions_hovered = str(event.data).lower() == "true"
+            if not state.proposal_actions_hovered and not state.proposal_input_focused:
+                _set_proposal_editing(page, state, False)
+
+        def change_watch_deliberation(event) -> None:
+            state.watch_deliberation = bool(event.control.value)
+            # Save without rebuilding the editor (and disturbing typing focus).
+            try:
+                save_directorate_preferences(state)
+            except OSError:
+                state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Watch option applies for this session")
+            state.proposal_input_focused = False
+            state.proposal_actions_hovered = False
+            _set_proposal_editing(page, state, False)
+
+        def open_deliberation(_=None) -> None:
+            state.deliberation_viewer_open = True
+            _render_page(page, state)
+
+        def close_deliberation(_=None) -> None:
+            state.deliberation_viewer_open = False
+            _render_page(page, state)
+
+        def open_directorate_boot(_=None) -> None:
+            state.diagnostics_drawer_open = False
+            state.directorate_open = False
+            state.directorate_boot_open = True
+            _render_page(page, state)
+
+        def open_directorate(_=None) -> None:
+            state.directorate_open = True
+            _render_page(page, state)
+
+        def close_directorate(_=None) -> None:
+            state.directorate_open = False
+            _render_page(page, state)
+
+        def directorate_history(_=None) -> None:
+            state.directorate_open = False
+            state.proposal_history_open = True
+            _render_page(page, state)
+
+        def copy_latest_dispatch(_=None) -> None:
+            dispatches = state.directorate.dispatches()
+            if dispatches:
+                dispatch = dispatches[-1]
+                page.set_clipboard(dispatch.report)
+                state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Dispatch copied to clipboard", dispatch.session_id)
+                _refresh_live_page(page, state)
+
+        def export_latest_dispatch(_=None) -> None:
+            dispatches = state.directorate.dispatches()
+            if not dispatches:
+                return
+            dispatch = dispatches[-1]
+            def worker() -> None:
+                try:
+                    path = export_dispatch(dispatch)
+                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Dispatch exported locally: {path.name}", dispatch.session_id)
+                except Exception:
+                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", "Dispatch export failed; retry available", dispatch.session_id)
+                _refresh_live_page(page, state)
+            page.run_thread(worker)
+
+        def continue_directorate(_=None) -> None:
+            if not state.directorate_config_failed:
+                state.directorate_boot_open = False
+                _render_page(page, state)
+
+        def change_animation(event) -> None:
+            state.directorate_animation = bool(event.control.value)
+            preference_update()
+
+        def change_motion(event) -> None:
+            state.reduced_motion = bool(event.control.value)
+            state.cursor_visible = False
+            preference_update()
+
+        def copy_cable(_=None) -> None:
+            if state.current_result:
+                page.set_clipboard(render_cable(state.current_result, state.directorate_sources))
+                state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Cable copied to clipboard", state.current_result.session_id)
+                _refresh_live_page(page, state)
+
+        def save_cable(_=None) -> None:
+            if state.current_result is None:
+                return
+            result = state.current_result
+            sources = list(state.directorate_sources)
+            def worker() -> None:
+                try:
+                    path = export_cable(result, sources)
+                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Cable exported locally: {path.name}", result.session_id)
+                except Exception as exc:
+                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", f"Cable export failed ({type(exc).__name__}); retry available", result.session_id)
+                _refresh_live_page(page, state)
+            page.run_thread(worker)
 
         def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
             refresh_bellator_intelligence_for_gui(state)
@@ -2208,6 +2651,8 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
 
         def handle_proposal_change(value: str) -> None:
             state.proposal_input_text = value
+            if state.submission_message and not state.submission_lock.locked():
+                _set_submission_feedback(page, state, "")
 
         def handle_proposal_history_action(action: str, proposal_id: str) -> None:
             try:
@@ -2318,6 +2763,9 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             _render_page(page, state)
 
         def handle_footer_command(key: str) -> None:
+            state.proposal_input_focused = False
+            state.proposal_actions_hovered = False
+            _set_proposal_editing(page, state, False)
             if key == "K":
                 state.command_palette_open = not state.command_palette_open
                 log_event(
@@ -2327,6 +2775,9 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 _render_page(page, state)
             elif key == "D":
                 toggle_diagnostics(None)
+            elif key == "P":
+                state.directorate_open = not state.directorate_open
+                _render_page(page, state)
             elif key == "T":
                 execute_command_palette_action(state, "Toggle Theme")
                 _render_page(page, state)
@@ -2339,15 +2790,32 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 except Exception:
                     pass
                 _render_page(page, state)
+                _set_submission_feedback(page, state, state.operator_status)
 
         def on_keyboard_event(event) -> None:
             key = str(getattr(event, "key", "") or "").upper()
             if getattr(event, "ctrl", False) or getattr(event, "meta", False):
-                handle_footer_command(key)
+                if key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
+                    submit(state.proposal_input_text)
+                else:
+                    handle_footer_command(key)
 
         if hasattr(page, "on_keyboard_event"):
             page.on_keyboard_event = on_keyboard_event
 
+        def on_resized(_=None) -> None:
+            if state.ui_stopped.is_set():
+                return
+            narrow = bool(getattr(page, "width", 0) and page.width < 1150)
+            if narrow != state.narrow_layout:
+                state.narrow_layout = narrow
+                _render_page(page, state)
+
+        if hasattr(page, "on_resized"):
+            page.on_resized = on_resized
+        state.narrow_layout = bool(getattr(page, "width", 0) and page.width < 1150)
+
+        state.live_panels.clear()
         layout = build_gui_layout(
             state,
             submit,
@@ -2363,6 +2831,19 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             on_template_select=handle_template_select,
             on_proposal_change=handle_proposal_change,
             on_footer_command=handle_footer_command,
+            toggle_directorate=toggle_directorate,
+            open_directorate_boot=open_directorate_boot,
+            open_directorate=open_directorate,
+            toggle_cable=toggle_cable,
+            copy_cable=copy_cable,
+            save_cable=save_cable,
+            viewport_width=getattr(page, "width", None),
+            on_proposal_focus=handle_proposal_focus,
+            on_proposal_blur=handle_proposal_blur,
+            on_proposal_tap_outside=handle_proposal_tap_outside,
+            on_proposal_actions_hover=handle_proposal_actions_hover,
+            change_watch_deliberation=change_watch_deliberation,
+            open_deliberation=open_deliberation,
         )
         page.controls.clear()
         page.add(layout)
@@ -2380,8 +2861,40 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 "branch_tree_viewer",
                 "simulation_branch_expand_overlay",
                 "data_sources_viewer",
+                "directorate_boot",
+                "directorate_desk",
+                "live_deliberation",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
+            if state.deliberation_viewer_open:
+                overlay.append(ft.Container(
+                    ft.Column([
+                        ft.Row([ft.Text("LIVE DELIBERATION", color=state.theme.primary_color,
+                                        weight=ft.FontWeight.BOLD, expand=True),
+                                ft.TextButton("CLOSE", on_click=close_deliberation,
+                                              style=ft.ButtonStyle(color=state.theme.accent_color))]),
+                        _register_live_panel(state, "deliberation_assessments", lambda: build_assessments(state)),
+                    ], expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH),
+                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                    border=ft.border.all(2, state.theme.accent_color),
+                    bgcolor=state.theme.surface_color, data="live_deliberation"))
+            if state.directorate_boot_open:
+                overlay.append(ft.Container(
+                    _register_live_panel(state, "directorate_boot", lambda: build_boot(
+                        state.theme, state.directorate, state.directorate_busy, retry_directorate,
+                        continue_directorate, state.directorate_animation, state.reduced_motion,
+                        change_animation, change_motion)),
+                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
+                    bgcolor=state.theme.background_color, data="directorate_boot"))
+            if state.directorate_open:
+                roll = _register_live_panel(state, "directorate_roll", lambda: build_dispatch_roll(
+                    state.directorate, animation=state.directorate_animation, reduced_motion=state.reduced_motion))
+                actions = _register_live_panel(state, "directorate_actions", lambda: build_dispatch_actions(
+                    state.theme, state.directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history))
+                overlay.append(ft.Container(build_dispatch_desk(state.theme, state.directorate, roll,
+                    close_directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history, actions),
+                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
+                    bgcolor=state.theme.background_color, data="directorate_desk"))
             if state.diagnostics_drawer_open:
                 overlay.append(
                     ft.Container(
@@ -2398,7 +2911,8 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                                     alignment=ft.MainAxisAlignment.END,
                                 ),
                                 ft.Container(
-                                    build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer),
+                                    build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer,
+                                                             open_system_checks=open_directorate_boot),
                                     expand=True,
                                 ),
                             ],
@@ -2501,20 +3015,33 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                         data="data_sources_viewer",
                     )
                 )
+            # Transparent full-page overlay containers still take part in hit
+            # testing. Keep every operator viewer above the command bar.
+            for control in overlay:
+                if getattr(control, "data", None) in operator_overlays:
+                    if control.top is None:
+                        control.top = 8
+                    if control.bottom is None:
+                        control.bottom = FOOTER_HEIGHT + 8
+                    if control.left is None and control.right is None:
+                        control.left = 8
+                        control.right = 8
+                    control.clip_behavior = ft.ClipBehavior.HARD_EDGE
         page.update()
     finally:
         state.render_in_progress = False
 
 
 def _start_status_polling(page: ft.Page, state: GuiState, interval: float = GUI_ACTIVITY_REFRESH_INTERVAL_SECONDS) -> None:
+    if state.ui_stopped.is_set():
+        return
     def poll() -> None:
         last_status_refresh = time.monotonic()
-        while True:
-            time.sleep(interval)
+        while not state.ui_stopped.wait(interval):
             try:
                 advance_war_room_activity(state)
                 now = time.monotonic()
-                if now - last_status_refresh >= GUI_PROVIDER_REFRESH_INTERVAL_SECONDS:
+                if not state.directorate_busy and now - last_status_refresh >= GUI_PROVIDER_REFRESH_INTERVAL_SECONDS:
                     refresh_gui_status(state)
                     last_status_refresh = now
                 refresh_telemetry_for_gui(state)
@@ -2524,6 +3051,56 @@ def _start_status_polling(page: ft.Page, state: GuiState, interval: float = GUI_
                 log_war_room_runtime("ui_refresh_error", {"error": str(exc)}, level="ERROR")
 
     page.run_thread(poll)
+    page.run_thread(_poll_monolith_feedback, page, state)
+    page.run_thread(_poll_directorate_roll, page, state)
+
+
+def _poll_directorate_roll(page: ft.Page, state: GuiState) -> None:
+    """Reveal new report lines without rebuilding the editor or other panels."""
+    completed = None
+    while not state.ui_stopped.wait(.2):
+        if not state.directorate_open or state.reduced_motion or not state.directorate_animation:
+            continue
+        dispatches = state.directorate.dispatches()
+        if not dispatches or dispatches[-1] is completed:
+            continue
+        latest = dispatches[-1]
+        try:
+            with state.render_lock:
+                registered = state.live_panels.get("directorate_roll")
+                if registered is None:
+                    continue
+                roll, builder = registered
+                roll.controls = builder().controls
+                page.update(roll)
+                if time.monotonic() - latest.received_at >= 3:
+                    completed = latest
+        except Exception as exc:
+            log_error("gui_directorate_reveal_error", exc)
+
+
+def _poll_monolith_feedback(page: ft.Page, state: GuiState) -> None:
+    """Update only the borders, preserving focus and the model turn lifecycle."""
+    while not state.ui_stopped.wait(1.2):
+        try:
+            with state.render_lock:
+                registered = state.live_panels.get("build_monolith_panel")
+                if not registered:
+                    continue
+                panel = registered[0]
+                changed = []
+                for card in panel.controls[1:5]:
+                    agent = card.data["agent_id"]
+                    color, width = card_border(state.theme, state.monolith_statuses.get(agent, "ONLINE"),
+                        state.monolith_feedback.get(agent), time.monotonic(),
+                        reduced_motion=state.reduced_motion or not state.directorate_animation)
+                    if card.border.top.color != color or card.border.top.width != width:
+                        card.border = ft.border.all(width, color)
+                        changed.append(card)
+                if changed:
+                    page.update(*changed)
+        except Exception as exc:
+            log_error("gui_monolith_feedback_error", exc)
 
 
 def run_flet_gui(
@@ -2532,16 +3109,43 @@ def run_flet_gui(
     nodes: Dict[str, NodeIdentity] | None = None,
     compact_header: bool = True,
     window_mode: GuiWindowMode = "maximized",
+    startup_config_error: bool = False,
+    startup_config_path: Path | None = None,
+    startup_config_loader: Callable[[], RuntimeConfig] | None = None,
 ) -> None:
     ensure_flet_desktop_runtime()
-    state = create_gui_state(theme_key, config, nodes, compact_header=compact_header, window_mode=window_mode)
+    state = create_gui_state(theme_key, config, nodes, compact_header=compact_header,
+                             window_mode=window_mode, initialize=False)
+    state.directorate_boot_open = startup_config_error
+    state.directorate_config_failed = startup_config_error
+    state.directorate_config_path = startup_config_path
+    state.directorate_config_loader = startup_config_loader
+    if startup_config_error:
+        state.directorate.emit("CONFIG", "STARTUP_CHECK", "FAILED", "Configuration unreadable; correct it locally and retry", check=True)
 
     def target(page: ft.Page) -> None:
-        _render_page(page, state)
+        if hasattr(page, "on_disconnect"):
+            page.on_disconnect = lambda _: state.ui_stopped.set()
+        state.directorate_busy = True
+        try:
+            _render_page(page, state)
+        except Exception as exc:
+            state.directorate_busy = False
+            state.directorate.emit("INTERFACE", "STARTUP_CHECK", "FAILED",
+                                  f"Interface mount failed ({type(exc).__name__}); correct local assets and retry", check=True)
+            page.controls.clear()
+            page.add(ft.Container(build_boot(state.theme, state.directorate, False,
+                                            retry=lambda _: target(page), animation=False), expand=True, padding=24))
+            page.update()
+            return
+        state.directorate.emit("INTERFACE", "STARTUP_CHECK", "AVAILABLE", "Flet interface mounted", check=True)
         marker = os.getenv("CONSENSUS_GUI_READY_MARKER")
         if marker:
             Path(marker).write_text("ready", encoding="utf-8")
-        _start_status_polling(page, state)
+        def initialize() -> None:
+            initialize_directorate(state, lambda: _refresh_live_page(page, state))
+            _start_status_polling(page, state)
+        page.run_thread(initialize)
 
     ft.app(target=target)
 

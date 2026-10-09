@@ -22,7 +22,7 @@ def test_war_room_visual_invariants_hold_with_diagnostics_closed() -> None:
     invariants = assert_visual_invariants(layout)
 
     assert invariants["layout_expands"] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
-    assert invariants["proposal_height_fixed"] is True
+    assert invariants["proposal_size_bounded"] is True
 
 
 def test_diagnostics_drawer_open_does_not_mutate_layout_proportions() -> None:

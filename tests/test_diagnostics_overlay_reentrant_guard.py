@@ -30,7 +30,7 @@ class FakePage:
     def add(self, control) -> None:
         self.controls.append(control)
 
-    def update(self) -> None:
+    def update(self, *controls) -> None:
         self.update_count += 1
 
     def run_thread(self, target, *args, **kwargs) -> None:

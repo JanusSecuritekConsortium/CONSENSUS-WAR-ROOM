@@ -28,6 +28,7 @@ def test_footer_lists_operator_shortcuts() -> None:
     text = "\n".join(_flatten_text(build_layout_for("eva")))
     assert "Ctrl+K Command" in text
     assert "Ctrl+D Diagnostics" in text
+    assert "Ctrl+P DIRECTORATE" in text
     assert "Ctrl+H History" in text
     assert "Ctrl+E Export" in text
 
@@ -47,12 +48,12 @@ def test_footer_clicks_and_keyboard_share_actions(monkeypatch):
     page = FakePage()
     gui._render_page(page, state)
     buttons = page.controls[0].content.controls[2].content.controls[1].content.controls
-    assert len(buttons) == 5
+    assert len(buttons) == 6
     actions = []
     monkeypatch.setattr(gui, "_render_page", lambda *args: None)
     monkeypatch.setattr(gui, "execute_command_palette_action", lambda state, action: actions.append(action))
-    for button, key, attribute in zip(buttons, ("K", "D", "T", "H", "E"),
-                                      ("command_palette_open", "diagnostics_drawer_open", None, "proposal_history_open", None)):
+    for button, key, attribute in zip(buttons, ("K", "D", "P", "T", "H", "E"),
+                                      ("command_palette_open", "diagnostics_drawer_open", "directorate_open", None, "proposal_history_open", None)):
         assert button.on_click is not None
         button.on_click(None)
         if attribute:

@@ -139,7 +139,8 @@ def news_section(now):
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(lambda feed: fetch_feed(feed, now), FEEDS))
     lines = ['5. NEWS — SOURCES AND DATE']
-    for source, story in select_stories(results, limit=4):
+    selected = select_stories(results, limit=4)
+    for source, story in selected:
         lines.extend(['- '+source['name']+' · '+story['published'].astimezone(TZ).strftime('%d/%m %H:%M')+': '+story['title'],
                       '  '+story['url']])
     if len(lines) == 1:
@@ -148,6 +149,10 @@ def news_section(now):
     if failed:
         lines.append('Unavailable sources: '+', '.join(failed))
     lines.append('Original headlines from the last 36 hours; not independently verified facts.')
+    from core.knowledge.ghostnotes import briefing_background
+    background = briefing_background([story['title'] for _, story in selected])
+    if background:
+        lines.append(background)
     return '\n'.join(lines)
 
 

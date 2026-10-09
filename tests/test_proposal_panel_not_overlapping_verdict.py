@@ -24,6 +24,7 @@ def test_proposal_and_verdict_regions_have_explicit_gap() -> None:
     assert proposal_region.expand is None
     assert proposal_region.height == PROPOSAL_HEIGHT
     assert verdict_region.expand is True
+    assert verdict_region.visible is True
 
 
 if __name__ == "__main__":

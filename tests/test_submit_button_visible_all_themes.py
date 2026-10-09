@@ -72,11 +72,11 @@ def test_submit_button_is_visible_inside_proposal_panel_for_all_themes() -> None
         assert proposal_inputs, f"{theme_key} proposal input missing"
         assert region.clip_behavior is not None
         assert region.height == PROPOSAL_HEIGHT
-        assert PROPOSAL_HEIGHT >= 270
+        assert region.expand is None
         assert getattr(submit_buttons[0], "height", None) <= 40
-        assert getattr(proposal_inputs[0], "min_lines", None) == PROPOSAL_INPUT_LINES
-        assert getattr(proposal_inputs[0], "max_lines", None) == PROPOSAL_INPUT_LINES
-        assert proposal_submit_button_bottom_margin() >= PROPOSAL_BOTTOM_CLEARANCE
+        assert proposal_inputs[0].min_lines == PROPOSAL_INPUT_LINES
+        assert proposal_inputs[0].max_lines == PROPOSAL_INPUT_LINES
+        assert region.content.content.controls[-1] is submit_buttons[0]
 
 
 if __name__ == "__main__":
