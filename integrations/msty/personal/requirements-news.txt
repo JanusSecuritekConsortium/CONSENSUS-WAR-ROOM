@@ -1,0 +1,2 @@
+# Optional shared-folder PDF excerpts; Markdown requires no extra package.
+pypdf>=5,<7

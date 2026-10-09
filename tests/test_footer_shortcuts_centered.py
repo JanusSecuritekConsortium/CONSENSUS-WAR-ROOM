@@ -25,7 +25,7 @@ def test_footer_shortcuts_are_center_region_for_all_themes() -> None:
         assert shortcuts.expand is True
         assert shortcuts.data["role"] == "footer_shortcuts"
         assert shortcuts.data["alignment"] == "center"
-        assert shortcuts.content.text_align.name == "CENTER"
+        assert shortcuts.content.alignment.name == "CENTER"
 
 
 if __name__ == "__main__":

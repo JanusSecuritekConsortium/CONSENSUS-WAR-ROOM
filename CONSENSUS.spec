@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
+import sys
 
 from PyInstaller.utils.hooks import collect_submodules
 
@@ -7,9 +8,11 @@ from PyInstaller.utils.hooks import collect_submodules
 ROOT = Path(SPECPATH)
 hiddenimports = sorted(set(collect_submodules("flet") + collect_submodules("flet_desktop")))
 datas = [
+    (str(ROOT / "monoliths" / "profiles"), "monoliths/profiles"),
     (str(ROOT / "static"), "static"),
     (str(ROOT / "_ARBITER" / "genesis_config.json"), "_ARBITER"),
     (str(ROOT / "voice" / "voice_config.json"), "voice"),
+    (str(ROOT / "voice" / "voice_config.linux.json"), "voice"),
     (str(ROOT / "config" / "data_sources.json"), "config"),
 ]
 
@@ -48,5 +51,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(ROOT / "static" / "icons" / "consensus_icon.ico"),
-    version=str(ROOT / "packaging" / "windows_version_info.txt"),
+    version=str(ROOT / "packaging" / "windows_version_info.txt") if sys.platform == "win32" else None,
 )

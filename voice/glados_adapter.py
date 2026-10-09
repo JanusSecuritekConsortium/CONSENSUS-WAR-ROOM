@@ -16,13 +16,13 @@ try:
     from .glados_native import default_native_project_dir, native_glados_error
     from .rvc_adapter import RVCAdapter
     from .text_normalization import normalize_for_speech
-    from .tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from .tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
     from voice.glados_native import default_native_project_dir, native_glados_error
     from voice.rvc_adapter import RVCAdapter
     from voice.text_normalization import normalize_for_speech
-    from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend
+    from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from voice.voice_profiles import VoiceProfile, get_voice_profile
 
 
@@ -55,7 +55,7 @@ class GladosAdapter:
             if self.backend == "glados_tts" and self.profile.fallback == "rvc"
             else None
         )
-        self.sapi_fallback = WindowsSAPIBackend(
+        self.sapi_fallback = create_system_backend(
             rate=self.profile.rate,
             volume=self.profile.volume,
             voice_names=[str(item) for item in self.profile.settings.get("base_voice_name", [])],
@@ -166,6 +166,9 @@ class GladosAdapter:
         )
 
     def _play_wav(self, path: Path) -> TTSBackendResult:
+        if sys.platform.startswith("linux"):
+            from voice.linux_audio import play_wav
+            return play_wav(path)
         if os.name != "nt":
             return TTSBackendResult(ok=True, text="", mode="wav_file", audio_path=str(path), metadata={"playback": "not_supported", "played": False})
         try:

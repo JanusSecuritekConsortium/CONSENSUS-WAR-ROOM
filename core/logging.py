@@ -39,6 +39,10 @@ def log_decision_trace(result: Any) -> None:
             "evidence_quality": vote.evidence_quality,
             "critical_risk": vote.critical_risk,
             "model": vote.model,
+            "backend": vote.backend,
+            "argument": vote.argument, "peer_responses": vote.peer_responses,
+            "review_required": vote.review_required, "review_reason": vote.review_reason,
+            "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": vote.unresolved_disagreements,
         }
         for agent_id, vote in result.votes.items()
     }
@@ -53,6 +57,9 @@ def log_decision_trace(result: Any) -> None:
             "confidence": result.confidence,
             "terminal_branch": result.terminal_branch,
             "review_triggers": result.review_triggers,
+            "deliberation_transcript": result.deliberation_transcript,
+            "deliberation_complete": result.deliberation_complete,
+            "simulation": result.simulation,
             "lifecycle_events": list(getattr(result, "lifecycle_events", [])),
             "phase_durations": dict(getattr(result, "phase_durations", {})),
             "reasoning_stream": list(getattr(result, "reasoning_stream", [])),

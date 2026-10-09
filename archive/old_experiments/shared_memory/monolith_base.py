@@ -1,1 +1,0 @@
-<full MonolithBase content from earlier post>

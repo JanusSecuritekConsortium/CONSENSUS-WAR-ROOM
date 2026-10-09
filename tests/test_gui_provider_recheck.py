@@ -36,7 +36,10 @@ def test_degraded_provider_allows_mock_fallback_submission() -> None:
         )
 
         assert state.provider_status["status"] == "degraded"
-        assert state.provider_warning == "PROVIDER DEGRADED - MOCK FALLBACK ACTIVE"
+        assert state.provider_warning.startswith("DELIBERATION INCOMPLETE:")
+        assert result.verdict.value == "NO_CONSENSUS"
+        assert result.terminal_branch == "deliberation_incomplete"
+        assert not result.deliberation_complete
         assert result.votes
     finally:
         api_module.health_check = original_health

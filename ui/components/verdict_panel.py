@@ -167,6 +167,7 @@ def build_verdict_panel(
             ],
             spacing=VERDICT_PANEL_SPACING,
             tight=True,
+            scroll=ft.ScrollMode.AUTO,
         ),
         padding=VERDICT_PANEL_PADDING,
         border=ft.border.all(2, theme.primary_color),

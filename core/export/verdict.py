@@ -37,8 +37,47 @@ def _verdict_payload(trace: Dict[str, Any], source_trace_path: Path = SYSTEM_LOG
         "final_verdict": trace.get("final_verdict") or trace.get("verdict"),
         "terminal_branch": trace.get("terminal_branch"),
         "review_triggers": trace.get("review_triggers", []),
+        "deliberation_transcript": trace.get("deliberation_transcript", []),
+        "deliberation_complete": trace.get("deliberation_complete", False),
+        "simulation": trace.get("simulation", False),
         "source_trace_path": str(source_trace_path),
     }
+
+
+def deliberation_markdown(payload: Dict[str, Any]) -> str:
+    entries = payload.get("deliberation_transcript", [])
+    if not entries:
+        return ""
+    lines = ["\n\n## Deliberation exchange\n", f"Simulation: {bool(payload.get('simulation'))}. Completed: {bool(payload.get('deliberation_complete'))}.\n"]
+    for entry in entries:
+        lines.extend([
+            f"\n### Round {entry['round']}: {entry['phase']} — {entry['agent_id']}\n",
+            f"Model: {entry.get('model')}; backend: {entry.get('backend')}; temperature: {entry.get('temperature')}; vote: {entry.get('vote')}.\n",
+            f"Preferred model: {entry.get('requested_model')}; fallback: {bool(entry.get('model_fallback'))}; reason: {entry.get('model_fallback_reason', '')}.\n",
+            str(entry.get("reasoning", "")) + "\n",
+            "Risks: " + "; ".join(entry.get("risks", [])) + "\n",
+            "Conditions: " + "; ".join(entry.get("conditions", [])) + "\n",
+        ])
+        argument = entry.get("argument", {})
+        if argument:
+            lines.extend([
+                "Claim: " + str(argument.get("claim", "")) + "\n",
+                "Assumptions: " + "; ".join(argument.get("assumptions", [])) + "\n",
+                "Strongest objection: " + str(argument.get("strongest_objection", "")) + "\n",
+                "Decision-change condition: " + str(argument.get("change_condition", "")) + "\n",
+            ])
+            for evidence in argument.get("evidence", []):
+                lines.append(f"Evidence ({evidence.get('source')}): {evidence.get('detail')}\n")
+        for response in entry.get("peer_responses", []):
+            lines.append(f"Peer {response.get('peer')}, round {response.get('round')}, {response.get('stance')}: {response.get('claim')} — {response.get('reason')}\n")
+        lines.extend([
+            f"Review required: {bool(entry.get('review_required'))}; reason: {entry.get('review_reason', '')}.\n",
+            "Vote/risk change reason: " + str(entry.get("vote_change_reason", "")) + "\n",
+            "Unresolved disagreements: " + "; ".join(entry.get("unresolved_disagreements", [])) + "\n",
+        ])
+        for attempt in entry.get("model_attempts", []):
+            lines.append(f"Model attempt: {attempt.get('model')}; status: {attempt.get('status')}; error: {attempt.get('error', '')}.\n")
+    return "\n".join(lines)
 
 
 def _markdown(payload: Dict[str, Any]) -> str:
@@ -60,6 +99,7 @@ def _markdown(payload: Dict[str, Any]) -> str:
         "## Votes\n\n"
         + "\n".join(vote_lines)
         + "\n"
+        + deliberation_markdown(payload)
     )
 
 

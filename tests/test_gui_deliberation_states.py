@@ -57,7 +57,11 @@ def test_monoliths_think_then_receive_vote_details() -> None:
         skip_animations=True,
     )
 
-    assert any(all(snapshot.get(agent) == "THINKING" for agent in TRIBUNAL_AGENT_IDS) for snapshot in snapshots)
+    # Shared turns run sequentially: queued peers must not pretend to be thinking.
+    assert any(any(snapshot.get(agent) == "QUEUED" for agent in TRIBUNAL_AGENT_IDS) for snapshot in snapshots)
+    for agent in TRIBUNAL_AGENT_IDS:
+        assert any(snapshot.get(agent) == "THINKING" for snapshot in snapshots)
+    assert all(sum(snapshot.get(agent) == "THINKING" for agent in TRIBUNAL_AGENT_IDS) <= 1 for snapshot in snapshots)
     assert set(TRIBUNAL_AGENT_IDS) <= set(state.monolith_vote_details)
     for agent in TRIBUNAL_AGENT_IDS:
         detail = state.monolith_vote_details[agent]

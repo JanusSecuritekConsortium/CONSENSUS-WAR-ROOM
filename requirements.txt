@@ -5,6 +5,7 @@ Pillow>=10.0
 fastapi>=0.115
 uvicorn>=0.30
 pydantic>=2.7
+websockets>=13,<16
 psutil>=5.9
 pyttsx3>=2.90
 openai>=1.0

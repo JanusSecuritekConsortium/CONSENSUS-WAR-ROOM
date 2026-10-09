@@ -14,6 +14,7 @@ from config.nodes import DEFAULT_NODES
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION
 from core.tribunal import Tribunal
 from core.voting.rules import ConsensusRules
+from tests.argument_fixture import argument_fields
 
 
 class RecordingRuntime:
@@ -41,6 +42,7 @@ class RecordingRuntime:
             f"RATIONALE: {reasoning}\n"
             "RISKS: test risk\n"
             "CONDITIONS: test condition\n"
+            + argument_fields(reasoning, agent_id, context, vote)
         )
 
 
@@ -56,7 +58,9 @@ def test_voting_uses_runtime() -> None:
     result = tribunal.deliberate("runtime integration vote")
 
     assert result.verdict.value == "APPROVE"
-    assert [call["agent_id"] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS)
+    assert [call["agent_id"] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS) * 3
+    assert result.deliberation_complete
+    assert len(result.deliberation_transcript) == 9
     assert set(result.votes) == set(TRIBUNAL_AGENT_IDS)
     bellator_call = next(call for call in runtime.calls if call["agent_id"] == BELLATOR)
     assert "bellator_context_packet" in bellator_call["context"]

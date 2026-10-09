@@ -18,9 +18,12 @@ def test_executable_launcher_resolves_canonical_boot_entrypoint() -> None:
 
 
 def test_build_wrapper_targets_consensus_executable() -> None:
+    import build_exe
+
     script = (ROOT / "build_exe.py").read_text(encoding="utf-8")
     batch = (ROOT / "build_exe.bat").read_text(encoding="utf-8")
-    assert 'ROOT / "dist" / "CONSENSUS.exe"' in script
+    expected_name = "CONSENSUS.exe" if sys.platform == "win32" else "CONSENSUS"
+    assert build_exe.OUTPUT_PATH == ROOT / "dist" / expected_name
     assert "verify_executable(OUTPUT_PATH)" in script
     assert "BOOT LOGO SUBSYSTEM: READY (military 38x28)" in script
     assert "GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)" in script

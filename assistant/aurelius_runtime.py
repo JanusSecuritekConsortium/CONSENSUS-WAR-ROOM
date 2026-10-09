@@ -42,12 +42,15 @@ class AureliusRuntime:
         voice_adapter: Optional[VoiceAdapter] = None,
         consensus_handler: Optional[ConsensusHandler] = None,
         persona_path: Optional[Path] = None,
+        agent_runtime: Any = None,
     ) -> None:
         self.tts_adapter = tts_adapter
         self.voice_adapter = voice_adapter
         self.consensus_handler = consensus_handler
         self.persona_path = persona_path or Path(__file__).with_name("aurelius_persona.yaml")
         self.voice_loop_enabled = False
+        self.agent_runtime = agent_runtime
+        self.agent_setup_error: Optional[str] = None
 
     def set_voice_loop(self, enabled: bool) -> None:
         self.voice_loop_enabled = bool(enabled)
@@ -62,6 +65,8 @@ class AureliusRuntime:
             "voice_adapter_available": self.voice_adapter is not None,
             "consensus_route_available": self.consensus_handler is not None,
             "persona_path": str(self.persona_path),
+            "agent_enabled": bool(self.agent_runtime and self.agent_runtime.config.enabled),
+            "agent_setup_error": self.agent_setup_error,
         }
 
     def handle_text(
@@ -88,10 +93,15 @@ class AureliusRuntime:
             routed_payload = self.consensus_handler(prompt)
             routed = True
 
-        response = self._compose_response(prompt, routed_payload)
+        agent_result = None
+        if not route_to_consensus and self.agent_runtime is not None and self.agent_runtime.config.enabled:
+            agent_result = self.agent_runtime.run(prompt)
+        response = agent_result.text if agent_result is not None else self._compose_response(prompt, routed_payload)
         spoken = False
         audio_path: Optional[str] = None
         metadata: Dict[str, Any] = {}
+        if agent_result is not None:
+            metadata["agent"] = agent_result.as_dict()
         if speak:
             if self.tts_adapter is None:
                 metadata["tts"] = "unavailable"
@@ -209,6 +219,21 @@ def get_aurelius_runtime() -> AureliusRuntime:
             tts_adapter=AureliusAdapter(),
             voice_adapter=RikoVoiceAdapter(),
         )
+        try:
+            from integrations.odysseus.client import OdysseusConfig
+            odysseus = OdysseusConfig.from_env()
+            from assistant.agent.config import AgentConfig
+            if odysseus.enabled:
+                from integrations.odysseus.service import OdysseusRuntime
+                _RUNTIME.agent_runtime = OdysseusRuntime(odysseus)
+            elif (config := AgentConfig.from_env()).enabled:
+                from assistant.agent.service import build_agent
+                from integrations.msty.aurelius import AureliusOperator
+                _RUNTIME.agent_runtime = build_agent(operator=AureliusOperator(), config=config)
+        except Exception as exc:
+            # Optional feature setup must not prevent voice/UI startup.
+            _RUNTIME.agent_setup_error = type(exc).__name__
+            log_event("aurelius_agent_setup_degraded", {"error_type": type(exc).__name__})
     return _RUNTIME
 
 

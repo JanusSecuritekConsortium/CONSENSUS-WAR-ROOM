@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -46,7 +47,8 @@ def test_release_validation_runs_fast_tests_compile_and_gallery() -> None:
     commands: list[list[str]] = []
     try:
         boot._run_command = lambda args: commands.append(args) or 0
-        assert boot.run_release_validation() == 0
+        with patch("sys.platform", "win32"):
+            assert boot.run_release_validation() == 0
     finally:
         boot._run_command = original_run_command
 

@@ -100,7 +100,9 @@ def test_recent_decisions_have_verdict_colors() -> None:
     body_row = layout.content.controls[1].content
     right_column = body_row.controls[2].content
     log_panel = right_column.controls[1]
-    decision_rows = log_panel.content.controls[4]
+    title_index = next(index for index, control in enumerate(log_panel.content.controls)
+                       if isinstance(control, ft.Text) and control.value == "RECENT DECISIONS")
+    decision_rows = log_panel.content.controls[title_index + 1]
     colors = [row.color for row in decision_rows.controls]
 
     assert colors == [state.theme.primary_color, state.theme.error_color, state.theme.warning_color]

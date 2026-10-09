@@ -119,10 +119,12 @@ def build_log_panel(
     timeline_events: Iterable[str] | None = None,
     bellator_intelligence: dict | None = None,
     refresh_bellator_intelligence=None,
+    directorate_panel=None,
 ) -> ft.Control:
     return ft.Container(
         content=ft.Column(
             [
+                *([directorate_panel] if directorate_panel is not None else []),
                 ft.Row(
                     [
                         ft.Text("LIVE LOGS", color=theme.primary_color, weight=ft.FontWeight.BOLD),
@@ -142,7 +144,7 @@ def build_log_panel(
             ],
             spacing=7,
             scroll=ft.ScrollMode.AUTO,
-            auto_scroll=True,
+            auto_scroll=directorate_panel is None,
         ),
         padding=8,
         border=ft.border.all(1, theme.secondary_color),

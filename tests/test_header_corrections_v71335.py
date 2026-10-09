@@ -81,10 +81,10 @@ def test_wh40k_supersampled_visible_glyph_bounds_apply_optical_offset() -> None:
     left, right, top, bottom = diagnostic["clearances"]
     raw_canvas_center_left = (metrics.cell_width - (metrics.natural_width * metrics.fit_scale)) / 2
 
-    assert diagnostic["optical_offset_x"] == 6
-    assert left > right
-    assert round(left - right, 3) == 12.0
-    assert abs(top - bottom) <= 1.0
+    assert diagnostic["optical_offset_x"] == 0
+    assert abs(left - right) < 0.01
+    assert round(left - right, 3) == 0.0
+    assert round(top - bottom, 3) == -2.0
     assert min(left, right, top, bottom) >= 5
     assert abs(metrics.canvas_left - raw_canvas_center_left) > 1.0
 
@@ -97,7 +97,7 @@ def test_military_logo_region_and_artwork_match_final_geometry() -> None:
 
     assert diagnostic["renderer_mode"] == "supersampled_square"
     assert diagnostic["logo_region_width"] == 162
-    assert 138 <= diagnostic["visible_artwork_width"] <= 144
+    assert 124 <= diagnostic["visible_artwork_width"] <= 126
     assert 148 <= diagnostic["visible_artwork_height"] <= 152
     assert abs(left - right) <= 1
     assert left >= 10

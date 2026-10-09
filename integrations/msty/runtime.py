@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from config.agents import AgentProfile, get_agent_profile
 from config.names import AETERNUM, AURELIUS, BELLATOR, RATIONALIS
-from config.nodes import DEFAULT_NODES
+from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.llm.backends import MockBackend
 from core.logging import log_error, log_event
@@ -69,6 +69,8 @@ class MstyRuntime:
         self.fallback_enabled = self.config.mock_fallback_enabled if fallback_enabled is None else fallback_enabled
         self.fallback_hooks = fallback_hooks or []
         self.telemetry_hooks = telemetry_hooks or []
+        self.last_execution: Dict[str, Dict[str, Any]] = {}
+        self._deliberation_models: Dict[tuple[str, str], tuple[str, str]] = {}
 
     def send_to_agent(
         self,
@@ -80,46 +82,45 @@ class MstyRuntime:
         session.turns += 1
         started = time.perf_counter()
         rendered_prompt = self._render_prompt(session, prompt, context)
+        self.last_execution[session.agent_id] = {"status": "pending"}
+        provider = self.config.backend
+        requested_model = str(
+            (context or {}).get("model")
+            or self.config.agent_model_overrides.get(session.agent_id)
+            or session.profile.model_preference
+        )
+        execution: Dict[str, Any] = {}
 
         try:
-            requested_model = str(
-                (context or {}).get("model")
-                or self.config.agent_model_overrides.get(session.agent_id)
-                or session.profile.model_preference
-            )
             if self.config.backend == "mock":
                 response = self._mock_response(session.agent_id, prompt, context)
                 provider = "mock"
             else:
                 from integrations.msty import api as api_module
 
-                health = self._provider_health(api_module)
+                health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
+                provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
                 provider_state = str(health.get("status", "offline"))
                 if provider_state == "offline":
                     raise RuntimeError(f"Provider offline at {health.get('base_url')}")
-                resolved_models = health.get("resolved_required_models", {})
-                if isinstance(resolved_models, dict) and session.agent_id in resolved_models:
-                    requested_model = str(resolved_models[session.agent_id])
-                else:
-                    matched_model, _match_type = api_module.match_model_alias(requested_model, health.get("models", []))
-                    if matched_model:
-                        requested_model = matched_model
-                if requested_model not in set(health.get("models", [])):
-                    if health.get("model_remap_active") and health.get("model_remap_model"):
-                        requested_model = str(health["model_remap_model"])
-                    else:
-                        raise RuntimeError(f"Required model unavailable for {session.agent_id}: {requested_model}")
-                response = api_module.send_prompt(
-                    requested_model,
-                    rendered_prompt,
-                    system_prompt=session.profile.system_prompt,
-                    config=self.config,
-                    base_url=health.get("base_url"),
+                response, execution = self._generate_real_response(
+                    api_module, session, requested_model, rendered_prompt, context or {}, health,
                 )
                 provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
+            if not response.strip():
+                raise RuntimeError("Provider returned an empty response")
+            self.last_execution[session.agent_id] = {
+                "status": "ready", "model": "mock" if provider == "mock" else requested_model, "backend": provider,
+                **execution,
+            }
             self._record_telemetry(session, prompt, response, started, provider, "ready")
             return response
         except Exception as exc:
+            self.last_execution[session.agent_id] = {
+                "model": requested_model, "backend": provider,
+                **self.last_execution.get(session.agent_id, {}),
+                "status": "failed", "error_type": type(exc).__name__,
+            }
             log_error(
                 "msty_runtime_send_error",
                 exc,
@@ -129,7 +130,7 @@ class MstyRuntime:
                     "backend": self.config.backend,
                 },
             )
-            if self.config.strict_provider_mode or not self.fallback_enabled:
+            if (context or {}).get("require_real_model") or self.config.strict_provider_mode or not self.fallback_enabled:
                 raise
             log_event(
                 "provider_degraded_fallback",
@@ -143,8 +144,72 @@ class MstyRuntime:
                 level="WARNING",
             )
             response = self._fallback_response(session.agent_id, prompt, context, exc)
+            self.last_execution[session.agent_id] = {"status": "degraded", "model": "mock", "backend": "mock-fallback"}
             self._record_telemetry(session, prompt, response, started, "mock-fallback", "degraded")
             return response
+
+    def _generate_real_response(
+        self, api_module, session: MstySession, preferred: str, prompt: str,
+        context: Dict[str, Any], health: Dict[str, Any],
+    ) -> tuple[str, Dict[str, Any]]:
+        real_tribunal = bool(context.get("require_real_model"))
+        models = health.get("models", [])
+        matched, _ = api_module.match_model_alias(preferred, models)
+        if real_tribunal:
+            candidates = api_module.real_model_candidates(session.agent_id, preferred, models, self.config)
+        else:
+            candidates = [matched] if matched else []
+            if not candidates and not self.config.strict_provider_mode and health.get("model_remap_active") and health.get("model_remap_model"):
+                candidates = [str(health["model_remap_model"])]
+        if not candidates:
+            raise RuntimeError(f"Required model unavailable for {session.agent_id}: {preferred}; no real fallback available")
+        deliberation_id = str(context.get("session_id") or "")
+        key = (deliberation_id, session.agent_id)
+        pinned = self._deliberation_models.get(key) if deliberation_id and real_tribunal else None
+        if pinned and pinned[0] in candidates:
+            candidates.remove(pinned[0])
+            candidates.insert(0, pinned[0])
+        attempts: list[Dict[str, Any]] = []
+        configured_node = apply_node_overrides(DEFAULT_NODES, self.config.node_overrides).get(session.agent_id)
+        system_prompt = str(context.get("system_prompt") or (configured_node.prompt if configured_node else session.profile.system_prompt))
+        last_error: Optional[Exception] = None
+        for model in candidates:
+            started = time.perf_counter()
+            attempt: Dict[str, Any] = {"model": model, "backend": health.get("active_backend") or health.get("backend") or self.config.backend}
+            try:
+                response = api_module.send_prompt(
+                    model, prompt + f"\n\nExecution model: {model}. Preserve your assigned monolith instructions and parameters.",
+                    system_prompt=system_prompt, config=self.config, base_url=health.get("base_url"),
+                    temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
+                    max_output_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
+                )
+                if not response.strip():
+                    raise RuntimeError("Provider returned an empty response")
+                if real_tribunal and configured_node:
+                    from core.voting.parser import parse_vote
+                    parsed = parse_vote(response, configured_node, time.perf_counter() - started, str(attempt["backend"]), context)
+                    if parsed.validation_errors:
+                        attempt["raw_response"] = response
+                        raise ValueError("Invalid deliberation response: " + ", ".join(parsed.validation_errors))
+                attempt.update(status="completed", response_time=time.perf_counter() - started)
+                attempts.append(attempt)
+                fallback = model != matched
+                reason = "preferred_model_unavailable" if not matched else "preferred_model_call_failed"
+                if pinned and model == pinned[0]:
+                    reason = pinned[1]
+                execution = {"model": model, "model_fallback": fallback, "model_fallback_reason": reason if fallback else "", "model_attempts": attempts}
+                if deliberation_id and real_tribunal:
+                    self._deliberation_models[key] = (model, reason)
+                if fallback:
+                    log_event("real_model_fallback", {"agent_id": session.agent_id, "requested_model": preferred, **execution}, level="WARNING")
+                return response, execution
+            except Exception as exc:
+                last_error = exc
+                attempt.update(status="failed", error_type=type(exc).__name__, error=str(exc), response_time=time.perf_counter() - started)
+                attempts.append(attempt)
+                self.last_execution[session.agent_id] = {"status": "failed", "model": model, "backend": attempt["backend"], "model_attempts": list(attempts)}
+        assert last_error is not None
+        raise last_error
 
     def stream_to_agent(
         self,
@@ -161,7 +226,7 @@ class MstyRuntime:
 
         from config.nodes import DEFAULT_NODES
 
-        status = self._provider_health(api_module, DEFAULT_NODES)
+        status = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
         runtime_status = "ready" if status.get("status") == "ready" else "degraded"
         payload = {
             "status": runtime_status,
@@ -188,6 +253,9 @@ class MstyRuntime:
         if self.config.strict_provider_mode:
             mode = "strict"
             action = "fail_if_provider_or_required_model_unavailable"
+        elif self.config.real_model_fallback_enabled and missing and status.get("models"):
+            mode = "real_model_fallback"
+            action = "use_role_fallback_then_base_then_available_real_model"
         elif status.get("model_remap_active"):
             mode = "degraded_model_remap"
             action = f"use_available_model:{status.get('model_remap_model')}"
@@ -256,7 +324,9 @@ class MstyRuntime:
         prompt: str,
         context: Optional[Dict[str, Any]],
     ) -> str:
-        context_block = f"\n\nContext:\n{context}" if context else ""
+        # Monolith prompts already contain the complete machine context. Repeating
+        # peer rounds here can exceed the local model's context window.
+        context_block = f"\n\nContext:\n{context}" if context and "Shared machine context:" not in prompt else ""
         return (
             f"Agent: {session.agent_id}\n"
             f"Session: {session.session_id}\n"

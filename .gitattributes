@@ -1,2 +1,2 @@
-static/logos/gui/eva_header.txt -text
-static/logos/gui/helldivers_header.txt -text
+static/logos/gui/*.txt -text
+*.sh text eol=lf

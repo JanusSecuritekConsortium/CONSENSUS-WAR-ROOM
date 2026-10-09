@@ -26,16 +26,19 @@ dist/
 *.tmp
 *.bak
 *.swp
+*.dpapi
+*.sqlite
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+integrations/msty/ground_news_setup_status.json
 .env
 .env.*
 !.env.example
 
 # Consensus runtime artifacts
-memory/
-reports/verdicts/latest_verdict_*
-reports/logo_audit/current/
-reports/theme_gallery/current/
-reports/logo_history_candidates/
+/memory/
+reports/
 _ARBITER/backups/
 _ARBITER/Bot/Ext/
 _ARBITER/Bot/Voice/
@@ -45,13 +48,17 @@ _ARBITER/logs/
 _ARBITER/memory/
 _ARBITER/tmp_votes/
 _ARBITER/tts_audio/
+_ARBITER/aurelius_agent/
+_ARBITER/aurelius_odysseus/
+_ARBITER/aurelius_odysseus_token.txt
 _ARBITER/decision_history*.json
+_ARBITER/decision_history*.json.lock
 _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json
 
 # Heavy/generated historical backups
-archive/pre_modular_backups/
-archive/old_experiments/tts_audio/
+archive/
+future_implementations/
 
 # Nested repositories and model/artifact blobs
 **/.git/
@@ -75,3 +82,17 @@ archive/old_experiments/tts_audio/
 *.parquet
 *.mp3
 *.wav
+
+# Runtime data and model artifacts (source directories remain trackable)
+/logs/
+/cache/
+/caches/
+/embeddings/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.gguf
+*.ggml
+*.exe

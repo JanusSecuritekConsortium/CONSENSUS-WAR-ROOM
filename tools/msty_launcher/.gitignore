@@ -1,0 +1,6 @@
+*.exe
+launcher.config.json
+launcher.config.backup-*.json
+*.out.txt
+*.err.txt
+disabled-startup-shortcuts/

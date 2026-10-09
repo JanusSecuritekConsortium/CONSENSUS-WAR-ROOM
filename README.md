@@ -1,63 +1,99 @@
 # CONSENSUS War Room
 
-CONSENSUS War Room is a local multi-agent tribunal for proposal review. Three
-specialized monoliths analyze a proposal from different perspectives, then an
-arbiter combines their votes into an auditable verdict.
+CONSENSUS War Room is a Windows-first, local multi-agent tribunal for proposal
+review. RATIONALIS, AETERNUM, and BELLATOR assess a proposal from different
+perspectives; the ARBITER combines their votes into an auditable verdict.
 
-Author: Project contributors, CONSENSUS project.
+Each proposal now runs three rounds. All monoliths first assess it independently;
+then each critiques the complete set of initial assessments; finally each reads
+all critiques and submits a revised final vote. Dissent is preserved. The ARBITER
+still applies deterministic voting rules rather than generating another model
+opinion. The legacy sequential option is accepted for compatibility; it does not
+disable these shared rounds.
 
-## Project Status
+Every new tribunal turn must include a structured argument: one claim, supplied
+source identities and supporting details, assumptions, the strongest genuine
+objection, and evidence or mitigation that would change the decision. Critique
+and revision turns must quote and address each peer's exact claim from the
+latest completed round. Changed votes and cleared risk/review flags need an
+explanation. Agreement and empty unresolved-disagreement lists are valid;
+agents must not manufacture dissent. Citations are checked against supplied
+source identities; this establishes traceability, not automatic fact checking.
 
-The current codebase is **v8.0.0 — Theme-Native Production Boot System**,
-last patched on 2026-07-19.
-CONSENSUS is an actively developed, Windows-first local application with a Flet
-desktop interface, CLI and API entrypoints, a deterministic offline backend,
-and adapters for local Msty/Ollama-compatible inference runtimes.
+Monolith votes remain APPROVE, DENY or ABSTAIN. Conditions are prerequisites;
+an unresolved requirement needing human judgment uses a separate review flag
+and reason. With high-risk review enabled (the default), a domain-relevant
+critical risk or an explicit review request returns ESCALATE before an approval
+can be issued. Evidence gaps return NO_CONSENSUS before majority or priority
+approval, including gaps reported by a relevant role below the confidence
+threshold. Majority denial remains DENY with review flags preserved. Explicitly
+disabling high-risk review is recorded. Historical records remain readable.
 
-| Area | Current state |
+The default temperatures are Rationalis 0.1, Aeternum 0.3, and Bellator 0.6.
+Each node can override its temperature and maximum output tokens (900 by
+default) through node overrides. These values reach the provider request.
+The audit transcript records each round, actual model/backend, settings,
+decision reasons, risks, conditions and failures. It is included in API results,
+local history, session memory, decision traces and verdict/dossier exports.
+Ollama generation requests are translated to OpenAI chat requests when the same
+provider explicitly rejects the Ollama route with HTTP 404 or 405. The model and
+generation settings are preserved; timeout/server failures are not replayed.
+
+Real-provider tribunal calls use the preferred model, then any configured
+`agent_model_fallbacks` for that role, then `base_model` (default
+`Hermes-3-Llama-3.1-8B`), then other available real provider models. The same
+monolith instructions, doctrine, mission, temperature and output limit apply
+to every candidate. Missing, failed, empty or malformed candidates are skipped;
+each attempt and substitution is recorded. A working model stays assigned to
+that role for the rest of the deliberation. All three roles may use one model,
+but still exchange distinct role assessments and critiques; the audit flags
+`shared_model_roles` because this reduces model diversity.
+
+`real_model_fallback_enabled` defaults to true. Setting it false, or explicitly
+enabling `strict_provider_mode`, requires the preferred model. Fallback uses
+models listed by the selected real provider and does not download new models.
+If no candidate produces a valid response, the remaining rounds stop and return
+NO_CONSENSUS with an incomplete-deliberation reason. Real tribunals never use
+simulated replacement votes. Explicit mock mode labels its result SIMULATION
+ONLY. Three rounds require nine model calls, so latency is higher than the
+previous single-round flow. Running source processes need a reload; packaged
+executables need a rebuild to include the changes.
+
+The current release is **v8.0.0**. It includes a Flet desktop interface, CLI and
+local API entry points, deterministic offline operation, Msty/Ollama-compatible
+provider adapters, real-data enrichment, simulations, voice integrations, and
+Windows packaging.
+
+Maintained by the CONSENSUS project contributors.
+
+The Flet desktop includes [DIRECTORATE](docs/DIRECTORATE.md): a teletype dispatch
+desk with numbered decisions, public justifications, dissent, conditions and
+source references. Open it from Ctrl+P or the bottom command bar; reports can be
+copied or exported locally. Startup checks and movement preferences are under
+Diagnostics → System Checks.
+
+## Status
+
+| Area | State |
 | --- | --- |
-| Tribunal | Operational deterministic classification, quorum, confidence, review triggers, voting, and auditable decision traces |
-| Desktop operator UI | Operational Flet War Room with proposal lifecycle, verdict export, diagnostics, telemetry, themes, and command palette |
-| Provider layer | Msty-first local routing with Ollama-compatible options, explicit readiness/degraded states, model checks, and controlled mock fallback |
-| Data layer | RSS-first, cache-backed enrichment is implemented; credentialed sources are opt-in and unavailable data is reported rather than invented |
-| Simulations | Operator-driven deterministic scenario scaffolding is implemented; autonomous forecasting is not |
-| Packaging | PyInstaller-based standalone Windows executable and packaged self-test are implemented |
-| Verification | Active-source compilation, categorized regression tooling, and Python 3.10 GitHub Actions coverage are configured |
+| Tribunal | Deterministic classification, quorum, confidence, review triggers, voting, and decision traces |
+| Desktop UI | Flet War Room with proposal history, verdict export, diagnostics, telemetry, and six theme families |
+| Providers | Msty-first local routing, Ollama-compatible options, readiness checks, and controlled mock fallback |
+| Data | RSS-first cached enrichment with explicit unavailable/degraded states |
+| API | Local REST decisions and analytics plus status-only WebSocket lifecycle events |
+| Packaging | PyInstaller-based Windows executable and packaged self-test |
+| Verification | Python 3.10 CI, active-tree compilation, and categorized regression tests |
 
-### What changed in v8.0.0
-
-- Six production startup layouts now match the EVA/MAGI, Arasaka, Military,
-  WH40K, Helldivers, and Janus interface families instead of sharing one legacy
-  boot screen.
-- Startup captures a fresh, privacy-safe hardware snapshot: CPU identity and
-  topology, GPU/display identity when available, RAM, operating system, and
-  system-drive capacity. User, network, and serial identifiers are suppressed.
-- Boot rendering supports full and compact terminal layouts, theme-specific
-  animation and loading geometry, balanced timing, reduced-motion rendering,
-  and interactive preview controls.
-- The same theme identity and provider status carry through console startup,
-  Flet startup, and the main War Room handoff.
-
-See [CHANGELOG.md](CHANGELOG.md) for the release history and
-[CONSENSUS_ARCHITECTURE.md](CONSENSUS_ARCHITECTURE.md) for module ownership.
-
-## Current System
-
-- `RATIONALIS`: logic, consistency, and acceptance criteria
-- `AETERNUM`: finance, precedent, and long-range risk
-- `BELLATOR`: security, tactical exposure, and operational risk
-- `ARBITER`: quorum, confidence, review triggers, and final synthesis
-
-`AURELIUS` is an optional operator-assistant/integration layer. It is not a
-tribunal voter and does not independently resolve providers or verdicts.
-
-The active implementation lives in `core/`, `config/`, `integrations/`, `ui/`,
-and `monoliths/`. Legacy experiments and prototypes are preserved separately in
-`archive/` and `future_implementations/`.
+See [the changelog](CHANGELOG.md) for release history and
+[the architecture guide](docs/ARCHITECTURE.md) for module ownership.
 
 ## Quick Start
 
-Use Python 3.10 or newer.
+Requirements: Windows and Python 3.10 or newer.
+
+Linux migration support (launchers, voice fallback, and setup requirements)
+is documented in [the Linux migration guide](docs/LINUX_MIGRATION.md).
+Native Linux desktop and voice-model validation is still required.
 
 ```powershell
 python -m venv .venv
@@ -67,95 +103,34 @@ python -m pip install -r requirements.txt
 python -m pip install -r requirements-dev.txt
 ```
 
-Normal operator startup:
+Start the normal desktop workflow:
 
 ```powershell
 .\boot.bat
 ```
 
-Normal boot runs only lightweight dependency/provider health checks, selects the
-configured or random startup theme, runs BIOS/POST, and launches the GUI. It
-does not run `tools\run_tests.py`, active-tree compilation, or screenshot
-regression checks.
-
-The six selectable GUI theme families are EVA/MAGI, Arasaka, Military/EXCOMM,
-WH40K/Cogitator, Helldivers/Super Earth, and Janus. `NERV` remains a CLI/config
-compatibility alias in the EVA/MAGI family.
-
-Diagnostics-only recovery mode:
+Useful boot modes:
 
 ```powershell
-.\boot.bat --safe
+.\boot.bat --safe        # diagnostics-only recovery
+.\boot.bat --validate    # release validation
+.\boot.bat --test-theme  # theme/layout validation
 ```
 
-Release validation mode:
+Run a deterministic offline tribunal:
 
 ```powershell
-.\boot.bat --validate
+python consensus_war_room_genesis.py --no-boot --backend mock "Should we proceed?"
 ```
 
-Developer theme/layout validation:
-
-```powershell
-.\boot.bat --test-theme
-```
-
-`boot.bat` is the canonical operator entrypoint. It validates the local
-environment, checks dependencies and provider status, selects the configured or
-random startup theme, runs the themed BIOS/POST sequence, and opens the GUI.
-Normal operation does not require Python arguments.
-
-### Standalone Windows Executable
-
-Build the standalone operator executable with:
-
-```powershell
-.\build_exe.bat
-```
-
-The output is `dist\CONSENSUS.exe`. Normal operation requires no Python
-arguments:
-
-```powershell
-.\dist\CONSENSUS.exe
-```
-
-Diagnostics-only recovery mode:
-
-```powershell
-.\dist\CONSENSUS.exe --safe
-```
-
-Packaged asset, voice configuration, and deterministic simulation scaffold check:
-
-```powershell
-.\dist\CONSENSUS.exe --self-test
-```
-
-The executable uses the same startup flow as `boot.bat`: dependency checks,
-Msty provider validation, random or configured theme selection, BIOS/POST
-output, then GUI launch.
-
-Run an offline mock tribunal:
-
-```powershell
-python consensus_war_room_genesis.py --no-boot --backend mock "Should we document and test the next implementation?"
-```
-
-Run health checks:
+Run health checks and tests:
 
 ```powershell
 python consensus_war_room_genesis.py --health
-```
-
-Run tests:
-
-```powershell
 python tools\run_tests.py
 ```
 
-`pytest` is optional for developer workflows and is not required by runtime dependencies.
-If you install the development extra, you can also run:
+For the standard pytest workflow:
 
 ```powershell
 python -m pip install -e .[dev]
@@ -164,102 +139,78 @@ python -m pytest
 
 ## Runtime Modes
 
-CLI tribunal:
-
 ```powershell
+# CLI
 python consensus_war_room_genesis.py "Your proposal here"
-```
 
-GUI:
-
-```powershell
+# Desktop GUI
 python consensus_war_room_genesis.py --gui
-```
 
-The desktop GUI uses a dedicated CONSENSUS War Room tribunal icon from
-`static/icons/`, separate from the individual theme ASCII logos.
-
-API:
-
-```powershell
+# Local API (127.0.0.1:8888 by default)
 python consensus_war_room_genesis.py --api
-```
 
-Provider diagnostics:
-
-```powershell
+# Provider diagnostics
 python consensus_war_room_genesis.py --provider-status --verbose
 python consensus_war_room_genesis.py --list-models
 ```
 
-## Operator Workflow
+Primary API routes:
 
-The GUI command palette opens with `Ctrl+K`. Current operator shortcuts:
+- `POST /consensus` runs a tribunal decision.
+- `GET /analytics/summary` returns bounded aggregate metrics.
+- `GET /analytics/summary.csv` downloads the same metrics as CSV.
+- `WS /ws/tribunal` streams status-only lifecycle events.
 
-- `Ctrl+D`: diagnostics drawer
-- `Ctrl+T`: cycle theme
-- `Ctrl+H`: proposal history
-- `Ctrl+E`: export latest verdict
+The real-time stream excludes raw model responses and internal reasoning. Keep
+the API on localhost unless it is protected by an authenticated deployment
+boundary.
 
-Proposal templates are available from the proposal panel for geopolitical,
-market/finance, technical, operational-risk, and general tribunal queries.
-Proposal history is stored locally as JSONL and can be resent, duplicated for
-editing, or archived from the Proposal History overlay.
+## Operator Features
 
-Export the latest verdict outside the GUI:
+The GUI command palette opens with `Ctrl+K`. Common shortcuts are `Ctrl+D` for
+diagnostics, `Ctrl+T` to cycle themes, `Ctrl+H` for proposal history, and
+`Ctrl+E` to export the latest verdict.
+
+The active release provides:
+
+- deterministic proposal classification and multi-agent voting;
+- linked proposal, verdict, and simulation records;
+- Markdown, JSON, dossier, and analytics CSV exports;
+- deterministic geopolitical, economic, cyber, and security scenario scaffolds;
+- cache-backed RSS intelligence with source health and freshness reporting;
+- EVA/MAGI, Arasaka, Military/EXCOMM, WH40K, Helldivers, and Janus themes;
+- optional AURELIUS and ARBITER voice integrations.
+
+Generated verdicts, dossiers, screenshots, manifests, caches, and histories are
+written locally and intentionally excluded from Git.
+
+## Configuration
+
+The runtime creates `_ARBITER/genesis_config.json` when required. Create it
+explicitly with:
 
 ```powershell
-python tools\export_latest_verdict.py
+python consensus_war_room_genesis.py --write-default-config
 ```
 
-Proposal records are linked to finalized decision traces when the tribunal
-returns a verdict. Linked records carry decision status, decision timestamp, and
-verdict export paths. Export a combined proposal/verdict dossier:
+Set `startup_theme` to `RANDOM` or a theme such as `ARASAKA`. Optional provider,
+data-source, Telegram, and integration variables are documented in
+[`.env.example`](.env.example). Never commit `.env` or credentials.
 
-```powershell
-python tools\export_dossier.py <proposal_id>
-```
+Available backends include:
 
-During live GUI tribunal runs the Arbiter Verdict panel exposes the active
-processing lifecycle: classification, dispatch, analysis, deliberation,
-synthesis, terminal verdict state, and export-ready status. The GUI also shows a
-bounded status-only reasoning stream and convergence meter; these are operator
-state signals, not hidden chain-of-thought.
+- `mock`: deterministic offline demos and tests;
+- `ollama`: a local Ollama-compatible runtime;
+- `msty-local`: Msty's local LLaMA.cpp endpoint;
+- `msty-claw`: the Msty Claw bridge;
+- `msty-llama-cpp`: the explicit lower-level Msty endpoint.
 
-## Simulation Layer
+## Data and Simulation
 
-The simulation layer is deterministic scaffolding for geopolitical, economic,
-cyber, and security branch analysis. It defines scenario and branch records, a
-simulation type registry, bounded probability/risk scoring helpers, and
-append-only local JSONL history. It does not generate autonomous forecasts or
-invented geopolitical predictions.
-
-GUI command palette actions:
-
-- `Create Simulation`: opens an operator input overlay and creates a deterministic scaffold linked to the current proposal context when available.
-- `View Simulations`: opens simulation history and branch-tree actions.
-- `Export Simulation Dossier`: exports the selected or latest scenario as Markdown and JSON.
-
-Branch expansion requires explicit operator assumptions. The system records
-deterministic branch probability/risk scaffolding only and does not generate
-forecasts or invented intelligence.
-
-## Real Data Layer
-
-The current data-source foundation, introduced in v7.13, supplies normalized,
-cache-backed external context for `BELLATOR` and `AETERNUM`. RSS is the primary
-Bellator intelligence layer. APIs are enrichment only. Tribunal prompt
-enrichment explicitly reports unavailable data; it never invents intelligence
-when a source is disabled, unconfigured, stale, or empty.
-
-The RSS cache is `_ARBITER/cache/data_sources/intelligence.db`. It uses SQLite
-FTS5 retrieval, GUID/URL/content-hash deduplication, conditional HTTP requests,
-and per-source failure backoff. The default poll interval is 20 minutes.
-Bellator receives at most 12 cited items after query, taxonomy, freshness, and
-deduplication filters. If refresh fails, cached items are explicitly marked
-`CACHE_FALLBACK`.
-
-Probe configured endpoints before enabling or scheduling ingestion:
+The data layer normalizes and caches external context for BELLATOR and
+AETERNUM. RSS is the primary source; credentialed APIs are opt-in enrichment.
+Unavailable or stale sources are reported instead of replaced with invented
+content.
 
 ```powershell
 python tools\probe_rss_feeds.py
@@ -267,59 +218,14 @@ python tools\poll_rss_feeds.py --force
 python tools\poll_rss_feeds.py --watch
 ```
 
-`--watch` keeps the local ingestion process running at the configured interval.
-Reuters and AP are quarantined until current XML endpoints are confirmed.
-NATO remains quarantined while its official directory transition is resolved.
-ECB and European Council feeds are discovered from their official directory
-pages rather than hardcoded from assumptions.
-
-Public GDELT remains enabled as Tier 3 enrichment. Credentialed sources stay
-disabled until explicitly enabled in `config/data_sources.json` and configured
-through environment variables. Ground News integration requires official API
-access and does not scrape. IBKR access is read-only and rejects order
-placement.
-
-GUI command palette actions:
-
-- `Refresh Data Sources`: background live refresh with TTL cache fallback.
-- `View Source Health`: redacted adapter health and configuration status.
-- `View Bellator Intel Feed`: normalized conflict/security context.
-- `View Aeternum Market Feed`: normalized market/economic context.
-
-Optional environment variables are listed in `.env.example`.
-
-## Configuration
-
-The default runtime config is written to `_ARBITER/genesis_config.json` when the
-system first needs it. You can create it explicitly:
-
-```powershell
-python consensus_war_room_genesis.py --write-default-config
-```
-
-Set `startup_theme` to `RANDOM` for a random theme on each `boot.bat` launch, or
-set it to a theme name such as `ARASAKA`.
-
-Useful environment variables are documented in `.env.example`.
-
-Common backend choices:
-
-- `mock`: deterministic offline demo and tests
-- `ollama`: local Ollama-compatible runtime
-- `msty-local`: Msty local LLaMA.cpp endpoint
-- `msty-claw`: Msty Claw bridge endpoint
-- `msty-llama-cpp`: explicit Msty lower-level LLaMA.cpp endpoint
+Simulations create deterministic branch and risk scaffolds from explicit
+operator assumptions. They do not autonomously forecast events or invent
+intelligence.
 
 ## MstyClaw MCP
 
-CONSENSUS exposes a read-only local MCP server for MstyClaw at:
-
-```text
-integrations\mcp\consensus_mcp_server.py
-```
-
-Register it in MstyClaw as a local command, replacing `<repo>` with this
-repository's absolute path:
+The read-only MCP server is `integrations\mcp\consensus_mcp_server.py`.
+Register it in MstyClaw with the repository virtual environment:
 
 ```text
 Name: CONSENSUS MCP
@@ -327,55 +233,60 @@ Command: <repo>\.venv\Scripts\python.exe
 Arguments: <repo>\integrations\mcp\consensus_mcp_server.py
 ```
 
-Fallback launcher:
+It exposes status, redacted logs, model discovery, project-tree, safe-read, and
+text-search tools. It does not write files, execute commands, delete data, or
+access arbitrary network targets.
 
-```text
-integrations\mcp\run_consensus_mcp.bat
+## Build a Windows Executable
+
+```powershell
+.\build_exe.bat
+.\dist\CONSENSUS.exe --self-test
 ```
 
-The MCP server exposes read-only status, AURELIUS logs, Msty model discovery,
-project tree, safe file read, and project text search tools. It does not execute
-commands, write files, delete files, or access external network targets.
+The generated `build/` and `dist/` trees stay local and are not committed.
 
 ## Repository Map
 
-- `core/`: tribunal logic, voting, memory, health checks, CLI
-- `_ARBITER/`: local runtime configuration and ignored logs, cache, exports, and decision state
-- `config/`: agent identities, node defaults, runtime config
-- `integrations/`: Msty/Ollama-compatible provider adapters
-- `ui/`: Flet GUI and themed terminal rendering
-- `monoliths/`: active monolith profile registry
-- `assistant/`: Aurelius assistant persona/runtime helpers
-- `voice/`: optional operator voice adapters and ARBITER verdict announcements
-- `static/`: ASCII logo and theme assets
-- `tests/`: focused regression tests
-- `tools/`: boot, validation, export, data-source, and packaging utilities
-- `docs/`: maintenance and architecture notes
-- `future_implementations/`: Riko and Flet prototype material for later work
-- `archive/`: historical code snapshots and imported demos
+| Path | Purpose |
+| --- | --- |
+| `core/` | Tribunal, voting, memory, proposals, simulations, telemetry, API, and CLI |
+| `config/` | Runtime defaults, versions, and agent identities |
+| `integrations/` | Provider, feed, market, search, and MCP adapters |
+| `ui/` | Flet desktop UI, components, boot flow, and themes |
+| `monoliths/` | Active tribunal profiles and registry |
+| `_ARBITER/` | Runtime configuration plus ignored local cache, logs, and state |
+| `assistant/` | AURELIUS operator-assistant helpers |
+| `voice/` | Optional voice profiles and adapters |
+| `static/` | Icons, ASCII logos, and theme assets |
+| `tools/` | Boot, validation, export, data-source, and packaging utilities |
+| `tests/` | Regression and integration tests |
+| `docs/` | Architecture, operations, migrations, and workspace documentation |
 
-## Wider Local Workspace
+Historical experiments, future prototypes, generated reports, runtime data,
+model weights, and local workspace inventories are deliberately not tracked.
+Git history remains the source for retired implementations.
 
-This repository sits inside a larger `G:\` workspace that includes Msty Studio,
-local model folders, TARS assets, Kiwix/Msty knowledge exports, Flet prototypes,
-and Obsidian notes. See:
+## Repository Hygiene
 
-- `docs/WORKSPACE_ECOSYSTEM.md`
-- `docs/MSTY_STUDIO_CONTEXT.md`
-- `scripts/workspace_inventory.ps1`
+- Keep active source and maintained documentation in Git.
+- Keep generated output under ignored runtime paths such as `reports/`.
+- Keep experiments and local archives outside the tracked tree.
+- Store secrets in environment variables or ignored local configuration.
+- Add new behavior to the owning module instead of reviving legacy monoliths.
 
-Those files document how the project relates to the wider local system without
-committing installed applications, model weights, private notes, or generated
-runtime data.
+`boot.bat` is the canonical operator entry point.
+`consensus_war_room_genesis.py` remains the stable compatibility entry point for
+CLI, API, and older Msty workflows.
 
-## Git Hygiene
+## Optional AURELIUS Agent Runtime
 
-The repository intentionally ignores runtime state, caches, logs, memory dumps,
-exports, virtual environments, model weights, voice datasets, and audio assets.
-Keep secrets in environment variables or local ignored config files.
-
-## Notes
-
-`main.py` and `consensus_war_room_genesis.py` are both launchers for the active
-CLI. `consensus_war_room_genesis.py` remains the stable command target for older
-local workflows and Msty integration notes.
+An opt-in operator execution layer adds bounded tool rounds, context handling,
+tool retrieval, exact host approvals, MCP clients and durable background jobs.
+The existing UI, voice route, tribunal models and live briefing schedules remain
+the defaults. Install the optional dependency with `python -m pip install -e ".[agent]"`
+and read [AURELIUS agent operations](docs/AURELIUS_AGENT.md) before enabling it.
+`python -m assistant.agent --self-test` exercises the runtime offline.
+Real Odysseus can complement AURELIUS over a separate local service:
+[setup and permissions](docs/AURELIUS_ODYSSEUS.md). This route uses the actual
+Odysseus agent API and preserves CONSENSUS reasoning and existing briefing owners.

@@ -4,6 +4,7 @@ import argparse
 import functools
 import os
 import platform
+import random
 import re
 import shutil
 import sys
@@ -1252,12 +1253,20 @@ def _type_styled_lines(
     controls: PreviewControls | None = None,
     memory_total_mb: int | None = None,
 ) -> bool:
-    for line in lines:
-        if memory_total_mb is not None and "MEMORY CHECK:" in line:
-            if not _animate_memory_count(memory_total_mb, palette, controls, width or DEFAULT_WIDTH):
-                return False
-            continue
-        if not _type_styled_line(line, char_delay, line_delay, palette, width, controls):
+    # POST output arrives in whole-line bursts, with a fresh cadence per run.
+    rng = random.Random()
+    pending = list(lines)
+    offset = 0
+    while offset < len(pending):
+        _poll_controls(controls)
+        if controls and (controls.skip or controls.static):
+            return False
+        batch = pending[offset:offset + rng.randint(3, 8)]
+        for line in batch:
+            _write_styled_line(line, palette, width)
+        offset += len(batch)
+        pause = rng.choice((0.5, 1.0, 2.0))
+        if not _wait_with_controls(pause, controls):
             return False
     return True
 
@@ -1345,14 +1354,14 @@ def render_theme_dummy(
     _clear(clear)
     logo_complete = _print_lines(
         logo_lines,
-        logo_line_delay,
+        0.0,
         palette.logo,
         palette.reset,
         palette.background,
         active_width,
         controls,
     )
-    if not logo_complete or not _wait_with_controls(logo_hold, controls):
+    if not logo_complete or not _wait_with_controls(random.choice((0.5, 1.0, 2.0)), controls):
         finish_immediately()
         return
     _clear(clear)

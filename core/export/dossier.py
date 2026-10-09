@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 from config.version import SYSTEM_VERSION
 from core.decision_trace import read_trace_by_proposal_id
+from core.export.verdict import deliberation_markdown
 from core.paths import SYSTEM_LOG_PATH, SYSTEM_ROOT
 from core.proposals.store import PROPOSAL_HISTORY_PATH, get_proposal
 
@@ -76,6 +77,9 @@ def build_dossier_payload(
             "final_verdict": source.get("final_verdict") or source.get("verdict"),
             "terminal_branch": source.get("terminal_branch"),
             "review_triggers": source.get("review_triggers", []),
+            "deliberation_transcript": source.get("deliberation_transcript", []),
+            "deliberation_complete": source.get("deliberation_complete", False),
+            "simulation": source.get("simulation", False),
         },
         "references": {
             "history_path": str(history_path),
@@ -118,6 +122,7 @@ def _markdown(payload: Dict[str, Any]) -> str:
         f"- Decision timestamp: `{decision.get('decision_timestamp')}`\n\n"
         "## Monolith Votes\n\n"
         + "\n".join(vote_lines)
+        + deliberation_markdown(decision)
         + "\n\n## References\n\n"
         f"- Trace: `{decision.get('linked_decision_trace_id')}`\n"
         f"- Verdict JSON: `{references.get('linked_verdict_export_json')}`\n"

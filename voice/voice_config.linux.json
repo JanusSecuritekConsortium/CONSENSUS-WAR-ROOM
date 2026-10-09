@@ -1,0 +1,26 @@
+{
+  "profiles": {
+    "AURELIUS": {
+      "base_tts": "espeak",
+      "base_voice_language": "en-gb",
+      "fallback": "espeak",
+      "rvc_model_path": "voice/models/aurelius/DavidAttenborough/weights/DavidAttenborough.pth",
+      "rvc_index_path": "voice/models/aurelius/DavidAttenborough/logs/DavidAttenborough/added_IVF1110_Flat_nprobe_1_DavidAttenborough_v2.index",
+      "rvc_workdir": "_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
+      "rvc_python": ".venv-voice/bin/python",
+      "rvc_ffmpeg_dir": "",
+      "output_dir": "_ARBITER/tts_audio"
+    },
+    "ARBITER_GLADOS": {
+      "base_tts": "espeak",
+      "base_voice_language": "en-us",
+      "rvc_model_path": "voice/models/arbiter_glados/glados/glados2333333.pth",
+      "rvc_index_path": "voice/models/arbiter_glados/glados/added_IVF2170_Flat_nprobe_1.index",
+      "rvc_workdir": "_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
+      "rvc_python": ".venv-voice/bin/python",
+      "native_python": ".venv-voice/bin/python",
+      "rvc_ffmpeg_dir": "",
+      "output_dir": "_ARBITER/tts_audio"
+    }
+  }
+}

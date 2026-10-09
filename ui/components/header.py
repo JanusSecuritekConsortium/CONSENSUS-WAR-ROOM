@@ -30,7 +30,7 @@ THEME_LOGO_LAYOUTS = {
     "default": {"mode": "percentage", "split": THEME_HEADER_SPLITS["default"]},
     "arasaka": {"mode": "percentage", "split": THEME_HEADER_SPLITS["arasaka"]},
     "janus": {"mode": "percentage", "split": THEME_HEADER_SPLITS["janus"]},
-    "helldivers": {"mode": "percentage", "split": THEME_HEADER_SPLITS["helldivers"]},
+    "helldivers": {"mode": "supersampled_rect"},
     "eva": {"mode": "supersampled_rect"},
     "nerv": {"mode": "supersampled_rect"},
     "wh40k": {"mode": "supersampled_rect"},
@@ -40,6 +40,8 @@ HEADER_STATUS_METADATA_FLEX = 68
 HEADER_TELEMETRY_FLEX = 32
 LOGO_FONT_FAMILY = "Consolas"
 LOGO_CHAR_WIDTH_FACTOR = 0.62
+# Measured Consolas advance: the legacy 0.62 estimate includes empty space.
+CONSOLAS_CHAR_ADVANCE_FACTOR = 0.55
 SUPERSAMPLED_LOGO_MARGIN = 6
 SUPERSAMPLED_BANNER_MARGIN = 20
 MILITARY_HISTORICAL_RENDERER_COMMIT = "f7248fc"
@@ -216,16 +218,17 @@ def supersampled_logo_metrics(
     line_height = float(base_font_size) * float(line_height_factor)
     natural_width = source_max_columns * char_width
     natural_height = source_line_count * line_height
-    natural_visible_width = visible_columns * char_width
+    natural_visible_width = visible_columns * base_font_size * CONSOLAS_CHAR_ADVANCE_FACTOR
     natural_visible_height = visible_rows * line_height
     usable_width = resolved_width - (margin * 2)
     usable_height = resolved_height - (margin * 2)
-    fit_scale = min(usable_width / natural_visible_width, usable_height / natural_visible_height)
+    # Retain the established artwork scale, but center its actual glyph width.
+    fit_scale = min(usable_width / (visible_columns * char_width), usable_height / natural_visible_height)
     transformed_width = natural_visible_width * fit_scale
     transformed_height = natural_visible_height * fit_scale
     visible_left = (resolved_width - transformed_width) / 2
     visible_top = (resolved_height - transformed_height) / 2
-    canvas_left = visible_left - (min_column * char_width * fit_scale)
+    canvas_left = visible_left - (min_column * base_font_size * CONSOLAS_CHAR_ADVANCE_FACTOR * fit_scale)
     canvas_top = visible_top - (top_line * line_height * fit_scale)
     return SupersampledLogoMetrics(
         source_line_count=source_line_count,
@@ -849,7 +852,7 @@ def logo_runtime_diagnostics(theme: Theme | str, *, header_width: int = 1920) ->
         )
         art_width = metrics.transformed_width
         art_height = metrics.transformed_height
-        clearances = metrics.clearances
+        clearances = _offset_supersampled_clearances(metrics, layout)
     elif mode == "historical":
         region_width = float(_logo_box_width(logo, layout, cap_to_viewport=False))
         region_height = float(_logo_box_height(layout))
@@ -883,7 +886,8 @@ def logo_runtime_diagnostics(theme: Theme | str, *, header_width: int = 1920) ->
         "visible_artwork_width": round(art_width, 3),
         "visible_artwork_height": round(art_height, 3),
         "clearances": tuple(round(value, 3) for value in clearances),
-        "optical_offset_x": layout.logo_offset_x if theme.key == "wh40k" else 0,
+        "optical_offset_x": layout.logo_offset_x,
+        "optical_offset_y": layout.logo_offset_y,
     }
 
 

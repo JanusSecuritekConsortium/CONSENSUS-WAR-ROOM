@@ -155,32 +155,32 @@ def test_voice_profiles_load_identity_layer_config() -> None:
     assert aurelius.backend == "rvc"
     assert aurelius.voice == "aurelius"
     assert aurelius.settings["display_name"] == "AURELIUS"
-    assert aurelius.settings["base_tts"] == "windows_sapi"
+    assert aurelius.settings["base_tts"] == ("espeak" if sys.platform.startswith("linux") else "windows_sapi")
     assert aurelius.settings["base_voice_name"] == ["Microsoft George", "Microsoft Ryan", "Microsoft David"]
     assert aurelius.settings["base_voice_gender"] == "Male"
-    assert aurelius.settings["base_voice_language"] == "en-GB"
+    assert aurelius.settings["base_voice_language"].casefold() == "en-gb"
     assert aurelius.settings["transpose"] == 2
     assert aurelius.settings["index_rate"] == 0.78
     assert aurelius.settings["protect"] == 0.4
     assert aurelius.settings["filter_radius"] == 3
     assert aurelius.settings["rvc_model_name"] == "aurelius.pth"
-    assert aurelius.settings["rvc_python"].endswith("rvc_env/Scripts/python.exe")
+    assert aurelius.settings["rvc_python"].replace("\\", "/").endswith(".venv-voice/bin/python" if sys.platform.startswith("linux") else "rvc_env/Scripts/python.exe")
     assert aurelius.settings["rvc_env"]["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] == "1"
-    assert aurelius.fallback == "windows_sapi"
+    assert aurelius.fallback == ("espeak" if sys.platform.startswith("linux") else "windows_sapi")
     assert glados.backend == "glados_tts"
     assert glados.voice == "glados"
     assert glados.settings["display_name"] == "ARBITER"
     assert glados.settings["base_voice_name"] == ["Microsoft Zira", "Microsoft Hazel"]
     assert glados.settings["base_voice_gender"] == "Female"
-    assert glados.settings["base_voice_language"] == "en-US,en-GB"
+    assert glados.settings["base_voice_language"] == ("en-us" if sys.platform.startswith("linux") else "en-US,en-GB")
     assert glados.settings["transpose"] == 0
     assert glados.settings["index_rate"] == 0.72
     assert glados.settings["protect"] == 0.33
     assert glados.settings["filter_radius"] == 3
     assert glados.settings["max_chunk_chars"] == 360
     assert glados.settings["rvc_model_name"] == "arbiter_glados.pth"
-    assert glados.settings["rvc_python"].endswith("rvc_env/Scripts/python.exe")
-    assert glados.settings["native_python"].endswith("rvc_env/Scripts/python.exe")
+    assert glados.settings["rvc_python"].replace("\\", "/").endswith(".venv-voice/bin/python" if sys.platform.startswith("linux") else "rvc_env/Scripts/python.exe")
+    assert glados.settings["native_python"].replace("\\", "/").endswith(".venv-voice/bin/python" if sys.platform.startswith("linux") else "rvc_env/Scripts/python.exe")
     assert glados.rate == 155
     assert glados.fallback == "rvc"
 

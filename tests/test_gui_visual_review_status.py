@@ -65,7 +65,9 @@ def test_visual_review_overlay_does_not_mutate_body_layout() -> None:
     body = layout.content.controls[1].content
 
     assert [control.expand for control in body.controls] == [LEFT_COLUMN_FLEX, CENTER_COLUMN_FLEX, RIGHT_COLUMN_FLEX]
-    assert hasattr(layout, "visual_review_status_viewer")
+    # Viewers are now created lazily in page.overlay, not attached to the body.
+    assert state.visual_review_viewer_open
+    assert "VISUAL REVIEW STATUS" in "\n".join(_flatten_text(build_visual_review_status_viewer(state)))
 
 
 if __name__ == "__main__":

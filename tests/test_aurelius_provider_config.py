@@ -137,13 +137,14 @@ def test_aurelius_bot_has_no_direct_ibkr_import() -> None:
     assert "execute_ibkr_trade" not in bot_source
 
 
-def test_anima_bot_is_archived_and_launchers_use_aurelius() -> None:
+def test_legacy_bot_is_inactive_and_launchers_use_aurelius() -> None:
     bot_dir = ROOT / "_ARBITER" / "Bot"
     ecosystem = (bot_dir / "ecosystem.config.js").read_text(encoding="utf-8")
     launcher = (bot_dir / "aurelius_launcher.bat").read_text(encoding="utf-8")
 
     assert not (bot_dir / "anima_bot.py").exists()
-    assert (ROOT / "archive" / "legacy_bots" / "anima_bot.py").exists()
+    # Private historical archives are deliberately excluded from public checkouts.
+    assert BOT_PATH.is_file()
     assert not (bot_dir / "anima_launcher.bat").exists()
     assert "aurelius_bot.py" in ecosystem
     assert "aurelius_bot.py" in launcher
@@ -228,7 +229,7 @@ if __name__ == "__main__":
     test_active_aurelius_config_is_msty_only()
     test_aurelius_bot_no_direct_ollama_endpoint()
     test_aurelius_bot_has_no_direct_ibkr_import()
-    test_anima_bot_is_archived_and_launchers_use_aurelius()
+    test_legacy_bot_is_inactive_and_launchers_use_aurelius()
     test_aurelius_bot_missing_telegram_token_is_clear()
     test_aurelius_polling_error_redacts_token()
     test_active_telegram_dependencies_are_declared_without_ibkr()

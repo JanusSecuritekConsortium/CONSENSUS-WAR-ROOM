@@ -9,7 +9,7 @@ from pathlib import Path
 from config.agents import AGENT_PROFILES
 from config.names import ARBITER, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
-from config.runtime import apply_cli_overrides, load_runtime_config, runtime_config_to_dict, write_default_config
+from config.runtime import RuntimeConfig, apply_cli_overrides, load_runtime_config, runtime_config_to_dict, write_default_config
 from core.active_compile import compile_active_sources, print_compile_report
 from core.health import print_health_report, run_health_check
 from core.history import migrate_legacy_history
@@ -322,7 +322,19 @@ def main() -> None:
         _warn_if_model_unavailable(verification_config, model_name)
         return
 
-    config = apply_cli_overrides(load_runtime_config(config_path), args)
+    try:
+        config = apply_cli_overrides(load_runtime_config(config_path), args)
+    except (OSError, ValueError, TypeError, AttributeError, KeyError):
+        if not args.gui:
+            raise
+        from ui.flet_app import run_flet_gui
+        recovery_config = apply_cli_overrides(RuntimeConfig(), args)
+        recovery_config.theme = resolve_selected_gui_theme(args.theme, args.seed)
+        run_flet_gui(recovery_config.theme, recovery_config, compact_header=args.compact_header,
+                     window_mode=resolve_gui_window_mode(args.fullscreen, args.maximized, args.windowed),
+                     startup_config_error=True, startup_config_path=config_path,
+                     startup_config_loader=lambda: apply_cli_overrides(load_runtime_config(config_path), args))
+        return
     if args.memory_status:
         from core.memory.session import memory_status
 
@@ -484,8 +496,6 @@ def main() -> None:
         return
 
     if args.gui:
-        provider_status = resolve_runtime_provider_status(config, nodes)
-        render_bios_boot_console(theme_id=config.theme, speed=args.speed, seed=args.seed, provider_status=provider_status)
         from ui.flet_app import run_flet_gui
 
         run_flet_gui(

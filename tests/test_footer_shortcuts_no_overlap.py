@@ -17,8 +17,9 @@ def test_footer_shortcuts_do_not_share_region_with_theme_selector_or_controls() 
     assert left.width is not None
     assert right.width is not None
     assert shortcuts.expand is True
-    assert "Ctrl+K Command" in shortcuts.content.value
-    assert "Ctrl+E Export" in shortcuts.content.value
+    labels = [button.content.value for button in shortcuts.content.controls]
+    assert "Ctrl+K Command" in labels
+    assert "Ctrl+E Export" in labels
     assert footer.wrap is False
     assert footer.spacing == 0
 

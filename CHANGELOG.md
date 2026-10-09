@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased - Synchronization audit 2026-09-16
+
+Review branch only; not a validated release. See `docs/GITHUB_SYNC_AUDIT_2026-09-16.md`.
+
+### Added
+- Bounded Aurelius shared-memory MCP operations with transactional revisions, synthetic tests, and usage documentation; personal memory databases are excluded.
+- Curated MstyConsensusLauncher source, build/maintenance scripts, and example configuration under `tools/msty_launcher`; installed executables and operational configuration are excluded.
+- Audit of local/remotely published commits, branch divergence, missing tags/releases, data exclusions, and validation failures.
+
+### Changed
+- Preserve proposal focus through partial GUI refreshes, serialize rendering, expose footer commands, and update diagnostic overlays, logo geometry, and boot batches.
+- Improve Aurelius report selection, summaries, duplicate handling, and recorded open-task reporting.
+- Include monolith prompt profiles in packaged resources and verify prompt assembly during startup self-test.
+- Retain the existing unpublished cleanup/Linux portability commit and analytics changes; merge current remote main into the review branch.
+- Scope runtime memory exclusions to the repository root so `core/memory` source remains discoverable; exclude local databases, caches, embeddings, and model artifacts.
+
+### Validation / Known issues
+- Active compilation passed for 497 files; 36 targeted tests passed.
+- Full suite remains red: 665 passed, 13 failed, 1 skipped on the repeated isolated run (initial run: 666 passed, 12 failed, 1 skipped).
+- Outstanding failures cover archive assumptions, logo hashes/geometry, a date assertion affected by the checkout path, and an order/state-sensitive Ollama routing assertion that passes separately.
+- No version bump, release tag, production deployment, installed-binary rebuild, or main merge is implied by this synchronization.
+
 ## 8.0.0 - Theme-Native Production Boot System
 
 - Replaced the shared legacy dense boot screen with six distinct production layouts for EVA, Arasaka, Military, WH40K, Helldivers, and Janus.

@@ -52,21 +52,30 @@ def run_boot(
     seed: int | None = None,
     config_path: Path = CONFIG_PATH,
     launch_gui: Callable[..., Any] | None = None,
-    render_bios: Callable[..., Any] = render_bios_boot_console,
+    render_bios: Callable[..., Any] | None = None,
 ) -> int:
     dependencies = build_dependency_report()
     print_human_report(dependencies)
     if dependencies["missing_required"]:
         return 1
 
-    config = load_runtime_config(config_path)
-    theme_key = resolve_startup_theme(config.startup_theme, seed=seed)
+    config_error = False
+    try:
+        config = load_runtime_config(config_path)
+        theme_key = resolve_startup_theme(config.startup_theme, seed=seed)
+        nodes = apply_node_overrides(DEFAULT_NODES, config.node_overrides)
+    except (OSError, ValueError, TypeError, AttributeError, KeyError):
+        if safe:
+            print("CONFIGURATION: FAILED; correct the local configuration and retry")
+            return 1
+        config = RuntimeConfig(startup_theme="MILITARY")
+        config_error = True
+        theme_key = "military"
+        nodes = dict(DEFAULT_NODES)
     config.theme = theme_key
-    nodes = apply_node_overrides(DEFAULT_NODES, config.node_overrides)
-    provider = health_check(config, nodes)
     print(f"SELECTED THEME: {theme_key.upper()}")
-    print(f"PROVIDER STATUS: {str(provider.get('status', 'unknown')).upper()}")
-    print(f"PROVIDER BACKEND: {provider.get('active_backend') or provider.get('backend') or config.backend}")
+    print("DIRECTORATE: configuration loaded" if not config_error else "DIRECTORATE: configuration failed; GUI retry available")
+    print("DIRECTORATE: provider check pending in desktop worker")
 
     if safe:
         print("SAFE MODE: diagnostics only")
@@ -74,12 +83,21 @@ def run_boot(
         print_health_report(report, verbose=True)
         return 0 if report["status"] != "fail" else 1
 
-    render_bios(theme_id=theme_key, speed="random", seed=seed, provider_status=provider)
+    # Preserve the themed animation on ordinary executable launches. Provider
+    # readiness is still resolved by DIRECTORATE after the desktop mounts.
+    # Configuration failures go straight to the recovery interface.
+    if not config_error:
+        renderer = render_bios or render_bios_boot_console
+        renderer(theme_id=theme_key, speed="random", seed=seed,
+                 provider_status={"status": "unknown", "active_backend": config.backend})
     if launch_gui is None:
         from ui.flet_app import run_flet_gui
 
         launch_gui = run_flet_gui
-    launch_gui(theme_key, config, nodes, compact_header=True, window_mode="maximized")
+    kwargs: dict[str, Any] = {"compact_header": True, "window_mode": "maximized"}
+    if config_error:
+        kwargs.update(startup_config_error=True, startup_config_path=config_path)
+    launch_gui(theme_key, config, nodes, **kwargs)
     return 0
 
 
@@ -95,6 +113,11 @@ def run_release_validation() -> int:
         [sys.executable, str(ROOT / "tools" / "export_theme_gallery.py"), "--timeout", "90"],
     ]
     for command in commands:
+        if sys.platform != "win32" and "export_theme_gallery.py" in command[1]:
+            print("INCOMPLETE: automated theme screenshots require Windows. "
+                  "Tests and compilation passed; manually validate the Linux desktop. "
+                  "See docs/LINUX_MIGRATION.md.")
+            return 2
         print(f"VALIDATE: {' '.join(command)}")
         code = _run_command(command)
         if code != 0:
@@ -118,6 +141,20 @@ def run_self_test() -> int:
     from ui.animations.bios_boot import _theme_boot_logo_text, capture_boot_hardware_snapshot
     from ui.components.header import logo_runtime_diagnostics
     from voice.voice_profiles import get_voice_profile
+
+    from config.names import ARBITER
+    from config.nodes import DEFAULT_NODES
+    from core.prompting.assembler import load_monolith_profile, assemble_monolith_prompt
+
+    try:
+        for agent_id in (*DEFAULT_NODES, ARBITER):
+            load_monolith_profile(agent_id)
+        for node in DEFAULT_NODES.values():
+            assemble_monolith_prompt(node, "Runtime self-test proposal", {})
+    except Exception as exc:
+        print(f"PROMPT SUBSYSTEM: ERROR ({exc})")
+        return 1
+    print("PROMPT SUBSYSTEM: READY")
 
     failures = validate_graphic_registry()
     if failures:

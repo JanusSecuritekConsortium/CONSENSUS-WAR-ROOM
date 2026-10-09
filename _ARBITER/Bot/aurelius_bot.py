@@ -29,18 +29,30 @@ LOG_DIR = Path(os.getenv("AURELIUS_LOG_DIR", str(Path(__file__).resolve().parent
 MODEL = os.getenv("AURELIUS_MODEL", "mistral")
 CHAT_ID: Optional[str] = os.getenv("AURELIUS_TELEGRAM_CHAT_ID") or os.getenv("TELEGRAM_CHAT_ID")
 BOT: Any = None
+AGENT_OPERATOR: Any = None
 provider_error_gate = ProviderErrorGate()
 TELEGRAM_INITIAL_RETRY_SECONDS = 3
 TELEGRAM_MAX_RETRY_SECONDS = 60
 
 BRIEF_PROMPTS = {
     "Morning Brief": (
-        "Prepare the AURELIUS morning brief. Summarize the most important operational, "
-        "geopolitical, and market items concisely. Mark uncertainty and do not invent facts."
+        "Prepare a concise AURELIUS morning brief using only facts returned by tools or "
+        "source material supplied during this run. Never rely on model memory for current "
+        "events, dates, prices, percentages, market movements, or political developments. "
+        "Never print bracketed placeholders or sample values. Include a development only "
+        "when its source, publication time, and direct URL are available. Every market value "
+        "must include its as-of time and source. If no current sources were successfully "
+        "verified, return exactly: NO VERIFIED CURRENT DATA — No factual morning brief was generated. "
+        "Return plain text only; the delivery wrapper adds the title and timestamp."
     ),
     "End-of-Day Shutdown": (
-        "Prepare the AURELIUS end-of-day shutdown brief. Summarize material developments, "
-        "open risks, and items requiring attention tomorrow. Mark uncertainty and do not invent facts."
+        "Prepare a concise AURELIUS end-of-day report using only task activity, tool results, "
+        "documents, or other evidence supplied during this run. Never invent completed work, "
+        "open work, blockers, deadlines, events, or tomorrow's priorities. Never print bracketed "
+        "placeholders or sample values. State unavailable information as unavailable. If no "
+        "operational evidence was successfully verified, return exactly: NO VERIFIED ACTIVITY — "
+        "No factual end-of-day report was generated. Return plain text only; the delivery wrapper "
+        "adds the title and timestamp."
     ),
 }
 
@@ -97,6 +109,22 @@ def send_telegram_message(message: str, chat_id: Optional[str] = None) -> bool:
 
 
 def call_msty(prompt: str, context: str, scheduled: bool = False) -> Optional[str]:
+    if not scheduled:
+        try:
+            from integrations.odysseus.client import OdysseusConfig
+            from assistant.agent.config import AgentConfig
+            odysseus_enabled = OdysseusConfig.from_env().enabled
+            agent_enabled = False if odysseus_enabled else AgentConfig.from_env().enabled
+            if odysseus_enabled or agent_enabled:
+                global AGENT_OPERATOR
+                if AGENT_OPERATOR is None:
+                    from integrations.msty.aurelius import AureliusOperator
+                    AGENT_OPERATOR = AureliusOperator()
+                return (AGENT_OPERATOR.run_odysseus(prompt).text if odysseus_enabled
+                        else AGENT_OPERATOR.run_agent(prompt).text)
+        except Exception as error:
+            log_once(context, 'Agent unavailable: ' + type(error).__name__)
+            return None
     provider_config = resolve_aurelius_provider_config()
     if not provider_config.ready:
         log_once(context, scheduled_provider_error_message(provider_config))
@@ -131,12 +159,15 @@ def call_msty(prompt: str, context: str, scheduled: bool = False) -> Optional[st
 
 
 def generate_brief(label: str, scheduled: bool = False) -> Optional[str]:
-    prompt = BRIEF_PROMPTS[label]
-    content = call_msty(prompt, label, scheduled=scheduled)
-    if content is None:
+    # Keep legacy outbound schedules factual too; never ask an ungrounded model for news.
+    from assistant.agent.service import scheduled_report
+
+    kind = {'Morning Brief': 'morning', 'End-of-Day Shutdown': 'evening'}[label]
+    try:
+        return scheduled_report(kind)
+    except Exception as exc:
+        log_once(label, 'Report source collection failed: ' + type(exc).__name__)
         return None
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    return f"{label} - {timestamp}\n\n{content}"
 
 
 def send_brief(label: str, scheduled: bool = False, chat_id: Optional[str] = None) -> bool:
@@ -243,12 +274,19 @@ def poll_telegram(bot: Any, token: str, sleep: Any = time.sleep) -> None:
 
 def run_scheduler() -> None:
     import schedule
+    from assistant.agent.jobs import register_legacy_schedule
 
-    schedule.every().day.at("08:00").do(send_morning_brief)
-    schedule.every().day.at("18:00").do(send_end_of_day_shutdown)
+    register_legacy_schedule(schedule, send_morning_brief, send_end_of_day_shutdown)
     while True:
         schedule.run_pending()
         time.sleep(60)
+
+
+def telegram_polling_enabled(environ: Optional[Mapping[str, str]] = None) -> bool:
+    """Return whether this legacy service should consume inbound Telegram updates."""
+    env = os.environ if environ is None else environ
+    value = env.get("AURELIUS_TELEGRAM_POLLING", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
 
 
 def main() -> int:
@@ -261,6 +299,13 @@ def main() -> int:
         return 1
 
     BOT = create_bot(token)
+    if not telegram_polling_enabled():
+        LOGGER.info(
+            "AURELIUS scheduled Telegram delivery started; inbound polling is owned by Msty Go."
+        )
+        run_scheduler()
+        return 0
+
     threading.Thread(target=run_scheduler, daemon=True, name="aurelius-scheduler").start()
     LOGGER.info("AURELIUS Telegram assistant started with Msty provider routing.")
     poll_telegram(BOT, token)

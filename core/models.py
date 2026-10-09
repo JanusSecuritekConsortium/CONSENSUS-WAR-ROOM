@@ -46,6 +46,7 @@ class NodeIdentity:
     temperature: float
     mission: str
     prompt: str
+    max_output_tokens: int = 900
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,13 @@ class Vote:
     response_time: float = 0.0
     raw_response: str = ""
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    backend: str = "unknown"
+    argument: Dict[str, Any] = field(default_factory=dict)
+    peer_responses: List[Dict[str, Any]] = field(default_factory=list)
+    review_required: bool = False
+    review_reason: str = ""
+    vote_change_reason: str = ""
+    unresolved_disagreements: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -141,6 +149,9 @@ class TribunalResult:
     terminal_branch: str = ""
     proposal_classification: Dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    deliberation_transcript: List[Dict[str, Any]] = field(default_factory=list)
+    deliberation_complete: bool = False
+    simulation: bool = False
 
 
 class LLMBackend(Protocol):

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+import time
 from typing import Dict
 
 import flet as ft
 
 from config.names import ARBITER, TRIBUNAL_AGENT_IDS
 from core.models import NodeIdentity, Theme
+from ui.directorate import contrast_ratio
 
 
 READINESS_ROW_LABELS = ("SESSION", "MEMORY", "THEME", "PROVIDER", "LAST VERDICT", "LIFECYCLE")
@@ -14,6 +16,35 @@ READINESS_LABEL_WIDTH = 78
 READINESS_ROW_FONT_SIZE = 9
 MONOLITH_CARD_COUNT = 4
 MONOLITH_CARD_PADDING = 8
+VERDICT_FEEDBACK_SECONDS = 12.0
+THINKING_STATUSES = {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING"}
+
+
+def feedback_color(theme: Theme, status: str) -> str:
+    normalized = status.upper()
+    if normalized in {"APPROVE", "APPROVED", "SUCCESS"}:
+        candidates = ("#61e9ee", "#08777c") if theme.key == "military" else ("#48e68b", "#087c42")
+    elif normalized in {"DENY", "DENIED", "ERROR", "OFFLINE"}:
+        candidates = ("#ff655c", "#b71925")
+    else:
+        candidates = (("#f5f5f5", "#9b5900") if theme.key in {"eva", "nerv", "wh40k", "helldivers"}
+                      else ("#ffbd59", "#9b5900"))
+    return max(candidates, key=lambda color: contrast_ratio(color, theme.surface_color))
+
+
+def card_border(theme: Theme, status: str, feedback: tuple[str, float] | None,
+                now: float, *, reduced_motion: bool = False) -> tuple[str, int]:
+    if status.upper() in THINKING_STATUSES:
+        color = theme.accent_color
+        if not reduced_motion and int(now / 1.2) % 2 == 0:
+            # Slow, modest border-only dimming; text and card contents never blink.
+            fg = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
+            bg = [int(theme.surface_color[i:i + 2], 16) for i in (1, 3, 5)]
+            color = "#" + "".join(f"{round(a * .65 + b * .35):02x}" for a, b in zip(fg, bg))
+        return color, 2
+    if feedback and now < feedback[1]:
+        return feedback_color(theme, feedback[0]), 2
+    return theme.primary_color, 1
 
 
 def status_color_category(status: str) -> str:
@@ -167,10 +198,14 @@ def build_monolith_panel(
     session_id: str = "--",
     lifecycle_state: str = "IDLE",
     runtime_details: Dict[str, Dict[str, object]] | None = None,
+    feedback: Dict[str, tuple[str, float]] | None = None,
+    reduced_motion: bool = False,
+    now: float | None = None,
 ) -> ft.Control:
     cards = []
     vote_details = vote_details or {}
     runtime_details = runtime_details or {}
+    now = time.monotonic() if now is None else now
     muted_color = theme.muted_text or theme.secondary_text or theme.secondary_color
     for key in [*TRIBUNAL_AGENT_IDS, ARBITER]:
         labels = theme.monolith_labels.get(key)
@@ -180,6 +215,8 @@ def build_monolith_panel(
         model = nodes[key].model if key in nodes else "operator"
         compact_model = _compact_model_name(model)
         color = status_color(theme, status)
+        border_color, border_width = card_border(theme, status, (feedback or {}).get(key), now,
+                                                reduced_motion=reduced_motion)
         category = status_color_category(status)
         opacity = 0.55 if category == "error" and status.upper() == "OFFLINE" else 1.0
         details = vote_details.get(key, {})
@@ -191,6 +228,8 @@ def build_monolith_panel(
             glyph = str(runtime.get("glyph", ""))
             pulse = str(runtime.get("pulse", "*"))
             activity = str(runtime.get("activity", activity_state))
+            if status == "QUEUED":
+                activity = "WAITING FOR MODEL TURN"
             latency_ms = int(runtime.get("latency_ms", 0) or 0)
             signal = str(runtime.get("signal", ""))
             detail_lines.append(
@@ -292,7 +331,8 @@ def build_monolith_panel(
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 padding=MONOLITH_CARD_PADDING,
-                border=ft.border.all(2 if active_runtime else 1, color),
+                border=ft.border.all(border_width, border_color),
+                animate=ft.Animation(1000, ft.AnimationCurve.EASE_IN_OUT) if not reduced_motion else None,
                 bgcolor=theme.surface_color,
                 opacity=opacity,
                 expand=1,

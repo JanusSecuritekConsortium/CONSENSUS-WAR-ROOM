@@ -17,5 +17,5 @@ scheduled delivery, or send `/start` after the bot launches to register the
 active chat for the current process. A missing or unavailable Msty endpoint is
 logged once and does not emit repeated scheduled Telegram errors.
 
-The retired ANIMA implementation is preserved at
-`archive/legacy_bots/anima_bot.py` for historical reference only.
+The retired ANIMA implementation is available through Git history for
+historical reference only.
