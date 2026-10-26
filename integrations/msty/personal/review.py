@@ -134,7 +134,7 @@ def render_english(results, now, mode='weekly'):
     lines.append(str(low_count)+' requests without an observed prior exchange remain low priority. An unanswered message alone does not establish a pending task.')
     label = {'morning': 'NEXT SEVEN DAYS', 'evening': 'TOMORROW', 'weekly': 'NEXT WEEK'}[mode]
     lines.extend(['', '2. AGENDA — '+label+': '+start.date().isoformat()+' through '+(end.date()-timedelta(days=1)).isoformat()])
-    lines.extend(agenda(results))
+    lines.extend(agenda(results, include_locations=True))
     lines.extend(['', '3. RECENT LOCAL FOLDER ACTIVITY'])
     files = [(r,f) for r in results if r['status']=='ok' for f in r.get('files',[])]
     for result,file in sorted(files,key=lambda pair:pair[1]['modified'],reverse=True)[:8]:
@@ -164,17 +164,29 @@ def render_english(results, now, mode='weekly'):
     return '\n'.join(lines)
 
 
-def build(mode='weekly'):
+def build(mode='weekly', *, vault=None, target_hash=None):
     from .digest import personal_digest
     from .publication import saved_tasks
     now = datetime.now(timezone.utc)
-    results = collect(load(), now, mode=mode)
+    config = load()
+    results = collect(config, now, mode=mode)
     body = render_english(results, now, mode=mode)
     tasks = saved_tasks()
-    summary = personal_digest(results, now, tasks, weekly=mode=='weekly', morning=mode=='morning')
+    from .calendar_changes import snapshot, baseline, compare
+    from .followups import items
+    from .publication import VAULT
+    calendar_snapshot = snapshot(results, now, mode)
+    changes = compare(calendar_snapshot, baseline(vault or VAULT, target_hash),
+                      excluded_titles=config.get('agenda_reminder_excluded_titles', []))
+    followups = items(results, tasks, now)
+    summary = personal_digest(results, now, tasks, weekly=mode=='weekly', morning=mode=='morning',
+                              excluded_titles=config.get('agenda_reminder_excluded_titles', []),
+                              include_locations=config.get('agenda_include_locations_by_default', False) is True,
+                              changes=changes, controlled=True)
     body = summary+'\n\nDETAILS AND SOURCES\n\n'+body
     return {'body_text': body, 'generated_at': now.isoformat(), 'mode': mode,
             'telegram_text': summary,
+            'calendar_snapshot': calendar_snapshot, 'followups': followups,
             'coverage': [{k: r[k] for k in ('id', 'label', 'status', 'checked_at', 'warnings') if k in r} for r in results]}
 
 

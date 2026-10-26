@@ -116,6 +116,10 @@ def deliver(body, receipt, state_path, route):
     method = 'sendMessage'
     data = {'chat_id': route['chat_id'], 'text': body,
             'link_preview_options': {'is_disabled': True}}
+    if receipt.get('interactive'):
+        from .telegram_buttons import for_receipt
+        receipt['reply_markup'] = receipt.get('reply_markup') or for_receipt(receipt, route, body)
+        data['reply_markup'] = receipt['reply_markup']
     receipt['delivery_format'] = 'text'
     receipt.update(status='sending', part=1, parts=1)
     atomic(state_path, json.dumps(receipt, ensure_ascii=False, indent=2))
@@ -128,6 +132,10 @@ def deliver(body, receipt, state_path, route):
         atomic(state_path, json.dumps(receipt, ensure_ascii=False, indent=2))
         raise
     sent.append(result['message_id'])
+    if receipt.get('reply_markup'):
+        from .interaction_store import bind
+        bind(route, receipt['reply_markup'], result['message_id'],
+             [item['id'] for item in receipt.get('followups', [])] if len(receipt.get('followups', [])) == 1 else [])
     receipt.update(status='delivered', acknowledged_at=datetime.now(timezone.utc).isoformat())
     atomic(state_path, json.dumps(receipt, ensure_ascii=False, indent=2))
     return receipt
@@ -214,7 +222,7 @@ def publish(mode='morning', send=False, *, vault=None, db_path=None, edition=Non
                     else:
                         report['telegram_text'] += '\nShared-source excerpts are available in the local vault.'
             else:
-                report = build(mode)
+                report = build(mode, vault=vault, target_hash=hashlib.sha256(str(route['chat_id']).encode()).hexdigest() if route else None)
             consultation = uuid4().hex[:12]
             body = report['body_text']
             body += '\n\nConsulta: '+consultation
@@ -225,6 +233,8 @@ def publish(mode='morning', send=False, *, vault=None, db_path=None, edition=Non
             receipt = {'status': 'prepared', 'note': relative, 'generated_at': report['generated_at'],
                        'consultation_id': consultation, 'body_text': body, 'telegram_text': report['telegram_text'],
                        'coverage': report['coverage'], 'message_ids': []}
+            receipt['interactive'] = True
+            receipt.update({key: report[key] for key in ('calendar_snapshot', 'followups') if key in report})
             atomic(state_path, json.dumps(receipt, ensure_ascii=False, indent=2))
         index_path = vault/'index.json'
         index = json.loads(index_path.read_text(encoding='utf-8')) if index_path.exists() else {}

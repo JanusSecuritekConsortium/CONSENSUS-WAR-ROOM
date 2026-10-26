@@ -28,7 +28,9 @@ def section(title, items, budget):
     return '\n'.join(lines)
 
 
-def personal_digest(results, now, tasks=None, weekly=False, morning=True):
+def personal_digest(results, now, tasks=None, weekly=False, morning=True, *, excluded_titles=(), include_locations=False, changes=(), controlled=False):
+    from .followups import task_item, mail_item
+    from .interaction_store import visible
     mail, failures = [], []
     low = 0
     for source in results:
@@ -40,19 +42,24 @@ def personal_digest(results, now, tasks=None, weekly=False, morning=True):
         low += len(isolated)
         for item in priority:
             message = item['message']
+            if controlled and not visible(mail_item(source, message)['id'], now):
+                continue
             mail.append('- '+('Attention: ' if item['urgent'] else 'Consider replying: ')+
                         clean(message.get('subject',''))+' ['+source['label']+']')
     if not mail:
         mail = ['No priority requests detected.']
     mail.append(str(low)+' isolated requests at low priority. Possible follow-ups, not confirmed tasks.')
-    calendar = agenda(results)
+    calendar = agenda(results, excluded_titles=excluded_titles, include_locations=include_locations)
     conflicts = [line for line in calendar if '↔' in line]
     entries = [line for line in calendar if line and (line.startswith('- ') and '↔' not in line or
                any(line.startswith(day+' ') for day in ('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')))]
     if not entries:
-        entries=['No appointments retrieved.']
+        entries=[next((line for line in calendar if line.startswith('No other appointments')), 'No appointments retrieved.')]
     todo=[]
     for task in tasks or []:
+        identity = task_item(task)
+        if controlled and identity and not visible(identity['id'], now):
+            continue
         if isinstance(task,str) and task.strip():
             todo.append('- '+clean(task))
         elif isinstance(task,dict) and str(task.get('status','open')).casefold() not in ('done','completed','cancelled','closed'):
@@ -60,13 +67,16 @@ def personal_digest(results, now, tasks=None, weekly=False, morning=True):
             if title:
                 todo.append('- '+clean(title))
     sections=['AURELIUS · '+('DAILY PLAN' if morning else 'REVIEW')+' · '+now.astimezone(TZ).strftime('%d/%m %H:%M'),
-              section('SAVED TASKS',todo or ['Task list unavailable.' if tasks is None else 'No open tasks recorded.'],550),
-              section('EMAIL',mail,800),
-              section('AGENDA · '+('NEXT WEEK' if weekly else 'TODAY AND COMING DAYS' if morning else 'TOMORROW'),entries,1400)]
+              section('SAVED TASKS',todo or ['Task list unavailable.' if tasks is None else 'No open tasks recorded.'],500 if changes else 550),
+              section('EMAIL',mail,700 if changes else 800),
+              section('AGENDA · '+('NEXT WEEK' if weekly else 'TODAY AND COMING DAYS' if morning else 'TOMORROW'),entries,1350 if changes else 1400)]
+    if changes:
+        sections.insert(1, section('CHANGES SINCE THE LAST DELIVERED BRIEFING', list(changes), 450))
     if conflicts:
-        sections.append(section('OVERLAPS · check whether intentional',conflicts,650))
+        sections.append(section('OVERLAPS · check whether intentional',conflicts,550 if changes else 650))
     else:
-        sections.append('No overlaps detected between events with known start and end times.')
+        sections.append(next((line for line in calendar if line.startswith('No overlaps detected')),
+                             'No overlaps detected between events with known start and end times.'))
     if failures:
         sections.append('Unavailable: '+short(', '.join(failures),180))
     if any('does not share the title' in line for line in calendar):

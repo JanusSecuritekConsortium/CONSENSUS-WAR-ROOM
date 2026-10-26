@@ -12,12 +12,12 @@ from typing import Any, List, Optional
 try:
     from .audio_quality import polish_wav
     from .tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
-    from .text_normalization import split_speech_text
+    from .text_normalization import normalize_for_speech, split_speech_text
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
     from voice.audio_quality import polish_wav
     from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
-    from voice.text_normalization import split_speech_text
+    from voice.text_normalization import normalize_for_speech, split_speech_text
     from voice.voice_profiles import VoiceProfile, get_voice_profile
 
 
@@ -62,7 +62,7 @@ class RVCAdapter:
             return converted
         if converted.metadata.get("playback_error"):
             print(f"RVC playback failed: {converted.metadata['playback_error']}")
-        fallback = self.base_tts.speak(text)
+        fallback = self.base_tts.speak(normalize_for_speech(text, lang=self.settings.get('speech_language', 'en')))
         fallback.metadata["fallback_from"] = "rvc"
         fallback.metadata["rvc_error"] = converted.metadata.get("error", "unknown RVC error")
         if converted.audio_path:
@@ -73,7 +73,7 @@ class RVCAdapter:
         return self.convert_text(text, play=False)
 
     def convert_text(self, text: str, play: bool = True) -> TTSBackendResult:
-        chunks = split_speech_text(text, max_chars=self.max_chunk_chars)
+        chunks = split_speech_text(text, max_chars=self.max_chunk_chars, lang=self.settings.get('speech_language', 'en'))
         if not chunks:
             return TTSBackendResult(ok=False, text=text, mode="rvc", metadata={"error": "empty_text"})
         self.output_dir.mkdir(parents=True, exist_ok=True)

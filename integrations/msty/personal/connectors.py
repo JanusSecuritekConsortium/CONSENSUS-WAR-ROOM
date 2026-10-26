@@ -3,6 +3,7 @@ from email import policy
 from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
 import html
+import hashlib
 import imaplib
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -210,10 +211,10 @@ def calendar_events(account, now, mode='weekly'):
         warnings.append('Shared calendar feed can lag changes; confirm urgent changes in Proton Calendar')
     start, end = calendar_window(now, mode)
     calendar = icalendar.Calendar.from_ical(data)
+    recurring_uids = {str(event.get('UID', '')) for event in calendar.walk('VEVENT')
+                      if event.get('RRULE') or event.get('RDATE') or event.get('RECURRENCE-ID')}
     events = []
     for event in recurring_ical_events.of(calendar).between(start, end):
-        if str(event.get('STATUS', '')).upper() == 'CANCELLED':
-            continue
         beginning = event.decoded('DTSTART')
         all_day = isinstance(beginning, date) and not isinstance(beginning, datetime)
         if not all_day:
@@ -221,7 +222,12 @@ def calendar_events(account, now, mode='weekly'):
         ending = event.decoded('DTEND') if event.get('DTEND') else None
         if isinstance(ending, datetime):
             ending = ending.replace(tzinfo=TZ) if ending.tzinfo is None else ending.astimezone(TZ)
-        events.append({'uid': str(event.get('UID', '')), 'start': beginning.isoformat(), 'all_day': all_day,
+        recurrence = event.decoded('RECURRENCE-ID') if event.get('RECURRENCE-ID') and str(event.get('UID', '')) in recurring_uids else None
+        if isinstance(recurrence, datetime):
+            recurrence = recurrence.replace(tzinfo=TZ) if recurrence.tzinfo is None else recurrence.astimezone(TZ)
+            recurrence = recurrence.astimezone(timezone.utc)
+        events.append({'uid': str(event.get('UID', '')), 'recurrence_id': recurrence.isoformat() if recurrence else '',
+                       'start': beginning.isoformat(), 'all_day': all_day,
                        'title': str(event.get('SUMMARY', 'Busy / no title')),
                        'location': str(event.get('LOCATION', '')), 'status': str(event.get('STATUS', '')),
                        'transparent': str(event.get('TRANSP', '')).upper() == 'TRANSPARENT',
@@ -231,7 +237,12 @@ def calendar_events(account, now, mode='weekly'):
             break
     if events and all(e['title'].strip().casefold() in ('busy', 'busy / no title', 'occupied', 'ocupado', 'private event', '') for e in events):
         warnings.append('Calendar exposes busy times only; full-view sharing is required for event titles')
-    return {'events': sorted(events, key=lambda e: e['start']), 'warnings': warnings}
+    source_identity = str(Path(path).resolve()) if path else url
+    return {'events': sorted([event for event in events if event['status'].upper() != 'CANCELLED'], key=lambda e: e['start']),
+            'cancelled_events': [event for event in events if event['status'].upper() == 'CANCELLED'], 'warnings': warnings,
+            'window_start': start.isoformat(), 'window_end': end.isoformat(),
+            'complete': len(events) < 500,
+            'source_key': hashlib.sha256(source_identity.encode()).hexdigest()}
 
 
 def drive_files(account, now):

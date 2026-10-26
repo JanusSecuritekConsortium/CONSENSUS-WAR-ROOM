@@ -29,6 +29,26 @@ _ONES = (
     "nineteen",
 )
 _TENS = ("", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety")
+_SPANISH_SMALL = ('cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve',
+                  'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete',
+                  'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés',
+                  'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve')
+
+
+def _spanish_clock_number(value):
+    if value < 30:
+        return _SPANISH_SMALL[value]
+    tens, units = divmod(value, 10)
+    word = ('', '', '', 'treinta', 'cuarenta', 'cincuenta')[tens]
+    return word+(' y '+_SPANISH_SMALL[units] if units else '')
+
+
+def _spanish_time(match):
+    hour, minute = int(match[1]), int(match[2])
+    if hour > 24 or minute > 59:
+        return match.group(0)
+    return _spanish_clock_number(hour)+(' en punto' if minute == 0 else
+                                      ' horas y '+_spanish_clock_number(minute)+' minutos')
 _SPOKEN_NAMES = {
     "A.U.R.E.L.I.U.S.": "Aurelius",
     "A.U.R.E.L.I.U.S": "Aurelius",
@@ -66,9 +86,48 @@ def number_to_words(value: int) -> str:
     return " ".join(_ONES[int(digit)] for digit in str(value))
 
 
-def normalize_for_speech(text: str) -> str:
+def prepare_speech_text(text: str, lang: str = 'en') -> str:
+    """Turn visual formatting into pauses, preserving the words and numeric meaning."""
+    text = unicodedata.normalize("NFKC", html.unescape(str(text))).strip()
+    text = re.sub(r"\[([^\]\n]+)\]\(https?://[^\s)]+\)", r"\1", text)
+    text = re.sub(r"(?m)^\s*(?:[-*_]\s*){3,}$", "", text)
+    text = re.sub(r"(?m)^\s*```[^\n]*$", "", text)
+    text = re.sub(r"(?m)^\s*(?:#{1,6}\s+|>\s*|[-+*•‣–—]\s+|\d+[.)]\s+)", "", text)
+    text = re.sub(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1", r"\2", text)
+    text = re.sub(r"(?<!\w)(\*|_)(?=\S)([^\n]+?)(?<=\S)\1(?!\w)", r"\2", text)
+    text = text.replace("`", "")
+    text = text.replace('→', ' a ' if lang == 'es' else ' to ')
+    text = text.replace('↔', ' se solapa con ' if lang == 'es' else ' overlaps with ')
+
+    # A dash in a numeric/time range has meaning; a prose dash is just a pause.
+    value = r"-?\d+(?::\d{2}|\.\d+)?%?"
+    text = re.sub(rf"(?<![\w./:-])({value})\s*[-–]\s*({value})(?!\w|[./:-]\d)", r"\1 a \2" if lang == 'es' else r"\1 to \2", text)
+    text = re.sub(r"(?<=\d)\s*−\s*(?=\d)", " menos " if lang == 'es' else " minus ", text)
+    text = re.sub(r"(?<!\w)[-−](?=\d)", "menos " if lang == 'es' else "minus ", text)
+    text = re.sub(r"\s+[—–-]\s+|[—–]|[·•|]", ", ", text)
+    text = re.sub(r"(?<=\w)-(?=\w)", " ", text)
+    text = re.sub(r"\b(\d+)/(\d+)\b", r"\1 entre \2" if lang == 'es' else r"\1 over \2", text)
+    text = re.sub(r"(?<=\w)/(?=\w)", " ", text)
+    text = re.sub(r"[()\[\]{}]", ", ", text)
+    text = re.sub(r"[,;:]\s*[,;:]+", ",", text)
+    text = re.sub(r"[,;:]\s*([.!?])", r"\1", text)
+
+    lines = [line.strip(" ,") for line in text.splitlines() if line.strip(" ,")]
+    for index, line in enumerate(lines[:-1]):
+        if line[-1] not in ".!?;:,":
+            lines[index] += "."
+    text = " ".join(lines)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    return re.sub(r"[ \t]+", " ", text).strip(" ,")
+
+
+def normalize_for_speech(text: str, lang: str = 'en') -> str:
     """Normalize UI and operator text into stable, TTS-friendly English."""
-    normalized = unicodedata.normalize("NFKC", html.unescape(str(text))).strip()
+    normalized = prepare_speech_text(text, lang=lang)
+    if lang == 'es':
+        # Spell the 24-hour clock to prevent a voice changing 14:00 into an
+        # ambiguous "two". Other numbers use the selected Spanish voice.
+        return re.sub(r'\b(\d{1,2}):(\d{2})\b', _spanish_time, normalized).replace('&', ' y ')
     if not normalized:
         return ""
 
@@ -89,7 +148,6 @@ def normalize_for_speech(text: str) -> str:
         normalized = normalized.replace(source, replacement)
 
     normalized = re.sub(r"(?<=\w)_(?=\w)", " ", normalized)
-    normalized = re.sub(r"(?<=\w)/(?=\w)", " slash ", normalized)
     normalized = re.sub(r"\b([A-Za-z])-(\d+)\b", r"\1 \2", normalized)
     normalized = re.sub(r"\b(\d{1,2}):(\d{2})\b", _replace_time, normalized)
     normalized = re.sub(r"\$([0-9]+(?:\.[0-9]{1,2})?)", _replace_dollars, normalized)
@@ -106,9 +164,9 @@ def normalize_for_speech(text: str) -> str:
     return normalized.strip()
 
 
-def split_speech_text(text: str, max_chars: int = 360) -> List[str]:
+def split_speech_text(text: str, max_chars: int = 360, lang: str = 'en') -> List[str]:
     """Split normalized speech at sentence boundaries without dropping content."""
-    normalized = normalize_for_speech(text)
+    normalized = normalize_for_speech(text, lang=lang)
     if not normalized:
         return []
     if max_chars < 80:
@@ -188,4 +246,4 @@ def _split_long_clause(text: str, max_chars: int) -> List[str]:
     return chunks
 
 
-__all__ = ["normalize_for_speech", "number_to_words", "split_speech_text"]
+__all__ = ["normalize_for_speech", "number_to_words", "prepare_speech_text", "split_speech_text"]

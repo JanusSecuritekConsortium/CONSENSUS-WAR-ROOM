@@ -2,10 +2,12 @@ from __future__ import annotations
 
 try:
     from .rvc_adapter import RVCAdapter
+    from .text_normalization import normalize_for_speech
     from .tts_backends import TTSBackendResult, create_system_backend
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
     from voice.rvc_adapter import RVCAdapter
+    from voice.text_normalization import normalize_for_speech
     from voice.tts_backends import TTSBackendResult, create_system_backend
     from voice.voice_profiles import VoiceProfile, get_voice_profile
 
@@ -27,13 +29,14 @@ class AureliusAdapter:
 
     def save_only(self, text: str) -> TTSBackendResult:
         """Use the assigned profile without playing audio on the host."""
+        text = normalize_for_speech(text, lang=self.profile.settings.get('speech_language', 'en'))
         if self.profile.backend == 'rvc':
             return self.backend.save_only(text)
         from pathlib import Path
         return self.backend.synthesize_to_wav(text, Path(self.profile.settings['output_dir'])/'aurelius.wav')
 
     def synthesize(self, text: str) -> TTSBackendResult:
-        return self.backend.synthesize(text)
+        return self.backend.synthesize(normalize_for_speech(text, lang=self.profile.settings.get('speech_language', 'en')))
 
     def speak(self, text: str) -> TTSBackendResult:
-        return self.backend.speak(text)
+        return self.backend.speak(normalize_for_speech(text, lang=self.profile.settings.get('speech_language', 'en')))

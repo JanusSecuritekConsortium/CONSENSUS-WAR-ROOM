@@ -60,8 +60,21 @@ def event_title(event):
     return title
 
 
-def agenda(results):
-    days = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+def agenda(results, *, excluded_titles=(), include_locations=False, lang='en'):
+    """Render an agenda; reminder exclusions hide titles, not occupied time."""
+    if not isinstance(excluded_titles, (list, tuple, set)):
+        excluded_titles = ()
+    excluded = {clean(title).casefold() for title in excluded_titles if isinstance(title, str) and title.strip()}
+    def omitted(event):
+        return event_title(event).casefold() in excluded
+    from .language import choose
+    def shown_title(event):
+        title = event_title(event)
+        return choose(lang, title, 'Ocupado (el calendario no comparte el título)') if title == 'Busy (calendar does not share the title)' else title
+    def conflict_title(event):
+        return choose(lang, 'routine calendar block', 'bloque rutinario del calendario') if omitted(event) else shown_title(event)
+    days = (('lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo') if lang == 'es' else
+            ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'))
     events, seen = [], set()
     for source in results:
         if source.get('status') != 'ok':
@@ -82,22 +95,26 @@ def agenda(results):
             seen.add(key)
             events.append((start, stamp(event.get('end')), source, event))
     events.sort(key=lambda entry: entry[0])
+    visible = [entry for entry in events if not omitted(entry[3])]
     lines, day = [], None
-    for start, end, source, event in events:
+    for start, end, source, event in visible:
         if day != start.date():
             day = start.date()
             lines.extend(['', days[start.weekday()].capitalize()+' '+start.strftime('%d/%m')])
-        when = 'All day' if event.get('all_day') else start.strftime('%H:%M')
+        when = choose(lang, 'All day', 'Todo el día') if event.get('all_day') else start.strftime('%H:%M')
         if not event.get('all_day'):
-            when += ('–'+end.strftime('%H:%M' if end.date() == start.date() else '%d/%m %H:%M')) if end else ' (end time not provided)'
+            when += ('–'+end.strftime('%H:%M' if end.date() == start.date() else '%d/%m %H:%M')) if end else choose(lang, ' (end time not provided)', ' (hora de finalización no disponible)')
         elif event.get('end'):
             last = datetime.fromisoformat(event['end']).date()-timedelta(days=1)
             if last > start.date():
-                when += ' through '+last.strftime('%d/%m')
-        location = ' · '+clean(event['location']) if event.get('location') else ''
-        lines.append('- '+when+': '+event_title(event)+location+' ['+clean(source['label'])+']')
-    if not events:
-        lines.append('No events retrieved for this period; check source coverage.')
+                when += choose(lang, ' through ', ' hasta ')+last.strftime('%d/%m')
+        location = ' · '+clean(event['location']) if include_locations and event.get('location') else ''
+        lines.append('- '+when+': '+shown_title(event)+location+' ['+clean(source['label'])+']')
+    if not visible:
+        lines.append(choose(lang, 'No other appointments to remind you about in the retrieved calendar.',
+                            'No hay otras citas que recordar en el calendario consultado.') if events else
+                     choose(lang, 'No events retrieved for this period; check source coverage.',
+                            'No se obtuvieron eventos para este período; revisa la cobertura de las fuentes.'))
     conflicts = []
     for i, (start, end, source, event) in enumerate(events):
         if not end or end <= start or event.get('all_day') or event.get('transparent'):
@@ -105,15 +122,22 @@ def agenda(results):
         for other_start, other_end, other_source, other in events[i+1:]:
             if other_start >= end:
                 break
+            if omitted(event) and omitted(other):
+                continue
             if not other_end or other_end <= other_start or other.get('all_day') or other.get('transparent'):
                 continue
             if start < other_end and other_start < end:
                 conflicts.append('- '+days[other_start.weekday()].capitalize()+' '+other_start.strftime('%d/%m')+' '+
                     max(start, other_start).strftime('%H:%M')+'–'+min(end, other_end).strftime('%H:%M')+': '+
-                    event_title(event)+' ↔ '+event_title(other)+'. Check whether the overlap is intentional.')
-    lines.extend(['', 'SCHEDULE OVERLAPS']+conflicts if conflicts else
-                 ['', 'No overlaps detected between events with known start and end times.'])
-    if any('does not share the title' in event_title(e) for _, _, _, e in events):
-        lines.append('Event names are missing from the source: share full calendar details or use an ICS export with titles to identify them.')
-    lines.append('Events without an end time, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.')
+                    conflict_title(event)+' ↔ '+conflict_title(other)+choose(lang, '. Check whether the overlap is intentional.', '. Comprueba si el solapamiento es intencional.'))
+    lines.extend(['', choose(lang, 'SCHEDULE OVERLAPS', 'SOLAPAMIENTOS DE HORARIO')]+conflicts if conflicts else
+                 ['', choose(lang, 'No overlaps detected among the appointments included in this reminder.',
+                             'No se detectaron solapamientos entre las citas de este recordatorio.') if len(visible) < len(events) else
+                  choose(lang, 'No overlaps detected between events with known start and end times.',
+                         'No se detectaron solapamientos entre eventos con horas de inicio y fin conocidas.')])
+    if any('does not share the title' in event_title(e) for _, _, _, e in visible):
+        lines.append(choose(lang, 'Event names are missing from the source: share full calendar details or use an ICS export with titles to identify them.',
+                            'Faltan nombres en la fuente: comparte los detalles del calendario o utiliza una exportación ICS con títulos.'))
+    lines.append(choose(lang, 'Events without an end time, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
+                        'Los eventos sin hora de fin, de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.'))
     return lines

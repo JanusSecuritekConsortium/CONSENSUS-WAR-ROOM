@@ -12,24 +12,87 @@ import subprocess
 import tempfile
 
 from . import publication, store
+from voice.text_normalization import number_to_words, prepare_speech_text
+from .language import choose
 
 
-def narration(text):
+_MONTHS = ('January', 'February', 'March', 'April', 'May', 'June',
+           'July', 'August', 'September', 'October', 'November', 'December')
+_ORDINALS = ('', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth',
+             'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth',
+             'thirteenth', 'fourteenth', 'fifteenth', 'sixteenth', 'seventeenth',
+             'eighteenth', 'nineteenth', 'twentieth')
+
+
+def _spoken_timestamp(match):
+    day, month = int(match['day']), int(match['month'])
+    year = int(match['year']) if match['year'] else 2000
+    hour, minute = int(match['hour']), int(match['minute'])
+    try:
+        datetime(year, month, day, hour, minute)
+    except ValueError:
+        return match.group(0)  # Do not invent a correction to an invalid timestamp.
+    ordinal = _ORDINALS[day] if day <= 20 else (
+        'thirtieth' if day == 30 else ('twenty ' if day < 30 else 'thirty ')+_ORDINALS[day % 10])
+    date = 'the '+ordinal+' of '+_MONTHS[month-1]
+    if match['year']:
+        date += ' '+number_to_words(year)
+    time = number_to_words(hour)+' '+(
+        "o'clock" if minute == 0 else 'oh '+number_to_words(minute) if minute < 10 else number_to_words(minute))
+    return date+' at '+time
+
+
+def narration(text, lang='en'):
     # Keep facts and qualifiers verbatim; URLs are useful in text, not speech.
+    text = re.sub(r'\[([^\]\n]+)\]\(https?://[^\s)]+\)', r'\1', text)
     text = re.sub(r'https?://\S+', '', text)
-    return re.sub(r'(?m)^\s*[-•#]+\s*', '', text).strip()
+    # The digest publisher explicitly emits day/month, not US month/day.
+    text = re.sub(r'(?<![\w/])(?P<day>\d{1,2})/(?P<month>\d{1,2})'
+                  r'(?:/(?P<year>\d{4}))?\s+(?P<hour>\d{1,2}):(?P<minute>\d{2})(?!\d)',
+                  _spoken_timestamp if lang == 'en' else _spanish_timestamp, text)
+    text = re.sub(r'(?<![\w/])(?P<day>\d{2})/(?P<month>\d{2})(?:/(?P<year>\d{4}))?(?![\w/])',
+                  lambda match: _spoken_date(match, lang), text)
+    return prepare_speech_text(text, lang=lang)
+
+
+def _spoken_date(match, lang):
+    values = {**match.groupdict(), 'hour': '0', 'minute': '00'}
+    try:
+        datetime(int(values['year'] or 2000), int(values['month']), int(values['day']))
+    except ValueError:
+        return match.group(0)
+    return (_spanish_timestamp(values).split(' a las ')[0] if lang == 'es' else
+            _spoken_timestamp(values).split(' at ')[0])
+
+
+def _spanish_timestamp(match):
+    day, month = int(match['day']), int(match['month'])
+    try:
+        datetime(int(match['year'] or 2000), month, day, int(match['hour']), int(match['minute']))
+    except ValueError:
+        return match.group(0)
+    months = ('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+              'septiembre', 'octubre', 'noviembre', 'diciembre')
+    return str(day)+' de '+months[month-1]+(' de '+match['year'] if match['year'] else '')+' a las '+match['hour']+':'+match['minute']
 
 
 @contextmanager
-def audio_file(text):
+def audio_file(text, lang='en'):
     from voice.aurelius_adapter import AureliusAdapter
     from voice.voice_profiles import get_voice_profile
     store.ROOT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='narration-', dir=store.ROOT) as folder:
         profile = get_voice_profile('AURELIUS')
         profile = replace(profile, settings={**profile.settings, 'output_dir': folder})
+        if lang == 'es':
+            from voice.tts_backends import list_sapi_voices
+            names = [voice['name'] for voice in list_sapi_voices() if voice.get('language', '').startswith('es')]
+            if not names:
+                raise RuntimeError('Local Spanish voice unavailable')
+            profile = replace(profile, settings={**profile.settings, 'base_voice_name': names,
+                              'base_voice_language': 'es', 'base_voice_gender': '', 'speech_language': 'es'})
         with redirect_stdout(io.StringIO()):
-            result = AureliusAdapter(profile=profile).save_only(narration(text))
+            result = AureliusAdapter(profile=profile).save_only(narration(text, lang))
         if not result.ok or not result.audio_path:
             raise RuntimeError('Local Aurelius narration unavailable')
         ffmpeg = shutil.which('ffmpeg')
@@ -45,12 +108,15 @@ def audio_file(text):
         yield output
 
 
-def send_voice(route, path):
+def send_voice(route, path, markup=None):
     import requests
     try:
         with path.open('rb') as stream:
+            data = {'chat_id': route['chat_id'], 'caption': 'Aurelius'}
+            if markup:
+                data['reply_markup'] = json.dumps(markup)
             response = requests.post('https://api.telegram.org/bot'+route['token']+'/sendVoice',
-                data={'chat_id': route['chat_id'], 'caption': 'Aurelius briefing'},
+                data=data,
                 files={'voice': ('briefing.ogg', stream, 'audio/ogg')},
                 timeout=(10, 120), allow_redirects=False)
         response.raise_for_status()
@@ -74,6 +140,7 @@ def offer(receipt, path, route, mode):
         return
     prompt_path = path.with_suffix('.choice.json')
     prompt = json.loads(prompt_path.read_text(encoding='utf-8')) if prompt_path.exists() else {}
+    prompt.update(interactive=True, choice_offer=True)
     title = 'Morning agenda and follow-ups' if mode == 'morning' else 'Evening news' if mode == 'evening' else 'Weekly briefing'
     publication.deliver(title+' is ready. Reply to this message: 1 for voice, 2 for text. Choice expires in 18 hours.',
                         prompt, prompt_path, route)
@@ -82,7 +149,7 @@ def offer(receipt, path, route, mode):
     save(path, receipt)
 
 
-def handle_choice(message, route, *, vault=None):
+def handle_choice(message, route, *, vault=None, lang='en'):
     """Return None for ordinary messages; otherwise a local delivery outcome."""
     choice = message.get('text', '').strip().casefold().rstrip('.!')
     if choice in ('read it aloud', 'read this aloud', 'read it out loud', 'read this out loud',
@@ -113,7 +180,7 @@ def handle_choice(message, route, *, vault=None):
                 continue
             if receipt.get('choice_update_message') == message['message_id']:
                 if receipt['status'] in ('sending', 'uncertain'):
-                    return 'Delivery is unconfirmed. Please check Telegram before requesting another copy.'
+                    return choose(lang, 'Delivery is unconfirmed. Please check Telegram before requesting another copy.', 'La entrega no está confirmada. Comprueba Telegram antes de pedir otra copia.')
                 if receipt['status'] == 'delivered':
                     return ''  # Crash after acknowledgement: do not send twice.
             # An explicit reply to a previously delivered digest can request narration.
@@ -124,6 +191,7 @@ def handle_choice(message, route, *, vault=None):
                 receipt = {**receipt, 'status':'awaiting_choice', 'message_ids':[],
                            'choice_message_id':reply_id, 'offered_at':datetime.now(timezone.utc).isoformat()}
                 receipt.pop('choice_update_message', None)
+                receipt.pop('reply_markup', None)
                 path = replay_path
             if receipt.get('status') not in ('awaiting_choice', 'selected'):
                 continue
@@ -136,19 +204,26 @@ def handle_choice(message, route, *, vault=None):
         if not reply_id and candidates:
             candidates = [max(candidates, key=lambda item:item[1]['offered_at'])]
         if len(candidates) != 1:
-            return 'Reply directly to a current briefing offer: 1 for voice or 2 for text. Old offers expire after 18 hours.'
+            return choose(lang, 'Reply directly to a current briefing offer: 1 for voice or 2 for text. Old offers expire after 18 hours.', 'Responde a una oferta actual del informe: 1 para voz o 2 para texto. Las ofertas caducan a las 18 horas.')
         path, receipt = candidates[0]
         if receipt.get('status') != 'selected':
             receipt.update(status='selected', choice_update_message=message['message_id'], selected_format=choice)
             save(path, receipt)
         if receipt['selected_format'] == '2':
+            receipt.pop('reply_markup', None)  # A voice replay must not reuse old bindings.
             publication.deliver(receipt['telegram_text'], receipt, path, route)
             return ''
         try:
-            with audio_file(receipt['telegram_text']) as audio:
+            rendering = audio_file(receipt['telegram_text'], lang='es') if receipt.get('language') == 'es' else audio_file(receipt['telegram_text'])
+            with rendering as audio:
+                from .telegram_buttons import make
+                from .interaction_store import bind
+                markup = make(route, lang=receipt.get('language', 'en')) if receipt.get('interactive') else None
                 receipt.update(status='sending', delivery_format='voice')
                 save(path, receipt)
-                result = send_voice(route, audio)
+                result = send_voice(route, audio, markup)
+                if markup:
+                    bind(route, markup, result['message_id'], [item['id'] for item in receipt.get('followups', [])] if len(receipt.get('followups', [])) == 1 else [])
                 receipt.update(status='delivered', message_ids=[result['message_id']],
                                acknowledged_at=datetime.now(timezone.utc).isoformat())
                 save(path, receipt)
@@ -156,7 +231,7 @@ def handle_choice(message, route, *, vault=None):
             if receipt['status'] in ('sending', 'delivered'):
                 receipt['status'] = 'uncertain'
                 save(path, receipt)
-                return 'Voice delivery is unconfirmed. Please check Telegram before requesting another copy.'
+                return choose(lang, 'Voice delivery is unconfirmed. Please check Telegram before requesting another copy.', 'La entrega de voz no está confirmada. Comprueba Telegram antes de pedir otra copia.')
             # Rendering failed before any upload; exactly one text fallback is safe.
             receipt['voice_error'] = 'local_narration_failed'
             publication.deliver(receipt['telegram_text'], receipt, path, route)

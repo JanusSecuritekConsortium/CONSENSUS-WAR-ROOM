@@ -6,6 +6,7 @@ from integrations.msty.personal import spoken_briefing as s
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
+    monkeypatch.setattr(s.store, 'ROOT', tmp_path/'private')
     route={'chat_id':'42'}
     path=tmp_path/'Deliveries'/'test.json'
     receipt={'status':'prepared','telegram_text':'Monday 09:00: Project review. Possible conflict.', 'message_ids':[]}
@@ -82,6 +83,29 @@ def test_expiry_wrong_reply_and_forwarded(setup):
 
 def test_narration_preserves_qualifiers():
     assert s.narration('- Possible conflict at 09:00. https://example.com/a')=='Possible conflict at 09:00.'
+
+
+@pytest.mark.parametrize(('timestamp', 'spoken'), [
+    ('09/10 17:32', 'the ninth of October at seventeen thirty two'),
+    ('10/10 00:05', 'the tenth of October at zero oh five'),
+    ('21/03/2026 09:00', "the twenty first of March two thousand twenty six at nine o'clock"),
+    ('30/04 14:06', 'the thirtieth of April at fourteen oh six'),
+    ('31/12 23:59', 'the thirty first of December at twenty three fifty nine'),
+])
+def test_narration_reads_publisher_dates_without_saying_slash(timestamp, spoken):
+    text = '- BBC World · '+timestamp+': Possible change — not confirmed.\nhttps://example.com/a'
+    assert s.narration(text) == 'BBC World, '+spoken+': Possible change, not confirmed.'
+
+
+def test_narration_keeps_sources_qualifiers_and_item_boundaries():
+    text = '## NEWS\n- **Possible** change (unverified)\nhttps://example.com/a\n- [Source](https://example.com/b): No real-time coverage.'
+    assert s.narration(text) == 'NEWS. Possible change, unverified. Source: No real time coverage.'
+
+
+def test_invalid_timestamp_is_not_reinterpreted_as_valid():
+    assert s._spoken_timestamp(__import__('re').search(
+        r'(?P<day>\d+)/(?P<month>\d+)(?:/(?P<year>\d{4}))? (?P<hour>\d+):(?P<minute>\d+)',
+        '31/02/2026 25:00')) == '31/02/2026 25:00'
 
 
 def test_plain_choice_uses_latest_offer(setup):
