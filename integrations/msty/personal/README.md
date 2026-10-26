@@ -156,6 +156,28 @@ avoid sending that JSON as a second report. Existing route settings are preserve
 Msty Go must be running at the scheduled time. The direct Telegram send was
 verified; a future automatic execution remains to be observed.
 
+### Msty Go 1.1 scheduled runs have no shell
+
+Msty Go 1.1.0-beta.2 (installed 2026-10-14) runs scheduled prompt tasks with
+shell access forced off and denies MCP tools that need approval, whatever the
+job's own `allowShellAccess` says. The prompt jobs above therefore stopped
+publishing after 2026-10-15 while still being recorded as completed.
+
+The replacement path is a "Reminder with context" task (source reminder). Msty
+calls one MCP tool directly, without a model or an approval prompt, and only
+then summarizes the result. The CONSENSUS MCP server provides
+`aurelius_publish_briefing` with `{"mode": "morning"}` or `{"mode": "evening"}`
+for this. It runs the same `publish(mode, send=True)` as the command line, so:
+
+- At most one delivery per mode per Madrid date (`already_delivered` on repeat).
+- An `uncertain` or `sending` receipt blocks resending; inspect it first.
+- Outside 07:00–10:00 (morning) or 17:30–20:30 (evening) Europe/Madrid it
+  sends nothing and returns `outside_window`, so an interactive chat cannot
+  consume the day's slot early.
+- A failure is returned as an MCP error, which Msty records as a failed run.
+
+Reconnect the MCP server in Msty after updating the code so the tool is listed.
+
 Morning reviews collect seven days starting today; evening reviews
 collect tomorrow's events; weekly reviews collect next Monday through Sunday.
 Each includes possible unanswered requests from enabled Inbox/Sent sources and

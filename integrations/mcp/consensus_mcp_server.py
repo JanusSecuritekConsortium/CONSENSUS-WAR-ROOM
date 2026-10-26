@@ -371,6 +371,39 @@ def aurelius_briefing_memory(arguments=None):
     return recall((arguments or {}).get('mode', 'latest'))
 
 
+# Delivery windows (Europe/Madrid) for scheduled briefings. Msty Go 1.1 scheduled
+# prompt runs have no shell, so its source-reminder task calls this tool instead.
+# The window keeps an interactive chat from consuming the day's slot early.
+BRIEFING_WINDOWS = {
+    'morning': (dt.time(7, 0), dt.time(10, 0)),
+    'evening': (dt.time(17, 30), dt.time(20, 30)),
+}
+
+
+def _madrid_now() -> dt.datetime:
+    from integrations.msty.personal.connectors import TZ
+    return dt.datetime.now(TZ)
+
+
+def aurelius_publish_briefing(arguments=None):
+    """Publish today's scheduled briefing once; publish() owns receipts and duplicate checks."""
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    args = arguments or {}
+    if not isinstance(args, dict) or set(args) != {'mode'} or args['mode'] not in BRIEFING_WINDOWS:
+        raise ValueError('Only mode morning or evening is accepted')
+    mode = args['mode']
+    start, end = BRIEFING_WINDOWS[mode]
+    now = _madrid_now()
+    if not start <= now.time() < end:
+        return {'tool': 'aurelius_publish_briefing', 'mode': mode, 'status': 'outside_window',
+                'window': start.strftime('%H:%M')+'-'+end.strftime('%H:%M')+' Europe/Madrid',
+                'checked_at': now.isoformat(timespec='seconds')}
+    from integrations.msty.personal.publication import publish
+    result = publish(mode, send=True)
+    return {'tool': 'aurelius_publish_briefing', 'mode': mode, **result}
+
+
 def aurelius_memory_recall(arguments: dict[str, Any] | None = None) -> dict[str, Any]:
     return _shared_memory().recall((arguments or {}).get('query', ''))
 
@@ -453,6 +486,7 @@ TOOL_HANDLERS = {
     "aurelius_memory_remember": aurelius_memory_remember,
     "aurelius_memory_forget": aurelius_memory_forget,
     "aurelius_report": aurelius_report,
+    "aurelius_publish_briefing": aurelius_publish_briefing,
     "consensus_status": consensus_status,
     "aurelius_status": aurelius_status,
     "aurelius_recent_logs": aurelius_recent_logs,
@@ -539,6 +573,17 @@ TOOLS = [
             "type": "object",
             "properties": {"kind": {"type": "string", "enum": ["morning", "evening"]}},
             "required": ["kind"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "aurelius_publish_briefing",
+        "description": "Scheduled-task use only: publish today's AURELIUS briefing (morning 07:00-10:00 or evening 17:30-20:30 Europe/Madrid) to the configured private Telegram recipient and the local briefing vault. Outside the window it sends nothing and returns outside_window. At most one delivery per mode per day; an uncertain earlier delivery blocks resending. Do not call from a conversation unless the user explicitly asks to publish now.",
+        "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+        "inputSchema": {
+            "type": "object",
+            "properties": {"mode": {"type": "string", "enum": ["morning", "evening"]}},
+            "required": ["mode"],
             "additionalProperties": False,
         },
     },
