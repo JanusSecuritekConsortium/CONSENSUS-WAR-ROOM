@@ -9,6 +9,9 @@ if str(ROOT) not in sys.path:
 
 from tests.helpers.gui_harness import make_gui_state
 from ui.assets.app_icon import APP_ICON_ICO, apply_app_icon_to_page, resolve_app_icon_path
+from ui.assets.brand import CORPORATE_SYMBOL, corporate_symbol_base64, validate_brand_assets
+from ui.components.header import build_header
+from ui.themes.catalog import THEMES
 from ui.flet_app import _apply_page_theme
 
 
@@ -42,6 +45,30 @@ def test_page_theme_configures_window_icon() -> None:
     _apply_page_theme(page, state)
 
     assert page.window.icon == str(APP_ICON_ICO)
+
+
+def test_corporate_c2_is_visible_across_themes_and_separate_from_desktop_icon() -> None:
+    import base64
+    import flet as ft
+    from ui.assets.app_icon import APP_ICON_PNG_256
+
+    def walk(control):
+        yield control
+        for child in control._get_children():
+            yield from walk(child)
+
+    assert not validate_brand_assets()
+    assert CORPORATE_SYMBOL.read_bytes() != APP_ICON_PNG_256.read_bytes()
+    for theme in THEMES.values():
+        header = build_header(theme, "READY", "AVAILABLE")
+        marks = [control for control in walk(header)
+                 if isinstance(control, ft.Image) and isinstance(control.data, dict)
+                 and control.data.get("role") == "corporate_logo"]
+        assert len(marks) == 1
+        assert marks[0].data["identity"] == "C2"
+        assert base64.b64decode(marks[0].src_base64) == CORPORATE_SYMBOL.read_bytes()
+        assert marks[0].color == theme.primary_color
+        assert corporate_symbol_base64() == marks[0].src_base64
 
 
 if __name__ == "__main__":

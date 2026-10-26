@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SPEC_PATH = ROOT / "CONSENSUS.spec"
+WORK_PATH = ROOT / ".local" / "build"
 OUTPUT_PATH = ROOT / "dist" / ("CONSENSUS.exe" if sys.platform == "win32" else "CONSENSUS")
 PACKAGED_SELF_TEST_MARKERS = (
     "PROMPT SUBSYSTEM: READY",
@@ -15,6 +16,7 @@ PACKAGED_SELF_TEST_MARKERS = (
     "HARDWARE SUBSYSTEM: READY",
     "BOOT LOGO SUBSYSTEM: READY (military 38x28)",
     "GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)",
+    "BRANDING SUBSYSTEM: READY (C2 corporate / A3 desktop)",
 )
 
 
@@ -41,7 +43,7 @@ def build_executable() -> Path:
             "python -m pip install pyinstaller"
         )
     subprocess.run(
-        [sys.executable, "-m", "PyInstaller", "--clean", "--noconfirm", str(SPEC_PATH)],
+        [sys.executable, "-m", "PyInstaller", "--clean", "--noconfirm", "--workpath", str(WORK_PATH), str(SPEC_PATH)],
         cwd=ROOT,
         check=True,
     )

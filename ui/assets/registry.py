@@ -272,7 +272,7 @@ THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
 THEME_GRAPHIC_ASSETS["military"] = ThemeGraphicAsset(
     "military",
     GUI_LOGO_DIR / "military_header.txt",
-    "Military tactical command styling",
+    "EXCOMM tactical command styling with EXALT artwork",
     ("×", "÷", "-"),
     "military_boot",
     ("---×÷÷×----", "×÷÷÷÷÷÷÷÷×", "------"),

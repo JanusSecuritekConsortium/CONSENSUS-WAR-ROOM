@@ -8,6 +8,7 @@ import flet as ft
 from config.version import SYSTEM_VERSION
 from core.logging import log_event
 from core.models import Theme
+from ui.assets.brand import corporate_symbol_base64
 from ui.assets.registry import HeaderLogoLayout, HeaderLogoProfile, THEME_GRAPHIC_ASSETS, get_theme_graphic_asset
 from ui.components.ascii_grid_logo import CELL_HORIZONTAL_FILL, CELL_VERTICAL_FILL, ascii_grid_metrics, build_ascii_grid_logo
 from ui.components.safe_text import safe_ellipsis
@@ -703,7 +704,23 @@ def build_header(
                         [
                             ft.Row(
                                 [
-                                    ft.Text("SYSTEM STATUS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=status_sizes["title"]),
+                                    ft.Row(
+                                        [
+                                            ft.Image(
+                                                src_base64=corporate_symbol_base64(),
+                                                width=22,
+                                                height=22,
+                                                fit=ft.ImageFit.CONTAIN,
+                                                color=theme.primary_color,
+                                                color_blend_mode=ft.BlendMode.SRC_IN,
+                                                semantics_label="CONSENSUS",
+                                                data={"role": "corporate_logo", "identity": "C2"},
+                                            ),
+                                            ft.Text("SYSTEM STATUS", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=status_sizes["title"]),
+                                        ],
+                                        spacing=8,
+                                        tight=True,
+                                    ),
                                     ft.Container(
                                         content=ft.Text(
                                             f"HEALTH {badge_label}",

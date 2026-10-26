@@ -91,7 +91,10 @@ def test_header_status_and_telemetry_remain_readable() -> None:
         status_column = content_row.controls[0]
         telemetry = content_row.controls[1]
 
-        assert title_row.controls[0].size >= 16
+        corporate_title = title_row.controls[0]
+        assert isinstance(corporate_title.controls[0], ft.Image)
+        assert corporate_title.controls[0].data["identity"] == "C2"
+        assert corporate_title.controls[1].size >= 16
         for row in status_column.controls:
             if isinstance(row, ft.Row):
                 for control in row.controls:

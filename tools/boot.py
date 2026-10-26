@@ -138,6 +138,8 @@ def run_theme_validation() -> int:
 def run_self_test() -> int:
     from core.simulation.scenarios import create_scenario
     from ui.assets.registry import validate_graphic_registry
+    from ui.assets.brand import validate_brand_assets
+    from ui.assets.app_icon import validate_app_icon_assets
     from ui.animations.bios_boot import _theme_boot_logo_text, capture_boot_hardware_snapshot
     from ui.components.header import logo_runtime_diagnostics
     from voice.voice_profiles import get_voice_profile
@@ -156,7 +158,9 @@ def run_self_test() -> int:
         return 1
     print("PROMPT SUBSYSTEM: READY")
 
-    failures = validate_graphic_registry()
+    failures = validate_graphic_registry() + validate_brand_assets()
+    if validate_app_icon_assets()["status"] != "READY":
+        failures.append("Desktop A3 icon is unavailable")
     if failures:
         print(f"ASSET SUBSYSTEM: ERROR ({'; '.join(failures)})")
         return 1
@@ -181,7 +185,7 @@ def run_self_test() -> int:
     boot_lines = boot_logo.splitlines()
     boot_dimensions = (max((len(line) for line in boot_lines), default=0), len(boot_lines))
     if boot_dimensions != (38, 28):
-        print(f"BOOT LOGO SUBSYSTEM: ERROR (expected 38x28, received {boot_dimensions[0]}x{boot_dimensions[1]})")
+        print(f"BOOT LOGO SUBSYSTEM: ERROR (expected EXALT 38x28, received {boot_dimensions[0]}x{boot_dimensions[1]})")
         return 1
     gui_logo = logo_runtime_diagnostics("military", header_width=1920)
     gui_contract = (
@@ -210,6 +214,7 @@ def run_self_test() -> int:
     )
     print("BOOT LOGO SUBSYSTEM: READY (military 38x28)")
     print("GUI LOGO SUBSYSTEM: READY (military supersampled_square 162x162)")
+    print("BRANDING SUBSYSTEM: READY (C2 corporate / A3 desktop)")
     return 0
 
 
