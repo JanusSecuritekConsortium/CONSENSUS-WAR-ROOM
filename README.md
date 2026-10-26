@@ -1,5 +1,14 @@
 # CONSENSUS War Room
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="static/branding/consensus-c2-lockup-light.svg">
+  <img src="static/branding/consensus-c2-lockup-dark.svg" alt="CONSENSUS corporate identity" width="395">
+</picture>
+
+The C2 mark identifies CONSENSUS in the application, documentation and internal
+information. The A3 tribunal emblem is reserved for desktop, executable and
+taskbar icons. See [branding assets and usage](docs/BRANDING.md).
+
 CONSENSUS War Room is a Windows-first, local multi-agent tribunal for proposal
 review. RATIONALIS, AETERNUM, and BELLATOR assess a proposal from different
 perspectives; the ARBITER combines their votes into an auditable verdict.
@@ -86,6 +95,14 @@ Diagnostics → System Checks.
 
 See [the changelog](CHANGELOG.md) for release history and
 [the architecture guide](docs/ARCHITECTURE.md) for module ownership.
+
+See [the folder guide](docs/FOLDER_GUIDE.md) for current source, runtime,
+build, archive and executable locations.
+
+Repeatable real-provider smoke checks and a 24-case synthetic decision benchmark
+compare one monolith, independent votes and the full debate. Reports include
+completion, inappropriate approvals, latency and vote-revision metrics; simulations
+cannot establish real-model success. See [evaluation commands and limitations](docs/EVALUATION.md).
 
 ## Quick Start
 

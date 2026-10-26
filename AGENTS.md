@@ -7,3 +7,12 @@ The runtime reads only `50 Agents/Shared Context.md` through `core.knowledge.sec
 Set `CONSENSUS_SECOND_BRAIN` to use a different local vault path. Missing briefs do not block deliberation.
 Personal source documents need explicit task-relevant retrieval by the host; the startup pointer is not a document search engine.
 Public GhostNotes reference passages are retrieved from the local `50 Agents/ghostnotes.sqlite` index by `core.knowledge.ghostnotes` and included when relevant in deliberation context. MCP exposes the same bounded search as `ghostnotes_search`. Cite source URLs and treat archived reporting as dated claims. The detailed local news briefing can include matching background references; these are kept separate from the current-news Telegram digest.
+
+## Ecosystem and agent collaboration
+
+Before starting work, read [CONSENSUS_ECOSYSTEM_MAP.md](CONSENSUS_ECOSYSTEM_MAP.md)
+and [AGENT_COLLABORATION.md](AGENT_COLLABORATION.md). Follow the shared task
+ownership, checkout/file claims, handoff, decision-log and validation protocol.
+Read the current files before editing; preserve other agents' uncommitted work.
+Update the owning docs and task record before handing off. The ecosystem map is
+provisional; verify implementation and live behavior before claiming readiness.

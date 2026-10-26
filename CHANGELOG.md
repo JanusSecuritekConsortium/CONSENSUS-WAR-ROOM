@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased - Working-tree consolidation 2026-10-26
+
+Review branch `consolidate/2026-10-26-working-tree`, based on `e851f59`. Commits
+17 days of previously uncommitted work; not a validated release and no version bump.
+
+### Added
+- Operator cancellation and retry for tribunal submissions; cancelled sessions record `CANCELLED` and issue no verdict.
+- Evidence passage audit: quoted evidence is checked against supplied passages, and contradicted or stale evidence withholds approval.
+- Unresolved next steps carried into history, decision traces, cables and verdict exports.
+- Opt-in SQLite archive and search for Directorate dispatch reports.
+- Repeatable decision evaluation (`tools/evaluate_consensus.py`) with a 24-case synthetic benchmark.
+- C2 corporate identity and A3 desktop emblem with self-test validation.
+- AURELIUS calendar-change, follow-up, interaction-store, language and Telegram-button support; spoken-briefing punctuation and date normalization.
+- Root ecosystem map and Codex/Claude collaboration protocol.
+
+### Changed
+- Launchers moved to `tools/launchers/`, Windows version metadata to `tools/packaging/`; build work and pytest cache moved to `.local/`.
+- Collapsed proposal region reduced from 335 to 235 pixels; fallback input from nine lines to three.
+- Status panel no longer shows placeholder development vitals.
+- Declared previously undeclared runtime dependencies: `httpx`, `icalendar`, `recurring-ical-events`.
+- Live refreshes update cancel/retry controls only when their state changes.
+
+### Validation / Known issues
+- Full suite in a Linux Python 3.10 environment: 1,133 passed, 9 skipped, 1 failed (`flet-desktop` runtime absent on Linux).
+- Not exercised: Windows desktop GUI, real providers, packaged executable, live AURELIUS delivery.
+- Tests write `_ARBITER/provider_model_cache.json`; repeated runs in one checkout can fail `test_fallback_resolution_chain` until it is removed.
+- `fastapi` 0.162 is incompatible with Flet 0.28 web serving (`openapi_prefix`); 0.115 and the operator's 0.136 work.
+
 ## Unreleased - Synchronization audit 2026-09-16
 
 Review branch only; not a validated release. See `docs/GITHUB_SYNC_AUDIT_2026-09-16.md`.
