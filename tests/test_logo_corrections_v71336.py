@@ -34,7 +34,7 @@ EXPECTED_TELEMETRY_SIGNATURES_71335 = {
 
 
 def _hash(theme_key: str) -> str:
-    return hashlib.sha256(THEME_GRAPHIC_ASSETS[theme_key].logo_path.read_bytes()).hexdigest()
+    return hashlib.sha256(THEME_GRAPHIC_ASSETS[theme_key].logo_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def test_eva_region_expands_without_clipping_or_asset_change() -> None:

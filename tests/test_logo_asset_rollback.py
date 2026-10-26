@@ -79,7 +79,7 @@ def _dimensions(data: bytes) -> tuple[int, int]:
 
 
 def _sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
 
 
 def test_header_renders_exact_gui_logo_assets_without_substitution() -> None:

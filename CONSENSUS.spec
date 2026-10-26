@@ -51,5 +51,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(ROOT / "static" / "icons" / "consensus_icon.ico"),
-    version=str(ROOT / "packaging" / "windows_version_info.txt") if sys.platform == "win32" else None,
+    version=str(ROOT / "tools" / "packaging" / "windows_version_info.txt") if sys.platform == "win32" else None,
 )

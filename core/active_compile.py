@@ -17,7 +17,6 @@ ACTIVE_COMPILE_TARGETS = (
     "boot.ps1",
     "boot.sh",
     "CONSENSUS.spec",
-    "packaging",
     "config",
     "core",
     "integrations",
@@ -30,6 +29,7 @@ ACTIVE_COMPILE_TARGETS = (
 
 EXCLUDED_PARTS = {
     ".git",
+    ".local",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",

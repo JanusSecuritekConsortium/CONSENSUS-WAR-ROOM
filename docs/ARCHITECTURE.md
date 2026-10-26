@@ -6,7 +6,7 @@ This workspace is now organized around the v7.5.0 modular direction while preser
 
 - `main.py` is the primary local launcher.
 - `consensus_war_room_genesis.py` remains as a compatibility launcher for existing batch files and Msty setup instructions.
-- `scripts/start_genesis_api_msty.bat` starts the local API with the Msty/Ollama-compatible backend.
+- `tools/launchers/start_genesis_api_msty.bat` starts the local API with the Msty/Ollama-compatible backend.
 
 ## Current Module Ownership
 
@@ -307,7 +307,7 @@ python main.py --search-decisions "query text"
 
 ## Active Compile Boundary
 
-`python main.py --compile-active` compiles only active modular source: `main.py`, `consensus_war_room_genesis.py`, `core/`, `config/`, `integrations/`, `ui/`, `monoliths/`, `tests/`, and `scripts/`. It intentionally excludes `_ARBITER/` runtime state, generated reports, caches, and local historical material. Health checks fail on active compile errors but may report `DEGRADED` when the external Msty/Ollama provider is unavailable.
+`python main.py --compile-active` compiles the current entry points and active modular source under `core/`, `config/`, `integrations/`, `voice/`, `assistant/`, `ui/`, `tests/`, and `tools/`. It intentionally excludes `_ARBITER/` runtime state, `.local/` build work and caches, generated reports, and local historical material. Health checks fail on active compile errors but may report `DEGRADED` when the external Msty/Ollama provider is unavailable.
 
 ## Repository Hygiene
 

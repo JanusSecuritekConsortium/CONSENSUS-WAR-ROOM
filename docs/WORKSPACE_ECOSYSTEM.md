@@ -12,8 +12,8 @@ Kiwix archives, caches, or local runtime state.
 | Active project | `G:\CONSENSUS_SYSTEM` | Source-controlled Consensus War Room implementation | Tracked |
 | Msty Studio | `G:\Msty\MstyStudio` | Installed Msty Studio app and bundled local runtime | Document only |
 | AI models | `G:\AI_MODELS` | Local model storage for Hugging Face, GGUF, Ollama, Clawd, and related runtimes | Inventory only |
-| TARS | `G:\.TARS` | Robot/control code and large STEP model | Source snippets only if intentionally imported |
-| Flet prototype | `G:\Flet Server` | Earlier Flet-based Consensus UI prototype | Local reference only; not tracked |
+| TARS archive | `G:\Backup\Projects\TARS` | Preserved robot/control code and large STEP model | Source snippets only if intentionally imported |
+| Flet prototype archive | `G:\Backup\Projects\Flet-Prototype` | Earlier Flet-based Consensus UI prototype | Local reference only; not tracked |
 | Kiwix/Msty knowledge stack | `G:\Kiwix\Kowledge Stack Msty` | Local knowledge corpus and exported project/context vaults | Index only |
 | Obsidian vault | `G:\Obsidian\CONSENSUS_SYSTEM` | Local Obsidian notes for Consensus | Index only unless specific notes are approved |
 
@@ -71,7 +71,7 @@ Relevant folders observed:
 
 ## TARS Notes
 
-`G:\.TARS` contains control scripts and a large mechanical model:
+`G:\Backup\Projects\TARS` contains the control scripts and large mechanical model formerly stored at `G:\.TARS` (moved 2026-10-09):
 
 - `download_model.py`
 - `servo_abstractor.py`

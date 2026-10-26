@@ -28,7 +28,7 @@ Get-ChildItem -Force -Directory -Path (Join-Path $WorkspaceRoot "AI_MODELS") -Re
     Format-Table -AutoSize
 
 Show-Section "TARS"
-Get-ChildItem -Force -Path (Join-Path $WorkspaceRoot ".TARS") |
+Get-ChildItem -Force -Path (Join-Path $WorkspaceRoot "Backup\Projects\TARS") |
     Select-Object Name, FullName, Mode, Length, LastWriteTime |
     Format-Table -AutoSize
 

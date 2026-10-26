@@ -84,6 +84,7 @@ future_implementations/
 *.wav
 
 # Runtime data and model artifacts (source directories remain trackable)
+/.local/
 /logs/
 /cache/
 /caches/

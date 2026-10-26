@@ -33,7 +33,7 @@ The GUI also includes an AURELIUS Voice Loop toggle. AURELIUS is an operator ass
 Or double-click:
 
 ```text
-scripts\start_genesis_api_msty.bat
+tools\launchers\start_genesis_api_msty.bat
 ```
 
 Default API base:

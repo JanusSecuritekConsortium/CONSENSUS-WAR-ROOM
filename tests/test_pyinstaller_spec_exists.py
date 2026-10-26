@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 
 def test_pyinstaller_spec_bundles_runtime_assets_and_metadata() -> None:
     spec = (ROOT / "CONSENSUS.spec").read_text(encoding="utf-8")
-    version_info = (ROOT / "packaging" / "windows_version_info.txt").read_text(encoding="utf-8")
+    version_info = (ROOT / "tools" / "packaging" / "windows_version_info.txt").read_text(encoding="utf-8")
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
     from config.version import SYSTEM_VERSION
