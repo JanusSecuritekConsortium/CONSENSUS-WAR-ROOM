@@ -46,7 +46,7 @@ def test_gui_provider_status_panel_shows_discovery_metadata() -> None:
     assert "FALLBACK: ACTIVE" in text
 
 
-def test_gui_provider_status_panel_shows_active_models_and_dev_status() -> None:
+def test_gui_provider_status_panel_shows_models_and_context_without_placeholder_vitals() -> None:
     provider = {
         "status": "ready",
         "provider": {
@@ -68,11 +68,12 @@ def test_gui_provider_status_panel_shows_active_models_and_dev_status() -> None:
 
     assert "ACTIVE MODELS" in text
     assert "RATIONALIS: deepseek-coder:33b [READY]" in text
-    assert "CODEX / DEV" in text
-    assert "RUNTIME LOGS: JSONL" in text
+    assert "CONTEXT" in text
+    assert "CODEX / DEV" not in text and "TEST REGISTERED" not in text
+    assert "METADATA INDEX READY" not in text and "SYSTEM: AVAILABLE" not in text
 
 
 if __name__ == "__main__":
     test_gui_provider_status_panel_shows_discovery_metadata()
-    test_gui_provider_status_panel_shows_active_models_and_dev_status()
+    test_gui_provider_status_panel_shows_models_and_context_without_placeholder_vitals()
     print("test_gui_provider_status_panel PASS")

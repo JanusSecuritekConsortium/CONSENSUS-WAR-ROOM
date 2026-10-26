@@ -333,3 +333,17 @@ whitespace checks pass. Rebuilt archive verified for the folded startup assignme
 and inline report; packaged and installed self-tests passed. Prior executable
 backed up and installed SHA-256 verified. Reopen the app to load this correction.
 
+## Smaller collapsed proposal — 2026-10-09
+
+The collapsed proposal region is now 235 pixels high, reduced from 335. Its
+standalone fallback input is three lines rather than nine. This gives the
+verdict 100 additional pixels in the desktop layout, so ordinary verdict content
+fits without the scrollbar at the reported window size. Clicking the mounted
+editor still expands it into the centre area; outside click or submission
+restores the shorter proposal region, preserving the draft and submission row.
+
+39 existing editor, action, focus, geometry and submit-visibility checks passed.
+Both edited UI sources compile and source whitespace checks pass. The executable
+archive was checked for the 235-pixel region, three-line fallback and expansion
+handler; C2/A3 assets remain intact. Staged and installed self-tests passed. The
+previous executable was backed up. Reopen Consensus to load the smaller region.

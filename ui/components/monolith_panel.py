@@ -17,7 +17,7 @@ READINESS_ROW_FONT_SIZE = 9
 MONOLITH_CARD_COUNT = 4
 MONOLITH_CARD_PADDING = 8
 VERDICT_FEEDBACK_SECONDS = 12.0
-THINKING_STATUSES = {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING"}
+THINKING_STATUSES = {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING", "GENERATING"}
 
 
 def feedback_color(theme: Theme, status: str) -> str:
@@ -51,7 +51,7 @@ def status_color_category(status: str) -> str:
     normalized = status.upper()
     if normalized in {"ONLINE", "IDLE", "APPROVE", "APPROVED", "SUCCESS", "OK"}:
         return "success"
-    if normalized in {"THINKING", "ANALYZING", "VOTING", "SYNCHRONIZING"}:
+    if normalized in THINKING_STATUSES:
         return "thinking"
     if normalized in {"DEGRADED", "CONDITIONAL", "ABSTAIN", "NO_CONSENSUS", "CAUTION", "ESCALATE", "HUMAN_REVIEW_REQUIRED", "DEADLOCK"}:
         return "warning"

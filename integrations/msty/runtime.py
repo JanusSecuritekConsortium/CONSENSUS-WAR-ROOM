@@ -11,6 +11,7 @@ from config.names import AETERNUM, AURELIUS, BELLATOR, RATIONALIS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.llm.backends import MockBackend
+from core.llm.generation import GenerationControl, SubmissionCancelled
 from core.logging import log_error, log_event
 
 
@@ -63,8 +64,10 @@ class MstyRuntime:
         fallback_enabled: Optional[bool] = None,
         fallback_hooks: Optional[List[FallbackHook]] = None,
         telemetry_hooks: Optional[List[TelemetryHook]] = None,
+        generation_control: GenerationControl | None = None,
     ) -> None:
         self.config = config or RuntimeConfig()
+        self.generation_control = generation_control
         self.session_registry = SessionRegistry()
         self.fallback_enabled = self.config.mock_fallback_enabled if fallback_enabled is None else fallback_enabled
         self.fallback_hooks = fallback_hooks or []
@@ -78,6 +81,8 @@ class MstyRuntime:
         prompt: str,
         context: Optional[Dict[str, Any]] = None,
     ) -> str:
+        if self.generation_control:
+            self.generation_control.check()
         session = self.session_registry.get_or_create(agent_id)
         session.turns += 1
         started = time.perf_counter()
@@ -99,6 +104,8 @@ class MstyRuntime:
                 from integrations.msty import api as api_module
 
                 health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
+                if self.generation_control:
+                    self.generation_control.check()
                 provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
                 provider_state = str(health.get("status", "offline"))
                 if provider_state == "offline":
@@ -115,6 +122,9 @@ class MstyRuntime:
             }
             self._record_telemetry(session, prompt, response, started, provider, "ready")
             return response
+        except SubmissionCancelled:
+            self.last_execution[session.agent_id] = {"status": "cancelled", "model": requested_model, "backend": provider}
+            raise
         except Exception as exc:
             self.last_execution[session.agent_id] = {
                 "model": requested_model, "backend": provider,
@@ -174,6 +184,8 @@ class MstyRuntime:
         system_prompt = str(context.get("system_prompt") or (configured_node.prompt if configured_node else session.profile.system_prompt))
         last_error: Optional[Exception] = None
         for model in candidates:
+            if self.generation_control:
+                self.generation_control.check()
             started = time.perf_counter()
             attempt: Dict[str, Any] = {"model": model, "backend": health.get("active_backend") or health.get("backend") or self.config.backend}
             try:
@@ -182,7 +194,10 @@ class MstyRuntime:
                     system_prompt=system_prompt, config=self.config, base_url=health.get("base_url"),
                     temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
                     max_output_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
+                    **({"control": self.generation_control} if self.generation_control else {}),
                 )
+                if self.generation_control:
+                    self.generation_control.check()
                 if not response.strip():
                     raise RuntimeError("Provider returned an empty response")
                 if real_tribunal and configured_node:
@@ -203,6 +218,8 @@ class MstyRuntime:
                 if fallback:
                     log_event("real_model_fallback", {"agent_id": session.agent_id, "requested_model": preferred, **execution}, level="WARNING")
                 return response, execution
+            except SubmissionCancelled:
+                raise
             except Exception as exc:
                 last_error = exc
                 attempt.update(status="failed", error_type=type(exc).__name__, error=str(exc), response_time=time.perf_counter() - started)

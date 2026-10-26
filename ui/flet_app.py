@@ -22,7 +22,8 @@ from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
 from core.history import record_result
-from core.directorate import Directorate, STARTUP_COMPONENTS, provider_observation, read_preferences, write_preferences
+from core.llm.generation import GenerationControl, SubmissionCancelled
+from core.directorate import Directorate, STARTUP_COMPONENTS, DISPATCH_ARCHIVE_PATH, provider_observation, read_preferences, write_preferences
 from core.export.cable import export_cable, export_dispatch, render_cable, retrieved_sources
 from ui.directorate import add_cable_controls, build_activity, build_boot, build_dispatch_desk, build_dispatch_roll, build_dispatch_actions
 from ui.deliberation import assessment_record, build_assessments
@@ -46,6 +47,7 @@ from core.proposals.store import (
     list_recent_proposals,
     proposal_history_status,
     resend_proposal,
+    update_proposal,
 )
 from core.proposals.lifecycle import link_decision_trace_to_proposal, proposal_lifecycle_summary
 from core.proposals.templates import get_template, list_templates, render_template_draft
@@ -251,7 +253,11 @@ class GuiState:
     directorate_cable: bool = False
     directorate_session_id: str = ""
     directorate_sources: List[Dict[str, str]] = field(default_factory=list)
+    directorate_search: str = ""
     submission_lock: Any = field(default_factory=threading.Lock, repr=False)
+    generation_control: GenerationControl | None = field(default=None, repr=False)
+    retry_proposal: str = ""
+    retry_available: bool = False
     ui_stopped: Any = field(default_factory=threading.Event, repr=False)
     narrow_layout: bool = False
     proposal_expanded: bool = False
@@ -652,6 +658,9 @@ def submit_proposal_live_for_gui(
     clean_proposal = proposal.strip()
     if not clean_proposal:
         raise ValueError("Proposal is empty.")
+    control = state.generation_control
+    if control:
+        control.check()
     skip_animations = skip_animations or state.reduced_motion or not state.directorate_animation
     state.directorate_session_id = uuid.uuid4().hex[:12]
     state.directorate_sources = []
@@ -699,7 +708,10 @@ def submit_proposal_live_for_gui(
     )
     state.last_proposal_record_id = str(proposal_record["proposal_id"])
     runtime = MstyRuntime(state.config)
+    runtime.generation_control = control
     state.provider_warning = _fallback_warning(state, runtime)
+    if control:
+        control.check()
     rules = ConsensusRules(
         minimum_confidence=state.config.minimum_confidence,
         quorum=state.config.quorum,
@@ -714,6 +726,8 @@ def submit_proposal_live_for_gui(
     session_id = state.directorate_session_id
     started = time.perf_counter()
     memory_context = build_context_packet(clean_proposal)
+    if control:
+        control.check()
     _set_lifecycle(state, LIFECYCLE_DISPATCHING, on_update)
     state.prior_decisions_used = int(memory_context.get("prior_decisions_used", 0) or 0)
     state.context_retrieval_status = context_status(memory_context)
@@ -746,6 +760,21 @@ def submit_proposal_live_for_gui(
     orchestrator = VotingOrchestrator(state.nodes, runtime)
     current_round_votes: Dict[str, Vote] = {}
     reported_substitutions: set[tuple[str, str]] = set()
+
+    def generation_progress(status: str) -> None:
+        for agent_id in TRIBUNAL_AGENT_IDS:
+            if agent_id in state.deliberation_pending:
+                state.monolith_statuses[agent_id] = status
+                phase = state.deliberation_pending[agent_id].split(" | ", 1)[0]
+                detail = {"WAITING": "Waiting for provider (queue, model load or prompt preparation)",
+                          "LOADING": "Provider reports model loading",
+                          "GENERATING": "Receiving model response"}[status]
+                state.deliberation_pending[agent_id] = f"{phase} | {detail}"
+                state.submission_message = f"{agent_id}: {detail}."
+        _notify(on_update)
+
+    if control:
+        control.on_progress = generation_progress
 
     def on_deliberation_event(event: Dict[str, Any]) -> None:
         phase = str(event["phase"])
@@ -836,6 +865,8 @@ def submit_proposal_live_for_gui(
         _set_lifecycle(state, LIFECYCLE_SYNTHESIZING, on_update)
         result = ConsensusEngine(rules, state.theme_key).calculate_result(clean_proposal, votes, session_id)
         orchestrator.attach_audit(result)
+        if control:
+            control.commit()
         state.directorate.record_decision(result, list(state.directorate_sources))
         terminal_phase = phase_for_verdict(result.verdict, result.terminal_branch, result.review_triggers)
         state.directorate.emit(ARBITER, terminal_phase, "AVAILABLE" if terminal_phase == "CONSENSUS_REACHED" else "DEGRADED",
@@ -974,6 +1005,8 @@ def submit_proposal_live_for_gui(
         state.recent_decisions = read_recent_decisions()
         log_event("gui_verdict_update", {"session_id": result.session_id, "verdict": result.verdict.value})
         return result
+    except SubmissionCancelled:
+        raise
     except Exception as exc:
         state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", f"Submission failed ({type(exc).__name__})", session_id)
         _set_lifecycle(state, LIFECYCLE_ERROR_DEGRADED, None)
@@ -1944,10 +1977,58 @@ def _set_submission_feedback(page: ft.Page, state: GuiState, message: str) -> No
                 break
 
 
+def _refresh_submission_controls(page: ft.Page, state: GuiState) -> None:
+    if state.ui_stopped.is_set() or state.proposal_regions is None:
+        return
+    with state.render_lock:
+        pending = [state.proposal_regions[0]]
+        changed = []
+        while pending:
+            control = pending.pop()
+            role = control.data.get("role") if isinstance(control.data, dict) else ""
+            if role in {"cancel_submission_button", "retry_submission_button"}:
+                busy = state.submission_lock.locked()
+                enabled = (busy and state.generation_control is not None and not state.generation_control.committed
+                           if role == "cancel_submission_button" else state.retry_available and not busy)
+                if control.disabled != (not enabled):
+                    control.disabled = not enabled
+                    changed.append(control)
+            content = getattr(control, "content", None)
+            if isinstance(content, ft.Control):
+                pending.append(content)
+            pending.extend(getattr(control, "controls", []) or [])
+        if changed:
+            page.update(*changed)
+    # Live ticks call this repeatedly; only push feedback when a control changed.
+    if changed:
+        _set_submission_feedback(page, state, state.submission_message)
+
+
+def _cancel_submission_state(state: GuiState) -> None:
+    state.current_result = None
+    state.consensus_locked = False
+    state.deliberation_pending = {}
+    state.monolith_statuses = {key: "CANCELLED" for key in [*TRIBUNAL_AGENT_IDS, ARBITER]}
+    state.monolith_activity_states = {key: "IDLE" for key in state.monolith_statuses}
+    state.monolith_feedback = {}
+    state.displayed_synthesis = "Submission cancelled. Completed assessments remain available in LIVE DELIBERATION."
+    state.displayed_confidence = 0.0
+    state.retry_available = True
+    _set_lifecycle(state, "CANCELLED")
+    state.directorate.emit("TRIBUNAL", "SUBMISSION_CANCELLED", "CANCELLED",
+                          "Submission cancelled by operator; no final verdict issued", state.directorate_session_id)
+    if state.last_proposal_record_id:
+        try:
+            update_proposal(state.last_proposal_record_id, decision_status="CANCELLED")
+        except (OSError, KeyError):
+            state.directorate.emit("LOCAL ARCHIVE", "SESSION_SAVE_FAILED", "FAILED", "Could not save cancellation status")
+
+
 def _refresh_live_page(page: ft.Page, state: GuiState) -> None:
     """Refresh display regions without unmounting inputs, menus or overlays."""
     if state.ui_stopped.is_set():
         return
+    _refresh_submission_controls(page, state)
     with state.render_lock:
         panels = []
         for name, (panel, builder) in state.live_panels.items():
@@ -2011,6 +2092,8 @@ def build_gui_layout(
     on_proposal_actions_hover=None,
     change_watch_deliberation=None,
     open_deliberation=None,
+    cancel_submission=None,
+    retry_submission=None,
 ) -> ft.Control:
     theme = state.theme
 
@@ -2138,6 +2221,10 @@ def build_gui_layout(
                         on_open_deliberation=open_deliberation,
                         on_actions_hover=on_proposal_actions_hover,
                         submission_message=state.submission_message,
+                        on_cancel=cancel_submission,
+                        on_retry=retry_submission,
+                        cancel_enabled=state.submission_lock.locked() and state.generation_control is not None and not state.generation_control.committed,
+                        retry_enabled=state.retry_available and not state.submission_lock.locked(),
                     ),
                     height=None if state.proposal_expanded else PROPOSAL_HEIGHT,
                     expand=True if state.proposal_expanded else None,
@@ -2420,7 +2507,7 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 _set_submission_feedback(page, state, "Enter a proposal before submitting.")
                 return
             if state.directorate_config_failed:
-                _set_submission_feedback(page, state, "Configuration needs attention. Open DIRECTORATE (Ctrl+P) to retry.")
+                _set_submission_feedback(page, state, "Configuration needs attention. Open Diagnostics > SYSTEM CHECKS to retry.")
                 return
             if not state.submission_lock.acquire(blocking=False):
                 _set_submission_feedback(page, state, "A proposal is already being reviewed. Open LIVE DELIBERATION for progress.")
@@ -2431,6 +2518,11 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             state.deliberation_pending = {}
             state.current_result = None
             state.current_proposal = proposal.strip()
+            state.last_proposal_record_id = ""
+            state.retry_proposal = proposal.strip()
+            state.retry_available = False
+            control = GenerationControl()
+            state.generation_control = control
             state.submission_message = "Proposal accepted. Tribunal starting..."
             def worker() -> None:
                 def update() -> None:
@@ -2439,7 +2531,12 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 try:
                     submit_proposal_live_for_gui(state, proposal, on_update=update)
                     _set_submission_feedback(page, state, "Verdict recorded. See the result below.")
+                    state.retry_available = bool(state.current_result and not getattr(state.current_result, "deliberation_complete", True))
+                except SubmissionCancelled:
+                    _cancel_submission_state(state)
+                    _set_submission_feedback(page, state, "Submission cancelled. RETRY resubmits the same proposal.")
                 except Exception as exc:
+                    state.retry_available = state.current_result is None
                     log_error("gui_submission_error", exc, {"theme": state.theme_key})
                     state.deliberation_pending = {}
                     state.monolith_statuses = {agent_id: "ERROR" for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]}
@@ -2450,6 +2547,7 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     _set_submission_feedback(page, state, "Submission failed. Review DIRECTORATE or Diagnostics, then retry.")
                 finally:
                     state.submission_lock.release()
+                    _refresh_submission_controls(page, state)
                 _refresh_live_page(page, state)
 
             try:
@@ -2457,9 +2555,28 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 page.run_thread(worker)
             except Exception as exc:
                 state.submission_lock.release()
+                state.retry_available = True
                 log_error("gui_submission_dispatch_error", exc, {"theme": state.theme_key})
                 state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Could not start submission; retry available")
                 _set_submission_feedback(page, state, "Could not start submission. Please retry or open Diagnostics.")
+                _refresh_submission_controls(page, state)
+
+        def cancel_submission(_=None) -> None:
+            control = state.generation_control
+            if not state.submission_lock.locked() or control is None:
+                return
+            if control.cancel():
+                _set_submission_feedback(page, state, "Cancelling submission; closing the response before retry...")
+            else:
+                _set_submission_feedback(page, state, "Verdict finalized; finishing its local record.")
+
+        def retry_submission(_=None) -> None:
+            if state.retry_available and not state.submission_lock.locked() and state.retry_proposal:
+                submit(state.retry_proposal)
+
+        def search_directorate(query: str) -> None:
+            state.directorate_search = query.strip()[:240]
+            _refresh_live_page(page, state)
 
         def switch_theme(next_theme: str) -> None:
             resolved = resolve_theme_key(next_theme)
@@ -2844,6 +2961,8 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             on_proposal_actions_hover=handle_proposal_actions_hover,
             change_watch_deliberation=change_watch_deliberation,
             open_deliberation=open_deliberation,
+            cancel_submission=cancel_submission,
+            retry_submission=retry_submission,
         )
         page.controls.clear()
         page.add(layout)
@@ -2888,11 +3007,13 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     bgcolor=state.theme.background_color, data="directorate_boot"))
             if state.directorate_open:
                 roll = _register_live_panel(state, "directorate_roll", lambda: build_dispatch_roll(
-                    state.directorate, animation=state.directorate_animation, reduced_motion=state.reduced_motion))
+                    state.directorate, animation=state.directorate_animation, reduced_motion=state.reduced_motion,
+                    query=state.directorate_search))
                 actions = _register_live_panel(state, "directorate_actions", lambda: build_dispatch_actions(
                     state.theme, state.directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history))
                 overlay.append(ft.Container(build_dispatch_desk(state.theme, state.directorate, roll,
-                    close_directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history, actions),
+                    close_directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history, actions,
+                    query=state.directorate_search, on_search=search_directorate),
                     top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
                     bgcolor=state.theme.background_color, data="directorate_desk"))
             if state.diagnostics_drawer_open:
@@ -3116,6 +3237,7 @@ def run_flet_gui(
     ensure_flet_desktop_runtime()
     state = create_gui_state(theme_key, config, nodes, compact_header=compact_header,
                              window_mode=window_mode, initialize=False)
+    state.directorate.enable_archive(DISPATCH_ARCHIVE_PATH)
     state.directorate_boot_open = startup_config_error
     state.directorate_config_failed = startup_config_error
     state.directorate_config_path = startup_config_path
@@ -3125,7 +3247,11 @@ def run_flet_gui(
 
     def target(page: ft.Page) -> None:
         if hasattr(page, "on_disconnect"):
-            page.on_disconnect = lambda _: state.ui_stopped.set()
+            def disconnect(_):
+                state.ui_stopped.set()
+                if state.generation_control and state.submission_lock.locked():
+                    state.generation_control.cancel()
+            page.on_disconnect = disconnect
         state.directorate_busy = True
         try:
             _render_page(page, state)

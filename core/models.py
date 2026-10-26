@@ -132,6 +132,7 @@ class Vote:
     review_reason: str = ""
     vote_change_reason: str = ""
     unresolved_disagreements: List[str] = field(default_factory=list)
+    evidence_audit: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass

@@ -37,6 +37,7 @@ def _verdict_payload(trace: Dict[str, Any], source_trace_path: Path = SYSTEM_LOG
         "final_verdict": trace.get("final_verdict") or trace.get("verdict"),
         "terminal_branch": trace.get("terminal_branch"),
         "review_triggers": trace.get("review_triggers", []),
+        "next_steps": trace.get("next_steps", []),
         "deliberation_transcript": trace.get("deliberation_transcript", []),
         "deliberation_complete": trace.get("deliberation_complete", False),
         "simulation": trace.get("simulation", False),
@@ -99,6 +100,8 @@ def _markdown(payload: Dict[str, Any]) -> str:
         "## Votes\n\n"
         + "\n".join(vote_lines)
         + "\n"
+        + ("\n## Next steps before reassessment\n\n" + "\n".join(f"- {step}" for step in payload.get("next_steps", []))
+           + "\n\nProposed steps only; no action has been scheduled.\n" if payload.get("next_steps") else "")
         + deliberation_markdown(payload)
     )
 

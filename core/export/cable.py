@@ -8,6 +8,7 @@ from core.export.verdict import _safe_proposal_id
 from core.models import TribunalResult
 from core.paths import EXPORT_DIR
 from core.public_text import public_text
+from core.voting.follow_up import unresolved_next_steps
 
 
 def _items(packet: Any, key: str = "items") -> list:
@@ -67,6 +68,16 @@ def render_cable(result: TribunalResult | None, sources: list[dict[str, str]] | 
                  for key, vote in result.votes.items())
     if not result.votes:
         lines.append("Not available")
+    audits = [f"- {key}: {audit.get('source', 'Unavailable')} / quote {audit.get('anchor', 'unavailable')}"
+              f" / claim support {audit.get('support', 'unreviewed')} / freshness {audit.get('freshness', 'not_required')}"
+              for key, vote in result.votes.items() for audit in vote.evidence_audit]
+    if audits:
+        lines.extend(["", "EVIDENCE PASSAGE CHECKS", *audits,
+                      "A matched quote is traceability only; unreviewed claim support is not verified."])
+    next_steps = unresolved_next_steps(result)
+    if next_steps:
+        lines.extend(["", "NEXT STEPS BEFORE REASSESSMENT", *[f"- {step}" for step in next_steps],
+                      "These are proposed next steps; no action has been scheduled."])
     lines.extend(["", "PUBLIC JUSTIFICATIONS"])
     for key, vote in result.votes.items():
         if vote.validation_errors:
@@ -78,6 +89,21 @@ def render_cable(result: TribunalResult | None, sources: list[dict[str, str]] | 
             lines.append(f"  Vote revision: {public_text(vote.vote_change_reason)}")
     if not result.votes:
         lines.append("Not available")
+    lines.extend(["", "VOTE DEVELOPMENT / ASSESSMENT -> CRITIQUE -> REVISION"])
+    agents = dict.fromkeys(str(turn.get("agent_id", "Unknown")) for turn in result.deliberation_transcript)
+    for agent in agents:
+        turns = [turn for turn in result.deliberation_transcript if str(turn.get("agent_id", "Unknown")) == agent]
+        timeline = " -> ".join(f"{turn.get('phase', '?')}: {turn.get('vote', 'Unavailable')}"
+                               + (" [invalid assessment]" if turn.get("validation_errors") else "") for turn in turns)
+        lines.append(f"- {agent}: {timeline}")
+        for turn in turns:
+            if turn.get("validation_errors"):
+                continue
+            reason = public_text(turn.get("vote_change_reason"))
+            if reason:
+                lines.append(f"  {turn.get('phase', '?')} / stated reason: {reason}")
+    if not agents:
+        lines.append("No round-by-round vote record available.")
     models = {(key, vote.model) for key, vote in result.votes.items()}
     for turn in result.deliberation_transcript:
         identity = (str(turn.get("agent_id", "Unknown")), str(turn.get("model", "Not available")))

@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 import importlib
 import shutil
 
@@ -39,7 +40,7 @@ def test_submission_file_error_does_not_claim_mock_fallback(monkeypatch):
     from ui import flet_app as gui
 
     state = make_gui_state("wh40k")
-    monkeypatch.setattr(gui, "MstyRuntime", lambda config: object())
+    monkeypatch.setattr(gui, "MstyRuntime", lambda config: SimpleNamespace())
     monkeypatch.setattr(gui, "_fallback_warning", lambda *args: "")
     monkeypatch.setattr(gui, "create_proposal", lambda **kwargs: {"proposal_id": "missing-profile-test"})
     monkeypatch.setattr(gui, "build_context_packet", lambda *args: {})

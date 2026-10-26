@@ -8,7 +8,7 @@ from core.models import Theme
 
 
 EMPTY_PROPOSAL_HINT = "Awaiting proposal. Select a template or enter a tribunal query."
-PROPOSAL_INPUT_LINES = 9
+PROPOSAL_INPUT_LINES = 3
 
 
 def build_proposal_panel(
@@ -29,6 +29,10 @@ def build_proposal_panel(
     on_open_deliberation=None,
     on_actions_hover=None,
     submission_message: str = "",
+    on_cancel=None,
+    on_retry=None,
+    cancel_enabled: bool = False,
+    retry_enabled: bool = False,
 ) -> ft.Control:
     fill_editor = expanded or on_focus is not None
     template_options = list(templates or [])
@@ -149,6 +153,11 @@ def build_proposal_panel(
     if on_watch_change:
         controls[-1] = ft.Row([
             controls[-1],
+            *([ft.TextButton("CANCEL", on_click=on_cancel, disabled=not cancel_enabled,
+                            height=32, data={"role": "cancel_submission_button"})] if on_cancel else []),
+            *([ft.TextButton("RETRY", on_click=on_retry, disabled=not retry_enabled,
+                            tooltip="Resubmit the last interrupted proposal", height=32,
+                            data={"role": "retry_submission_button"})] if on_retry else []),
             ft.Checkbox(label="Watch deliberation", value=watch_deliberation,
                         on_change=on_watch_change, label_style=ft.TextStyle(color=theme.text_color, size=11)),
             ft.TextButton("LIVE DELIBERATION", on_click=on_open_deliberation,

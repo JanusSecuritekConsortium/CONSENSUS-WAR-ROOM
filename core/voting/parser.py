@@ -7,6 +7,19 @@ from typing import Any, Dict, List, Optional
 from core.models import NodeIdentity, Vote, VoteValue
 
 
+def _fold_json_fields(raw: str) -> str:
+    """Accept complete pretty-printed JSON without relaxing field validation."""
+    pattern = re.compile(r"^(ARGUMENT|PEER_RESPONSES|UNRESOLVED_DISAGREEMENTS)\s*:\s*", re.I | re.M)
+    normalized = raw
+    for match in reversed(list(pattern.finditer(raw))):
+        try:
+            value, end = json.JSONDecoder().raw_decode(raw[match.end():])
+        except ValueError:
+            continue
+        normalized = normalized[:match.start()] + match.group(1) + ": " + json.dumps(value) + normalized[match.end() + end:]
+    return normalized
+
+
 def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, context: Optional[Dict[str, Any]] = None) -> Vote:
     vote = VoteValue.ABSTAIN
     confidence = 0.5
@@ -22,7 +35,7 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
     structured: Dict[str, Any] = {}
     json_fields = {"ARGUMENT": dict, "PEER_RESPONSES": list, "UNRESOLVED_DISAGREEMENTS": list}
 
-    for line in raw.splitlines():
+    for line in _fold_json_fields(raw).splitlines():
         stripped = line.strip()
         if not stripped:
             continue
@@ -114,6 +127,12 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
                 validation_errors.append(f"missing {field.lower()}")
         draft = Vote(node.codename, node.role, vote, confidence, " ".join(reasoning_lines), evidence_quality=evidence_quality or 0.0, critical_risk=bool(critical_risk), **argument_fields)
         validation_errors.extend(validate_argument(draft, context or {}))
+    from core.voting.evidence import audit_evidence
+    evidence_audit = audit_evidence(argument_fields["argument"], context or {})
+    if (context or {}).get("require_traceable_argument"):
+        for audit in evidence_audit:
+            if audit["anchor"] == "mismatch":
+                validation_errors.append("evidence quote does not match supplied passage")
     if validation_errors:
         return Vote(
             node_key=node.codename,
@@ -129,6 +148,7 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
             model=node.model if backend_name != "mock" else "mock",
             response_time=elapsed,
             raw_response=raw,
+            evidence_audit=evidence_audit,
             **{**argument_fields, "argument": {}, "peer_responses": [], "unresolved_disagreements": []},
         )
 
@@ -145,6 +165,7 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
         model=node.model if backend_name != "mock" else "mock",
         response_time=elapsed,
         raw_response=raw,
+        evidence_audit=evidence_audit,
         **argument_fields,
     )
 

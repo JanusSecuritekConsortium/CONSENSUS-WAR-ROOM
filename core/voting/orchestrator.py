@@ -9,10 +9,12 @@ from config.names import AETERNUM, BELLATOR, TRIBUNAL_AGENT_IDS
 from core.data_sources.enrichment import build_aeternum_data_enrichment
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION, build_bellator_context_packet
 from core.llm.prompts import build_node_prompt
+from core.llm.generation import SubmissionCancelled
 from core.logging import log_error, log_event
 from core.models import NodeIdentity, Vote, VoteValue
 from core.voting.parser import parse_vote
 from core.voting.arguments import evidence_source_ids
+from core.voting.evidence import supplied_passages
 
 
 DELIBERATION_PHASES = ("assessment", "critique", "revision")
@@ -37,10 +39,18 @@ class VotingOrchestrator:
         self, query: str, session_id: str, theme_key: str, sequential: bool = False,
         memory_context: Optional[Dict[str, Any]] = None,
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
+        *, assessment_only: bool = False, agent_ids: Optional[tuple[str, ...]] = None,
+        include_enrichment: bool = True,
     ) -> Dict[str, Vote]:
         # Kept for API compatibility. All submissions now use the same round barriers.
         self.transcript = []
         self.complete = False
+        agents = TRIBUNAL_AGENT_IDS if agent_ids is None else agent_ids
+        if not agents or len(set(agents)) != len(agents) or any(agent not in TRIBUNAL_AGENT_IDS or agent not in self.nodes for agent in agents):
+            raise ValueError("Expected distinct configured tribunal agent IDs")
+        if not assessment_only and tuple(agents) != tuple(TRIBUNAL_AGENT_IDS):
+            raise ValueError("Full deliberation requires all tribunal agents")
+        phases = DELIBERATION_PHASES[:1] if assessment_only else DELIBERATION_PHASES
         base_context = {
             "session_id": session_id, "theme": theme_key,
             "memory_context": memory_context or {"prior_decisions_used": 0, "items": [], "summary": "No prior decisions retrieved."},
@@ -50,22 +60,27 @@ class VotingOrchestrator:
         packets = {
             BELLATOR: {"bellator_context_packet": self._build_bellator_context_packet(query)},
             AETERNUM: {"aeternum_data_packet": build_aeternum_data_enrichment(query, live=False)},
-        }
+        } if include_enrichment else {}
         votes: Dict[str, Vote] = {}
         previous_rounds: list[Dict[str, Any]] = []
 
-        for number, phase in enumerate(DELIBERATION_PHASES, 1):
+        for number, phase in enumerate(phases, 1):
             self._emit(on_event, {"type": "round_started", "round": number, "phase": phase})
             round_votes: Dict[str, Vote] = {}
-            for agent_id in TRIBUNAL_AGENT_IDS:
+            for agent_id in agents:
+                control = getattr(self.runtime, "generation_control", None)
+                if control:
+                    control.check()
                 node = self.nodes[agent_id]
                 runtime_context = deepcopy(base_context)
                 runtime_context.update(deepcopy(packets.get(agent_id, {})))
                 runtime_context.update({
                     "model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
                     "system_prompt": node.prompt,
-                    "deliberation": {"round": number, "phase": phase, "total_rounds": len(DELIBERATION_PHASES), "previous_rounds": deepcopy(previous_rounds)},
+                    "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
                 })
+                runtime_context["evidence_passages"] = supplied_passages(query, runtime_context)
+                runtime_context["host_claim_reviews"] = deepcopy((memory_context or {}).get("host_claim_reviews", []))
                 runtime_context["evidence_source_ids"] = evidence_source_ids(runtime_context)
                 self._emit(on_event, {"type": "agent_started", "round": number, "phase": phase, "agent_id": agent_id, "context": deepcopy(runtime_context)})
                 started = time.perf_counter()
@@ -73,6 +88,8 @@ class VotingOrchestrator:
                 prompt = build_node_prompt(node, query, runtime_context)
                 try:
                     raw = self.runtime.send_to_agent(agent_id, prompt, runtime_context)
+                    if control:
+                        control.check()
                     execution = getattr(self.runtime, "last_execution", {}).get(agent_id, {})
                     backend = str(execution.get("backend") or ("mock" if self.simulation else "msty-runtime"))
                     vote = parse_vote(raw, node, time.perf_counter() - started, backend, runtime_context)
@@ -81,6 +98,8 @@ class VotingOrchestrator:
                     vote.model = str(execution.get("model") or vote.model)
                     if not self.simulation and backend in {"mock", "mock-fallback"}:
                         raise RuntimeError("Simulated response cannot count as real-model deliberation")
+                except SubmissionCancelled:
+                    raise
                 except Exception as exc:
                     execution = getattr(self.runtime, "last_execution", {}).get(agent_id, {})
                     log_error("vote_error", exc, {"session_id": session_id, "agent_id": agent_id, "model": node.model, "round": number, "phase": phase})
@@ -99,6 +118,7 @@ class VotingOrchestrator:
                     "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
                     "critical_risk": vote.critical_risk, "reasoning": vote.reasoning,
                     "argument": deepcopy(vote.argument), "peer_responses": deepcopy(vote.peer_responses),
+                    "evidence_audit": deepcopy(vote.evidence_audit),
                     "review_required": vote.review_required, "review_reason": vote.review_reason,
                     "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": list(vote.unresolved_disagreements),
                     "risks": list(vote.risks), "conditions": list(vote.conditions),
@@ -138,6 +158,7 @@ class VotingOrchestrator:
             "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
             "model": vote.model, "backend": vote.backend,
             "argument": argument, "review_required": vote.review_required, "review_reason": vote.review_reason[:240],
+            "evidence_audit": deepcopy(vote.evidence_audit[:2]),
             "peer_responses": peers,
             "vote_change_reason": vote.vote_change_reason[:240],
             "unresolved_disagreements": [item[:120] for item in vote.unresolved_disagreements[:2]],

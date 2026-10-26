@@ -32,6 +32,7 @@ def log_error(event_type: str, error: Exception, payload: Optional[Dict[str, Any
 
 
 def log_decision_trace(result: Any) -> None:
+    from core.voting.follow_up import unresolved_next_steps
     votes = {
         agent_id: {
             "vote": vote.vote.value,
@@ -41,6 +42,7 @@ def log_decision_trace(result: Any) -> None:
             "model": vote.model,
             "backend": vote.backend,
             "argument": vote.argument, "peer_responses": vote.peer_responses,
+            "evidence_audit": vote.evidence_audit,
             "review_required": vote.review_required, "review_reason": vote.review_reason,
             "vote_change_reason": vote.vote_change_reason, "unresolved_disagreements": vote.unresolved_disagreements,
         }
@@ -57,6 +59,7 @@ def log_decision_trace(result: Any) -> None:
             "confidence": result.confidence,
             "terminal_branch": result.terminal_branch,
             "review_triggers": result.review_triggers,
+            "next_steps": unresolved_next_steps(result),
             "deliberation_transcript": result.deliberation_transcript,
             "deliberation_complete": result.deliberation_complete,
             "simulation": result.simulation,

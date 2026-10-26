@@ -4,7 +4,6 @@ from typing import Dict
 
 import flet as ft
 
-from config.version import SYSTEM_VERSION
 from core.models import Theme
 from ui.components.safe_text import safe_ellipsis, safe_wrap
 
@@ -110,18 +109,11 @@ def build_status_panel(
                 *warning_controls,
                 section("ACTIVE MODELS"),
                 *[row(agent_id, model_name, theme.warning_color if "[MISSING]" in model_name else value_color) for agent_id, model_name in active_model_rows],
-                section("CODEX / DEV"),
-                row("VERSION", SYSTEM_VERSION),
-                row("ACTIVE COMPILE", "TEST REGISTERED"),
-                row("RUNTIME LOGS", "JSONL"),
-                section("MEMORY"),
-                row("SYSTEM", memory_status),
-                row("SESSION MEMORY", session_memory_status),
                 section("CONTEXT"),
+                row("SESSION MEMORY", session_memory_status),
                 row("CONTEXT RETRIEVAL", context_retrieval_status),
                 row("PRIOR DECISIONS USED", str(prior_decisions_used)),
                 row("CURRENT SESSION", current_session_id),
-                row("KNOWLEDGE", "METADATA INDEX READY"),
                 section("LIFECYCLE"),
                 row("STATE", lifecycle_state, theme.accent_color, bold=True),
                 row("ACTIVITY", ambient_status, muted_color, wrap_value=True),

@@ -1186,6 +1186,7 @@ def send_prompt(
     base_url: Optional[str] = None,
     temperature: float = 0.2,
     max_output_tokens: int = 900,
+    control=None,
 ) -> str:
     runtime_config = config or RuntimeConfig()
     backend = OllamaBackend(base_url=base_url or resolve_provider_base_url(runtime_config))
@@ -1196,6 +1197,9 @@ def send_prompt(
         "stream": False,
         "options": {"temperature": temperature, "num_predict": max_output_tokens},
     }
+    if control is not None:
+        from core.llm.generation import generate_response
+        return generate_response(backend.base_url, payload, control)
     response = backend_requests_post(backend, payload)
     return response.get("response", "")
 

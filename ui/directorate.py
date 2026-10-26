@@ -112,15 +112,19 @@ def dispatch_body(dispatch: DecisionDispatch, *, animation: bool, reduced_motion
 
 
 def build_dispatch_roll(journal: Directorate, *, animation: bool = True,
-                        reduced_motion: bool = False, now: float | None = None) -> ft.Column:
+                        reduced_motion: bool = False, now: float | None = None,
+                        query: str = "") -> ft.Column:
     now = time.monotonic() if now is None else now
-    entries = [(d.timestamp, "dispatch", d) for d in journal.dispatches()]
-    entries.extend((n.timestamp, "notice", n) for n in journal.notices())
+    dispatches = journal.search_dispatches(query)
+    entries = [(d.timestamp, "dispatch", d) for d in dispatches]
+    entries.extend((n.timestamp, "notice", n) for n in journal.notices()
+                   if not query.strip() or query.strip().casefold() in (n.component + n.kind + n.summary).casefold())
     controls = [paper_text("CONSENSUS / OFFICIAL DECISION REGISTER", bold=True, size=14),
-                paper_text("CURRENT DESKTOP SESSION · Previous decisions remain in History.", size=10),
+                paper_text(("LOCAL ARCHIVE · Latest 50 matching dispatches. Earlier decisions remain in History."
+                            if journal.archive_path else "CURRENT DESKTOP SESSION · Previous decisions remain in History."), size=10),
                 ft.Divider(color=RULE, thickness=2)]
     if not entries:
-        controls.extend([paper_text("TRANSMISSION STANDBY", bold=True),
+        controls.extend([paper_text("NO MATCHING DISPATCHES" if query.strip() else "TRANSMISSION STANDBY", bold=True),
                          paper_text("Submit a proposal. The ruling, individual votes, dissent and conditions will appear here.")])
     for _, kind, entry in sorted(entries, key=lambda row: row[0]):
         if kind == "dispatch":
@@ -152,7 +156,8 @@ def build_dispatch_actions(theme: Theme, journal: Directorate, copy=None, export
 
 
 def build_dispatch_desk(theme: Theme, journal: Directorate, roll: ft.Column,
-                        close=None, copy=None, export=None, open_history=None, actions=None) -> ft.Control:
+                        close=None, copy=None, export=None, open_history=None, actions=None,
+                        query: str = "", on_search=None) -> ft.Control:
     def rail():
         return ft.Container(ft.Column([
             ft.Text("●", color=theme.background_color, size=10) for _ in range(18)
@@ -163,6 +168,11 @@ def build_dispatch_desk(theme: Theme, journal: Directorate, roll: ft.Column,
                                    color=readable(theme, theme.primary_color), font_family="Consolas"),
                            ft.Text("TRIBUNAL DISPATCH DESK", size=11, color=theme.text_color, font_family="Consolas")], spacing=0, expand=True),
                 button(theme, "CLOSE", close)], spacing=12),
+        *([ft.TextField(value=query, hint_text="Search subject, verdict, session or report; press Enter",
+                        on_submit=lambda e: on_search(str(e.control.value or "")),
+                        color=theme.text_color, border_color=theme.secondary_color,
+                        text_style=ft.TextStyle(font_family="Consolas", size=12), dense=True,
+                        data={"role": "directorate_archive_search"})] if on_search else []),
         ft.Container(ft.Row([rail(), ft.Container(roll, padding=20, expand=True), rail()],
                             spacing=0, vertical_alignment=ft.CrossAxisAlignment.STRETCH),
                      bgcolor=PAPER, expand=True, border=ft.border.symmetric(horizontal=ft.BorderSide(2, RULE))),

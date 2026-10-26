@@ -119,6 +119,16 @@ class ConsensusEngine:
                     query, FinalVerdict.CAUTION, "UNRESOLVED tribunal with critical risk reported.",
                     votes, distribution, review_triggers, session_id, "tie_break_caution", classification_payload,
                 )
+            evidence_blockers = [vote.node_key for vote in voting_votes if any(
+                audit.get("support") == "contradicts" or audit.get("freshness") in {"stale", "unknown"}
+                for audit in vote.evidence_audit)]
+            if evidence_blockers:
+                return self._terminal_result(
+                    query, FinalVerdict.NO_CONSENSUS,
+                    "Approval withheld: cited evidence is contradicted by a supplied review or lacks required freshness. Obtain current supporting passages and reassess.",
+                    votes, distribution, [*review_triggers, *[f"evidence_audit_blocked:{key}" for key in evidence_blockers]],
+                    session_id, "evidence_audit_no_consensus", classification_payload,
+                )
             mean_evidence = mean(vote.evidence_quality for vote in qualified_votes) if qualified_votes else 0.0
             domain_critical_starved = any(
                 vote.critical_domain_relevance and vote.evidence_quality < self.rules.evidence_threshold

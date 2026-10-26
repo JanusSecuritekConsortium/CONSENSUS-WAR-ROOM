@@ -18,7 +18,9 @@ from core.paths import ARBITER_DIR, HISTORY_PATH, LEGACY_HISTORY_PATH
 
 
 def result_to_dict(result: TribunalResult) -> Dict[str, Any]:
+    from core.voting.follow_up import unresolved_next_steps
     payload = asdict(result)
+    payload["next_steps"] = unresolved_next_steps(result)
     payload["verdict"] = result.verdict.value
     payload["votes"] = {key: serialize_vote(vote) for key, vote in result.votes.items()}
     return payload
