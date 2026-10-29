@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 from pathlib import Path
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -25,9 +27,24 @@ def at(hour, minute, day=dt.date(2026, 10, 27)):
 
 
 class PublishBriefingToolTests(unittest.TestCase):
-    def call(self, now, arguments):
+    def setUp(self):
+        # Run records go to a temporary folder, and no failure notice reaches Telegram.
+        runs = tempfile.TemporaryDirectory()
+        self.addCleanup(runs.cleanup)
+        self.runs = Path(runs.name)
+        self.notices = []
+        for name, value in (('_runs_dir', lambda: self.runs),
+                            ('_notify_late_failure', lambda mode, error: self.notices.append((mode, str(error))))):
+            patcher = patch.object(server, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def call(self, now, arguments, tool='aurelius_publish_briefing'):
         with patch.object(server, '_madrid_now', return_value=now):
-            return server.call_tool('aurelius_publish_briefing', arguments)
+            return server.call_tool(tool, arguments)
+
+    def run_record(self, mode, day=dt.date(2026, 10, 27)):
+        return json.loads((self.runs / f'{day.isoformat()}-{mode}.run.json').read_text(encoding='utf-8'))
 
     def test_inside_window_publishes_with_telegram(self):
         result_by_mode = {'status': 'delivered', 'note': 'n.md', 'memory': 'linked',
@@ -83,9 +100,50 @@ class PublishBriefingToolTests(unittest.TestCase):
             self.assertEqual(calls, ['morning'])  # no duplicate publish while one is running
             worker = server._publishing['morning']
             self.assertFalse(worker.daemon)
+            self.assertEqual(self.run_record('morning')['status'], 'running')
             release.set()
             worker.join(5)
             self.assertEqual(worker.outcome['result']['status'], 'delivered')
+        self.assertEqual(self.run_record('morning')['status'], 'delivered')
+        self.assertEqual(self.notices, [])
+
+    def test_late_failure_is_recorded_and_sent_to_the_user(self):
+        release = threading.Event()
+
+        def failing_publish(mode, send):
+            release.wait(5)
+            raise RuntimeError('Telegram request failed; delivery may require verification')
+
+        with patch.object(server, 'PUBLISH_WAIT_SECONDS', 0.05), patch(PUBLISH, side_effect=failing_publish):
+            self.assertEqual(self.call(at(17, 30), {'mode': 'evening'})['status'], 'publishing')
+            worker = server._publishing['evening']
+            release.set()
+            worker.join(5)
+        record = self.run_record('evening')
+        self.assertEqual(record['status'], 'failed')
+        self.assertIn('Telegram request failed', record['error'])
+        self.assertIn('finished_at', record)
+        self.assertEqual(self.notices, [('evening', 'Telegram request failed; delivery may require verification')])
+
+    def test_failure_inside_the_wait_is_returned_without_extra_notice(self):
+        with patch(PUBLISH, side_effect=RuntimeError('Another briefing publication is running')):
+            with self.assertRaisesRegex(RuntimeError, 'Another briefing'):
+                self.call(at(8, 0), {'mode': 'morning'})
+        self.assertEqual(self.run_record('morning')['status'], 'failed')
+        self.assertEqual(self.notices, [])
+
+    def test_status_tool_reads_the_run_record_and_sends_nothing(self):
+        self.assertEqual(self.call(at(9, 0), {'mode': 'morning'}, 'aurelius_briefing_status')['status'], 'not_started')
+        with patch(PUBLISH, return_value={'status': 'awaiting_choice', 'message_ids': [4]}) as publish:
+            self.call(at(7, 0), {'mode': 'morning'})
+            status = self.call(at(9, 0), {'mode': 'morning'}, 'aurelius_briefing_status')
+            publish.assert_called_once()
+        self.assertEqual(status['status'], 'awaiting_choice')
+        self.assertEqual(status['date'], '2026-10-27')
+        tool = next(t for t in server.TOOLS if t['name'] == 'aurelius_briefing_status')
+        self.assertTrue(tool['annotations']['readOnlyHint'])
+        with self.assertRaises(ValueError):
+            self.call(at(9, 0), {'mode': 'weekly'}, 'aurelius_briefing_status')
 
     def test_rejects_other_arguments(self):
         for arguments in ({}, {'mode': 'weekly'}, {'mode': 'morning', 'edition': 'x'}, {'kind': 'morning'}):

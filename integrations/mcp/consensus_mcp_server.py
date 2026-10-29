@@ -392,35 +392,98 @@ def _madrid_now() -> dt.datetime:
     return dt.datetime.now(TZ)
 
 
+def _runs_dir() -> Path:
+    from integrations.msty.personal.publication import VAULT
+    return VAULT / 'Deliveries'
+
+
+def _run_path(mode: str, day: dt.date) -> Path:
+    # Kept apart from the delivery receipt: a run can fail before publish() writes one.
+    return _runs_dir() / f'{day.isoformat()}-{mode}.run.json'
+
+
+def _write_run(path: Path, record: dict[str, Any]) -> None:
+    from integrations.msty.personal.publication import atomic
+    try:
+        atomic(path, json.dumps(record, ensure_ascii=False, indent=2))
+    except OSError as exc:
+        print(f'aurelius_publish_briefing could not record run: {exc}', file=sys.stderr)
+
+
+def _notify_late_failure(mode: str, error: BaseException) -> None:
+    """Msty was already told 'publishing', so a later failure would otherwise go unseen."""
+    from integrations.msty.personal.publication import telegram_call, telegram_route
+    text = (f'AURELIUS {mode} briefing failed after it started: {str(error)[:300]} '
+            'Check the vault delivery receipt before publishing it again.')
+    try:
+        route = telegram_route()
+        telegram_call(route, 'sendMessage', {'chat_id': route['chat_id'], 'text': text})
+    except Exception as exc:
+        print(f'aurelius_publish_briefing failure notice not sent: {exc}', file=sys.stderr)
+
+
 def _publish_in_background(mode: str) -> dict[str, Any] | None:
     """Run publish() on a non-daemon thread so it finishes even if the caller times out.
 
     Returns the result when it completes within PUBLISH_WAIT_SECONDS, re-raises its error,
-    or returns None while it is still running. The vault receipt records the final outcome.
+    or returns None while it is still running. The run record keeps the final outcome, and a
+    failure after the caller stopped waiting is also sent to the user on Telegram.
     """
     from integrations.msty.personal.publication import publish
     with _publishing_lock:
         worker = _publishing.get(mode)
         if worker is None or not worker.is_alive():
             outcome: dict[str, Any] = {}
+            lock = threading.Lock()
+            path = _run_path(mode, _madrid_now().date())
+            record = {'mode': mode, 'status': 'running', 'started_at': _madrid_now().isoformat(timespec='seconds')}
+            _write_run(path, record)
 
             def run():
                 try:
                     outcome['result'] = publish(mode, send=True)
-                except BaseException as exc:  # surfaced to the caller or logged below
+                    record['status'] = outcome['result'].get('status', 'completed')
+                except BaseException as exc:  # surfaced to the caller or reported below
                     outcome['error'] = exc
+                    record.update(status='failed', error=str(exc)[:500])
                     print(f'aurelius_publish_briefing {mode} failed: {exc}', file=sys.stderr)
+                record['finished_at'] = _madrid_now().isoformat(timespec='seconds')
+                _write_run(path, record)
+                with lock:
+                    outcome['done'] = True
+                    detached = outcome.get('detached', False)
+                if detached and 'error' in outcome:
+                    _notify_late_failure(mode, outcome['error'])
 
             worker = threading.Thread(target=run, name=f'aurelius-publish-{mode}', daemon=False)
             worker.outcome = outcome
+            worker.lock = lock
             _publishing[mode] = worker
             worker.start()
     worker.join(PUBLISH_WAIT_SECONDS)
-    if worker.is_alive():
-        return None
+    with worker.lock:
+        if not worker.outcome.get('done'):
+            worker.outcome['detached'] = True
+            return None
     if 'error' in worker.outcome:
         raise worker.outcome['error']
     return worker.outcome['result']
+
+
+def aurelius_briefing_status(arguments=None):
+    """Read today's run record for a briefing mode; sends and changes nothing."""
+    args = arguments or {}
+    if not isinstance(args, dict) or set(args) != {'mode'} or args['mode'] not in BRIEFING_WINDOWS:
+        raise ValueError('Only mode morning or evening is accepted')
+    mode = args['mode']
+    now = _madrid_now()
+    path = _run_path(mode, now.date())
+    try:
+        record = json.loads(path.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        record = {'mode': mode, 'status': 'not_started'}
+    return {'tool': 'aurelius_briefing_status', 'date': now.date().isoformat(), **record,
+            'checked_at': now.isoformat(timespec='seconds')}
 
 
 def aurelius_publish_briefing(arguments=None):
@@ -440,7 +503,8 @@ def aurelius_publish_briefing(arguments=None):
     result = _publish_in_background(mode)
     if result is None:
         return {'tool': 'aurelius_publish_briefing', 'mode': mode, 'status': 'publishing',
-                'detail': 'Still running; the delivery receipt in the vault records the outcome.',
+                'detail': 'Still running. aurelius_briefing_status reports the final outcome, '
+                          'and a later failure is also sent to the user on Telegram.',
                 'checked_at': now.isoformat(timespec='seconds')}
     return {'tool': 'aurelius_publish_briefing', 'mode': mode, **result}
 
@@ -528,6 +592,7 @@ TOOL_HANDLERS = {
     "aurelius_memory_forget": aurelius_memory_forget,
     "aurelius_report": aurelius_report,
     "aurelius_publish_briefing": aurelius_publish_briefing,
+    "aurelius_briefing_status": aurelius_briefing_status,
     "consensus_status": consensus_status,
     "aurelius_status": aurelius_status,
     "aurelius_recent_logs": aurelius_recent_logs,
@@ -621,6 +686,17 @@ TOOLS = [
         "name": "aurelius_publish_briefing",
         "description": "Scheduled-task use only: publish today's AURELIUS briefing (morning 07:00-10:00 or evening 17:30-20:30 Europe/Madrid) to the configured private Telegram recipient and the local briefing vault. Outside the window it sends nothing and returns outside_window. At most one delivery per mode per day; an uncertain earlier delivery blocks resending. Do not call from a conversation unless the user explicitly asks to publish now.",
         "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
+        "inputSchema": {
+            "type": "object",
+            "properties": {"mode": {"type": "string", "enum": ["morning", "evening"]}},
+            "required": ["mode"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "aurelius_briefing_status",
+        "description": "Report today's AURELIUS briefing run for a mode: not_started, running, the delivery status (for example delivered or awaiting_choice), or failed with its error. Read-only; sends nothing.",
+        "annotations": {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
         "inputSchema": {
             "type": "object",
             "properties": {"mode": {"type": "string", "enum": ["morning", "evening"]}},
