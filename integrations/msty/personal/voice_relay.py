@@ -117,7 +117,7 @@ def prompt_for(message, route, decoded=None, lang=None):
             +(f'Reply in {"Spanish" if lang == "es" else "English"} for this turn. ' if lang else '')+
             'For email replies, match the original email language. Preserve original names, subjects and event titles. Use concise plain text. '
             'Telegram cannot show request_clarification or other in-app prompts: ask any question in your reply text. '
-            'When an email request names no account, call email_accounts and check every account. No uses send_channel_message: '
+            'When an email request names no account, use the default account from your instructions; check every account only when asked. No uses send_channel_message: '
             'el transporte entrega tu respuesta final. Para acciones usa request_key '+key+
             ':<numero>, estable por acción. No repitas acciones ya ejecutadas.\nMensaje:\n'+text+'\n/no_think')
 
@@ -331,7 +331,8 @@ def msty_alert(route, ready, failures, reason):
               'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and run integrations.msty.personal.voice_setup.'
               if reason=='unauthorized' else
               f'Aurelius has not been able to reach Msty Go for {failures} minutes. Check that Msty Go is running on the PC.')
-        text+=' Messages sent here are kept and answered once it reconnects.'
+        # Undispatched requests get an offline reply; replaying them later could repeat an action.
+        text+=' Until then, messages sent here get an offline reply: send them again once it is back.'
     else:return
     try:api(route,'sendMessage',{'chat_id':route['chat_id'],'text':text})
     except Exception:return  # Telegram unavailable too; try again at the next check.

@@ -107,7 +107,8 @@ def test_reply_delivers_failed_turn_error_with_tool_calls(tmp_path,monkeypatch):
 
 def test_prompt_steers_telegram_away_from_in_app_prompts():
     prompt=relay.prompt_for(update()['message'],{'chat_id':'42'})
-    assert 'request_clarification' in prompt and 'email_accounts' in prompt
+    assert 'request_clarification' in prompt and 'default account from your instructions' in prompt
+    assert 'check every account only when asked' in prompt
 
 
 def test_redacted_prompt_matching_preserves_privacy():
@@ -167,6 +168,7 @@ def test_msty_outage_alerts_once_and_reports_recovery(isolated,monkeypatch):
     relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER,'unauthorized')
     relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER+1,'unauthorized')
     assert len(sent)==1 and 'token' in sent[0] and 'voice_setup' in sent[0]
+    assert 'send them again' in sent[0]  # offline requests are answered with an error, not replayed
     relay.msty_alert(route,True,0,None);relay.msty_alert(route,True,0,None)
     assert len(sent)==2 and 'again' in sent[1]
 
