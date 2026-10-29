@@ -4,6 +4,8 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 import sys
+import threading
+import time
 import unittest
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -61,6 +63,29 @@ class PublishBriefingToolTests(unittest.TestCase):
         with patch(PUBLISH, side_effect=RuntimeError('Delivery uncertain; inspect saved receipt before resending')):
             with self.assertRaisesRegex(RuntimeError, 'uncertain'):
                 self.call(at(8, 0), {'mode': 'morning'})
+
+    def test_slow_publish_returns_before_msty_timeout_and_still_finishes(self):
+        release = threading.Event()
+        calls = []
+
+        def slow_publish(mode, send):
+            calls.append(mode)
+            release.wait(5)
+            return {'status': 'delivered', 'message_ids': [5]}
+
+        with patch.object(server, 'PUBLISH_WAIT_SECONDS', 0.05), patch(PUBLISH, side_effect=slow_publish):
+            started = time.monotonic()
+            first = self.call(at(7, 0), {'mode': 'morning'})
+            second = self.call(at(7, 1), {'mode': 'morning'})
+            self.assertLess(time.monotonic() - started, 2)
+            self.assertEqual(first['status'], 'publishing')
+            self.assertEqual(second['status'], 'publishing')
+            self.assertEqual(calls, ['morning'])  # no duplicate publish while one is running
+            worker = server._publishing['morning']
+            self.assertFalse(worker.daemon)
+            release.set()
+            worker.join(5)
+            self.assertEqual(worker.outcome['result']['status'], 'delivered')
 
     def test_rejects_other_arguments(self):
         for arguments in ({}, {'mode': 'weekly'}, {'mode': 'morning', 'edition': 'x'}, {'kind': 'morning'}):

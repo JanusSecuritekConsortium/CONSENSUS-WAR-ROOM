@@ -115,7 +115,9 @@ def prompt_for(message, route, decoded=None, lang=None):
     return (f'{key}\n{source}\n'
             'Use English for scheduled reports, briefings and proactive messages. For direct conversational replies, including answers about a briefing, match the original incoming message language. '
             +(f'Reply in {"Spanish" if lang == "es" else "English"} for this turn. ' if lang else '')+
-            'For email replies, match the original email language. Preserve original names, subjects and event titles. Use concise plain text. No uses send_channel_message: '
+            'For email replies, match the original email language. Preserve original names, subjects and event titles. Use concise plain text. '
+            'Telegram cannot show request_clarification or other in-app prompts: ask any question in your reply text. '
+            'When an email request names no account, call email_accounts and check every account. No uses send_channel_message: '
             'el transporte entrega tu respuesta final. Para acciones usa request_key '+key+
             ':<numero>, estable por acción. No repitas acciones ya ejecutadas.\nMensaje:\n'+text+'\n/no_think')
 
@@ -146,6 +148,14 @@ def matches_redacted_prompt(content, metadata, prompt):
     except (ValueError,TypeError,KeyError,UnicodeError):return False
 
 
+def internal_message(metadata):
+    # Msty stores context-compaction summaries as assistant messages before the
+    # model answers. They are bookkeeping, never a reply for the user.
+    try:meta=json.loads(metadata) if metadata else {}
+    except ValueError:return False
+    return isinstance(meta,dict) and (meta.get('excludeFromContext') is True or meta.get('messageType')=='context_compaction')
+
+
 def final_reply(marker, prompt=None, dispatch_after=None):
     with sqlite3.connect(database_path().resolve().as_uri()+'?mode=ro',uri=True) as db:
         row=db.execute("SELECT conversation_id,sequence FROM messages WHERE role='user' AND instr(content,?)>0 ORDER BY created_at DESC LIMIT 1",(marker,)).fetchone()
@@ -155,15 +165,17 @@ def final_reply(marker, prompt=None, dispatch_after=None):
             # Redacted receipts may collide. Never guess between matching turns.
             if len(matches)==1:row=matches[0][:2]
         if not row:return None
-        following=db.execute('SELECT role,content,tool_calls FROM messages WHERE conversation_id=? AND sequence>? ORDER BY sequence',(row[0],row[1])).fetchall()
+        following=db.execute('SELECT role,content,tool_calls,metadata FROM messages WHERE conversation_id=? AND sequence>? ORDER BY sequence',(row[0],row[1])).fetchall()
     candidate=None
-    for role,content,calls in following:
+    for role,content,calls,metadata in following:
         if role=='user':break
-        if role=='assistant':
+        if role=='assistant' and not internal_message(metadata):
             # A tool-bearing message is an intermediate step even when its
             # tools have finished. Wait for the agent's final text message.
             parsed=json.loads(calls) if calls else []
-            candidate=content if not parsed and content and content.strip() else None
+            # Msty attaches a failed turn's tool calls to its final error text.
+            final=not parsed or (content or '').lstrip().startswith('**Error:**')
+            candidate=content if final and content and content.strip() else None
     return candidate
 
 

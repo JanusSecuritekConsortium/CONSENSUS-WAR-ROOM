@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -380,9 +381,46 @@ BRIEFING_WINDOWS = {
 }
 
 
+# Msty Go waits about 30s for tools/call; building a briefing can take longer.
+PUBLISH_WAIT_SECONDS = 20
+_publishing: dict[str, threading.Thread] = {}
+_publishing_lock = threading.Lock()
+
+
 def _madrid_now() -> dt.datetime:
     from integrations.msty.personal.connectors import TZ
     return dt.datetime.now(TZ)
+
+
+def _publish_in_background(mode: str) -> dict[str, Any] | None:
+    """Run publish() on a non-daemon thread so it finishes even if the caller times out.
+
+    Returns the result when it completes within PUBLISH_WAIT_SECONDS, re-raises its error,
+    or returns None while it is still running. The vault receipt records the final outcome.
+    """
+    from integrations.msty.personal.publication import publish
+    with _publishing_lock:
+        worker = _publishing.get(mode)
+        if worker is None or not worker.is_alive():
+            outcome: dict[str, Any] = {}
+
+            def run():
+                try:
+                    outcome['result'] = publish(mode, send=True)
+                except BaseException as exc:  # surfaced to the caller or logged below
+                    outcome['error'] = exc
+                    print(f'aurelius_publish_briefing {mode} failed: {exc}', file=sys.stderr)
+
+            worker = threading.Thread(target=run, name=f'aurelius-publish-{mode}', daemon=False)
+            worker.outcome = outcome
+            _publishing[mode] = worker
+            worker.start()
+    worker.join(PUBLISH_WAIT_SECONDS)
+    if worker.is_alive():
+        return None
+    if 'error' in worker.outcome:
+        raise worker.outcome['error']
+    return worker.outcome['result']
 
 
 def aurelius_publish_briefing(arguments=None):
@@ -399,8 +437,11 @@ def aurelius_publish_briefing(arguments=None):
         return {'tool': 'aurelius_publish_briefing', 'mode': mode, 'status': 'outside_window',
                 'window': start.strftime('%H:%M')+'-'+end.strftime('%H:%M')+' Europe/Madrid',
                 'checked_at': now.isoformat(timespec='seconds')}
-    from integrations.msty.personal.publication import publish
-    result = publish(mode, send=True)
+    result = _publish_in_background(mode)
+    if result is None:
+        return {'tool': 'aurelius_publish_briefing', 'mode': mode, 'status': 'publishing',
+                'detail': 'Still running; the delivery receipt in the vault records the outcome.',
+                'checked_at': now.isoformat(timespec='seconds')}
     return {'tool': 'aurelius_publish_briefing', 'mode': mode, **result}
 
 

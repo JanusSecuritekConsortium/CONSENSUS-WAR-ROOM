@@ -66,18 +66,48 @@ def test_reply_waits_for_final_text_and_stays_in_turn(tmp_path,monkeypatch):
     path=tmp_path/'messages.db'
     monkeypatch.setattr(relay,'database_path',lambda:path)
     with sqlite3.connect(path) as db:
-        db.execute('CREATE TABLE messages (conversation_id TEXT, sequence INTEGER, role TEXT, content TEXT, tool_calls TEXT, created_at TEXT)')
-        db.executemany('INSERT INTO messages VALUES (?,?,?,?,?,?)',[
+        db.execute('CREATE TABLE messages (conversation_id TEXT, sequence INTEGER, role TEXT, content TEXT, tool_calls TEXT, created_at TEXT, metadata TEXT)')
+        db.executemany('INSERT INTO messages VALUES (?,?,?,?,?,?,NULL)',[
             ('a',1,'user','receipt-one',None,'1'),
             ('a',2,'assistant','Checking now',json.dumps([{'status':'completed'}]),'2'),
             ('b',1,'assistant','Unrelated reply',None,'3')])
     assert relay.final_reply('receipt-one') is None
     with sqlite3.connect(path) as db:
-        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?)',('a',3,'assistant','Finished',None,'4'))
-        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?)',('a',4,'user','Next request',None,'5'))
-        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?)',('a',5,'assistant','Next answer',None,'6'))
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,NULL)',('a',3,'assistant','Finished',None,'4'))
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,NULL)',('a',4,'user','Next request',None,'5'))
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,NULL)',('a',5,'assistant','Next answer',None,'6'))
     assert relay.final_reply('receipt-one')=='Finished'
     assert relay.final_reply('unknown-receipt') is None
+
+
+def test_reply_skips_context_compaction_summary(tmp_path,monkeypatch):
+    path=tmp_path/'messages.db'
+    monkeypatch.setattr(relay,'database_path',lambda:path)
+    summary=json.dumps({'excludeFromContext':True,'messageType':'context_compaction'})
+    with sqlite3.connect(path) as db:
+        db.execute('CREATE TABLE messages (conversation_id TEXT, sequence INTEGER, role TEXT, content TEXT, tool_calls TEXT, created_at TEXT, metadata TEXT)')
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',1,'user','receipt-two',None,'1',None))
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',2,'assistant','## Current Progress',None,'2',summary))
+    assert relay.final_reply('receipt-two') is None
+    with sqlite3.connect(path) as db:
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',3,'assistant','Three unread emails...',None,'3','{}'))
+    assert relay.final_reply('receipt-two')=='Three unread emails...'
+
+
+def test_reply_delivers_failed_turn_error_with_tool_calls(tmp_path,monkeypatch):
+    path=tmp_path/'messages.db'
+    monkeypatch.setattr(relay,'database_path',lambda:path)
+    calls=json.dumps([{'name':'email_search','status':'completed'}])
+    with sqlite3.connect(path) as db:
+        db.execute('CREATE TABLE messages (conversation_id TEXT, sequence INTEGER, role TEXT, content TEXT, tool_calls TEXT, created_at TEXT, metadata TEXT)')
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',1,'user','receipt-three',None,'1',None))
+        db.execute('INSERT INTO messages VALUES (?,?,?,?,?,?,?)',('a',2,'assistant','  **Error:** The response stopped before finishing.',calls,'2','{}'))
+    assert relay.final_reply('receipt-three').strip().startswith('**Error:**')
+
+
+def test_prompt_steers_telegram_away_from_in_app_prompts():
+    prompt=relay.prompt_for(update()['message'],{'chat_id':'42'})
+    assert 'request_clarification' in prompt and 'email_accounts' in prompt
 
 
 def test_redacted_prompt_matching_preserves_privacy():
