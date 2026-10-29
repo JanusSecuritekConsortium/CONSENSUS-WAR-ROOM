@@ -159,6 +159,40 @@ def test_receiver_polls_choices_while_agent_waits(isolated,monkeypatch):
     relay.run()
     assert processed==[101] and calls[0]['timeout']==0
 
+def test_msty_outage_alerts_once_and_reports_recovery(isolated,monkeypatch):
+    sent=[];monkeypatch.setattr(relay,'api',lambda route,method,data:sent.append(data['text']))
+    route={'chat_id':'42'}
+    for failures in range(1,relay.MSTY_ALERT_AFTER):relay.msty_alert(route,False,failures,'unreachable')
+    assert sent==[]
+    relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER,'unauthorized')
+    relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER+1,'unauthorized')
+    assert len(sent)==1 and 'token' in sent[0] and 'voice_setup' in sent[0]
+    relay.msty_alert(route,True,0,None);relay.msty_alert(route,True,0,None)
+    assert len(sent)==2 and 'again' in sent[1]
+
+
+def test_msty_alert_retries_when_telegram_send_fails(isolated,monkeypatch):
+    def failed(*args):raise RuntimeError('Telegram transport failed')
+    monkeypatch.setattr(relay,'api',failed)
+    relay.msty_alert({'chat_id':'42'},False,relay.MSTY_ALERT_AFTER,'unreachable')
+    sent=[];monkeypatch.setattr(relay,'api',lambda route,method,data:sent.append(data['text']))
+    relay.msty_alert({'chat_id':'42'},False,relay.MSTY_ALERT_AFTER+1,'unreachable')
+    assert len(sent)==1 and 'minutes' in sent[0]
+
+
+def test_msty_failure_tells_refused_token_from_unreachable():
+    import requests
+    def wrapped(inner):
+        try:
+            try:raise inner
+            except Exception:raise RuntimeError('Local Msty MCP request failed') from None
+        except RuntimeError as error:return error
+    refused=requests.HTTPError(response=type('R',(),{'status_code':401})())
+    assert relay.msty_failure(wrapped(refused))=='unauthorized'
+    assert relay.msty_failure(wrapped(requests.ConnectionError()))=='unreachable'
+    assert relay.msty_failure(ValueError('Configure the local MCP bearer token'))=='unreachable'
+
+
 def test_stale_command_not_dispatched(isolated,monkeypatch):
     old=update();old['message']['date']=1
     relay.enqueue([old],'42')

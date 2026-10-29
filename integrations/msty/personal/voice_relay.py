@@ -310,10 +310,39 @@ def enabled():
     return bool(channel and not channel[0] and not bindings)
 
 
+MSTY_ALERT_AFTER=5  # failed connection checks, one a minute; a normal Msty restart takes about one
+
+
+def msty_failure(error):
+    # Client hides the transport error; its context still says whether the token was refused.
+    response=getattr(error.__context__,'response',None)
+    return 'unauthorized' if getattr(response,'status_code',None)==401 else 'unreachable'
+
+
+def msty_alert(route, ready, failures, reason):
+    """Tell the user once when Telegram has lost Msty for a while, and once when it is back."""
+    path=store.ROOT/'msty-alert.json'
+    try:alerted=json.loads(path.read_text(encoding='utf-8')).get('alerted') is True
+    except (OSError,ValueError):alerted=False
+    if ready and alerted:
+        text='Aurelius is reachable on Telegram again.'
+    elif not ready and not alerted and failures>=MSTY_ALERT_AFTER:
+        text=('Aurelius cannot reach Msty Go: its built-in server rejected the saved token, which changes whenever Msty restarts. '
+              'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and run integrations.msty.personal.voice_setup.'
+              if reason=='unauthorized' else
+              f'Aurelius has not been able to reach Msty Go for {failures} minutes. Check that Msty Go is running on the PC.')
+        text+=' Messages sent here are kept and answered once it reconnects.'
+    else:return
+    try:api(route,'sendMessage',{'chat_id':route['chat_id'],'text':text})
+    except Exception:return  # Telegram unavailable too; try again at the next check.
+    path.write_text(json.dumps({'alerted':not ready,'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
+
+
 def run():
     with single_instance():
         last_check=0
         msty_ready=False
+        failures=0;reason=None
         while store.load().get('telegram_voice_relay_enabled'):
             try:
                 # Startup can precede Msty/database readiness. Retry instead of exiting.
@@ -325,11 +354,13 @@ def run():
                     client=None
                     try:
                         client=Client()
-                        client.initialize();msty_ready=True
-                    except Exception:msty_ready=False
+                        client.initialize();msty_ready=True;failures=0
+                    except Exception as error:
+                        msty_ready=False;failures+=1;reason=msty_failure(error)
                     finally:
                         if client:client.close()
                         last_check=time.monotonic()
+                    msty_alert(route,msty_ready,failures,reason)
                 with database() as db:
                     offset=db.execute('SELECT offset FROM cursor WHERE id=1').fetchone()[0]
                 # Continue receiving format choices even while an agent request waits.
