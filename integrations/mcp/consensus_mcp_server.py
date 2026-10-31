@@ -769,6 +769,12 @@ if str(PROJECT_ROOT) not in sys.path:
 from integrations.msty.personal.action_tools import TOOL as ACTION_TOOL
 TOOLS.append(ACTION_TOOL)
 
+# Personal attention is its own package; this connection only mounts a compact subset of its tools.
+from integrations.attention import tools as attention_tools
+for _name in attention_tools.COMPACT:
+    TOOL_HANDLERS[_name] = attention_tools.HANDLERS[_name]
+TOOLS.extend(tool for tool in attention_tools.TOOLS if tool["name"] in attention_tools.COMPACT)
+
 
 
 def call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:

@@ -72,6 +72,7 @@ CONSENSUS — ecosystem / umbrella
 |   +-- CONSENSUS decision/session memory: application records and recall
 |   +-- AURELIUS Msty Memory Bank: selected shared facts/preferences
 |   +-- Briefing archive and knowledge indexes: dated retrieval sources
+|   +-- Personal attention state: replies owed, promises, waits, proposed meetings
 |
 +-- Related projects and external resources
     +-- TARS / earlier Flet prototype: archived under G:\Backup\Projects
@@ -98,6 +99,7 @@ Until an ADR adopts or replaces this rule:
 | What is known, from which source, with what provenance? | Obsidian second brain |
 | What does the operator prefer, and which shared facts are confirmed? | AURELIUS Msty Memory Bank |
 | What was reported on a given date? | Briefing archive (dated claims only, never current fact) |
+| Who is waiting for the operator, and what did the operator promise? | Personal attention state (`system/state.sqlite3`; Markdown is generated from it) |
 
 When two stores disagree, surface both with their sources and dates; do not
 overwrite one from the other automatically. The operator resolves the conflict,
@@ -126,6 +128,7 @@ this table or its owning document. Nothing here is Operational yet.
 | Persistent memory | Tested (application stores) | `core/memory/store.py`, `core/memory/session.py`, [AURELIUS shared memory](integrations/msty/AURELIUS_SHARED_MEMORY.md) | Live write and cross-client recall, with stored contents checked |
 | Shared second brain | Tested (loader) | Repository `AGENTS.md`; vault startup notes; `core/knowledge/second_brain.py` (loads only `50 Agents/Shared Context.md`); second-brain tests pass | Each client's access to the real vault confirmed by an executed check |
 | Surrounding workspace | Present | [Workspace ecosystem](docs/WORKSPACE_ECOSYSTEM.md), [folder guide](docs/FOLDER_GUIDE.md) | Per-path availability check; no active project is inferred from an archive |
+| Personal attention | Tested (offline) | [Personal Attention Manager](integrations/attention/README.md); `integrations/attention/`; `tests/test_attention.py` passes; live read-only scan 2026-10-29 read 65 email conversations and classified them locally; 2026-10-31 Windows backup tasks ran every scan, the 08:05 brief and the morning briefing; Msty Go source jobs fail because of a Msty Go 1.1.0-beta.3 worker bug (see README); Telegram and WhatsApp chat readers built and tested offline, not yet signed in or paired | Scheduled scans and briefs running in Msty Go, with a dated check of the brief; chat sources read live |
 | Coding-agent coordination | Proposed | [Collaboration protocol](AGENT_COLLABORATION.md) | Adoption by both hosts and the first coordination record |
 
 Test evidence, 2026-10-26: `python -m pytest` on the consolidation branch, run in
