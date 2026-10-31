@@ -213,3 +213,49 @@ def test_missing_agent_config_gets_reply_instead_of_waiting(isolated,monkeypatch
     relay.process(row,{'chat_id':'42'})
     with relay.database() as db:row=dict(db.execute('SELECT * FROM inbox').fetchone())
     assert row['state']=='reply_ready' and row['error']=='agent_unavailable'
+
+
+def _delivered(monkeypatch, decoded, reply='Tienes dos citas mañana.', error=None):
+    message=update()['message'];message.pop('text');message['voice']={'file_id':'f'}
+    with relay.database() as db:
+        db.execute('INSERT INTO inbox (update_id,message,state,reply,error,created_at,decoded,language) VALUES (?,?,?,?,?,?,?,?)',
+                   (100,json.dumps(message),'reply_ready',reply,error,'2026-10-30T00:00:00+00:00',
+                    json.dumps(decoded) if decoded else None,'es'))
+    monkeypatch.setattr(relay,'api',lambda route,method,data:{'chat':{'id':42},'message_id':9})
+    monkeypatch.setattr('integrations.msty.personal.telegram_buttons.make',lambda *a,**k:None)
+    monkeypatch.setattr(relay.interactions,'bind',lambda *a:None)
+    started=[]
+    monkeypatch.setattr(relay,'start',lambda target,*args:started.append(args))
+    with relay.database() as db:row=dict(db.execute('SELECT * FROM inbox').fetchone())
+    relay.process(row,{'chat_id':'42'})
+    return started
+
+
+def test_voice_note_gets_a_spoken_reply_after_the_text(isolated,monkeypatch):
+    started=_delivered(monkeypatch,{'status':'transcribed','text':'¿Qué tengo mañana?','forwarded':False})
+    assert started==[(100,{'chat_id':'42'},'Tienes dos citas mañana.','es',7)]
+    with relay.database() as db:assert db.execute('SELECT state FROM inbox').fetchone()[0]=='delivered'
+
+
+def test_text_forwards_errors_and_long_answers_stay_text_only(isolated,monkeypatch):
+    assert _delivered(monkeypatch,None)==[]
+    with relay.database() as db:db.execute('DELETE FROM inbox')
+    assert _delivered(monkeypatch,{'status':'transcribed','text':'x','forwarded':True})==[]
+    with relay.database() as db:db.execute('DELETE FROM inbox')
+    assert _delivered(monkeypatch,{'status':'transcribed','text':'x','forwarded':False},error='agent_unavailable')==[]
+    with relay.database() as db:db.execute('DELETE FROM inbox')
+    assert _delivered(monkeypatch,{'status':'transcribed','text':'x','forwarded':False},reply='a'*2000)==[]
+
+
+def test_failed_voice_reply_is_recorded_not_resent(isolated,monkeypatch):
+    from contextlib import contextmanager
+    from integrations.msty.personal import spoken_briefing
+    relay.enqueue([update()],'42');relay.set_state(100,'delivered')
+    @contextmanager
+    def broken(text,lang):raise RuntimeError('no voice')
+    sent=[]
+    monkeypatch.setattr(spoken_briefing,'audio_file',broken)
+    monkeypatch.setattr(spoken_briefing,'send_voice',lambda *a,**k:sent.append(a))
+    relay.spoken_reply(100,{'chat_id':'42'},'Hola','es',7)
+    with relay.database() as db:row=db.execute('SELECT state,error FROM inbox').fetchone()
+    assert tuple(row)==('delivered','voice_reply_failed:RuntimeError') and sent==[]

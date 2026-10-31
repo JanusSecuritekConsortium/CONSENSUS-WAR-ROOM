@@ -10,6 +10,7 @@ import hashlib
 import os
 from pathlib import Path
 import sqlite3
+import threading
 import time
 import requests
 from . import store
@@ -187,6 +188,33 @@ def plain_reply(text):
     return text if len(data)<=8100 else data[:8000].decode('utf-16-le',errors='ignore')+'\n…Reply shortened.'
 
 
+SPOKEN_LIMIT=1500  # characters; longer answers stay text-only rather than minutes of audio
+_speaking=threading.Lock()  # one local narration at a time; the voice model is heavy
+
+
+def wants_voice(row, message):
+    """Answer a direct voice note with voice too. Errors, forwards and long answers stay text."""
+    decoded=json.loads(row.get('decoded') or 'null')
+    return (bool(decoded) and not decoded.get('forwarded') and not message.get('_callback')
+            and not row.get('error') and len(row.get('reply') or '')<=SPOKEN_LIMIT
+            and store.load().get('telegram_spoken_replies', True))
+
+
+def spoken_reply(uid, route, text, lang, reply_to):
+    # Runs after the text reply was delivered: a failure is recorded, never resent.
+    from .spoken_briefing import audio_file, send_voice
+    try:
+        with _speaking, audio_file(text, lang) as path:
+            send_voice(route, path, reply_to=reply_to)
+        set_state(uid, 'delivered', error=None)
+    except Exception as error:
+        set_state(uid, 'delivered', error='voice_reply_failed:'+type(error).__name__)
+
+
+def start(target, *args):
+    threading.Thread(target=target, args=args, name='aurelius-voice-reply').start()
+
+
 def process(row, route):
     uid=row['update_id'];message=json.loads(row['message'])
     marker=receipt_marker(message,route)
@@ -288,6 +316,8 @@ def process(row, route):
         except Exception:
             set_state(uid,'delivery_uncertain',error='send_confirmation_uncertain');raise
         set_state(uid,'delivered')
+        if wants_voice(row, message):
+            start(spoken_reply, uid, route, plain_reply(row['reply']), lang, message['message_id'])
 
 
 @contextmanager

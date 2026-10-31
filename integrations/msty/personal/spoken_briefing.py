@@ -108,13 +108,15 @@ def audio_file(text, lang='en'):
         yield output
 
 
-def send_voice(route, path, markup=None):
+def send_voice(route, path, markup=None, reply_to=None):
     import requests
     try:
         with path.open('rb') as stream:
             data = {'chat_id': route['chat_id'], 'caption': 'Aurelius'}
             if markup:
                 data['reply_markup'] = json.dumps(markup)
+            if reply_to:
+                data['reply_parameters'] = json.dumps({'message_id': reply_to, 'allow_sending_without_reply': True})
             response = requests.post('https://api.telegram.org/bot'+route['token']+'/sendVoice',
                 data=data,
                 files={'voice': ('briefing.ogg', stream, 'audio/ogg')},

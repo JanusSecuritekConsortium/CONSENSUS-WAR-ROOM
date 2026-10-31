@@ -6,7 +6,19 @@ transcribes at most ten minutes with local multilingual Whisper, removes the aud
 file after processing, and forwards the text to the existing Msty Go Aurelius agent
 through its authenticated local MCP `enqueue_prompt` tool. The same local model,
 memory and action tools remain in use. Forwarded material is labelled as reference
-data rather than authorization. Calls and spoken replies are not implemented.
+data rather than authorization. Calls are not implemented.
+
+## Spoken replies
+
+A direct voice note gets its answer twice: the text reply first, as before, then the
+same answer as a Telegram voice note in the local Aurelius voice (Windows voice plus
+RVC conversion, Spanish or English to match the note), sent as a reply to the note.
+Narration runs on a background thread, one at a time, so polling never waits for it;
+on CPU it takes about a minute for a short answer. Typed text, forwarded audio, error
+replies and answers over 1500 characters stay text-only. A failed narration is
+recorded in the inbox row (`voice_reply_failed:…`) and never resent; the text reply
+already arrived. Set `telegram_spoken_replies` to false in the local account store
+to turn it off.
 
 There is one Telegram polling owner. The native Msty Telegram connection must stay
 disconnected, its auto-connect flag disabled, and the original agent's Telegram
