@@ -9,6 +9,10 @@ from .store import (APPOINTMENT_PROPOSED, CLOSED, COMMITMENT_OPEN, NEEDS_REPLY, 
                     WAITING_ON_ME, WAITING_ON_OTHER)
 
 
+class ClaimLost(RuntimeError):
+    """Another scan took the store over after this one stalled."""
+
+
 def similar(a: str, b: str) -> bool:
     left, right = set(store.normalized(a).split()), set(store.normalized(b).split())
     return bool(left and right) and len(left & right) / len(left | right) >= 0.5
@@ -153,8 +157,12 @@ def style_examples(threads: list[dict], address: str, limit: int, channel: str =
     return list(dict.fromkeys(entry[-1] for entry in own))[:limit]
 
 
-def draft_missing(db, threads: list[dict], settings: dict, now: datetime, drafter) -> int:
-    """Prepare a reply in the owner's style for open, confident, recent reply items. Never sent."""
+def draft_missing(db, threads: list[dict], settings: dict, now: datetime, drafter, hold=lambda: None) -> int:
+    """Prepare a reply in the owner's style for open, confident, recent reply items. Never sent.
+
+    hold() is called before each model request and before saving its draft; it raises ClaimLost
+    once another scan owns the store.
+    """
     by_key = {thread['key']: thread for thread in threads}
     rows = db.execute("SELECT * FROM items WHERE kind='reply' AND review=0 AND state IN (?,?) "
                       'AND id NOT IN (SELECT item_id FROM drafts)', (NEEDS_REPLY, WAITING_ON_ME)).fetchall()
@@ -167,6 +175,7 @@ def draft_missing(db, threads: list[dict], settings: dict, now: datetime, drafte
         address = thread['counterpart_address'] if thread else next(iter(db.execute(
             'SELECT address FROM identities WHERE contact_id=?', (item['contact_id'],)).fetchone() or []), '')
         contact = db.execute('SELECT name FROM contacts WHERE id=?', (item['contact_id'],)).fetchone()
+        hold()
         try:
             body = drafter(item, contact['name'] if contact else None, settings,
                            conversation=thread['messages'] if thread else None,
@@ -175,6 +184,7 @@ def draft_missing(db, threads: list[dict], settings: dict, now: datetime, drafte
             break
         except classify.ModelOutputError:
             continue
+        hold()
         db.execute('INSERT INTO drafts(item_id, body, model, created_at) VALUES(?,?,?,?)',
                    (item['id'], body, settings['model'], store.iso(now)))
         db.commit()
@@ -259,6 +269,12 @@ def run(now: datetime | None = None, *, settings=None, readers=None, classifier=
         owner = store.claim_scan(db, now)
         if not owner:
             return dict(summary, status='already_running')
+
+        def hold():
+            """Renew the claim before each slow step and each write after one; stop once another scan owns it."""
+            if not store.renew_scan(db, owner, max(now, store.utcnow())):
+                raise ClaimLost
+
         try:
             try:
                 imported = google_contacts.sync(db, settings, now)
@@ -269,6 +285,7 @@ def run(now: datetime | None = None, *, settings=None, readers=None, classifier=
                 log.event('source_error', source='google_contacts', error_type=type(error).__name__)
             statuses, threads = {}, []
             for name, read in readers.items():
+                hold()
                 try:
                     found, status = read(now)
                     threads += found
@@ -279,6 +296,7 @@ def run(now: datetime | None = None, *, settings=None, readers=None, classifier=
             for source, status in statuses.items():
                 if status['status'] != 'ok':
                     log.event('source_error', source=source, error_type=status.get('error_type'))
+            hold()
             for thread in threads:
                 record_thread(db, thread, now)
             db.commit()
@@ -292,10 +310,7 @@ def run(now: datetime | None = None, *, settings=None, readers=None, classifier=
                 if not thread['automated'] and calls >= settings['max_threads_per_scan']:
                     summary['pending'] = sum(not t['automated'] for t in changed[index:])
                     break
-                if not store.renew_scan(db, owner, max(now, store.utcnow())):
-                    summary['pending'] = sum(not t['automated'] for t in changed[index:])
-                    log.event('scan_claim_lost')
-                    break
+                hold()
                 if thread['automated']:
                     db.execute("UPDATE threads SET state=?, processed_fingerprint=fingerprint, error=NULL WHERE key=?",
                                (NO_ACTION, thread['key']))
@@ -316,23 +331,32 @@ def run(now: datetime | None = None, *, settings=None, readers=None, classifier=
                     db.commit()
                     log.event('model_error', kind='invalid_output', thread=thread['key'], detail=str(error)[:80])
                     continue
+                hold()
                 apply(db, thread, result, now, settings, availability)
                 db.commit()
                 summary['processed'] += 1
             refresh(db, now, settings)
             db.commit()
             if settings['auto_drafts'] and msty != 'unavailable':
-                summary['drafts'] = draft_missing(db, threads, settings, now, drafter)
+                summary['drafts'] = draft_missing(db, threads, settings, now, drafter, hold)
+            hold()
             if settings['alert_now']:
                 summary['alerts'] = len(alert(db, settings, now, notify))
             summary.update(status='ok', finished_at=store.iso(store.utcnow()), msty=msty, sources=statuses)
             store.meta_set(db, 'last_scan', summary)
             if msty in ('ok', 'unavailable'):
                 store.meta_set(db, 'msty', {'status': msty, 'at': store.iso(now)})
+        except ClaimLost:
+            # Another scan took over after this one stalled; it carries on from what was saved.
+            db.rollback()
+            summary.update(status='claim_lost', finished_at=store.iso(store.utcnow()))
+            log.event('scan_claim_lost')
         finally:
             db.commit()  # keep finished conversations even if a later step failed
             store.release_scan(db, owner)
             db.commit()
+    if summary.get('status') == 'claim_lost':
+        return summary  # the scan that took over writes the files
     export.write_all(settings, now)
     log.event('scan_finished', processed=summary['processed'], pending=summary['pending'], errors=summary['errors'])
     return summary

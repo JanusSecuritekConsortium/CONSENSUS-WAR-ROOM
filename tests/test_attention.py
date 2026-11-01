@@ -349,6 +349,37 @@ class AttentionTests(unittest.TestCase):
             store.release_scan(db, second)
             self.assertTrue(store.claim_scan(db, NOW + timedelta(minutes=47)))
 
+    def test_slow_drafting_keeps_the_scan_claim(self):
+        self.mail = [self.question(f'm{i}', sender=f'P{i} <p{i}@example.com>') for i in range(12)]
+        self.answers = [self.needs_reply() for _ in range(12)]
+        clock, rivals = [NOW], []
+
+        def slow_drafter(*args, **kwargs):
+            clock[0] += timedelta(minutes=4)  # each draft within the model's 5-minute timeout
+            with store.connect() as other:
+                rivals.append(store.claim_scan(other, clock[0]))
+            return 'Draft.'
+        with patch.object(store, 'utcnow', lambda: clock[0]):
+            summary = scan.run(NOW, settings=self.settings, readers={'email': self.reader}, classifier=self.classifier,
+                               availability=lambda e, n: {'status': 'unknown'}, drafter=slow_drafter, notify=self.notify)
+        self.assertEqual((summary['status'], summary['drafts']), ('ok', 12))
+        self.assertEqual(rivals, [None] * 12)
+
+    def test_a_scan_that_lost_its_claim_stops_writing(self):
+        self.mail = [self.question('m1'), self.question('m2', sender='Marta <marta@example.com>')]
+        self.answers = [self.needs_reply(), self.needs_reply()]
+
+        def stalled_drafter(*args, **kwargs):
+            with store.connect() as other:  # this scan stalled past its claim and another one took over
+                other.execute("UPDATE meta SET value=json_set(value,'$.owner','rival') WHERE key='scan_claim'")
+            return 'Draft.'
+        summary = scan.run(NOW, settings=self.settings, readers={'email': self.reader}, classifier=self.classifier,
+                           availability=lambda e, n: {'status': 'unknown'}, drafter=stalled_drafter, notify=self.notify)
+        self.assertEqual(summary['status'], 'claim_lost')
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM drafts').fetchone()[0], 0)
+            self.assertEqual(store.meta_get(db, 'scan_claim')['owner'], 'rival')  # the newer claim is left alone
+
     def test_messages_are_ordered_by_instant_not_local_clock(self):
         self.mail = [message('m1', 'inbox', datetime(2026, 10, 29, 10, tzinfo=timezone(timedelta(hours=2))), 'Free?'),
                      message('m2', 'sent', datetime(2026, 10, 29, 9, 30, tzinfo=timezone.utc), 'Yes!', refs='<m1@example.com>')]
