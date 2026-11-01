@@ -1,2 +1,2 @@
 telethon==1.45.0
-neonize==0.3.18.post0
+neonize==0.3.18.post0  # message classes for the offline tests only; pairing uses requirements-whatsapp.txt

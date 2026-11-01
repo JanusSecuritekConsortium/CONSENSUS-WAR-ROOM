@@ -8,6 +8,7 @@ import sys
 import tempfile
 from types import SimpleNamespace as Fake
 import unittest
+import unittest.mock
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,6 +176,11 @@ class WhatsAppTests(unittest.TestCase):
         chats, status = whatsapp.fetch(NOW, 60, 60)
         self.assertEqual((status['status'], status['error_type'], len(chats)), ('unavailable', 'temporarily_banned', 1))
         self.assertIn('not linked', whatsapp.listen())
+
+    def test_heartbeat_records_a_connected_listener(self):
+        stop = Fake(wait=unittest.mock.Mock(side_effect=[False, True]))
+        whatsapp.heartbeat(Fake(is_connected=True), stop)
+        self.assertIsNotNone(whatsapp.meta('heartbeat'))
 
     def test_message_text_and_media_labels(self):
         from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message

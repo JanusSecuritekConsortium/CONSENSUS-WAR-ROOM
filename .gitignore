@@ -13,6 +13,7 @@ htmlcov/
 
 # Virtual environments and local tooling
 .venv/
+.venv-whatsapp/
 venv/
 env/
 rvc_env/

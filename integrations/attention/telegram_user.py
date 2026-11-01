@@ -189,7 +189,9 @@ def setup_window() -> None:
             state.clear()
             for entry in fields.values():
                 entry.delete(0, 'end')
-            message.set(f'Signed in as {me.first_name}. The next attention scan reads your chats. You can close this window.')
+            for button in buttons.winfo_children():  # another attempt would only add another login to the account
+                button.configure(state='disabled')
+            message.set(f'Done: signed in as {me.first_name}. The next attention scan reads your chats. Close this window.')
         except Exception as error:
             message.set(f'Sign-in failed ({type(error).__name__}). Check the code and try again.')
 
@@ -197,6 +199,9 @@ def setup_window() -> None:
     buttons.grid(row=6, columnspan=2, pady=6)
     ttk.Button(buttons, text='Send code', command=send_code).grid(row=0, column=0, padx=4)
     ttk.Button(buttons, text='Sign in', command=sign_in).grid(row=0, column=1, padx=4)
+    root.lift()
+    root.attributes('-topmost', True)
+    root.after(800, lambda: root.attributes('-topmost', False))
     root.mainloop()
     if state.get('client'):
         call(state['client'].disconnect(), timeout=10)

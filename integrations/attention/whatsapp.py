@@ -1,9 +1,13 @@
-"""Read-only WhatsApp personal chats through a linked device, the way WhatsApp Web is linked.
+r"""Read-only WhatsApp personal chats through a linked device, the way WhatsApp Web is linked.
 
-    python -m integrations.attention.whatsapp pair      # shows a QR code: WhatsApp > Linked devices > Link a device
-    python -m integrations.attention.whatsapp listen    # keeps the local copy current; meant to run at sign-in
+    .venv-whatsapp\Scripts\python.exe -m integrations.attention.whatsapp pair    # QR code: WhatsApp > Linked devices > Link a device
+    .venv-whatsapp\Scripts\python.exe -m integrations.attention.whatsapp listen  # keeps the local copy current; meant to run at sign-in
+    .venv-whatsapp\Scripts\python.exe -m integrations.attention.whatsapp forget  # unlink this device and delete the local copy
     python -m integrations.attention.whatsapp status
-    python -m integrations.attention.whatsapp forget    # unlink this device and delete the local copy
+
+WhatsApp refuses old clients, and current neonize needs Python 3.11 or newer, so pairing and the
+listener run from their own environment (requirements-whatsapp.txt). The scan only reads the
+SQLite copy and needs neither neonize nor that environment.
 
 WhatsApp has no official way to read your own chats, so this uses an unofficial client (neonize,
 built on whatsmeow). Linking one is against WhatsApp's terms and can, rarely, get a number
@@ -254,7 +258,7 @@ def device(on_qr=None, on_paired=None):
 def heartbeat(client, stop: threading.Event) -> None:
     while not stop.wait(300):
         try:
-            if client.is_connected():
+            if client.is_connected:
                 set_meta(heartbeat=utcnow().isoformat())
         except Exception:
             pass
@@ -316,8 +320,8 @@ def pair_window() -> None:
                     show(value)
                 elif kind == 'paired':
                     picture.configure(image='')
-                    message.set('Linked. Recent chats are arriving; keep this window open a few minutes, then close it. '
-                                'From then on the listener keeps the copy current.')
+                    message.set('Linked. Close this window. Your recent chats arrive when the listener starts, '
+                                'and it keeps the copy current from then on.')
                 elif kind == 'stopped':
                     message.set(value)
         except queue.Empty:
@@ -340,6 +344,16 @@ def pair_window() -> None:
             events.put(('stopped', f'WhatsApp connection failed ({type(error).__name__}).'))
     threading.Thread(target=run, daemon=True).start()
     root.after(300, poll)
+
+    def no_code():
+        if picture.image is None and meta('state') == 'pairing':
+            message.set('WhatsApp has not sent a code. It may be refusing this client version: '
+                        'update neonize in .venv-whatsapp and try again.')
+    picture.image = None
+    root.after(30_000, no_code)
+    root.lift()
+    root.attributes('-topmost', True)
+    root.after(800, lambda: root.attributes('-topmost', False))
     try:
         root.mainloop()
     finally:
@@ -378,6 +392,9 @@ def status_text() -> str:
 
 def main(argv=None) -> int:
     command = (argv or sys.argv[1:] or ['status'])[0]
+    if command in ('pair', 'listen', 'forget') and sys.version_info < (3, 11):
+        print(r'Run this with .venv-whatsapp\Scripts\python.exe: WhatsApp refuses the neonize version that fits this Python.')
+        return 2
     if command == 'pair':
         pair_window()
     elif command == 'listen':

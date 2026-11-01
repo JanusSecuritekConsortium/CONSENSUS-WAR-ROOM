@@ -1,0 +1,4 @@
+# Installed in its own environment, .venv-whatsapp (Python 3.11 or newer); see README.
+neonize==0.5.2
+segno
+tzdata

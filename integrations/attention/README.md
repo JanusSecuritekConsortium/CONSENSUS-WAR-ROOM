@@ -136,8 +136,8 @@ Other MCP hosts can run the full tool set with
 |---|---|---|
 | Email | Working | Inbox and Sent of enabled accounts, last 60 days (`lookback_days`), 60 messages per folder |
 | Calendar | Working for availability | ICS calendar; candidates are never added, accepted or declined |
-| Telegram | Ready, needs sign-in | One-to-one chats with people, read through the user's own account (Telegram's user API). No groups, channels or bots; nothing sent or marked read. |
-| WhatsApp | Ready, needs pairing | One-to-one chats through a linked device (unofficial neonize/whatsmeow client; see the risk below). Text only, no groups, status or channels; nothing sent or marked read. |
+| Telegram | Signed in 2026-11-01; read live | One-to-one chats with people, read through the user's own account (Telegram's user API). No groups, channels or bots; nothing sent or marked read. |
+| WhatsApp | Linked 2026-11-01; history and live messages stored | One-to-one chats through a linked device (unofficial neonize/whatsmeow client; see the risk below). Text only, no groups, status or channels; nothing sent or marked read. |
 
 Chats become one conversation per person, using the same lookback window, quiet period,
 model and draft rules as email. Drafts copy how the owner writes on that channel.
@@ -160,10 +160,10 @@ client is against WhatsApp's terms and can, rarely, get a number restricted; rea
 the lowest-risk use. If WhatsApp logs the device out or restricts it, the listener stops and
 does not reconnect until it is paired again.
 
-1. Run `.\.venv\Scripts\python.exe -m integrations.attention.whatsapp pair` and scan the code
+1. Run `.\.venv-whatsapp\Scripts\python.exe -m integrations.attention.whatsapp pair` and scan the code
    in WhatsApp → Settings → Linked devices → Link a device. Keep the window open a few
    minutes while recent history arrives.
-2. `whatsapp listen` keeps the local copy current. It must run while the PC is on (a
+2. `whatsapp listen` keeps the local copy current. It must run while the PC is on (the `\CONSENSUS\WhatsApp listener`
    Windows sign-in task); a linked device only receives messages while it is connected, and
    messages sent while it was off arrive when it reconnects.
 
@@ -172,8 +172,11 @@ folder under `whatsapp`. `whatsapp status` reports the link; `whatsapp forget` u
 deletes the copy. The scan marks WhatsApp `stale` when the listener has not been heard from
 for 30 minutes, and still uses the stored copy.
 
-Extra packages: `pip install -r integrations/attention/requirements-chats.txt`
-(neonize 0.3.18 is the last release that supports this Python 3.10 environment).
+Extra packages: `pip install -r integrations/attention/requirements-chats.txt` in `.venv`.
+WhatsApp rejects neonize 0.3.18 as outdated (error 405), and newer releases need Python 3.11
+or newer, so pairing and the listener have their own environment. Create `.venv-whatsapp`
+with Python 3.12 and install `requirements-whatsapp.txt` there. The scan only reads the
+stored copy and stays in `.venv`.
 
 ## Tests
 
