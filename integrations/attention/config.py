@@ -38,6 +38,13 @@ DEFAULTS = {
     'telegram_chats': True,          # read personal Telegram chats once signed in (telegram_user setup)
     'whatsapp_chats': True,          # read personal WhatsApp chats once linked (whatsapp pair)
     'chat_context_messages': 15,     # chat messages are short, so the model sees more of them
+    'organise_mail': False,          # sort inbox email into folders after each scan (organise.py)
+    'organise_accounts': [],         # empty means every enabled IMAP account
+    'organise_per_run': 40,          # inbox emails looked at per run, newest first; the rest wait
+    'organise_questions_per_run': 5, # Telegram questions sent per run when unsure
+    'organise_new_folder_min': 3,    # emails in one run that must clearly need a folder before it is created
+    'memory_review': False,          # ask on Telegram about Msty Go memory suggestions after each scan (memory_review.py)
+    'memory_review_per_run': 5,
 }
 
 

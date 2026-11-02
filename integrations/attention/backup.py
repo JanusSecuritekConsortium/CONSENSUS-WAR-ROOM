@@ -54,10 +54,24 @@ def main(argv=None) -> int:
     try:
         result = scan.run() if args[0] == 'scan' else brief() if args[0] == 'brief' else briefing(args[1])
         log(f'{command} ok {json.dumps(result, ensure_ascii=False, default=str)[:400]}')
-        return 0
     except Exception as error:  # the log is the only place a windowless run can report
         log(f'{command} failed {type(error).__name__}: {error}\n{traceback.format_exc(limit=3)}')
         return 1
+    if args[0] == 'scan' and config.load()['organise_mail']:
+        try:  # after the scan, so conversations with open items are known and stay in the inbox
+            from . import organise
+            log(f'organise ok {json.dumps(organise.run(), ensure_ascii=False, default=str)[:400]}')
+        except Exception as error:
+            log(f'organise failed {type(error).__name__}: {error}\n{traceback.format_exc(limit=3)}')
+            return 1
+    if args[0] == 'scan' and config.load()['memory_review']:
+        try:
+            from integrations.msty import memory_review
+            log(f'memory review ok sent={memory_review.ask(config.load()["memory_review_per_run"])}')
+        except Exception as error:
+            log(f'memory review failed {type(error).__name__}: {error}\n{traceback.format_exc(limit=3)}')
+            return 1
+    return 0
 
 
 if __name__ == '__main__':

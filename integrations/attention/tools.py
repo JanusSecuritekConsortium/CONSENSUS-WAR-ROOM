@@ -89,7 +89,16 @@ HANDLERS = {
     'contacts_link': lambda a: api.link_contact(*_require(a, 'channel', 'address', 'contact_id'), a.get('decision', 'confirm')),
     'appointments_list': lambda a: _items(api.get_appointment_candidates()),
     'appointments_get': _kind_get('appointment'),
+    'mail_folders_status': lambda a: _organise().status(),
+    'mail_folders_questions': lambda a: {'questions': _organise().pending()},
+    'mail_folders_file': lambda a: {'result': _organise().file(int(_require(a, 'id')[0]), _require(a, 'folder')[0])},
+    'mail_folders_undo': lambda a: {'result': _organise().undo(int(_require(a, 'move_id')[0]))},
 }
+
+
+def _organise():
+    from . import organise
+    return organise
 
 S = {'type': 'string'}
 ID = {'id': dict(S, description='Item id, e.g. reply-1a2b3c4d5e')}
@@ -148,11 +157,21 @@ TOOLS = [
     tool('appointments_list', 'Proposed meetings, calls or dinners found in messages, with calendar availability. '
          'Nothing is added to the calendar.'),
     tool('appointments_get', 'One appointment candidate.', ID, ['id']),
+    tool('mail_folders_status', 'Email sorting: whether it is on, counts of moved, kept, held and asked emails, open '
+         'questions, and the latest moves with their move ids.'),
+    tool('mail_folders_questions', 'Emails the sorter was unsure about, with its suggested folders. Ask the user where '
+         'each goes; never guess.'),
+    tool('mail_folders_file', 'File an email the sorter asked about, only with the user\'s answer: an existing folder, '
+         'a new folder name (created), or "keep" to leave it in the inbox. The sender is filed there from then on.',
+         {'id': dict(S, description='Question id from mail_folders_questions'), 'folder': S}, ['id', 'folder'], read_only=False),
+    tool('mail_folders_undo', 'Move a sorted email back to the inbox, by move id from mail_folders_status.',
+         {'move_id': S}, ['move_id'], read_only=False),
 ]
 
 # The compact set mounted into the existing CONSENSUS MCP connection in Msty Go.
 COMPACT = ['attention_status', 'attention_scan', 'attention_brief', 'attention_list', 'attention_search', 'attention_get',
-           'attention_complete', 'attention_snooze', 'attention_ignore', 'attention_create']
+           'attention_complete', 'attention_snooze', 'attention_ignore', 'attention_create',
+           'mail_folders_status', 'mail_folders_questions', 'mail_folders_file', 'mail_folders_undo']
 
 
 def call(name: str, arguments: dict | None = None):

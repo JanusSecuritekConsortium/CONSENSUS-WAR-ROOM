@@ -17,7 +17,7 @@ from .store import secret_read, secret_write
 
 TZ = ZoneInfo('Europe/Madrid')
 MAX_BYTES = 2_000_000
-SCOPES = ['Mail.Read', 'User.Read']
+SCOPES = ['Mail.ReadWrite', 'User.Read']  # write only for sorting into folders (attention/organise.py)
 
 
 def plain(text):
@@ -31,7 +31,8 @@ def next_week(now):
     return start, start + timedelta(days=7)
 
 
-def imap_mail(account, now, days=30, limit=100):
+def imap_client(account):
+    """An unauthenticated IMAP connection for an account; the caller logs in."""
     host = account['host']
     if account['kind'] == 'bridge' and host not in ('localhost', '127.0.0.1', '::1'):
         raise ValueError('Proton Bridge must use loopback')
@@ -48,6 +49,11 @@ def imap_mail(account, now, days=30, limit=100):
         except Exception:
             client.shutdown()
             raise
+    return client, password
+
+
+def imap_mail(account, now, days=30, limit=100):
+    client, password = imap_client(account)
     messages, warnings = [], []
     readable_folders = []
     with client:

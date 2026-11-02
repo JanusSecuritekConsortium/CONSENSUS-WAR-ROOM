@@ -8,6 +8,12 @@ from .language import choose
 def answer(message, route, lang, request_key, *, callback=None):
     from . import agenda_query, followups, spoken_briefing as spoken
     action, payload = callback or (None, {})
+    if action == 'file':
+        from integrations.attention import organise
+        return {'text': organise.answer_button(payload), 'items': []}
+    if action == 'memory':
+        from integrations.msty import memory_review
+        return {'text': memory_review.answer_button(payload), 'items': []}
     if action == 'read':
         # A durable voice receipt makes repeated updates and upload uncertainty
         # use the same no-resend protection as scheduled briefing narration.
