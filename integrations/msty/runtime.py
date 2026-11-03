@@ -19,6 +19,15 @@ FallbackHook = Callable[[str, str, Optional[Dict[str, Any]], Exception], str]
 TelemetryHook = Callable[[Dict[str, Any]], None]
 
 
+def _timed_out(exc: BaseException) -> bool:
+    """True when a model call failed by running out of time rather than by answering badly."""
+    while exc is not None:
+        if isinstance(exc, TimeoutError) or "Timeout" in type(exc).__name__ or "timed out" in str(exc).lower():
+            return True
+        exc = exc.__cause__
+    return False
+
+
 @dataclass
 class MstySession:
     session_id: str
@@ -225,6 +234,8 @@ class MstyRuntime:
                 attempt.update(status="failed", error_type=type(exc).__name__, error=str(exc), response_time=time.perf_counter() - started)
                 attempts.append(attempt)
                 self.last_execution[session.agent_id] = {"status": "failed", "model": model, "backend": attempt["backend"], "model_attempts": list(attempts)}
+                if _timed_out(exc):
+                    break  # the provider is busy or still loading; starting another model would only add to the load
         assert last_error is not None
         raise last_error
 

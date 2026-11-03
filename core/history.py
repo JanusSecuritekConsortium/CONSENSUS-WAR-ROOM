@@ -37,7 +37,8 @@ MIN_MODEL_RESPONSE_SECONDS = 0.05
 
 
 def is_real_decision(item: Dict[str, Any]) -> bool:
-    """False for simulation runs and for votes no real model answered (tests, mocks); records without votes are kept."""
+    """False for simulation runs and for votes no real model answered (tests, mocks, model calls that failed);
+    records without votes are kept."""
     if item.get("simulation"):
         return False
     votes = item.get("votes") or item.get("monolith_votes") or {}
@@ -47,6 +48,7 @@ def is_real_decision(item: Dict[str, Any]) -> bool:
         isinstance(vote, dict)
         and str(vote.get("model") or "mock") != "mock"
         and float(vote.get("response_time") or 0.0) >= MIN_MODEL_RESPONSE_SECONDS
+        and not any(str(error).startswith("runtime_failure") for error in vote.get("validation_errors") or [])
         for vote in votes.values()
     )
 

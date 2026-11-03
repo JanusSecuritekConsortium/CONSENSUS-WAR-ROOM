@@ -56,6 +56,8 @@ class RuntimeConfig:
     agent_model_fallbacks: Dict[str, list[str]] = field(default_factory=dict)
     refresh_model_cache: bool = False
     model_cache_ttl_seconds: int = 120
+    # A cold 33B model loads from disk for minutes before its first token, so local calls get a long limit.
+    generation_timeout_seconds: int = 900
     msty_live_context_default_theme: str = "eva"
     api_host: str = "127.0.0.1"
     api_port: int = 8888

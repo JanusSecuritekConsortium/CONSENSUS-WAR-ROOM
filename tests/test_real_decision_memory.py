@@ -29,6 +29,9 @@ class RealDecisionMemoryTest(unittest.TestCase):
         session = {"session_id": "e", "monolith_votes": {"BELLATOR": {"model": "mixtral:8x7b", "response_time": 4.0}}}
         self.assertTrue(is_real_decision(session))
         self.assertTrue(is_real_decision({"session_id": "f", "proposal": "imported decision"}))
+        failed = decision("g", "q", seconds=700.0)
+        failed["votes"]["RATIONALIS"]["validation_errors"] = ["runtime_failure:ProviderRequestError"]
+        self.assertFalse(is_real_decision(failed))  # every model call timed out; nothing was decided
 
     def test_context_skips_test_runs(self):
         with tempfile.TemporaryDirectory() as folder:

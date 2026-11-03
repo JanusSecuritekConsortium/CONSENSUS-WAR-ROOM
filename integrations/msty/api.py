@@ -1189,7 +1189,8 @@ def send_prompt(
     control=None,
 ) -> str:
     runtime_config = config or RuntimeConfig()
-    backend = OllamaBackend(base_url=base_url or resolve_provider_base_url(runtime_config))
+    backend = OllamaBackend(base_url=base_url or resolve_provider_base_url(runtime_config),
+                            timeout=runtime_config.generation_timeout_seconds)
     full_prompt = f"{system_prompt.strip()}\n\n{prompt}" if system_prompt else prompt
     payload = {
         "model": model,

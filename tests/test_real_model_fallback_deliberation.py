@@ -91,7 +91,7 @@ def test_one_available_model_completes_real_exchange_with_three_role_parameters(
     assert "preferred_model_unavailable" in markdown and "Model attempt: base:latest" in markdown
 
 
-@pytest.mark.parametrize("failure", [TimeoutError("load timeout"), RuntimeError("empty"), ValueError("malformed")])
+@pytest.mark.parametrize("failure", [RuntimeError("provider error"), "empty", "malformed"])
 def test_failed_preferred_model_uses_base_and_pins_it_for_later_rounds(monkeypatch, failure):
     provider(monkeypatch, ["preferred", "base"])
     calls = []
@@ -121,7 +121,7 @@ def test_failed_preferred_model_uses_base_and_pins_it_for_later_rounds(monkeypat
 
 def test_exhausted_real_candidates_are_audited_and_never_simulated(monkeypatch):
     provider(monkeypatch, ["base", "another"])
-    monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: (_ for _ in ()).throw(TimeoutError("unusable model")))
+    monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("unusable model")))
     runtime = MstyRuntime(RuntimeConfig(base_model="base", mock_fallback_enabled=True))
     monkeypatch.setattr(runtime, "_fallback_response", lambda *a: pytest.fail("No fabricated votes"))
     orchestration = VotingOrchestrator(DEFAULT_NODES, runtime)
@@ -132,6 +132,20 @@ def test_exhausted_real_candidates_are_audited_and_never_simulated(monkeypatch):
     assert not result.deliberation_complete and not result.simulation
     assert len(result.deliberation_transcript) == 3
     assert all([attempt["model"] for attempt in turn["model_attempts"]] == ["base", "another"] for turn in result.deliberation_transcript)
+
+
+def test_a_timeout_stops_instead_of_loading_more_models(monkeypatch):
+    provider(monkeypatch, ["preferred", "base", "another"])
+    calls = []
+    def send(model, *a, **kw):
+        calls.append(model)
+        raise api.ProviderRequestError("Provider generation unavailable: Read timed out. (read timeout=900)")
+    monkeypatch.setattr(api, "send_prompt", send)
+    runtime = MstyRuntime(RuntimeConfig(base_model="base"))
+    with pytest.raises(api.ProviderRequestError):
+        runtime.send_to_agent(RATIONALIS, "assessment", {"model": "preferred", "session_id": "p", "require_real_model": True})
+    assert calls == ["preferred"]
+    assert RuntimeConfig().generation_timeout_seconds >= 600
 
 
 def test_no_available_real_models_fail_explicitly(monkeypatch):
