@@ -57,6 +57,22 @@ Set `CONSENSUS_MCP_LOG` to override the path. The log records process startup, M
 - `read_project_file`
 - `search_project_text`
 
+### Tribunal
+
+The tribunal is CONSENSUS, not AURELIUS; these tools only relay questions and results.
+
+- `tribunal_deliberate` puts a decision question to the tribunal and returns a ticket at once. One deliberation
+  runs at a time, in its own process, because the voters share one GPU. On local 33-34B models a full
+  deliberation can take an hour. Unfilled templates (two or more `[FIELD]` blanks) are refused.
+- `tribunal_verdict` reads a ticket: queued, running (with elapsed minutes), finished with the verdict and each
+  vote, or failed.
+- `tribunal_track_record` lists recent real decisions with their outcomes, verdicts a week old still awaiting an
+  outcome, and each member's record. Read-only.
+- `tribunal_record_outcome` records whether a verdict was followed and whether it turned out good, mixed or bad.
+  It writes only the local outcome store.
+
+Job records are kept in the git-ignored `_ARBITER/memory/tribunal_jobs` folder.
+
 ## Self-Test
 
 ```powershell

@@ -669,7 +669,7 @@ TOOLS = [
     },
     {
         'name': 'tribunal_verdict',
-        'description': 'Check a tribunal_deliberate ticket: queued, running, finished with the verdict, each vote and next steps, or failed. Starts and sends nothing.',
+        'description': 'Check a tribunal_deliberate ticket: queued, running (with elapsed minutes; on local models a deliberation can take an hour), finished with the verdict, each vote and next steps, or failed. Starts and sends nothing.',
         'annotations': {'readOnlyHint': True, 'destructiveHint': False, 'openWorldHint': False},
         'inputSchema': {'type': 'object', 'properties': {'ticket': {'type': 'string', 'pattern': '^[0-9a-f]{12}$'}}, 'required': ['ticket'], 'additionalProperties': False},
     },

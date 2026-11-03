@@ -71,6 +71,29 @@ class TribunalJobTest(unittest.TestCase):
         self.assertEqual(job.status(old, jobs_dir=self.jobs)["status"], "failed")
         self.assertEqual(self.start("New question?")["status"], "queued")
 
+    def test_a_long_run_with_a_heartbeat_stays_running(self):
+        import os
+        ticket = self.start()["ticket"]
+        path = self.jobs / f"{ticket}.json"
+        record = json.loads(path.read_text())
+        old = datetime.now(timezone.utc) - timedelta(hours=3)
+        record.update(status="running", requested_at=old.isoformat(), started_at=old.isoformat())
+        path.write_text(json.dumps(record))
+        alive = path.with_suffix(".alive")
+        alive.touch()  # beating now
+        running = job.status(ticket, jobs_dir=self.jobs)
+        self.assertEqual(running["status"], "running")
+        self.assertEqual(running["elapsed_minutes"], 180)
+        self.assertEqual(self.start("Another question?")["status"], "busy")
+        stopped = (datetime.now(timezone.utc) - timedelta(minutes=10)).timestamp()
+        os.utime(alive, (stopped, stopped))  # the process died ten minutes ago
+        self.assertEqual(job.status(ticket, jobs_dir=self.jobs)["status"], "failed")
+
+    def test_run_leaves_no_heartbeat_behind(self):
+        ticket = self.start()["ticket"]
+        job.run(ticket, jobs_dir=self.jobs, deliberate=result)
+        self.assertEqual(list(self.jobs.glob("*.alive")), [])
+
     def test_bad_input_is_refused(self):
         for question in ("", "x" * (job.MAX_QUERY_CHARS + 1), "Region: [REGION] Question: [QUESTION]"):
             with self.assertRaises(ValueError):
