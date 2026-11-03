@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 try:
-    from .audio_quality import polish_wav
+    from .audio_quality import polish_wav, tighten_pauses
     from .tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from .text_normalization import normalize_for_speech, split_speech_text
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
-    from voice.audio_quality import polish_wav
+    from voice.audio_quality import polish_wav, tighten_pauses
     from voice.tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from voice.text_normalization import normalize_for_speech, split_speech_text
     from voice.voice_profiles import VoiceProfile, get_voice_profile
@@ -199,6 +199,8 @@ class RVCAdapter:
             error = (completed.stderr or completed.stdout or "RVC conversion failed").strip()
             return TTSBackendResult(ok=False, text=cleaned, mode="rvc", audio_path=str(base_wav), metadata={"error": error[-1000:]})
         try:
+            if self.settings.get("tighten_pauses", True):
+                tighten_pauses(converted_wav)
             quality = polish_wav(converted_wav).as_dict()
         except Exception as exc:
             return TTSBackendResult(

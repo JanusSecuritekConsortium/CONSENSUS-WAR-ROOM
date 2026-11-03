@@ -13,12 +13,14 @@ except ImportError:
     from core.paths import SYSTEM_ROOT
 
 try:
+    from .audio_quality import tighten_pauses
     from .glados_native import default_native_project_dir, native_glados_error
     from .rvc_adapter import RVCAdapter
     from .text_normalization import normalize_for_speech
     from .tts_backends import TTSBackendResult, WindowsSAPIBackend, create_system_backend
     from .voice_profiles import VoiceProfile, get_voice_profile
 except ImportError:
+    from voice.audio_quality import tighten_pauses
     from voice.glados_native import default_native_project_dir, native_glados_error
     from voice.rvc_adapter import RVCAdapter
     from voice.text_normalization import normalize_for_speech
@@ -139,6 +141,11 @@ class GladosAdapter:
         if completed.returncode != 0 or not target.exists():
             error = (completed.stderr or completed.stdout or "GLaDOS synthesis failed").strip()
             return TTSBackendResult(ok=False, text=text, mode="glados_tts", metadata={"error": error[-1000:]})
+        if self.profile.settings.get("tighten_pauses", True):
+            try:
+                tighten_pauses(target)
+            except Exception:
+                pass  # the untouched recording is still a valid result
 
         if not play:
             return TTSBackendResult(

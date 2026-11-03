@@ -148,8 +148,83 @@ def polish_wav(
     return analyze_wav(target)
 
 
+def tighten_pauses(
+    path: Path | str,
+    *,
+    keep_ms: int = 120,
+    ratio: float = 0.4,
+    max_pause_ms: int = 450,
+    silence_db: float = -40.0,
+) -> Dict[str, Any]:
+    """Shorten long pauses inside speech so it flows; short gaps between words are left as they are.
+
+    A pause up to `keep_ms` is kept; beyond that only `ratio` of the extra length remains, and no pause exceeds
+    `max_pause_ms` (a 0.9 s sentence pause becomes about 0.43 s, a 0.35 s comma pause about 0.21 s). Silence is
+    measured relative to the loudest sample, and cuts are made in the middle of a pause, where it is quietest.
+    """
+    target = Path(path)
+    with wave.open(str(target), "rb") as source:
+        channels = source.getnchannels()
+        sample_width = source.getsampwidth()
+        sample_rate = source.getframerate()
+        compression = source.getcomptype()
+        raw = source.readframes(source.getnframes())
+    if sample_width != 2 or compression != "NONE":
+        raise ValueError(f"only uncompressed 16-bit PCM WAV is supported: {target}")
+    samples = array("h")
+    samples.frombytes(raw)
+    window = max(1, round(sample_rate * 0.01)) * channels
+    peak = max((abs(value) for value in samples), default=0)
+    if not peak:
+        return {"pauses_shortened": 0, "removed_ms": 0}
+    threshold = peak * 10 ** (silence_db / 20.0)
+    quiet = []
+    for start in range(0, len(samples), window):
+        block = samples[start : start + window]
+        quiet.append(math.sqrt(sum(value * value for value in block) / len(block)) < threshold)
+
+    cuts: list[tuple[int, int]] = []  # window ranges to drop
+    index, speech_started = 0, False
+    while index < len(quiet):
+        if not quiet[index]:
+            speech_started = True
+            index += 1
+            continue
+        end = index
+        while end < len(quiet) and quiet[end]:
+            end += 1
+        length_ms = (end - index) * 10
+        if speech_started and end < len(quiet) and length_ms > keep_ms:  # only pauses between speech
+            kept_ms = min(max_pause_ms, keep_ms + (length_ms - keep_ms) * ratio)
+            drop = (end - index) - round(kept_ms / 10)
+            if drop > 0:
+                middle = index + (end - index - drop) // 2
+                cuts.append((middle, middle + drop))
+        index = end
+    if not cuts:
+        return {"pauses_shortened": 0, "removed_ms": 0}
+
+    tightened = array("h")
+    position = 0
+    for first, last in cuts:
+        tightened.extend(samples[position : first * window])
+        position = last * window
+    tightened.extend(samples[position:])
+    temporary = target.with_name(f"{target.stem}.tight{target.suffix}")
+    try:
+        with wave.open(str(temporary), "wb") as output:
+            output.setnchannels(channels)
+            output.setsampwidth(sample_width)
+            output.setframerate(sample_rate)
+            output.writeframes(tightened.tobytes())
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return {"pauses_shortened": len(cuts), "removed_ms": sum((last - first) * 10 for first, last in cuts)}
+
+
 def _dbfs(value: float) -> float:
     return 20.0 * math.log10(max(value, 1e-12))
 
 
-__all__ = ["WavQualityReport", "analyze_wav", "polish_wav"]
+__all__ = ["WavQualityReport", "analyze_wav", "polish_wav", "tighten_pauses"]
