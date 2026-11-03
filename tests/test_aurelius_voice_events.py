@@ -155,8 +155,9 @@ def test_voice_profiles_load_identity_layer_config() -> None:
     assert aurelius.backend == "rvc"
     assert aurelius.voice == "aurelius"
     assert aurelius.settings["display_name"] == "AURELIUS"
-    assert aurelius.settings["base_tts"] == ("espeak" if sys.platform.startswith("linux") else "windows_sapi")
-    assert aurelius.settings["base_voice_name"] == ["Microsoft George", "Microsoft Ryan", "Microsoft David"]
+    assert aurelius.settings["base_tts"] == ("espeak" if sys.platform.startswith("linux") else "windows_onecore")
+    assert aurelius.settings["base_voice_name"][0] == "Microsoft Mark"
+    assert aurelius.settings["base_voice_name"][-1] == "Microsoft David"
     assert aurelius.settings["base_voice_gender"] == "Male"
     assert aurelius.settings["base_voice_language"].casefold() == "en-gb"
     assert aurelius.settings["transpose"] == 2

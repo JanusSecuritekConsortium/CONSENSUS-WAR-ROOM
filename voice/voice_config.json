@@ -5,8 +5,9 @@
       "backend": "rvc",
       "voice": "aurelius",
       "display_name": "AURELIUS",
-      "base_tts": "windows_sapi",
+      "base_tts": "windows_onecore",
       "base_voice_name": [
+        "Microsoft Mark",
         "Microsoft George",
         "Microsoft Ryan",
         "Microsoft David"

@@ -17,11 +17,13 @@ class TTSBackendResult:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-def create_system_backend(**kwargs):
+def create_system_backend(engine: str = "windows_sapi", **kwargs):
     if sys.platform.startswith("linux"):
         from .linux_audio import EspeakBackend
 
         return EspeakBackend(**kwargs)
+    if engine == "windows_onecore":
+        return WindowsOneCoreBackend(**kwargs)
     return WindowsSAPIBackend(**kwargs)
 
 
@@ -230,6 +232,88 @@ class WindowsSAPIBackend:
             return value, voice.get("name", "")
 
         return max(voices, key=score)
+
+
+_ONECORE_SCRIPT = r"""
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$null = [Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media.SpeechSynthesis, ContentType = WindowsRuntime]
+$null = [Windows.Storage.Streams.DataReader, Windows.Storage.Streams, ContentType = WindowsRuntime]
+$asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+    $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' } | Select-Object -First 1
+function Await($operation, [Type]$type) {
+    $task = $asTask.MakeGenericMethod($type).Invoke($null, @($operation))
+    $task.Wait() | Out-Null
+    $task.Result
+}
+$voices = [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices
+$match = $null
+foreach ($wanted in $env:ONECORE_VOICES.Split('|')) {
+    $match = $voices | Where-Object { $wanted -and ($wanted -like "$($_.DisplayName)*" -or $_.DisplayName -like "$wanted*") } | Select-Object -First 1
+    if ($match) { break }
+}
+if (-not $match) { throw "no requested OneCore voice installed" }
+$synth = New-Object Windows.Media.SpeechSynthesis.SpeechSynthesizer
+$synth.Voice = $match
+$synth.Options.SpeakingRate = [double]$env:ONECORE_RATE
+$synth.Options.AudioVolume = [double]$env:ONECORE_VOLUME
+$text = [System.IO.File]::ReadAllText($env:ONECORE_TEXT, [System.Text.Encoding]::UTF8)
+$stream = Await ($synth.SynthesizeTextToStreamAsync($text)) ([Windows.Media.SpeechSynthesis.SpeechSynthesisStream])
+$reader = New-Object Windows.Storage.Streams.DataReader($stream.GetInputStreamAt(0))
+$size = [uint32]$stream.Size
+$null = Await ($reader.LoadAsync($size)) ([uint32])
+$bytes = New-Object byte[] $size
+$reader.ReadBytes($bytes)
+[System.IO.File]::WriteAllBytes($env:ONECORE_OUT, $bytes)
+Write-Output "$($match.DisplayName)|$($match.Language)|$($match.Gender)"
+"""
+
+
+class WindowsOneCoreBackend(WindowsSAPIBackend):
+    """Renders WAVs with the newer Windows OneCore voices (such as Microsoft Mark), which SAPI cannot reach.
+
+    Only file rendering uses OneCore; direct playback, and any render whose requested voices are not installed
+    as OneCore voices, falls back to SAPI.
+    """
+
+    def synthesize_to_wav(self, text: str, target: Path) -> TTSBackendResult:
+        if os.name != "nt" or not self.voice_names:
+            return super().synthesize_to_wav(text, target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        text_file = target.with_name(f"{target.stem}.onecore.txt")
+        text_file.write_text(text, encoding="utf-8")
+        environment = {
+            **os.environ,
+            "ONECORE_VOICES": "|".join(self.voice_names),
+            "ONECORE_RATE": str(round(max(0.5, min(3.0, self.rate / 145)), 3)),
+            "ONECORE_VOLUME": str(max(0.0, min(1.0, self.volume))),
+            "ONECORE_TEXT": str(text_file),
+            "ONECORE_OUT": str(target),
+        }
+        try:
+            completed = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", _ONECORE_SCRIPT],
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=environment,
+            )
+        finally:
+            text_file.unlink(missing_ok=True)
+        if completed.returncode != 0 or not target.exists():
+            error = (completed.stderr or completed.stdout or "OneCore WAV synthesis failed").strip()
+            fallback = super().synthesize_to_wav(text, target)
+            fallback.metadata["onecore_error"] = error.splitlines()[0] if error else error
+            return fallback
+        name, language, gender = ((completed.stdout.strip().splitlines() or [""])[-1].split("|") + ["", ""])[:3]
+        return TTSBackendResult(
+            ok=True,
+            text=text,
+            mode="windows_onecore",
+            audio_path=str(target),
+            metadata={"voice": {"name": name, "language": language, "gender": gender}},
+        )
 
 
 def format_sapi_voices(voices: Optional[List[Dict[str, str]]] = None) -> str:

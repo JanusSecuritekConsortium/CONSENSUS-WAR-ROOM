@@ -45,6 +45,7 @@ class RVCAdapter:
         self.filter_radius = int(self.settings.get("filter_radius", 3))
         self.max_chunk_chars = int(self.settings.get("max_chunk_chars", 360))
         self.base_tts = create_system_backend(
+            engine=str(self.settings.get("base_tts", "windows_sapi")),
             rate=self.profile.rate,
             volume=self.profile.volume,
             voice_names=[str(item) for item in self.settings.get("base_voice_name", [])],
