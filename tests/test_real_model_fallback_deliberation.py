@@ -148,6 +148,21 @@ def test_a_timeout_stops_instead_of_loading_more_models(monkeypatch):
     assert RuntimeConfig().generation_timeout_seconds >= 600
 
 
+def test_other_tribunal_models_are_unloaded_before_a_voter_runs(monkeypatch):
+    provider(monkeypatch, ["deepseek:33b", "yi:34b", "base", "user-chat-model"])
+    monkeypatch.setattr(api, "loaded_models", lambda base_url: ["yi:34b", "base", "user-chat-model"])
+    unloaded = []
+    monkeypatch.setattr(api, "unload_model", lambda base_url, model: unloaded.append(model) or True)
+    monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: valid_response("Room made"))
+    config = RuntimeConfig(base_model="base", agent_model_overrides={RATIONALIS: "deepseek:33b", BELLATOR: "yi:34b"})
+    MstyRuntime(config).send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "p", "require_real_model": True})
+    assert unloaded == ["base", "yi:34b"]  # the owner's own chat model is left alone
+    unloaded.clear()
+    config.unload_idle_tribunal_models = False
+    MstyRuntime(config).send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "q", "require_real_model": True})
+    assert unloaded == []
+
+
 def test_no_available_real_models_fail_explicitly(monkeypatch):
     provider(monkeypatch, [])
     monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: pytest.fail("No real model to call"))

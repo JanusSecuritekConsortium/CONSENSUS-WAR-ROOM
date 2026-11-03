@@ -197,6 +197,8 @@ class MstyRuntime:
                 self.generation_control.check()
             started = time.perf_counter()
             attempt: Dict[str, Any] = {"model": model, "backend": health.get("active_backend") or health.get("backend") or self.config.backend}
+            if real_tribunal:
+                self._make_room_for(api_module, health, model)
             try:
                 response = api_module.send_prompt(
                     model, prompt + f"\n\nExecution model: {model}. Preserve your assigned monolith instructions and parameters.",
@@ -238,6 +240,18 @@ class MstyRuntime:
                     break  # the provider is busy or still loading; starting another model would only add to the load
         assert last_error is not None
         raise last_error
+
+    def _make_room_for(self, api_module, health: Dict[str, Any], keep: str) -> None:
+        """Unload the other tribunal models so the next voter's model fits in memory beside the rest of the PC."""
+        if not self.config.unload_idle_tribunal_models or not health.get("base_url"):
+            return
+        models = health.get("models", [])
+        configured = [*self.config.agent_model_overrides.values(), self.config.base_model,
+                      *(name for names in self.config.agent_model_fallbacks.values() for name in names)]
+        tribunal = {api_module.match_model_alias(name, models)[0] for name in configured if name} - {None, keep}
+        for model in sorted(tribunal & set(api_module.loaded_models(health["base_url"]))):
+            if api_module.unload_model(health["base_url"], model):
+                log_event("tribunal_model_unloaded", {"model": model, "to_load": keep})
 
     def stream_to_agent(
         self,

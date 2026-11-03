@@ -1178,6 +1178,31 @@ def _classify_service(backend: str, shape: Dict[str, Any]) -> Dict[str, str]:
     return {"service_classification": "unknown", "model_inference": "unknown"}
 
 
+def loaded_models(base_url: str) -> list[str]:
+    """Models a llama.cpp router reports as loaded or loading; empty for providers without per-model status."""
+    from core.llm import backends
+
+    try:
+        response = backends.requests.get(f"{base_url.rstrip('/')}/v1/models", timeout=5)
+        response.raise_for_status()
+        entries = response.json().get("data", [])
+    except Exception:
+        return []
+    return [str(entry.get("id")) for entry in entries
+            if isinstance(entry, dict) and str((entry.get("status") or {}).get("value")) in {"loaded", "loading"}]
+
+
+def unload_model(base_url: str, model: str) -> bool:
+    """Ask a llama.cpp router to unload a model; it reloads on its next use. False when that is not possible."""
+    from core.llm import backends
+
+    try:
+        response = backends.requests.post(f"{base_url.rstrip('/')}/models/unload", json={"model": model}, timeout=30)
+        return response.ok
+    except Exception:
+        return False
+
+
 def send_prompt(
     model: str,
     prompt: str,
