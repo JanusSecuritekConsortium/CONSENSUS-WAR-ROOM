@@ -32,6 +32,8 @@ class RealDecisionMemoryTest(unittest.TestCase):
         failed = decision("g", "q", seconds=700.0)
         failed["votes"]["RATIONALIS"]["validation_errors"] = ["runtime_failure:ProviderRequestError"]
         self.assertFalse(is_real_decision(failed))  # every model call timed out; nothing was decided
+        self.assertFalse(is_real_decision(decision("h", "Region: [REGION] Actors: [ACTORS] Question: [QUESTION]")))
+        self.assertTrue(is_real_decision(decision("i", "Should we move the [BACKUP] folder?")))  # one bracket is text
 
     def test_context_skips_test_runs(self):
         with tempfile.TemporaryDirectory() as folder:

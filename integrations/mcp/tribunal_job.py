@@ -68,6 +68,10 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
         raise ValueError("A question is required")
     if len(query) > MAX_QUERY_CHARS:
         raise ValueError(f"Questions are limited to {MAX_QUERY_CHARS} characters")
+    from core.history import unfilled_template_fields
+    blanks = unfilled_template_fields(query)
+    if len(blanks) >= 2:
+        raise ValueError("The question is an unfilled template; fill in " + ", ".join(blanks) + " first")
     busy = _running(jobs_dir)
     if busy:
         return {"status": "busy", "ticket": busy["ticket"],

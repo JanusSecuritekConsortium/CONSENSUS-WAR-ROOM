@@ -72,7 +72,7 @@ class TribunalJobTest(unittest.TestCase):
         self.assertEqual(self.start("New question?")["status"], "queued")
 
     def test_bad_input_is_refused(self):
-        for question in ("", "x" * (job.MAX_QUERY_CHARS + 1)):
+        for question in ("", "x" * (job.MAX_QUERY_CHARS + 1), "Region: [REGION] Question: [QUESTION]"):
             with self.assertRaises(ValueError):
                 self.start(question)
         for ticket in ("../secrets", "ffffffffffff"):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import uuid
 from collections import Counter
@@ -34,12 +35,18 @@ def serialize_vote(vote: Vote) -> Dict[str, Any]:
 
 # A real model takes at least this long to answer; stub and mock votes come back in microseconds.
 MIN_MODEL_RESPONSE_SECONDS = 0.05
+_TEMPLATE_BLANK = re.compile(r"\[[A-Z][A-Z_]{2,}\]")  # an unfilled template field such as [REGION]
+
+
+def unfilled_template_fields(text: str) -> List[str]:
+    """Template fields left blank, such as [REGION]; two or more mean the question was never written."""
+    return list(dict.fromkeys(_TEMPLATE_BLANK.findall(str(text or ""))))
 
 
 def is_real_decision(item: Dict[str, Any]) -> bool:
-    """False for simulation runs and for votes no real model answered (tests, mocks, model calls that failed);
-    records without votes are kept."""
-    if item.get("simulation"):
+    """False for simulation runs, questions that are an unfilled template, and votes no real model answered
+    (tests, mocks, model calls that failed); records without votes are kept."""
+    if item.get("simulation") or len(unfilled_template_fields(item.get("query") or item.get("proposal"))) >= 2:
         return False
     votes = item.get("votes") or item.get("monolith_votes") or {}
     if not isinstance(votes, dict) or not votes:
