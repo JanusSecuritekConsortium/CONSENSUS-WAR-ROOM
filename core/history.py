@@ -32,6 +32,40 @@ def serialize_vote(vote: Vote) -> Dict[str, Any]:
     return data
 
 
+# A real model takes at least this long to answer; stub and mock votes come back in microseconds.
+MIN_MODEL_RESPONSE_SECONDS = 0.05
+
+
+def is_real_decision(item: Dict[str, Any]) -> bool:
+    """False for simulation runs and for votes no real model answered (tests, mocks); records without votes are kept."""
+    if item.get("simulation"):
+        return False
+    votes = item.get("votes") or item.get("monolith_votes") or {}
+    if not isinstance(votes, dict) or not votes:
+        return True
+    return any(
+        isinstance(vote, dict)
+        and str(vote.get("model") or "mock") != "mock"
+        and float(vote.get("response_time") or 0.0) >= MIN_MODEL_RESPONSE_SECONDS
+        for vote in votes.values()
+    )
+
+
+def keep_latest(items: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+    """The newest `limit` items, dropping test runs before real decisions so tests never push those out."""
+    excess = len(items) - limit
+    if excess <= 0:
+        return items
+    drop = set()
+    for index, item in enumerate(items):
+        if len(drop) == excess:
+            break
+        if not is_real_decision(item):
+            drop.add(index)
+    kept = [item for index, item in enumerate(items) if index not in drop]
+    return kept[-limit:]
+
+
 def record_result(result: TribunalResult, history_path: Path = HISTORY_PATH) -> None:
     ARBITER_DIR.mkdir(parents=True, exist_ok=True)
     lock_path = history_path.with_name(f"{history_path.name}.lock")
@@ -48,7 +82,7 @@ def record_result(result: TribunalResult, history_path: Path = HISTORY_PATH) -> 
                 raise RuntimeError(f"Decision history is corrupt: {history_path}") from exc
 
         history.append(result_to_dict(result))
-        _atomic_write_json(history_path, history[-1000:])
+        _atomic_write_json(history_path, keep_latest(history, 1000))
         log_event("decision_history_write", {"path": str(history_path), "session_id": result.session_id})
     finally:
         _release_lock(lock_fd, lock_path)

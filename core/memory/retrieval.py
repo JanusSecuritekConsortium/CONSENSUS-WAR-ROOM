@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+from core.history import is_real_decision
 from core.paths import HISTORY_PATH, SESSION_MEMORY_PATH
 from core.memory.session import load_session_memory
 
@@ -33,8 +34,10 @@ def retrieve_relevant_context(
 ) -> Dict[str, Any]:
     query_terms = keywords(query)
     tag_terms = {tag.lower() for tag in (tags or []) if tag}
-    sessions = [item for item in load_session_memory(session_path).get("sessions", []) if isinstance(item, dict)]
-    history = _load_history(history_path)
+    # Only decisions real models reached; test, mock and simulation runs would read as precedent otherwise.
+    sessions = [item for item in load_session_memory(session_path).get("sessions", [])
+                if isinstance(item, dict) and is_real_decision(item)]
+    history = [item for item in _load_history(history_path) if isinstance(item, dict) and is_real_decision(item)]
 
     candidates_by_session: Dict[str, Dict[str, Any]] = {}
     for item in [*sessions, *history]:

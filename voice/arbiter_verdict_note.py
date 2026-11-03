@@ -49,10 +49,8 @@ def enabled() -> bool:
 
 def is_real(record: Dict[str, Any]) -> bool:
     """Only verdicts reached by real models outside tests; mock and simulation runs stay silent."""
-    if os.environ.get("PYTEST_CURRENT_TEST") or record.get("simulation"):
-        return False
-    votes = record.get("votes") or {}
-    return bool(votes) and any(str((vote or {}).get("model") or "mock") != "mock" for vote in votes.values())
+    from core.history import is_real_decision
+    return not os.environ.get("PYTEST_CURRENT_TEST") and bool(record.get("votes")) and is_real_decision(record)
 
 
 def _sentence(text: str, limit: int = 160) -> str:

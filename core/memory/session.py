@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
+from core.history import keep_latest
 from core.logging import log_error, log_event
 from core.paths import CONTEXT_INDEX_PATH, SESSION_MEMORY_PATH
 
@@ -99,7 +100,7 @@ def upsert_session_record(record: Dict[str, Any], path: Path = SESSION_MEMORY_PA
     else:
         record.setdefault("created_at", _now())
         sessions.append(record)
-    memory["sessions"] = sessions[-1000:]
+    memory["sessions"] = keep_latest(sessions, 1000)
     save_session_memory(memory, path)
     rebuild_context_index(memory, CONTEXT_INDEX_PATH)
     return record

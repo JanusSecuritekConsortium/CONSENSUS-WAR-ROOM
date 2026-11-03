@@ -17,7 +17,7 @@ from voice import arbiter_verdict_note as note
 
 
 def vote(value, model="llama3.3:70b", reasoning="Looks sound. More detail follows."):
-    return {"vote": value, "model": model, "reasoning": reasoning}
+    return {"vote": value, "model": model, "reasoning": reasoning, "response_time": 4.2}
 
 
 def record(**extra):
