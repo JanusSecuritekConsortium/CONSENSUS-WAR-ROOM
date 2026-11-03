@@ -108,11 +108,11 @@ def audio_file(text, lang='en'):
         yield output
 
 
-def send_voice(route, path, markup=None, reply_to=None):
+def send_voice(route, path, markup=None, reply_to=None, caption='Aurelius'):
     import requests
     try:
         with path.open('rb') as stream:
-            data = {'chat_id': route['chat_id'], 'caption': 'Aurelius'}
+            data = {'chat_id': route['chat_id'], 'caption': caption}
             if markup:
                 data['reply_markup'] = json.dumps(markup)
             if reply_to:

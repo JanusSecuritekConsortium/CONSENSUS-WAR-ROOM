@@ -65,7 +65,17 @@ class Tribunal:
             },
         )
         self._announce_verdict(result)
+        self._queue_verdict_note(result)
         return result
+
+    def _queue_verdict_note(self, result: TribunalResult) -> None:
+        """ARBITER's spoken verdict as a voice note, in its own process; off unless configured."""
+        try:
+            from voice.arbiter_verdict_note import queue
+            queue(result)
+        except Exception as exc:
+            log_event("arbiter_verdict_note_queue_failed", {"session_id": result.session_id, "error": str(exc)},
+                      level="WARN")
 
     def _announce_verdict(self, result: TribunalResult) -> None:
         if self.voice_announcer is None:
