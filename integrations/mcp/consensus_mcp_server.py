@@ -387,6 +387,36 @@ def tribunal_verdict(arguments=None):
     return {'tool': 'tribunal_verdict', **tribunal_job.status(str(args['ticket']))}
 
 
+def tribunal_track_record(arguments=None):
+    """Past tribunal decisions with their outcomes, those awaiting one, and each member's track record."""
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from core.memory import outcomes
+    args = arguments or {}
+    if not isinstance(args, dict) or not set(args) <= {'limit'}:
+        raise ValueError('Only limit is accepted')
+    limit = args.get('limit', 10)
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 50:
+        raise ValueError('limit must be an integer from 1 to 50')
+    return {'tool': 'tribunal_track_record', **outcomes.overview(limit)}
+
+
+def tribunal_record_outcome(arguments=None):
+    """Record whether a tribunal verdict was followed and how it turned out; writes only the local outcome store."""
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from core.memory import outcomes
+    args = arguments or {}
+    if not isinstance(args, dict) or not {'session_id', 'followed', 'result'} <= set(args) <= {'session_id', 'followed', 'result', 'note'}:
+        raise ValueError('session_id, followed and result are required; note is optional')
+    if not isinstance(args['followed'], bool):
+        raise ValueError('followed must be true or false')
+    outcome = outcomes.record_outcome(str(args['session_id']), followed=args['followed'], result=str(args['result']),
+                                      note=str(args.get('note', '')))
+    return {'tool': 'tribunal_record_outcome', 'session_id': str(args['session_id']), 'outcome': outcome,
+            'described': outcomes.describe(outcome)}
+
+
 def aurelius_briefing_memory(arguments=None):
     if str(PROJECT_ROOT) not in sys.path:
         sys.path.insert(0, str(PROJECT_ROOT))
@@ -603,6 +633,8 @@ TOOL_HANDLERS = {
     "ghostnotes_search": ghostnotes_search,
     "tribunal_deliberate": tribunal_deliberate,
     "tribunal_verdict": tribunal_verdict,
+    "tribunal_track_record": tribunal_track_record,
+    "tribunal_record_outcome": tribunal_record_outcome,
     "aurelius_odysseus_status": aurelius_odysseus_status,
     "aurelius_odysseus_task": aurelius_odysseus_task,
     "aurelius_agent_status": aurelius_agent_status,
@@ -640,6 +672,23 @@ TOOLS = [
         'description': 'Check a tribunal_deliberate ticket: queued, running, finished with the verdict, each vote and next steps, or failed. Starts and sends nothing.',
         'annotations': {'readOnlyHint': True, 'destructiveHint': False, 'openWorldHint': False},
         'inputSchema': {'type': 'object', 'properties': {'ticket': {'type': 'string', 'pattern': '^[0-9a-f]{12}$'}}, 'required': ['ticket'], 'additionalProperties': False},
+    },
+    {
+        'name': 'tribunal_track_record',
+        'description': 'Show recent CONSENSUS tribunal decisions with how each turned out, decisions at least a week old still awaiting an outcome, and each member\'s track record (approving what turned out good or denying what turned out bad counts as right). Reads only. Not part of AURELIUS.',
+        'annotations': {'readOnlyHint': True, 'destructiveHint': False, 'openWorldHint': False},
+        'inputSchema': {'type': 'object', 'properties': {'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50}}, 'additionalProperties': False},
+    },
+    {
+        'name': 'tribunal_record_outcome',
+        'description': 'Record what happened after a tribunal verdict: whether the owner followed it and whether it turned out good, mixed or bad, with an optional short note. Use the session_id from tribunal_track_record and only what the owner states. Replaces an earlier outcome for the same decision. Writes only the local outcome store; sends nothing.',
+        'annotations': {'readOnlyHint': False, 'destructiveHint': False, 'idempotentHint': True, 'openWorldHint': False},
+        'inputSchema': {'type': 'object', 'properties': {
+            'session_id': {'type': 'string', 'minLength': 1, 'maxLength': 200},
+            'followed': {'type': 'boolean'},
+            'result': {'type': 'string', 'enum': ['good', 'mixed', 'bad']},
+            'note': {'type': 'string', 'maxLength': 500},
+        }, 'required': ['session_id', 'followed', 'result'], 'additionalProperties': False},
     },
     {
         'name': 'ghostnotes_search',

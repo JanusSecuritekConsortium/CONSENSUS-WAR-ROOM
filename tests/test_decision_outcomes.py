@@ -73,6 +73,39 @@ class DecisionOutcomesTest(unittest.TestCase):
                       packet["summary"])
         self.assertIn("Track record on decisions with recorded outcomes", packet["summary"])
 
+    def test_overview_lists_recent_awaiting_and_record(self):
+        now = datetime(2026, 11, 3, tzinfo=timezone.utc)
+        view = outcomes.overview(now=now, **self.paths)
+        self.assertEqual([item["session_id"] for item in view["recent"]], ["gpu", "backup", "stuck"])  # newest first, no tests
+        self.assertEqual([item["session_id"] for item in view["awaiting_outcome"]], ["backup"])
+        self.assertEqual(view["recent"][0]["outcome"], "outcome not recorded")
+        self.assertIn("No followed decision", view["summary"])
+        outcomes.record_outcome("backup", followed=True, result="good", note="copied fine", **self.paths)
+        view = outcomes.overview(limit=1, now=now, **self.paths)
+        self.assertEqual(len(view["recent"]), 1)
+        self.assertEqual(view["awaiting_outcome"], [])
+        self.assertEqual(view["track_record"]["BELLATOR"], {"right": 0, "wrong": 1})
+
+    def test_mcp_tools_validate_and_use_the_store(self):
+        from integrations.mcp import consensus_mcp_server as server
+        names = [tool["name"] for tool in server.TOOLS]
+        self.assertIn("tribunal_track_record", names)
+        self.assertIn("tribunal_record_outcome", names)
+        for name, arguments in (("tribunal_track_record", {"limit": 0}), ("tribunal_track_record", {"query": "x"}),
+                                ("tribunal_record_outcome", {"session_id": "backup", "followed": "yes", "result": "good"}),
+                                ("tribunal_record_outcome", {"session_id": "backup", "result": "good"})):
+            with self.assertRaises(ValueError):
+                server.call_tool(name, arguments)
+        from unittest import mock
+        with mock.patch.object(outcomes, "OUTCOMES_PATH", self.store), mock.patch.object(outcomes, "HISTORY_PATH", self.history), \
+                mock.patch.object(outcomes.record_outcome, "__defaults__", None), \
+                mock.patch.object(outcomes.record_outcome, "__kwdefaults__", {"note": "", **self.paths, "now": None}), \
+                mock.patch.object(outcomes.overview, "__kwdefaults__", {**self.paths, "now": None}):
+            saved = server.call_tool("tribunal_record_outcome", {"session_id": "gpu", "followed": True, "result": "bad"})
+            self.assertEqual(saved["described"], "followed, turned out bad")
+            view = server.call_tool("tribunal_track_record", {"limit": 2})
+        self.assertEqual(view["recent"][0]["outcome"], "followed, turned out bad")
+
 
 if __name__ == "__main__":
     unittest.main()

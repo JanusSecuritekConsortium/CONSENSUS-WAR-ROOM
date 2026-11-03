@@ -97,6 +97,28 @@ def track_record(*, path: Path = OUTCOMES_PATH, history_path: Path = HISTORY_PAT
     return record
 
 
+def overview(limit: int = 10, *, path: Path = OUTCOMES_PATH, history_path: Path = HISTORY_PATH,
+             now: Optional[datetime] = None) -> Dict[str, Any]:
+    """Recent real decisions with their outcomes, the ones still waiting for an outcome, and the track record."""
+    outcomes = load_outcomes(path)
+
+    def brief(item: Dict[str, Any]) -> Dict[str, Any]:
+        query = " ".join(str(item.get("query") or "").split())
+        return {"session_id": str(item.get("session_id")), "timestamp": item.get("timestamp"),
+                "question": query[:200] + ("..." if len(query) > 200 else ""), "verdict": item.get("verdict"),
+                "outcome": describe(outcomes.get(str(item.get("session_id"))))}
+
+    decisions = sorted(_decisions(history_path), key=lambda item: str(item.get("timestamp") or ""), reverse=True)
+    record = track_record(path=path, history_path=history_path)
+    return {
+        "recent": [brief(item) for item in decisions[:limit]],
+        "awaiting_outcome": [brief(item) for item in pending_outcomes(path=path, history_path=history_path, now=now)],
+        "track_record": record,
+        "summary": track_record_line(record) or "No followed decision has a clear good or bad outcome yet.",
+        "recorded_outcomes": len(outcomes),
+    }
+
+
 def track_record_line(record: Dict[str, Dict[str, int]]) -> str:
     if not record:
         return ""
