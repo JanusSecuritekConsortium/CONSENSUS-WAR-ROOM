@@ -61,6 +61,7 @@ CONSENSUS — ecosystem / umbrella
 |   +-- RATIONALIS + AETERNUM + BELLATOR: deliberation and votes
 |   +-- ARBITER: deterministic decision rules and audit
 |   +-- Flet desktop / CLI / local API / Msty integration surfaces
+|   +-- CONSENSUS MCP: tribunal_deliberate and tribunal_verdict (ticketed, one run at a time)
 |
 +-- AURELIUS — distinct operator-assistant layer
 |   +-- Operator interaction, optional voice and personal workflows
