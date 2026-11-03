@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Dict, Iterable, Optional
@@ -9,19 +10,44 @@ from core.models import Vote
 
 
 DEFAULT_KEYWORD_MAP: Dict[str, tuple[str, ...]] = {
-    "logic": ("logic", "reason", "consisten", "premise", "fallacy", "infer"),
-    "governance": ("governance", "policy", "regulat", "compliance", "charter", "mandate"),
-    "ethics": ("ethic", "moral", "fairness", "rights", "harm", "consent"),
-    "analysis": ("analy", "evaluat", "assess", "breakdown", "diagnos", "review", "validat", "approv", "proposal", "test"),
-    "finance": ("financ", "budget", "cost", "revenue", "capital", "invest", "funding"),
-    "forecasting": ("forecast", "predict", "projection", "outlook", "trend"),
-    "economics": ("econom", "market", "inflation", "supply", "demand", "gdp", "trade"),
-    "historical_patterns": ("histor", "precedent", "pattern", "prior", "past", "legacy"),
-    "security": ("secur", "vulnerab", "threat", "breach", "attack", "exploit", "intrusion"),
-    "geopolitics": ("geopolit", "nation", "sovereign", "treaty", "border", "diplom", "alliance"),
-    "risk": ("risk", "downside", "hazard", "exposure", "danger", "liabilit"),
-    "operations": ("operation", "logistic", "deploy", "execution", "ops", "rollout", "runtime"),
+    # English stems, then Spanish; matched after accents are removed ("análisis" -> "analisis").
+    "logic": ("logic", "reason", "consisten", "premise", "fallacy", "infer",
+              "razon", "coheren", "premisa", "falacia", "deduc"),
+    "governance": ("governance", "policy", "regulat", "compliance", "charter", "mandate", "legal", "contract",
+                   "gobern", "politica", "normativ", "regulac", "cumplimiento", "contrato"),
+    "ethics": ("ethic", "moral", "fairness", "rights", "harm", "consent",
+               "etica", "justicia", "derecho", "dano", "consentim"),
+    # Plain decision wording lands here, so an everyday "should I...?" is still deliberated.
+    "analysis": ("analy", "evaluat", "assess", "breakdown", "diagnos", "review", "validat", "approv", "proposal", "test",
+                 "should", "whether", "decide", "decision", "option", "choose", "change", "switch",
+                 "analis", "evalu", "revis", "valid", "aprob", "propuesta", "prueba",
+                 "deber", "debo", "debe", "decid", "elegir", "cambiar", "opin", "opcion", "conviene", "vale la pena"),
+    "finance": ("financ", "budget", "cost", "revenue", "capital", "invest", "funding",
+                "money", "price", "pay", "salary", "spend", "saving", "afford", "buy", "loan", "debt", "mortgage", "rent",
+                "presupuest", "ingreso", "invers", "invert", "dinero", "precio", "pagar", "ahorr", "gasto",
+                "sueldo", "salario", "comprar", "prestamo", "deuda", "hipoteca", "alquiler"),
+    "forecasting": ("forecast", "predict", "projection", "outlook", "trend", "future",
+                    "pronostic", "predic", "proyeccion", "perspectiva", "tendencia", "futuro"),
+    "economics": ("econom", "market", "inflation", "supply", "demand", "gdp", "trade",
+                  "mercado", "inflac", "oferta", "pib", "comercio"),
+    "historical_patterns": ("histor", "precedent", "pattern", "prior", "past", "legacy",
+                            "patron", "previo", "pasado", "legado"),
+    "security": ("secur", "vulnerab", "threat", "breach", "attack", "exploit", "intrusion",
+                 "privacy", "password", "malware", "phishing", "scam", "fraud",
+                 "seguridad", "amenaza", "brecha", "ataque", "explot", "intrus", "privacidad", "contrasena",
+                 "estafa", "fraude"),
+    "geopolitics": ("geopolit", "nation", "sovereign", "treaty", "border", "diplom", "alliance",
+                    "nacion", "soberan", "tratado", "frontera", "alianza"),
+    "risk": ("risk", "downside", "hazard", "exposure", "danger", "liabilit",
+             "riesgo", "desventaja", "peligro", "exposicion", "responsabilid"),
+    "operations": ("operation", "logistic", "deploy", "execution", "ops", "rollout", "runtime",
+                   "migrat", "install", "upgrade", "backup",
+                   "operac", "despleg", "desplieg", "ejecuc", "implement", "migra", "instal",
+                   "mover", "mudanza"),
 }
+
+# Decision wording says a choice is being made, not what it is about; a specific class wins when one matches.
+GENERIC_CLASS = "analysis"
 
 CLOSED_PROPOSAL_TAXONOMY: tuple[str, ...] = tuple(DEFAULT_KEYWORD_MAP)
 
@@ -56,7 +82,7 @@ def _now_iso() -> str:
 
 
 def _keyword_hits(text: str, taxonomy: tuple[str, ...], keyword_map: Dict[str, tuple[str, ...]]) -> dict[str, int]:
-    lowered = text.lower()
+    lowered = "".join(c for c in unicodedata.normalize("NFKD", text.lower()) if not unicodedata.combining(c))
     hits: dict[str, int] = {}
     for proposal_class in taxonomy:
         count = 0
@@ -73,7 +99,7 @@ def classify_proposal(
     taxonomy: Iterable[str],
     confidence_threshold: float,
     keyword_map: Optional[Dict[str, tuple[str, ...]]] = None,
-    classifier_version: str = "1.0.0",
+    classifier_version: str = "1.1.0",
     now_fn: Callable[[], str] = _now_iso,
 ) -> ClassificationResult:
     if not isinstance(text, str) or not text.strip():
@@ -92,9 +118,13 @@ def classify_proposal(
     if not matched:
         return ClassificationResult(False, failure_reason="no_taxonomy_class_matched")
 
+    specific = {proposal_class: count for proposal_class, count in hits.items() if proposal_class != GENERIC_CLASS}
+    ranked = specific or hits
+    primary = max(ranked, key=lambda proposal_class: (ranked[proposal_class], -ordered_taxonomy.index(proposal_class)))
+    # Confidence is how much taxonomy evidence the text carries (1 hit 0.67, 2 hits 0.8, 3 hits 0.86), so a
+    # proposal spanning several domains, as tribunal questions usually do, is not penalised for being broad.
     total = sum(hits.values())
-    primary = max(matched, key=lambda proposal_class: (hits[proposal_class], -ordered_taxonomy.index(proposal_class)))
-    confidence = hits[primary] / total if total else 0.0
+    confidence = total / (total + 0.5)
     if confidence < confidence_threshold:
         return ClassificationResult(
             False,

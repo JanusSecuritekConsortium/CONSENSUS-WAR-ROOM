@@ -70,6 +70,13 @@ not monolith votes. It returns:
 Classification failure occurs when output is missing, malformed, outside the
 configured taxonomy, or below `classification_confidence_threshold`.
 
+The keyword classifier (version 1.1.0) matches English and Spanish stems with
+accents removed. Plain decision wording ("should I", "¿debo", "¿me conviene")
+counts as `analysis`; a more specific matching class becomes the primary class.
+Confidence measures how much taxonomy evidence the text carries, `hits /
+(hits + 0.5)`: one hit is 0.67, two 0.8, three 0.86. A proposal that spans
+several domains is not penalised. Text with no taxonomy match still fails.
+
 On classification failure:
 
 - return `ESCALATE` if any voting monolith reported `critical_risk = true`
