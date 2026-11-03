@@ -208,6 +208,12 @@ def main() -> None:
     parser.add_argument("--session-summary", action="store_true", help="Show recent session memory summary and exit")
     parser.add_argument("--export-session", action="store_true", help="Export current session memory snapshot to _ARBITER/exports")
     parser.add_argument("--search-decisions", default=None, help="Search prior decisions using keyword overlap")
+    parser.add_argument("--record-outcome", default=None, metavar="SESSION_ID", help="Record what happened after a verdict (with --followed and --result)")
+    parser.add_argument("--followed", choices=["yes", "no"], default=None, help="Whether the verdict was followed, for --record-outcome")
+    parser.add_argument("--result", choices=["good", "mixed", "bad"], default=None, help="How it turned out, for --record-outcome")
+    parser.add_argument("--note", default="", help="Optional short note for --record-outcome")
+    parser.add_argument("--pending-outcomes", action="store_true", help="List decided verdicts older than a week with no recorded outcome")
+    parser.add_argument("--track-record", action="store_true", help="Show each member's record on decisions with outcomes")
     parser.add_argument(
         "--compact-header",
         action="store_true",
@@ -370,6 +376,30 @@ def main() -> None:
         print(f"SEARCH RESULTS: {len(results)}")
         for item in results:
             print(f"- {item.get('session_id', '--')} | {item.get('verdict', '--')} | {item.get('proposal', '')[:120]}")
+        return
+    if args.record_outcome is not None:
+        from core.memory.outcomes import describe, record_outcome
+
+        if args.followed is None or args.result is None:
+            raise SystemExit("--record-outcome needs --followed yes|no and --result good|mixed|bad")
+        try:
+            outcome = record_outcome(args.record_outcome, followed=args.followed == "yes", result=args.result, note=args.note)
+        except ValueError as error:
+            raise SystemExit(str(error)) from None
+        print(f"OUTCOME RECORDED: {args.record_outcome} | {describe(outcome)}")
+        return
+    if args.pending_outcomes:
+        from core.memory.outcomes import pending_outcomes
+
+        pending = pending_outcomes()
+        print(f"AWAITING OUTCOME: {len(pending)}")
+        for item in pending:
+            print(f"- {item.get('session_id', '--')} | {str(item.get('timestamp', ''))[:10]} | {item.get('verdict', '--')} | {str(item.get('query', '')).replace(chr(10), ' ')[:100]}")
+        return
+    if args.track_record:
+        from core.memory.outcomes import track_record, track_record_line
+
+        print(track_record_line(track_record()) or "No followed decisions with a good or bad outcome yet.")
         return
     if args.show_model_config:
         for agent_id, model_name in _effective_model_config(config).items():

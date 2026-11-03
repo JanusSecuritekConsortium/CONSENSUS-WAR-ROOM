@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from core.history import is_real_decision
 from core.paths import HISTORY_PATH, SESSION_MEMORY_PATH
+from core.memory.outcomes import OUTCOMES_PATH, describe, load_outcomes, track_record, track_record_line
 from core.memory.session import load_session_memory
 
 
@@ -31,6 +32,7 @@ def retrieve_relevant_context(
     latest: int = 3,
     session_path: Path = SESSION_MEMORY_PATH,
     history_path: Path = HISTORY_PATH,
+    outcomes_path: Path = OUTCOMES_PATH,
 ) -> Dict[str, Any]:
     query_terms = keywords(query)
     tag_terms = {tag.lower() for tag in (tags or []) if tag}
@@ -92,25 +94,33 @@ def retrieve_relevant_context(
             break
         if item.get("session_id") not in seen:
             selected.append({**item, "score": 0, "matched_keywords": [], "matched_tags": []})
+    outcomes = load_outcomes(outcomes_path)
+    for item in selected:
+        item["outcome"] = outcomes.get(str(item.get("session_id")))
+    record = track_record(path=outcomes_path, history_path=history_path) if outcomes else {}
 
     return {
         "query": query,
         "retrieval": "keyword_overlap",
         "prior_decisions_used": len(selected),
         "items": selected,
-        "summary": summarize_context(selected),
+        "track_record": record,
+        "summary": summarize_context(selected, record),
     }
 
 
-def summarize_context(items: List[Dict[str, Any]]) -> str:
+def summarize_context(items: List[Dict[str, Any]], record: Dict[str, Dict[str, int]] | None = None) -> str:
     if not items:
         return "No prior decisions retrieved."
     lines = []
     for item in items:
         proposal = str(item.get("proposal", "")).replace("\n", " ")[:120]
-        lines.append(
-            f"{item.get('session_id', '--')} | {item.get('verdict', '--')} | {proposal}"
-        )
+        line = f"{item.get('session_id', '--')} | {item.get('verdict', '--')} | {proposal}"
+        if "outcome" in item:
+            line += f" | {describe(item['outcome'])}"
+        lines.append(line)
+    if record:
+        lines.append(track_record_line(record))
     return "\n".join(lines)
 
 
