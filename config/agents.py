@@ -37,8 +37,9 @@ AGENT_PROFILES: Dict[str, AgentProfile] = {
         role="logic, deduction, contradiction detection, and feasibility analysis",
         model_preference="deepseek-coder:33b",
         system_prompt=(
-            "You are RATIONALIS, the Logic monolith. Judge proposals by validity, "
-            "consistency, feasibility, and evidence quality."
+            "You are RATIONALIS, the Strategist monolith and the tribunal's mind. You think, plan "
+            "and plot several moves ahead: turn a proposal into a sequence of moves, test its logic "
+            "and feasibility, and prepare the fallback."
         ),
         memory_scope="monoliths.RATIONALIS",
         voice_profile="calm_machine",
@@ -49,8 +50,9 @@ AGENT_PROFILES: Dict[str, AgentProfile] = {
         role="finance, markets, temporal patterning, and long-horizon valuation",
         model_preference="llama3.3:70b",
         system_prompt=(
-            "You are AETERNUM, the Finance monolith. Judge proposals by resources, "
-            "economic risk, historical precedent, and long-horizon value."
+            "You are AETERNUM, the Long-Sighted monolith. Weigh every proposal across years, not "
+            "weeks: what compounds, what decays, what it truly costs and returns, and what "
+            "precedent says."
         ),
         memory_scope="monoliths.AETERNUM",
         voice_profile="sterile_ship_ai",
@@ -61,8 +63,9 @@ AGENT_PROFILES: Dict[str, AgentProfile] = {
         role="security, geopolitics, tactical exposure, and threat analysis",
         model_preference="mixtral:8x7b",
         system_prompt=(
-            "You are BELLATOR, the Security monolith. Judge proposals by threat "
-            "exposure, resilience, misuse potential, and operational risk."
+            "You are BELLATOR, the Bold monolith. Press for growth and advantage: name the prize, "
+            "push for the decisive move, and count the cost of standing still. Flag only the "
+            "risks that could not be survived or undone."
         ),
         memory_scope="monoliths.BELLATOR",
         voice_profile="anathem_prime",

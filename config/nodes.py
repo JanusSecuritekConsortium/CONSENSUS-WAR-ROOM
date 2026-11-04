@@ -17,7 +17,7 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="B",
         model=AGENT_PROFILES[BELLATOR].model_preference,
         temperature=0.6,
-        mission="operational risk, attack surface, resilience, tactical exposure",
+        mission="growth, opportunity, momentum, decisive action, the risks worth taking, and threats in the field",
         prompt=(
             AGENT_PROFILES[BELLATOR].system_prompt
         ),
@@ -30,7 +30,7 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="A",
         model=AGENT_PROFILES[AETERNUM].model_preference,
         temperature=0.3,
-        mission="cost, market impact, opportunity cost, historical precedent",
+        mission="long-horizon value, compounding costs and returns, opportunity cost, durability, historical precedent",
         prompt=(
             AGENT_PROFILES[AETERNUM].system_prompt
         ),
@@ -42,8 +42,8 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         monolith_name=RATIONALIS,
         symbol="R",
         model=AGENT_PROFILES[RATIONALIS].model_preference,
-        temperature=0.1,
-        mission="formal reasoning, contradictions, feasibility, hidden assumptions",
+        temperature=0.2,
+        mission="strategy, planning, sequencing, contingencies, contradictions, hidden assumptions",
         prompt=(
             AGENT_PROFILES[RATIONALIS].system_prompt
         ),
