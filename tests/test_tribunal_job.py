@@ -33,7 +33,14 @@ class TribunalJobTest(unittest.TestCase):
         self.launched = []
 
     def start(self, question="Should we move the backups?", memory=None):
-        return job.start(question, jobs_dir=self.jobs, launch=self.launched.append, check_memory=lambda: memory)
+        return job.start(question, jobs_dir=self.jobs, launch=self.launched.append, check_memory=lambda: memory,
+                         free_local_ai=lambda: [])
+
+    def test_local_ai_is_freed_before_memory_is_measured(self):
+        order = []
+        job.start("Should we move the backups?", jobs_dir=self.jobs, launch=self.launched.append,
+                  free_local_ai=lambda: order.append("free") or [], check_memory=lambda: order.append("check"))
+        self.assertEqual(order, ["free", "check"])
 
     def test_low_memory_refuses_before_anything_starts(self):
         refused = self.start(memory="Low memory: BELLATOR's model needs about 28 GB, but only about 6 GB ...")

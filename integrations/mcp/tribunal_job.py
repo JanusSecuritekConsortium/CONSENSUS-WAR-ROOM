@@ -129,7 +129,8 @@ def memory_note() -> Optional[str]:
 
 
 def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
-          check_memory: Callable[[], Optional[str]] = memory_note) -> Dict[str, Any]:
+          check_memory: Callable[[], Optional[str]] = memory_note,
+          free_local_ai: Callable[[], list] = lambda: _free_local_ai()) -> Dict[str, Any]:
     query = " ".join(str(query or "").split())
     if not query:
         raise ValueError("A question is required")
@@ -143,6 +144,10 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
     if busy:
         return {"status": "busy", "ticket": busy["ticket"],
                 "detail": "Another deliberation is running; ask again when tribunal_verdict reports it finished."}
+    try:  # before measuring: Local AI's assistant model is memory the tribunal can reclaim
+        free_local_ai()
+    except Exception:
+        pass
     warning = check_memory()
     if warning:
         return {"status": "not_started", "detail": warning}
