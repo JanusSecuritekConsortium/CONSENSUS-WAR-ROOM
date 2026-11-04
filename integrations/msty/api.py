@@ -1192,6 +1192,27 @@ def loaded_models(base_url: str) -> list[str]:
             if isinstance(entry, dict) and str((entry.get("status") or {}).get("value")) in {"loaded", "loading"}]
 
 
+def model_file_sizes(base_url: str) -> Dict[str, int]:
+    """Bytes of each model file a llama.cpp router would load; empty for providers that do not say."""
+    from core.llm import backends
+
+    try:
+        response = backends.requests.get(f"{base_url.rstrip('/')}/v1/models", timeout=5)
+        response.raise_for_status()
+        entries = response.json().get("data", [])
+    except Exception:
+        return {}
+    sizes: Dict[str, int] = {}
+    for entry in entries:
+        args = list(((entry or {}).get("status") or {}).get("args") or []) if isinstance(entry, dict) else []
+        if "--model" in args[:-1]:
+            try:
+                sizes[str(entry.get("id"))] = Path(args[args.index("--model") + 1]).stat().st_size
+            except OSError:
+                continue
+    return sizes
+
+
 def unload_model(base_url: str, model: str) -> bool:
     """Ask a llama.cpp router to unload a model; it reloads on its next use. False when that is not possible."""
     from core.llm import backends

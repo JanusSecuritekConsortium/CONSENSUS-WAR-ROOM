@@ -32,8 +32,31 @@ class TribunalJobTest(unittest.TestCase):
         self.jobs = Path(folder.name)
         self.launched = []
 
-    def start(self, question="Should we move the backups?"):
-        return job.start(question, jobs_dir=self.jobs, launch=self.launched.append)
+    def start(self, question="Should we move the backups?", memory=None):
+        return job.start(question, jobs_dir=self.jobs, launch=self.launched.append, check_memory=lambda: memory)
+
+    def test_low_memory_refuses_before_anything_starts(self):
+        refused = self.start(memory="Low memory: BELLATOR's model needs about 28 GB, but only about 6 GB ...")
+        self.assertEqual(refused["status"], "not_started")
+        self.assertIn("Low memory", refused["detail"])
+        self.assertEqual((self.launched, list(self.jobs.glob("*.json"))), ([], []))
+
+    def test_memory_note_compares_the_largest_voter_with_free_memory(self):
+        from unittest import mock
+        from integrations.msty import api
+        gb = 2**30
+        sizes = {"deepseek.gguf": 18 * gb, "mixtral-q5.gguf": 30 * gb, "chat.gguf": 40 * gb}
+        config = mock.Mock(agent_model_overrides={"RATIONALIS": "deepseek.gguf", "BELLATOR": "mixtral-q5.gguf"})
+        with mock.patch("config.runtime.load_runtime_config", return_value=config), \
+                mock.patch.object(api, "resolve_provider_base_url", return_value="http://router"), \
+                mock.patch.object(api, "model_file_sizes", return_value=sizes), \
+                mock.patch.object(api, "loaded_models", return_value=["deepseek.gguf"]), \
+                mock.patch.object(job, "_free_gpu_bytes", return_value=3 * gb), \
+                mock.patch("psutil.virtual_memory", return_value=mock.Mock(available=6 * gb)):
+            note = job.memory_note()  # 6 + 3 free, plus 18 the tribunal itself would unload = 27 < 30
+            self.assertIn("BELLATOR's model needs about 30 GB", note)
+            with mock.patch("psutil.virtual_memory", return_value=mock.Mock(available=12 * gb)):
+                self.assertIsNone(job.memory_note())  # the owner's 40 GB chat model is not the tribunal's
 
     def test_start_returns_a_ticket_and_launches_once(self):
         started = self.start("  Should   we move the backups? ")

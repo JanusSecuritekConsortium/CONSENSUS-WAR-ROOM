@@ -663,7 +663,7 @@ TOOL_HANDLERS = {
 TOOLS = [
     {
         'name': 'tribunal_deliberate',
-        'description': 'Put a decision question to the CONSENSUS tribunal (RATIONALIS, AETERNUM and BELLATOR vote on local models; ARBITER synthesises). Returns a ticket immediately; deliberation takes several minutes. Read the verdict with tribunal_verdict. One deliberation runs at a time. The verdict is advice for the owner, never approval to act. Not part of AURELIUS.',
+        'description': 'Put a decision question to the CONSENSUS tribunal (RATIONALIS, AETERNUM and BELLATOR vote on local models; ARBITER synthesises). Returns a ticket immediately; on local models a deliberation can take an hour. If the largest voter model will not fit in free memory it returns not_started with the reason; tell the owner to close programs first. Read the verdict with tribunal_verdict. One deliberation runs at a time. The verdict is advice for the owner, never approval to act. Not part of AURELIUS.',
         'annotations': {'readOnlyHint': False, 'destructiveHint': False, 'openWorldHint': False},
         'inputSchema': {'type': 'object', 'properties': {'question': {'type': 'string', 'minLength': 1, 'maxLength': 4000}}, 'required': ['question'], 'additionalProperties': False},
     },

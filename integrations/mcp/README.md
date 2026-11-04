@@ -63,7 +63,8 @@ The tribunal is CONSENSUS, not AURELIUS; these tools only relay questions and re
 
 - `tribunal_deliberate` puts a decision question to the tribunal and returns a ticket at once. One deliberation
   runs at a time, in its own process, because the voters share one GPU. On local 33-34B models a full
-  deliberation can take an hour. Unfilled templates (two or more `[FIELD]` blanks) are refused.
+  deliberation can take an hour. Unfilled templates (two or more `[FIELD]` blanks) are refused, and so is a
+  start when the largest voter model would not fit in free RAM and graphics memory (`not_started`, with the reason).
 - `tribunal_verdict` reads a ticket: queued, running (with elapsed minutes), finished with the verdict and each
   vote, or failed.
 - `tribunal_track_record` lists recent real decisions with their outcomes, verdicts a week old still awaiting an

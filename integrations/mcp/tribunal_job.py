@@ -75,7 +75,48 @@ def _launch(ticket: str) -> None:
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags)
 
 
-def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch) -> Dict[str, Any]:
+def _free_gpu_bytes() -> int:
+    try:
+        completed = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                                   capture_output=True, text=True, timeout=10,
+                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return sum(int(line) for line in completed.stdout.split() if line.strip().isdigit()) * 2**20
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return 0
+
+
+def memory_note() -> Optional[str]:
+    """A warning when the largest voter model will not fit in the free RAM and graphics memory; None if it fits.
+
+    A model larger than what is free makes the model server refuse it, or pushes the whole PC out of memory.
+    """
+    try:
+        import psutil
+        from config.runtime import load_runtime_config
+        from core.paths import CONFIG_PATH
+        from integrations.msty import api
+        config = load_runtime_config(CONFIG_PATH)
+        base_url = api.resolve_provider_base_url(config)
+        sizes = api.model_file_sizes(base_url)
+        voters = {agent: api.match_model_alias(name, list(sizes))[0] for agent, name in config.agent_model_overrides.items()}
+        needed = {agent: sizes[model] for agent, model in voters.items() if model}
+        if not needed:
+            return None
+        resident = sum(sizes.get(model, 0) for model in api.loaded_models(base_url) if model in voters.values())
+        free = psutil.virtual_memory().available + _free_gpu_bytes() + resident
+    except Exception:
+        return None
+    agent = max(needed, key=needed.get)
+    if needed[agent] <= free:
+        return None
+    gb = lambda value: f"{value / 2**30:.0f} GB"
+    return (f"Low memory: {agent}'s model needs about {gb(needed[agent])}, but only about {gb(free)} of RAM and "
+            "graphics memory is free. The deliberation will probably fail or slow the PC; close other programs "
+            "or unload other models first.")
+
+
+def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
+          check_memory: Callable[[], Optional[str]] = memory_note) -> Dict[str, Any]:
     query = " ".join(str(query or "").split())
     if not query:
         raise ValueError("A question is required")
@@ -89,12 +130,15 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
     if busy:
         return {"status": "busy", "ticket": busy["ticket"],
                 "detail": "Another deliberation is running; ask again when tribunal_verdict reports it finished."}
+    warning = check_memory()
+    if warning:
+        return {"status": "not_started", "detail": warning}
     ticket = uuid.uuid4().hex[:12]
     record = {"ticket": ticket, "query": query, "status": "queued", "requested_at": _now().isoformat(timespec="seconds")}
     _write(_path(ticket, jobs_dir), record)
     launch(ticket)
     return {"status": "queued", "ticket": ticket,
-            "detail": "The tribunal is deliberating; this usually takes several minutes. Check with tribunal_verdict."}
+            "detail": "The tribunal is deliberating; on local models this can take an hour. Check with tribunal_verdict."}
 
 
 def summary(result: Dict[str, Any]) -> Dict[str, Any]:
