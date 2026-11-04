@@ -44,7 +44,19 @@ NUMBERS = {0: "zero", 1: "one", 2: "two", 3: "three"}
 
 
 def enabled() -> bool:
-    return os.environ.get(ENV_FLAG, "").strip() == "1"
+    """The process environment decides when it names the flag. Otherwise, on Windows, the owner's saved user
+    setting does: a user variable reaches only programs started after it was set, so an older Msty or shell would
+    silently skip every note."""
+    if ENV_FLAG in os.environ:
+        return os.environ[ENV_FLAG].strip() == "1"
+    if sys.platform != "win32":
+        return False
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            return str(winreg.QueryValueEx(key, ENV_FLAG)[0]).strip() == "1"
+    except OSError:
+        return False
 
 
 def is_real(record: Dict[str, Any]) -> bool:

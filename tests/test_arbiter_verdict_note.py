@@ -93,6 +93,20 @@ class VerdictNoteTest(unittest.TestCase):
         item = record(query="x" * 2000, next_steps=["step " * 100] * 3)
         self.assertLessEqual(len(note.caption(item)), note.CAPTION_LIMIT)
 
+    def test_saved_windows_setting_counts_when_the_process_lacks_it(self):
+        from unittest.mock import MagicMock
+        registry = MagicMock()
+        registry.QueryValueEx.return_value = ("1", 1)
+        environment = {key: value for key, value in os.environ.items() if key != note.ENV_FLAG}
+        with patch.dict(os.environ, environment, clear=True), patch.object(note.sys, "platform", "win32"), \
+                patch.dict(sys.modules, {"winreg": registry}):
+            self.assertTrue(note.enabled())  # started before the owner set it, yet the setting is on
+            registry.QueryValueEx.side_effect = OSError
+            self.assertFalse(note.enabled())
+        with patch.dict(os.environ, {note.ENV_FLAG: "0"}), patch.dict(sys.modules, {"winreg": registry}):
+            registry.QueryValueEx.side_effect = None
+            self.assertFalse(note.enabled())  # an explicit process value wins
+
     def test_queue_never_starts_during_tests(self):
         class Result:
             session_id = "abc123"
