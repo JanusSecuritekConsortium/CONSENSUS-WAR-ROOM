@@ -1213,6 +1213,27 @@ def model_file_sizes(base_url: str) -> Dict[str, int]:
     return sizes
 
 
+def unload_ollama_models(base_url: str) -> list[str]:
+    """Unload every model an Ollama-compatible server holds; each reloads on its next use. Returns the names."""
+    from core.llm import backends
+
+    base = base_url.rstrip("/")
+    try:
+        response = backends.requests.get(f"{base}/api/ps", timeout=5)
+        response.raise_for_status()
+        names = [str(item.get("name")) for item in response.json().get("models", []) if item.get("name")]
+    except Exception:
+        return []
+    freed = []
+    for name in names:
+        try:
+            if backends.requests.post(f"{base}/api/generate", json={"model": name, "keep_alive": 0}, timeout=30).ok:
+                freed.append(name)
+        except Exception:
+            continue
+    return freed
+
+
 def unload_model(base_url: str, model: str) -> bool:
     """Ask a llama.cpp router to unload a model; it reloads on its next use. False when that is not possible."""
     from core.llm import backends

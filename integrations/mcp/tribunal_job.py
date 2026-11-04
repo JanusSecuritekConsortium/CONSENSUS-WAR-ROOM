@@ -68,6 +68,19 @@ def _running(jobs_dir: Path) -> Optional[Dict[str, Any]]:
     return None
 
 
+def deliberation_running(jobs_dir: Path = JOBS_DIR) -> bool:
+    """True while a tribunal deliberation holds the GPU; other local model work should wait for it."""
+    return _running(jobs_dir) is not None
+
+
+def _free_local_ai() -> list:
+    """Unload Msty's Local AI models (an Ollama-compatible server), which would otherwise hold the GPU and RAM."""
+    from config.runtime import load_runtime_config
+    from core.paths import CONFIG_PATH
+    from integrations.msty import api
+    return api.unload_ollama_models(load_runtime_config(CONFIG_PATH).msty_base_url)
+
+
 def _launch(ticket: str) -> None:
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "DETACHED_PROCESS", 0)
     subprocess.Popen([sys.executable, "-m", "integrations.mcp.tribunal_job", ticket],
@@ -185,6 +198,11 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
     heartbeat = threading.Thread(target=beat, daemon=True)
     heartbeat.start()
     try:
+        if deliberate is None:
+            try:  # a 9B assistant model on the GPU pushes the 18 GB voter models into the page file
+                record["freed_models"] = _free_local_ai()
+            except Exception:
+                pass
         from core.history import result_to_dict
         result = (deliberate or _deliberate)(record["query"])
         record.update(status="finished", result=summary(result_to_dict(result)))

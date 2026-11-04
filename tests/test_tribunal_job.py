@@ -117,6 +117,33 @@ class TribunalJobTest(unittest.TestCase):
         job.run(ticket, jobs_dir=self.jobs, deliberate=result)
         self.assertEqual(list(self.jobs.glob("*.alive")), [])
 
+    def test_other_local_model_work_can_see_a_deliberation(self):
+        self.assertFalse(job.deliberation_running(self.jobs))
+        ticket = self.start()["ticket"]
+        self.assertTrue(job.deliberation_running(self.jobs))
+        job.run(ticket, jobs_dir=self.jobs, deliberate=result)
+        self.assertFalse(job.deliberation_running(self.jobs))
+
+    def test_the_email_scan_waits_for_a_deliberation(self):
+        from unittest import mock
+        from integrations.attention import backup
+        with mock.patch.object(job, "deliberation_running", return_value=True), \
+                mock.patch.object(backup, "log") as log, mock.patch.object(backup.scan, "run") as scan:
+            self.assertEqual(backup.main(["scan"]), 0)
+        scan.assert_not_called()
+        log.assert_called_once_with("scan deferred: tribunal deliberating")
+
+    def test_local_ai_models_are_unloaded_by_name(self):
+        from unittest import mock
+        from core.llm import backends
+        from integrations.msty import api
+        posts = []
+        listing = mock.Mock(json=lambda: {"models": [{"name": "qwen3.5:9b"}]}, raise_for_status=lambda: None)
+        with mock.patch.object(backends.requests, "get", return_value=listing), \
+                mock.patch.object(backends.requests, "post", side_effect=lambda url, json, timeout: posts.append((url, json)) or mock.Mock(ok=True)):
+            self.assertEqual(api.unload_ollama_models("http://local-ai/"), ["qwen3.5:9b"])
+        self.assertEqual(posts, [("http://local-ai/api/generate", {"model": "qwen3.5:9b", "keep_alive": 0})])
+
     def test_bad_input_is_refused(self):
         for question in ("", "x" * (job.MAX_QUERY_CHARS + 1), "Region: [REGION] Question: [QUESTION]"):
             with self.assertRaises(ValueError):

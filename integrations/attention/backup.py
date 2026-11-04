@@ -51,6 +51,11 @@ def main(argv=None) -> int:
         log(f'unknown command {" ".join(args)!r}')
         return 2
     command = ' '.join(args)
+    if args[0] == 'scan':
+        from integrations.mcp.tribunal_job import deliberation_running
+        if deliberation_running():  # the voters need the whole GPU; the next scan, 30 minutes on, catches up
+            log('scan deferred: tribunal deliberating')
+            return 0
     try:
         result = scan.run() if args[0] == 'scan' else brief() if args[0] == 'brief' else briefing(args[1])
         log(f'{command} ok {json.dumps(result, ensure_ascii=False, default=str)[:400]}')
