@@ -74,6 +74,16 @@ The tribunal is CONSENSUS, not AURELIUS; these tools only relay questions and re
 
 Job records are kept in the git-ignored `_ARBITER/memory/tribunal_jobs` folder.
 
+Before a first live deliberation on a machine, check that every voter's model loads:
+
+```powershell
+G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe -m integrations.mcp.voter_check
+```
+
+It loads RATIONALIS, AETERNUM, BELLATOR and the base model one at a time. For each it reports ready, with the
+time to the first answer and the speed, or the model server's error. A llama.cpp update can refuse files converted
+for an older version. It starts no deliberation, and it refuses to run while a deliberation is running.
+
 ## Self-Test
 
 ```powershell
