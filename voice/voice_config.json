@@ -19,7 +19,7 @@
       "rvc_index_path": "G:/CONSENSUS_SYSTEM/voice/models/aurelius/DavidAttenborough/logs/DavidAttenborough/added_IVF1110_Flat_nprobe_1_DavidAttenborough_v2.index",
       "rvc_workdir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
       "rvc_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
-      "rvc_ffmpeg_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/VoiceConversionWebUI",
+      "rvc_ffmpeg_dir": "G:/Tools/ffmpeg/bin",
       "rvc_env": {
         "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"
       },
@@ -74,7 +74,7 @@
       "rvc_workdir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/Retrieval-based-Voice-Conversion-WebUI",
       "rvc_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
       "native_python": "G:/CONSENSUS_SYSTEM/archive/pre_modular_backups/Rationalis/TTS/Retrieval-based-Voice-Conversion-WebUI/rvc_env/Scripts/python.exe",
-      "rvc_ffmpeg_dir": "G:/CONSENSUS_SYSTEM/_ARBITER/tts_audio/VoiceConversionWebUI",
+      "rvc_ffmpeg_dir": "G:/Tools/ffmpeg/bin",
       "rvc_env": {
         "TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD": "1"
       },
