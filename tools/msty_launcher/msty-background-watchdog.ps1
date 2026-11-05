@@ -111,7 +111,25 @@ function Test-MstyProvider {
     }
 }
 
+function Test-MstyEngineInstalling {
+    # Msty Studio stops its llama.cpp server while it reinstalls the engine (an update or a CPU/CUDA switch). It
+    # unpacks into %TEMP%\llamacpp-install-win-* and copies into llama-cpp-install-* beside its data. Restarting
+    # the old server during that locks its folder, and the install fails with EBUSY. Folders older than
+    # 20 minutes are leftovers, not an install in progress.
+    $recent = (Get-Date).AddMinutes(-20)
+    $installFolders = @(
+        Get-ChildItem -LiteralPath $env:TEMP -Directory -Filter "llamacpp-install*" -ErrorAction SilentlyContinue
+        Get-ChildItem -LiteralPath (Join-Path $env:APPDATA "MstyStudio") -Directory -Filter "llama-cpp-install-*" -ErrorAction SilentlyContinue
+    )
+    return @($installFolders | Where-Object { $_.LastWriteTime -gt $recent }).Count -gt 0
+}
+
 function Repair-MstyProvider {
+    if (Test-MstyEngineInstalling) {
+        Write-WatchdogLog "PROVIDER_REPAIR_DEFERRED reason=msty_engine_installing"
+        return
+    }
+
     if (-not (Test-Path -LiteralPath $ProviderRepairScript -PathType Leaf)) {
         throw "Missing provider repair script: $ProviderRepairScript"
     }

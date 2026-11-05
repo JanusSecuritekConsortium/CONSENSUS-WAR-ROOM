@@ -134,6 +134,15 @@ seconds, and invokes
 starts Msty Go once when the watchdog begins. Task Scheduler is configured to
 restart the watchdog after an unexpected exit.
 
+While Msty Studio reinstalls its llama.cpp engine (an update, or a switch between
+the CPU and CUDA builds), the watchdog holds off and logs
+`PROVIDER_REPAIR_DEFERRED reason=msty_engine_installing`. It knows an install is
+running from a `llamacpp-install*` folder in `%TEMP%`, or a `llama-cpp-install-*`
+folder in Msty's data folder, written in the last 20 minutes. A repair during the
+install restarts the old server, locks its folder, and makes the install fail with
+`EBUSY`. The deployed copy in `G:\Tools\MstyConsensusLauncher` has to be updated
+from this folder by hand.
+
 Operational checks:
 
 ```powershell
