@@ -13,8 +13,9 @@ import sqlite3
 from uuid import uuid4
 
 from .connectors import TZ
+from core.paths import on_portable_drive
 
-VAULT = Path(r'G:\Obsidian\Aurelius Briefings')
+VAULT = on_portable_drive('Obsidian', 'Aurelius Briefings')
 
 
 def database_path():

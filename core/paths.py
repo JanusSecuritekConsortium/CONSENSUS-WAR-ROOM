@@ -23,6 +23,21 @@ def resolve_system_root() -> Path:
 
 RESOURCE_ROOT = resolve_resource_root()
 SYSTEM_ROOT = resolve_system_root()
+
+
+def resolve_portable_drive() -> Path:
+    """The drive CONSENSUS runs from. The owner keeps everything for it (the vault, Msty, models, the private
+    Aurelius store) on one portable SSD, and Windows may give that SSD a different letter on another PC, so paths
+    to those things follow this drive instead of naming G:. CONSENSUS_PORTABLE_DRIVE overrides it."""
+    configured = os.environ.get("CONSENSUS_PORTABLE_DRIVE", "").strip()
+    return Path(configured) if configured else Path(SYSTEM_ROOT.anchor or "G:\\")
+
+
+PORTABLE_DRIVE = resolve_portable_drive()
+
+
+def on_portable_drive(*parts: str) -> Path:
+    return PORTABLE_DRIVE.joinpath(*parts)
 ARBITER_DIR = SYSTEM_ROOT / "_ARBITER"
 # Test runs set this (tests/conftest.py) so the deliberations they run never land in the owner's decision records.
 DECISION_STORE_DIR = Path(os.environ["CONSENSUS_TEST_DECISION_DIR"]) if os.environ.get("CONSENSUS_TEST_DECISION_DIR") else ARBITER_DIR

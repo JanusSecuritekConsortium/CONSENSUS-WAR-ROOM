@@ -24,11 +24,12 @@ import time
 import requests
 
 from integrations.attention import config as attention_config
+from core.paths import on_portable_drive
 
-OUTPUT = Path(r'G:\Msty\MstyWiki\memory-packs')
+OUTPUT = on_portable_drive('Msty', 'MstyWiki', 'memory-packs')
 DEFAULT_SOURCES = {
     # A folder whose subfolders are topics; loose notes directly inside it are grouped by the model.
-    'grouped': [r'G:\Msty\MstyWiki\wiki'],
+    'grouped': [str(on_portable_drive('Msty', 'MstyWiki', 'wiki'))],
     # A folder that is one topic each.
     'topics': {},
     'skip': ['images', '.obsidian', '.trash'],

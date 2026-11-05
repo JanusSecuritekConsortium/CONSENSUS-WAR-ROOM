@@ -2,7 +2,9 @@ from pathlib import Path
 import json
 import re
 
-ROOT = Path(r'G:\.codex-work\aurelius-private')
+from core.paths import on_portable_drive
+
+ROOT = on_portable_drive('.codex-work', 'aurelius-private')
 CONFIG = ROOT / 'accounts.json'
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any
+from core.paths import on_portable_drive
 
 
 MAX_BRIEF_BYTES = 8192
@@ -13,7 +14,7 @@ def shared_brain_context() -> dict[str, Any]:
     configured = os.environ.get("CONSENSUS_SECOND_BRAIN")
     if not configured and os.name != "nt":
         return {"status": "not_configured"}
-    vault = Path(configured or r"G:\Obsidian\CONSENSUS_SYSTEM")
+    vault = Path(configured) if configured else on_portable_drive("Obsidian", "CONSENSUS_SYSTEM")
     brief = vault / "50 Agents" / "Shared Context.md"
     try:
         with brief.open("rb") as stream:

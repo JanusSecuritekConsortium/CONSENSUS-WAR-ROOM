@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import sqlite3
 
+from core.paths import on_portable_drive
+
 STOP = set('a an and are as at be been by can could do does for from how i in into is it its me my of on or our should that the their them these they this to use using was we what when where which who why will with would you your please s2 underground ghostnotes'.split())
 
 
@@ -24,7 +26,7 @@ def search(query: str, limit: int = 4) -> dict:
     if not configured and os.name != 'nt':
         result['status'] = 'not_configured'
         return result
-    path = Path(configured or r'G:\Obsidian\CONSENSUS_SYSTEM') / '50 Agents' / 'ghostnotes.sqlite'
+    path = (Path(configured) if configured else on_portable_drive('Obsidian', 'CONSENSUS_SYSTEM')) / '50 Agents' / 'ghostnotes.sqlite'
     if not path.is_file():
         return result
     if not terms:

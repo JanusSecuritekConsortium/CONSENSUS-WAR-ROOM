@@ -18,6 +18,7 @@ import sqlite3
 import subprocess
 
 from . import config
+from core.paths import on_portable_drive
 
 PREFIX = 'attention-'
 SERVER_NAME = 'CONSENSUS MCP'
@@ -95,7 +96,7 @@ def install(apply: bool, remove: bool = False) -> list[str]:
                              f'[{job["cron"]}] -> {job["tool"]} -> {", ".join(job["destinations"]) or "no delivery"}')
         if not apply:
             return lines
-        backup = Path(r'G:\Msty\Msty Go\Backups') / f'before-attention-jobs-{datetime.now():%Y%m%d-%H%M%S}.db'
+        backup = on_portable_drive('Msty', 'Msty Go', 'Backups') / f'before-attention-jobs-{datetime.now():%Y%m%d-%H%M%S}.db'
         backup.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(backup) as target:
             db.backup(target)

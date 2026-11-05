@@ -7,8 +7,10 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
+from core.paths import on_portable_drive
+
 # The shared state folder is plain files plus the SQLite file that is authoritative for them.
-DEFAULT_HOME = Path(r'G:\Obsidian\Personal Attention')
+DEFAULT_HOME = on_portable_drive('Obsidian', 'Personal Attention')
 
 DEFAULTS = {
     'owner_name': 'the user',       # how the classifier refers to the mailbox owner
