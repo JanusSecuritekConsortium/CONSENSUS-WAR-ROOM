@@ -1,4 +1,4 @@
 @echo off
-cd /d G:\CONSENSUS_SYSTEM
-G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe G:\CONSENSUS_SYSTEM\integrations\mcp\consensus_mcp_server.py
-
+rem Paths are relative to this file, so the server starts whatever letter the portable SSD has.
+cd /d "%~dp0..\.."
+"%~dp0..\..\.venv\Scripts\python.exe" "%~dp0consensus_mcp_server.py"

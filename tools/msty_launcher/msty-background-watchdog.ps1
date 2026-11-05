@@ -14,15 +14,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$MstyStudioExe = "G:\Msty\MstyStudio\MstyStudio.exe"
-$MstyGoExe = "G:\Msty\Msty Go\MstyGo.exe"
-$ProviderRepairScript = "G:\Msty\keep-msty-running.ps1"
+# Msty lives on the same portable SSD as this script; follow its drive letter rather than assuming G:.
+$PortableDrive = Split-Path -Qualifier $PSCommandPath
+$MstyStudioExe = Join-Path $PortableDrive "Msty\MstyStudio\MstyStudio.exe"
+$MstyGoExe = Join-Path $PortableDrive "Msty\Msty Go\MstyGo.exe"
+$ProviderRepairScript = Join-Path $PortableDrive "Msty\keep-msty-running.ps1"
 $VibeCliProxyExe = Join-Path $env:APPDATA "MstyStudio\vibe-cli-proxy\msty-cli-proxy-studio.exe"
 $VibeCliProxyConfig = Join-Path $env:APPDATA "MstyStudio\vibe-cli-proxy\config.yaml"
 $MstyGoModelsUrl = "http://127.0.0.1:11964/v1/models"
 $LlamaModelsUrl = "http://127.0.0.1:11454/v1/models"
 $VibeCliProxyModelsUrl = "http://127.0.0.1:8317/v1/models"
-$LogDirectory = "G:\Msty\logs"
+$LogDirectory = Join-Path $PortableDrive "Msty\logs"
 $LogPath = Join-Path $LogDirectory "msty-background-watchdog.log"
 $MutexName = "Local\MstyBackgroundWatchdog"
 

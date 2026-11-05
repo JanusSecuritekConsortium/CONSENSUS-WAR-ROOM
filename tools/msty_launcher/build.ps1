@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Source = Join-Path $Root "MstyConsensusLauncher.cs"
 $Output = Join-Path $Root "MstyConsensusLauncher.exe"
-$Icon = "G:\CONSENSUS_SYSTEM\static\icons\consensus_icon.ico"
+$Icon = Join-Path (Split-Path -Qualifier $Root) "CONSENSUS_SYSTEM\static\icons\consensus_icon.ico"
 
 if (-not (Test-Path -LiteralPath $Source)) {
     throw "Missing source: $Source"

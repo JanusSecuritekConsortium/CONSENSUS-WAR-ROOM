@@ -1,5 +1,5 @@
 param(
-    [string]$WorkspaceRoot = "G:\",
+    [string]$WorkspaceRoot = ((Split-Path -Qualifier $PSCommandPath) + "\"),
     [int]$MaxItems = 200
 )
 
