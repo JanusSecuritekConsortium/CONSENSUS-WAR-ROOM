@@ -143,6 +143,19 @@ install restarts the old server, locks its folder, and makes the install fail wi
 `EBUSY`. The deployed copy in `G:\Tools\MstyConsensusLauncher` has to be updated
 from this folder by hand.
 
+When it starts, the watchdog runs `sync-model-drive.ps1` from its own folder (copy it
+next to the deployed watchdog). Msty's `llama-cpp\models-preset.ini` stores each model
+as an absolute path such as `G:\AI_MODELS\...`. On a PC where the SSD has another
+letter, the script rewrites a `model =` or `mmproj =` line only when that file is
+missing and the same path exists on the SSD's current drive. It keeps the previous
+file as `models-preset.ini.bak-drive` and logs `MODEL_DRIVE_UPDATED`; restart Msty
+Studio afterwards. When the letters already match it logs `MODEL_DRIVE_OK` and
+changes nothing. To check without writing:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File G:\Tools\MstyConsensusLauncher\sync-model-drive.ps1 -DryRun
+```
+
 Operational checks:
 
 ```powershell

@@ -19,6 +19,7 @@ $PortableDrive = Split-Path -Qualifier $PSCommandPath
 $MstyStudioExe = Join-Path $PortableDrive "Msty\MstyStudio\MstyStudio.exe"
 $MstyGoExe = Join-Path $PortableDrive "Msty\Msty Go\MstyGo.exe"
 $ProviderRepairScript = Join-Path $PortableDrive "Msty\keep-msty-running.ps1"
+$ModelDriveScript = Join-Path $PSScriptRoot "sync-model-drive.ps1"
 $VibeCliProxyExe = Join-Path $env:APPDATA "MstyStudio\vibe-cli-proxy\msty-cli-proxy-studio.exe"
 $VibeCliProxyConfig = Join-Path $env:APPDATA "MstyStudio\vibe-cli-proxy\config.yaml"
 $MstyGoModelsUrl = "http://127.0.0.1:11964/v1/models"
@@ -167,6 +168,15 @@ $goStartupChecked = $false
 
 try {
     Write-WatchdogLog "WATCHDOG_STARTED interval_seconds=$IntervalSeconds api_failure_threshold=$ApiFailureThreshold ensure_claw=$EnsureClaw once=$Once"
+
+    # On a PC where the SSD has another letter, point Msty's model list at it before Msty starts.
+    if (Test-Path -LiteralPath $ModelDriveScript -PathType Leaf) {
+        try {
+            & $ModelDriveScript | ForEach-Object { Write-WatchdogLog "$_" }
+        } catch {
+            Write-WatchdogLog "MODEL_DRIVE_ERROR $($_.Exception.Message)"
+        }
+    }
 
     while ($true) {
         try {
