@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from core.paths import SYSTEM_ROOT
 from voice.linux_audio import EspeakBackend, play_wav
-from voice.voice_profiles import get_voice_profile, load_voice_config
+from voice.voice_profiles import PATH_KEYS, get_voice_profile, load_voice_config
 from voice.tts_backends import create_system_backend, WindowsSAPIBackend
 
 
@@ -23,8 +23,17 @@ def test_windows_profiles_keep_existing_voice_settings():
     path = SYSTEM_ROOT / "voice/voice_config.json"
     original = json.loads(path.read_text(encoding="utf-8"))
     with patch("sys.platform", "win32"):
-        assert load_voice_config(path) == original
+        loaded = load_voice_config(path)
         assert isinstance(create_system_backend(), WindowsSAPIBackend)
+    # Only path settings change: they become absolute for this checkout and drive.
+    for name, raw in original["profiles"].items():
+        resolved = loaded["profiles"][name]
+        assert {k: v for k, v in resolved.items() if k not in PATH_KEYS} == {
+            k: v for k, v in raw.items() if k not in PATH_KEYS
+        }
+        for key in PATH_KEYS:
+            if raw.get(key):
+                assert Path(resolved[key]).is_absolute()
 
 
 def test_custom_config_does_not_receive_bundled_overrides(tmp_path):

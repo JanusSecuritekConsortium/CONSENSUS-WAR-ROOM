@@ -167,6 +167,19 @@ def run_health_check(config_path: Path = CONFIG_PATH, config_override: RuntimeCo
     except Exception as exc:
         fail_check("monolith_registry", exc)
 
+    try:
+        # Voice is optional: missing voice files degrade the health check but never fail it.
+        from voice.voice_check import check as check_voice
+
+        voice_rows = check_voice()
+        voice_detail = {"profiles": voice_rows}
+        if all(row["ok"] for row in voice_rows):
+            pass_check("voice_files", voice_detail)
+        else:
+            degraded_check("voice_files", voice_detail)
+    except Exception as exc:
+        degraded_check("voice_files", {"error_type": exc.__class__.__name__, "error": str(exc)})
+
     if any(check["status"] == "fail" for check in checks.values()):
         status = "fail"
     elif any(check["status"] == "degraded" for check in checks.values()):

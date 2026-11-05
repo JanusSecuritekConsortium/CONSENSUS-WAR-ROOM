@@ -84,6 +84,16 @@ It loads RATIONALIS, AETERNUM, BELLATOR and the base model one at a time. For ea
 time to the first answer and the speed, or the model server's error. A llama.cpp update can refuse files converted
 for an older version. It starts no deliberation, and it refuses to run while a deliberation is running.
 
+To check the ARBITER and AURELIUS voices' files (voice models, the voice conversion Python, ffmpeg):
+
+```powershell
+G:\CONSENSUS_SYSTEM\.venv\Scripts\python.exe -m voice.voice_check
+```
+
+It makes no sound and sends nothing. It warns when a voice file is inside `archive/`, which a clean-up could
+remove. The health check runs the same check; missing voice files mark it degraded, not failed. Paths in
+`voice/voice_config.json` are relative to the checkout, or start with `{drive}/` for the portable SSD.
+
 ## Self-Test
 
 ```powershell

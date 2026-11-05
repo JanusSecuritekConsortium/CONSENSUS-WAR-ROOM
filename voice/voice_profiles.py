@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
-from core.paths import SYSTEM_ROOT
+from core.paths import SYSTEM_ROOT, on_portable_drive
 
 
 CONFIG_PATH = Path(__file__).with_name("voice_config.json")
@@ -31,16 +31,29 @@ def load_voice_config(path: Optional[Path] = None) -> Dict[str, Any]:
             overrides = json.loads(override_path.read_text(encoding="utf-8"))
             for name, settings in overrides.get("profiles", {}).items():
                 config.setdefault("profiles", {}).setdefault(name, {}).update(settings)
-    path_keys = {"rvc_model_path", "rvc_index_path", "rvc_workdir", "rvc_python", "native_python", "rvc_ffmpeg_dir", "output_dir"}
     for profile in config.get("profiles", {}).values():
-        for key in path_keys:
+        for key in PATH_KEYS:
             value = profile.get(key)
-            if value and not Path(value).is_absolute():
-                # Preserve explicit Windows paths; Linux overrides replace these.
-                if len(value) > 1 and value[1] == ":":
-                    continue
-                profile[key] = str(SYSTEM_ROOT / value)
+            if value:
+                profile[key] = resolve_voice_path(str(value))
     return config
+
+
+PATH_KEYS = ("rvc_model_path", "rvc_index_path", "rvc_workdir", "rvc_python", "native_python", "rvc_ffmpeg_dir", "output_dir")
+DRIVE_PREFIX = "{drive}"
+
+
+def resolve_voice_path(value: str) -> str:
+    """Resolve a voice setting path so the SSD works under any drive letter.
+
+    ``{drive}/...`` is on the portable drive CONSENSUS runs from, a relative path is inside this
+    checkout, and an explicit absolute path (``C:/...``) is kept as written.
+    """
+    if value.startswith(DRIVE_PREFIX):
+        return str(on_portable_drive(*Path(value[len(DRIVE_PREFIX):].lstrip("/\\")).parts))
+    if Path(value).is_absolute() or (len(value) > 1 and value[1] == ":"):
+        return value
+    return str(SYSTEM_ROOT / value)
 
 
 def get_voice_profile(name: str, path: Optional[Path] = None) -> VoiceProfile:
