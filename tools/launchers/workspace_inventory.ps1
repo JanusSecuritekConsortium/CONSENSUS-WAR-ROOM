@@ -1,7 +1,10 @@
 param(
-    [string]$WorkspaceRoot = ((Split-Path -Qualifier $PSCommandPath) + "\"),
+    [string]$WorkspaceRoot,
     [int]$MaxItems = 200
 )
+
+# $PSCommandPath is empty in parameter defaults on Windows PowerShell 5.1, so default here.
+if (-not $WorkspaceRoot) { $WorkspaceRoot = (Split-Path -Qualifier $PSCommandPath) + "\" }
 
 $ErrorActionPreference = "SilentlyContinue"
 
