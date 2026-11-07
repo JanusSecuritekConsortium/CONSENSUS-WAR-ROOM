@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -22,6 +24,7 @@ def test_control_tree_smoke_uses_smoke_state() -> None:
     assert run_control_tree_smoke() is True
 
 
+@pytest.mark.opens_window
 def test_hidden_launch_smoke_returns_after_marker() -> None:
     assert run_hidden_gui_smoke(timeout=12.0) is True
 

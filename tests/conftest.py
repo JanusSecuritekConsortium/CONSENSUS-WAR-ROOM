@@ -9,3 +9,47 @@ if not os.environ.get("CONSENSUS_TEST_DECISION_DIR"):
     _folder = tempfile.mkdtemp(prefix="consensus-test-decisions-")
     os.environ["CONSENSUS_TEST_DECISION_DIR"] = _folder
     atexit.register(shutil.rmtree, _folder, ignore_errors=True)
+
+
+# ---- tests that open real CONSENSUS windows ---------------------------------------------------
+# A plain local `pytest` must not put the desktop app on the owner's screen. Tests marked
+# `opens_window` start the real Flet app (hidden or not) and run only when
+# CONSENSUS_GUI_TESTS=1, which CI sets. Without it, any other test that reaches flet.app()
+# fails with a clear error instead of opening a window.
+import pytest
+
+GUI_TESTS_ENABLED = os.environ.get("CONSENSUS_GUI_TESTS") == "1"
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "opens_window: starts the real desktop app; needs CONSENSUS_GUI_TESTS=1")
+
+
+def pytest_collection_modifyitems(config, items):
+    if GUI_TESTS_ENABLED:
+        return
+    skip = pytest.mark.skip(reason="opens a CONSENSUS window; set CONSENSUS_GUI_TESTS=1 to run")
+    for item in items:
+        if "opens_window" in item.keywords:
+            item.add_marker(skip)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _no_windows_unless_asked():
+    if GUI_TESTS_ENABLED:
+        yield
+        return
+    try:
+        import flet
+    except ImportError:
+        yield
+        return
+
+    def refuse(*args, **kwargs):
+        raise RuntimeError("This test tried to open a CONSENSUS window; mark it opens_window "
+                           "or stub the launcher. Set CONSENSUS_GUI_TESTS=1 to allow it.")
+
+    patcher = pytest.MonkeyPatch()
+    patcher.setattr(flet, "app", refuse)
+    yield
+    patcher.undo()

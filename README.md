@@ -176,6 +176,9 @@ python -m pip install -e .[dev]
 python -m pytest
 ```
 
+Tests that start the real desktop app are skipped unless `CONSENSUS_GUI_TESTS=1`
+is set (CI sets it), so a local run doesn't put windows on screen.
+
 ## Runtime Modes
 
 ```powershell

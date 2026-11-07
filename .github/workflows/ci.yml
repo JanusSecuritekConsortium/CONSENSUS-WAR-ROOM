@@ -32,4 +32,6 @@ jobs:
         run: python consensus_war_room_genesis.py --compile-active
 
       - name: Run tests
+        env:
+          CONSENSUS_GUI_TESTS: "1"
         run: python -m pytest

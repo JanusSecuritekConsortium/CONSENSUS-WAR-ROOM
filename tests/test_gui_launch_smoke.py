@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -10,6 +12,7 @@ if str(ROOT) not in sys.path:
 from tools.gui_smoke_check import run_hidden_gui_smoke
 
 
+@pytest.mark.opens_window
 def test_gui_launch_smoke_initializes_hidden_flet_app() -> None:
     assert run_hidden_gui_smoke(timeout=12.0) is True
 
