@@ -147,6 +147,28 @@ python consensus_war_room_genesis.py --health
 python tools\run_tests.py
 ```
 
+### What the repository does not include
+
+The code and the default configuration are enough for the `mock` backend. A
+real tribunal and the voices need files that are not in Git:
+
+- **Language models.** Each agent's model is named in
+  `_ARBITER/genesis_config.json` (`agent_model_overrides`). The GGUF files are
+  public downloads; serve them with Msty Studio (llama.cpp) or an
+  Ollama-compatible runtime. The current voters need about 18–19 GB each, so plan
+  for a GPU with 24 GB or enough RAM to offload. The Mixtral file named for
+  BELLATOR is an older conversion that current llama.cpp refuses; use a current
+  conversion or another model. `python -m integrations.mcp.voter_check` reports
+  whether each voter's model loads.
+- **Voice models.** ARBITER and AURELIUS can speak through RVC voice models and
+  an RVC Python environment, set in `voice/voice_config.json`. Neither is
+  distributed. Without them, speech falls back to the system voice.
+  `python -m voice.voice_check` lists what is missing.
+- **Accounts and secrets.** Telegram, mail, calendar and data-source credentials
+  go in `.env` (see [`.env.example`](.env.example)) or ignored local config.
+- **Personal context.** The optional second brain is a local Obsidian vault
+  (`CONSENSUS_SECOND_BRAIN`). Deliberation works without it.
+
 For the standard pytest workflow:
 
 ```powershell
