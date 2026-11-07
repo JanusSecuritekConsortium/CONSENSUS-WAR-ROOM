@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
+from core.paths import SYSTEM_ROOT
+
 from integrations.msty.personal import connectors, schedules, service, store
 from integrations.msty.personal.review import render
 from integrations.mcp.consensus_mcp_server import handle_jsonrpc
@@ -77,7 +79,7 @@ def test_schedule_upgrade_repairs_payloads_preserves_public_jobs(tmp_path):
             parsed=json.loads(payload)
             assert '--mode '+mode in parsed['prompt']
             assert '\n' in parsed['prompt'] and '\\n' not in parsed['prompt']
-            assert parsed['workspacePath'] == 'G:\\CONSENSUS_SYSTEM'
+            assert parsed['workspacePath'] == str(SYSTEM_ROOT)
             assert enabled == 1 and next_run
         assert db.execute("SELECT enabled FROM scheduled_job_destinations WHERE id='remote'").fetchone()[0] == 0
         assert db.execute("SELECT COUNT(*) FROM scheduled_job_destinations WHERE kind='in_app' AND enabled=1").fetchone()[0] == 3

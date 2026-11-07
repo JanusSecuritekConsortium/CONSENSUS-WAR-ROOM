@@ -24,7 +24,6 @@ from __future__ import annotations
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import logging
-import msvcrt
 import sqlite3
 import sys
 import threading
@@ -197,12 +196,22 @@ def fetch(now, days: int, limit: int):
 
 # ---- the linked device -----------------------------------------------------------------------
 
+def _lock_without_waiting(handle) -> None:
+    """Lock the first byte of an open file, or raise OSError if another process holds it."""
+    if sys.platform == 'win32':
+        import msvcrt
+        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+    else:
+        import fcntl
+        fcntl.lockf(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB, 1)
+
+
 class SingleInstance:
     def __enter__(self):
         FOLDER.mkdir(parents=True, exist_ok=True)
         self.handle = open(LOCK, 'a+')
         try:
-            msvcrt.locking(self.handle.fileno(), msvcrt.LK_NBLCK, 1)
+            _lock_without_waiting(self.handle)
         except OSError:
             self.handle.close()
             raise RuntimeError('Another WhatsApp listener is already running') from None

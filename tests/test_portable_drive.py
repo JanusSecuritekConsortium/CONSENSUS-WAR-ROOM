@@ -35,7 +35,7 @@ class PortableDriveTest(unittest.TestCase):
 
     def test_defaults_follow_the_drive(self):
         with mock.patch.object(paths, "PORTABLE_DRIVE", Path("E:\\")):
-            self.assertEqual(paths.on_portable_drive("Obsidian", "Personal Attention"), Path(r"E:\Obsidian\Personal Attention"))
+            self.assertEqual(paths.on_portable_drive("Obsidian", "Personal Attention"), Path("E:\\") / "Obsidian" / "Personal Attention")
 
     def test_no_module_names_a_drive_letter(self):
         for name in PORTABLE_MODULES:
