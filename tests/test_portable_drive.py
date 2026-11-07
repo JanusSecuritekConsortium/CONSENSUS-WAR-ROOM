@@ -20,6 +20,7 @@ PORTABLE_MODULES = [
     "core/knowledge/second_brain.py", "core/knowledge/ghostnotes.py", "integrations/msty/personal/store.py",
     "integrations/msty/personal/publication.py", "integrations/msty/personal/schedules.py",
     "integrations/msty/memory_packs.py", "integrations/attention/msty_jobs.py", "integrations/attention/config.py",
+    "voice/riko_adapter.py",
 ]
 DRIVE_LETTER_PATH = re.compile(r"""['"][A-Za-z]:[\\/]""")
 

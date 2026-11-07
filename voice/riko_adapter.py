@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Optional
 
+from core.paths import ARBITER_DIR
+
+DEFAULT_INPUT_PATH = ARBITER_DIR / "voice_tmp" / "latest_input.wav"
+
 
 @dataclass
 class VoiceInputResult:
@@ -16,7 +20,7 @@ class VoiceInputResult:
 class RikoVoiceAdapter:
     def __init__(
         self,
-        latest_input_path: Path | str = "J:/CONSENSUS_SYSTEM/_ARBITER/voice_tmp/latest_input.wav",
+        latest_input_path: Path | str = DEFAULT_INPUT_PATH,
         asr_endpoint: str = "http://127.0.0.1:7865/asr",
         timeout: float = 5.0,
     ) -> None:

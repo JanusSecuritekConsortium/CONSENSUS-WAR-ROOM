@@ -1,4 +1,4 @@
 @echo off
-cd /d J:\CONSENSUS_SYSTEM\_ARBITER
+cd /d "%~dp0"
 python arbiter_gui.py
 pause
