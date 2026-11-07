@@ -45,6 +45,29 @@ def _find_ffmpeg(settings: Dict[str, Any]) -> Optional[str]:
     return shutil.which("ffmpeg")
 
 
+def venv_base_problem(python: Path) -> Optional[str]:
+    """A virtual environment's python.exe only starts if the base Python named in pyvenv.cfg exists.
+
+    pyvenv.cfg stores that base as an absolute path, so on a PC where the SSD has another drive
+    letter the voice Python is present but cannot start.
+    """
+    config = python.parent.parent / "pyvenv.cfg"
+    if not config.is_file():
+        return None
+    try:
+        lines = config.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        key, sep, value = line.partition("=")
+        if sep and key.strip().lower() == "home":
+            home = Path(value.strip())
+            if not home.is_dir():
+                return f"base Python missing: {home} (named by {config}; on another drive letter, edit its home line)"
+            return None
+    return None
+
+
 def check_profile(name: str, settings: Dict[str, Any]) -> Dict[str, Any]:
     problems: List[str] = []
     warnings: List[str] = []
@@ -56,8 +79,13 @@ def check_profile(name: str, settings: Dict[str, Any]) -> Dict[str, Any]:
         exists = path.is_dir() if key in FOLDER_KEYS else path.is_file()
         if not exists:
             problems.append(f"{label} missing: {path}")
-        elif _inside_archive(path):
+            continue
+        if _inside_archive(path):
             warnings.append(f"{label} is inside the archive folder: {path}")
+        if key in ("rvc_python", "native_python"):
+            base = venv_base_problem(path)
+            if base and base not in problems:
+                problems.append(base)
     if settings.get("rvc_workdir"):
         script = Path(str(settings["rvc_workdir"])) / "tools" / "infer_cli.py"
         if not script.is_file():
