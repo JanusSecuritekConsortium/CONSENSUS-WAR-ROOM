@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-from core.logging import log_event
+from core.logging import log_event, log_files
 from core.paths import SYSTEM_LOG_PATH
 from voice.glados_adapter import GladosAdapter
 
@@ -170,18 +170,22 @@ def voice_status_snapshot(path: Path = SYSTEM_LOG_PATH) -> Dict[str, Any]:
 
 
 def read_last_voice_announcement(path: Path = SYSTEM_LOG_PATH) -> Optional[Dict[str, Any]]:
-    if not path.exists():
-        return None
-    for line in reversed(path.read_text(encoding="utf-8", errors="replace").splitlines()):
+    # Newest file first, so an older rotated part is only read when the current one has no announcement.
+    for part in reversed(log_files(path)):
         try:
-            record = json.loads(line)
-        except json.JSONDecodeError:
+            lines = part.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
             continue
-        if not isinstance(record, dict) or record.get("event_type") != ARBITER_VOICE_EVENT:
-            continue
-        payload = record.get("payload")
-        if isinstance(payload, dict):
-            return {"timestamp": record.get("timestamp"), **payload}
+        for line in reversed(lines):
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(record, dict) or record.get("event_type") != ARBITER_VOICE_EVENT:
+                continue
+            payload = record.get("payload")
+            if isinstance(payload, dict):
+                return {"timestamp": record.get("timestamp"), **payload}
     return None
 
 

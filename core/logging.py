@@ -2,10 +2,53 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 from datetime import datetime
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from core.paths import SYSTEM_LOG_PATH
+
+# When the log reaches this size it is renamed to <name>.<YYYYmmdd-HHMMSS-nanoseconds> and a new one starts.
+# Old files are never deleted here: decision traces live in them, so the readers below search them too.
+SYSTEM_LOG_MAX_BYTES = 25 * 1024 * 1024
+_ROTATED_SUFFIX = re.compile(r"^\d{8}-\d{6}-\d{9}$")
+
+
+def rotated_log_files(path: Path) -> List[Path]:
+    """The renamed earlier parts of a log, oldest first."""
+    if not path.parent.is_dir():
+        return []
+    prefix = path.name + "."
+    parts = [
+        candidate
+        for candidate in path.parent.glob(path.name + ".*")
+        if candidate.is_file() and _ROTATED_SUFFIX.match(candidate.name[len(prefix):])
+    ]
+    return sorted(parts, key=lambda candidate: candidate.name)
+
+
+def log_files(path: Path) -> List[Path]:
+    """Every part of a log that exists, oldest first, the current file last."""
+    files = rotated_log_files(path)
+    if path.is_file():
+        files.append(path)
+    return files
+
+
+def _rotate_if_large(path: Path) -> None:
+    try:
+        if path.stat().st_size < SYSTEM_LOG_MAX_BYTES:
+            return
+    except OSError:
+        return
+    stamp = f"{datetime.now():%Y%m%d-%H%M%S}-{time.time_ns() % 1_000_000_000:09d}"
+    try:
+        path.rename(path.with_name(f"{path.name}.{stamp}"))
+    except OSError:
+        # Windows refuses while another process has the file open; keep appending and try next time.
+        pass
 
 
 def log_event(
@@ -14,6 +57,7 @@ def log_event(
     level: str = "INFO",
 ) -> None:
     SYSTEM_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _rotate_if_large(SYSTEM_LOG_PATH)
     record = {
         "timestamp": datetime.now().isoformat(),
         "level": level,

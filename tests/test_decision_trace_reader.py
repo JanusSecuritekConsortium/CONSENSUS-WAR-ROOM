@@ -35,6 +35,29 @@ def test_decision_trace_reader_skips_corrupt_lines(tmp_path: Path) -> None:
     assert [item["proposal_id"] for item in list_recent_traces(2, path)] == ["p1", "p2"]
 
 
+def _trace(proposal_id: str) -> str:
+    return json.dumps({"timestamp": proposal_id, "level": "INFO", "event_type": "decision_trace", "payload": {"proposal_id": proposal_id}})
+
+
+def test_decision_trace_reader_includes_rotated_parts_in_order(tmp_path: Path) -> None:
+    path = tmp_path / "system.jsonl"
+    (tmp_path / "system.jsonl.20260501-120000-000000001").write_text(_trace("oldest") + "\n", encoding="utf-8")
+    (tmp_path / "system.jsonl.20261001-120000-000000002").write_text(_trace("middle") + "\n", encoding="utf-8")
+    (tmp_path / "system.jsonl.notes").write_text(_trace("not-a-rotated-part") + "\n", encoding="utf-8")
+    path.write_text(_trace("newest") + "\n", encoding="utf-8")
+
+    assert [item["proposal_id"] for item in list_recent_traces(10, path)] == ["oldest", "middle", "newest"]
+    assert read_trace_by_proposal_id("oldest", path) is not None
+    assert read_latest_trace(path)["proposal_id"] == "newest"
+
+
+def test_decision_trace_reader_finds_rotated_parts_without_a_current_file(tmp_path: Path) -> None:
+    path = tmp_path / "system.jsonl"
+    (tmp_path / "system.jsonl.20260501-120000-000000001").write_text(_trace("only") + "\n", encoding="utf-8")
+
+    assert read_latest_trace(path)["proposal_id"] == "only"
+
+
 if __name__ == "__main__":
     import tempfile
 

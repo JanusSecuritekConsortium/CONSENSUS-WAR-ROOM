@@ -2,16 +2,25 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
+from core.logging import log_files
 from core.paths import SYSTEM_LOG_PATH
 
 
+def _log_lines(path: Path) -> Iterator[str]:
+    """Lines of the log and of its rotated earlier parts, oldest first."""
+    for part in log_files(path):
+        try:
+            text = part.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        yield from text.splitlines()
+
+
 def _iter_trace_records(path: Path = SYSTEM_LOG_PATH) -> List[Dict[str, Any]]:
-    if not path.exists():
-        return []
     records: List[Dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+    for line in _log_lines(path):
         try:
             record = json.loads(line)
         except json.JSONDecodeError:

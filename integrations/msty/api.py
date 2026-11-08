@@ -193,8 +193,15 @@ def _load_model_cache() -> Dict[str, Any]:
 def _save_model_cache(cache: Dict[str, Any]) -> None:
     MODEL_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = MODEL_CACHE_PATH.with_name(f"{MODEL_CACHE_PATH.name}.{os.getpid()}.{time.time_ns()}.tmp")
-    tmp_path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
-    tmp_path.replace(MODEL_CACHE_PATH)
+    try:
+        tmp_path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+        tmp_path.replace(MODEL_CACHE_PATH)
+    finally:
+        # After a successful replace the temporary file is gone; after a failure it must not be left behind.
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def _cache_key(backend: str, endpoint: str, api_shape: str) -> str:
