@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.2.1 - Flet Deprecation Cleanup (2026-11-09)
+
+### Fixed
+- The proposal template menu no longer uses Dropdown options that Flet 0.30 removes
+  (`focused_color`, `focused_bgcolor` and the per-option `text_style`).
+
 ## 9.2.0 - Shared Backup Model for Online Voters (2026-11-09)
 
 ### Added

@@ -100,7 +100,6 @@ def build_proposal_panel(
                             font_family=theme.font_family,
                             size=11,
                         ),
-                        text_style=ft.TextStyle(color=dropdown_text, font_family=theme.font_family, size=11),
                     )
                     for item in template_options
                 ],
@@ -108,10 +107,8 @@ def build_proposal_panel(
                 border_color=theme.secondary_color,
                 focused_border_color=theme.accent_color,
                 color=dropdown_text,
-                focused_color=dropdown_text,
                 bgcolor=dropdown_bg,
                 fill_color=dropdown_fill,
-                focused_bgcolor=dropdown_focus,
                 hover_color=dropdown_focus,
                 text_style=ft.TextStyle(color=dropdown_text, font_family=theme.font_family, size=11),
                 label_style=ft.TextStyle(color=dropdown_label, font_family=theme.font_family, size=10),
