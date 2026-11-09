@@ -84,7 +84,10 @@ def _env_file() -> Optional[Path]:
     configured = os.environ.get("CONSENSUS_ONLINE_ENV_FILE")
     if configured is not None:
         return Path(configured) if configured.strip() else None
-    from core.paths import SYSTEM_ROOT
+    from core.paths import SYSTEM_ROOT, is_frozen_runtime
+    # The packaged CONSENSUS.exe runs from dist\; its settings live in the source folder above it.
+    if is_frozen_runtime() and not (SYSTEM_ROOT / ".env").is_file():
+        return SYSTEM_ROOT.parent / ".env"
     return SYSTEM_ROOT / ".env"
 
 
