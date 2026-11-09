@@ -64,6 +64,9 @@ class TribunalJobTest(unittest.TestCase):
             self.assertIn("BELLATOR's model needs about 30 GB", note)
             with mock.patch("psutil.virtual_memory", return_value=mock.Mock(available=12 * gb)):
                 self.assertIsNone(job.memory_note())  # the owner's 40 GB chat model is not the tribunal's
+            # BELLATOR on an online model loads nothing locally, so its 30 GB file no longer counts.
+            with mock.patch("core.llm.online.routes_for", side_effect=lambda agent: ["online"] if agent == "BELLATOR" else []):
+                self.assertIsNone(job.memory_note())
 
     def test_start_returns_a_ticket_and_launches_once(self):
         started = self.start("  Should   we move the backups? ")

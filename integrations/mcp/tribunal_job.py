@@ -111,7 +111,10 @@ def memory_note() -> Optional[str]:
         config = load_runtime_config(CONFIG_PATH)
         base_url = api.resolve_provider_base_url(config)
         sizes = api.model_file_sizes(base_url)
-        voters = {agent: api.match_model_alias(name, list(sizes))[0] for agent, name in config.agent_model_overrides.items()}
+        from core.llm import online
+        # Voters on an online model load nothing locally unless every online attempt fails.
+        voters = {agent: api.match_model_alias(name, list(sizes))[0] for agent, name in config.agent_model_overrides.items()
+                  if not online.routes_for(agent)}
         needed = {agent: sizes[model] for agent, model in voters.items() if model}
         if not needed:
             return None

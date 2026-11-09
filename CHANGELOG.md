@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.2.2 - Memory Check Skips Online Voters (2026-11-09)
+
+### Fixed
+- A tribunal started from Msty no longer refuses to run for lack of memory because of a local
+  model that an online voter does not load.
+
 ## 9.2.1 - Flet Deprecation Cleanup (2026-11-09)
 
 ### Fixed
