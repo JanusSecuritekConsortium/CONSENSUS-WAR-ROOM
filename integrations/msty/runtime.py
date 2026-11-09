@@ -110,12 +110,15 @@ class MstyRuntime:
         if self.config.backend != "mock":
             from core.llm import online
 
-            route = online.route_for(session.agent_id)
-            if route is not None:
+            # The voter's own online model first, then the shared backup, then the local model below.
+            for route in online.routes_for(session.agent_id):
                 try:
                     response, execution = self._generate_online_response(
                         route, session, rendered_prompt, context or {}, requested_model,
                     )
+                    if online_attempts:
+                        execution = {**execution, "model_fallback": True, "model_fallback_reason": "online_model_failed",
+                                     "model_attempts": online_attempts + execution["model_attempts"]}
                     self.last_execution[session.agent_id] = {"status": "ready", **execution}
                     self._record_telemetry(session, prompt, response, started, route.backend, "ready")
                     return response
@@ -126,7 +129,7 @@ class MstyRuntime:
                     online_attempts.append({"model": route.label, "backend": route.backend, "status": "failed",
                                             "error_type": type(exc).__name__, "error": str(exc)})
                     log_event("online_model_fallback", {"agent_id": session.agent_id, "online_model": route.label,
-                                                        "fallback": requested_model, "error": str(exc)}, level="WARNING")
+                                                        "error": str(exc)}, level="WARNING")
 
         try:
             if self.config.backend == "mock":

@@ -213,6 +213,24 @@ def route_for(agent_id: str) -> Optional[OnlineRoute]:
     return route
 
 
+def backup_route(agent_id: str) -> Optional[OnlineRoute]:
+    """The shared backup model (CONSENSUS_ONLINE_FALLBACK), or None when unset or unusable."""
+    value = setting("CONSENSUS_ONLINE_FALLBACK")
+    route = parse_route(agent_id.upper(), value) if value and online_enabled() else None
+    return route if route is not None and _usable(route.provider) else None
+
+
+def routes_for(agent_id: str) -> list[OnlineRoute]:
+    """The online models a voter tries in order: its own, then the shared backup.
+
+    Only voters given an online model use the backup; the others stay local.
+    """
+    if configured_route(agent_id) is None:
+        return []
+    routes = [route for route in (route_for(agent_id), backup_route(agent_id)) if route is not None]
+    return [route for index, route in enumerate(routes) if route.label not in {r.label for r in routes[:index]}]
+
+
 def status_report() -> list[Dict[str, Any]]:
     """Per voter: the configured online model and whether its key is present. Never the key itself."""
     rows = []
@@ -489,6 +507,18 @@ def main() -> int:
 
     for row in status_report():
         print(f"{row['agent_id']:<11} {row['state']:<28} {row['model'] or row['setting'] or '-'}")
+    backup = setting("CONSENSUS_ONLINE_FALLBACK")
+    if backup:
+        route = parse_route(TRIBUNAL_AGENT_IDS[0], backup)
+        if route is None:
+            state = "invalid setting"
+        elif route.provider.subscription and not _cli_path(route.provider):
+            state = f"'{route.provider.command}' not installed"
+        elif not route.provider.subscription and not _api_key(route.provider):
+            state = f"no key ({route.provider.key_env})"
+        else:
+            state = "ready"
+        print(f"{'BACKUP':<11} {state:<28} {backup}")
     print(f"Personal context sent online: {'yes' if share_personal_context() else 'no'}; "
           f"token budget per deliberation: {token_budget()}")
     if "--ping" not in sys.argv[1:]:

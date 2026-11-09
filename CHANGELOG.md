@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.2.0 - Shared Backup Model for Online Voters (2026-11-09)
+
+### Added
+- `CONSENSUS_ONLINE_FALLBACK` names a backup model (for example DeepSeek). An online voter
+  whose own model fails or reaches a usage limit asks the backup before its local model.
+
 ## 9.1.1 - Online Model Names on the Voter Cards (2026-11-09)
 
 ### Changed

@@ -55,11 +55,18 @@ To check the setup:
 The first command lists each voter's state and never prints keys. `--ping` sends one tiny
 request to each online voter's model.
 
+## Shared backup model
+
+`CONSENSUS_ONLINE_FALLBACK` names one more model, for example `deepseek:deepseek-chat`. When
+an online voter's own model fails or reaches a usage limit, the voter asks the backup before
+falling back to its local model. Voters without an online model never use the backup.
+
 ## Behaviour
 
 - **Fallback:** a failed online call (no network, not signed in, rejected key, usage limit,
-  an unfinished or unparseable answer) is logged as `online_model_fallback`, and the voter
-  answers with its local model. The transcript records the online attempt.
+  an unfinished or unparseable answer) is logged as `online_model_fallback`. The voter then
+  tries the shared backup model, if one is set, and otherwise answers with its local model.
+  The transcript records every attempt.
 - **Privacy:** an online voter's prompt leaves out the vault brief (`50 Agents/Shared
   Context.md`). The proposal, prior CONSENSUS decisions, public references and the BELLATOR and
   AETERNUM data packets are still sent. Set `CONSENSUS_ONLINE_SHARE_PERSONAL=1` to include the brief.

@@ -20,7 +20,7 @@ KEY = "sk-test-not-a-real-key"
 
 @pytest.fixture(autouse=True)
 def clean(monkeypatch):
-    for name in ("CONSENSUS_ONLINE_MODELS", "CONSENSUS_ONLINE_SHARE_PERSONAL", "CONSENSUS_ONLINE_TOKEN_BUDGET",
+    for name in ("CONSENSUS_ONLINE_MODELS", "CONSENSUS_ONLINE_SHARE_PERSONAL", "CONSENSUS_ONLINE_TOKEN_BUDGET", "CONSENSUS_ONLINE_FALLBACK",
                  "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "DEEPSEEK_API_KEY",
                  *(online.ENV_PREFIX + agent for agent in (RATIONALIS, AETERNUM, BELLATOR, AURELIUS))):
         monkeypatch.delenv(name, raising=False)
@@ -256,3 +256,29 @@ def test_monolith_cards_name_the_online_model(monkeypatch):
     assert cards[RATIONALIS] == "Claude sonnet · subscription"
     assert "·" not in cards[BELLATOR] and "·" not in cards[AETERNUM]
     online._which_cache.clear()
+
+
+def test_shared_backup_answers_when_the_voter_model_fails(monkeypatch):
+    monkeypatch.setenv(online.ENV_PREFIX + BELLATOR, "openai:gpt-5")
+    monkeypatch.setenv("OPENAI_API_KEY", KEY)
+    monkeypatch.setenv("CONSENSUS_ONLINE_FALLBACK", "deepseek:deepseek-chat")
+    assert online.routes_for(BELLATOR) == [online.parse_route(BELLATOR, "openai:gpt-5")]  # no DeepSeek key yet
+    monkeypatch.setenv("DEEPSEEK_API_KEY", KEY)
+    assert [route.label for route in online.routes_for(BELLATOR)] == ["openai:gpt-5", "deepseek:deepseek-chat"]
+    assert online.routes_for(AETERNUM) == []  # the backup is only for voters given an online model
+
+    calls = []
+    _local_provider(monkeypatch, calls)
+
+    def fake_complete(route, system, prompt, **kwargs):
+        if route.provider.name == "openai":
+            raise online.OnlineModelError("usage limit reached")
+        context = json.JSONDecoder().raw_decode(prompt.split("Shared machine context:\n", 1)[1])[0]
+        return online.OnlineResult(_vote(route.agent_id, context), 100, 10)
+    monkeypatch.setattr(online, "complete", fake_complete)
+
+    transcript = _deliberate(MstyRuntime(RuntimeConfig(base_model="base")))
+    bellator = [turn for turn in transcript if turn["agent_id"] == BELLATOR]
+    assert all(turn["backend"] == "online:deepseek" and turn["model_fallback"] for turn in bellator)
+    assert [attempt["model"] for attempt in bellator[0]["model_attempts"]] == ["openai:gpt-5", "deepseek:deepseek-chat"]
+    assert not any(agent == BELLATOR for where, agent, _ in calls)  # never needed the local model
