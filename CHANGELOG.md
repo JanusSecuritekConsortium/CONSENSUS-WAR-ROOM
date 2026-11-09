@@ -1,5 +1,16 @@
 # Changelog
 
+## 12.1.0 - Subscription Voters and a Sharper Map (2026-11-09)
+
+### Added
+- Voters can run on your Claude, ChatGPT or Grok subscription through Claude Code, Codex CLI
+  or Grok CLI, with no API bill (`claude-cli:`, `codex-cli:`, `grok-cli:`). Grok's paid API
+  is available as `xai:`.
+
+### Changed
+- The world map is bigger and sharper: 200x48 characters full screen (was 150x44) and 76x20 in
+  the BELLATOR panel (was 60x16), in the same style.
+
 ## 12.0.0 - World Map and Online Voters (2026-11-09)
 
 First numbered release since 8.0.0. A major version marks a big change: an overhaul, a new

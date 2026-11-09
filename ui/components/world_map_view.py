@@ -9,8 +9,8 @@ from core.intelligence.strategic_regions import STRATEGIC_REGIONS
 from core.intelligence.world_map import kind_runs, render_world_map
 from core.models import Theme
 
-MINI_SIZE = (60, 16)
-BIG_SIZE = (150, 44)
+MINI_SIZE = (76, 20)
+BIG_SIZE = (200, 48)
 LEGEND = "x/X BELLATOR feed event   + * # GDELT news: low / medium / high severity   +--+ strategic region"
 
 
@@ -87,7 +87,7 @@ def build_world_map_overlay(theme: Theme, data: Dict[str, Any] | None, *, busy: 
     width, height = BIG_SIZE
     available = max(600.0, float(page_width or 1400) - 100)
     # Consolas characters are about 0.55 em wide; size the font so the map fills the overlay width.
-    size = max(6.0, min(12.0, available / (width * 0.56)))
+    size = max(6.0, min(13.0, available / (width * 0.56)))
     button_style = ft.ButtonStyle(color=theme.accent_color, shape=ft.RoundedRectangleBorder(radius=0))
     return ft.Column(
         [

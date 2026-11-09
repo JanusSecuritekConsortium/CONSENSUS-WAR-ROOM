@@ -3,12 +3,13 @@
 A voter goes online only when the operator names a model for it, for example in the
 gitignored `.env` file beside the code:
 
-    CONSENSUS_ONLINE_MODEL_RATIONALIS=anthropic:claude-sonnet-5-5
-    CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-chat
-    ANTHROPIC_API_KEY=...
+    CONSENSUS_ONLINE_MODEL_RATIONALIS=claude-cli:sonnet      # Claude subscription via Claude Code
+    CONSENSUS_ONLINE_MODEL_AETERNUM=codex-cli:default        # ChatGPT subscription via Codex CLI
+    CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-chat   # paid API
     DEEPSEEK_API_KEY=...
 
-Without a model name or a key the voter stays on its local model. A failed online call is
+API providers need their key; subscription providers (`*-cli`) need their command-line tool
+installed and signed in. Otherwise the voter stays on its local model. A failed online call is
 logged and the voter falls back to its local model. API keys are read here and sent only in
 the provider's own request header; they never appear in logs, errors or results.
 """
@@ -39,13 +40,26 @@ class Provider:
     label: str
     base_url: str
     key_env: str
-    api: str  # "anthropic" or "openai"
+    api: str  # "anthropic", "openai" or "cli"
+    command: str = ""  # the command-line tool for subscription providers
+    # API keys removed from the tool's environment, so it signs in with the subscription instead.
+    strip_env: tuple = ()
+
+    @property
+    def subscription(self) -> bool:
+        return self.api == "cli"
 
 
 PROVIDERS: Dict[str, Provider] = {
     "anthropic": Provider("anthropic", "Claude (Anthropic)", "https://api.anthropic.com/v1", "ANTHROPIC_API_KEY", "anthropic"),
     "openai": Provider("openai", "OpenAI (GPT / Codex)", "https://api.openai.com/v1", "OPENAI_API_KEY", "openai"),
     "deepseek": Provider("deepseek", "DeepSeek", "https://api.deepseek.com/v1", "DEEPSEEK_API_KEY", "openai"),
+    "xai": Provider("xai", "Grok (xAI)", "https://api.x.ai/v1", "XAI_API_KEY", "openai"),
+    "claude-cli": Provider("claude-cli", "Claude subscription (Claude Code)", "", "", "cli", "claude",
+                           ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDECODE")),
+    "codex-cli": Provider("codex-cli", "ChatGPT subscription (Codex CLI)", "", "", "cli", "codex",
+                          ("OPENAI_API_KEY", "CODEX_API_KEY")),
+    "grok-cli": Provider("grok-cli", "Grok subscription (Grok CLI)", "", "", "cli", "grok", ("XAI_API_KEY",)),
 }
 
 
@@ -138,7 +152,17 @@ def token_budget() -> int:
 
 
 def _api_key(provider: Provider) -> str:
-    return setting(provider.key_env)
+    return setting(provider.key_env) if provider.key_env else ""
+
+
+def _cli_path(provider: Provider) -> Optional[str]:
+    import shutil
+
+    return shutil.which(provider.command) if provider.command else None
+
+
+def _usable(provider: Provider) -> bool:
+    return bool(_cli_path(provider)) if provider.subscription else bool(_api_key(provider))
 
 
 def parse_route(agent_id: str, value: str) -> Optional[OnlineRoute]:
@@ -162,7 +186,7 @@ def configured_route(agent_id: str) -> Optional[OnlineRoute]:
 def route_for(agent_id: str) -> Optional[OnlineRoute]:
     """The online model this voter will try first, or None when it stays local."""
     route = configured_route(agent_id)
-    if route is None or not _api_key(route.provider):
+    if route is None or not _usable(route.provider):
         return None
     return route
 
@@ -177,7 +201,9 @@ def status_report() -> list[Dict[str, Any]]:
             state = "local"
         elif route is None:
             state = "disabled" if not online_enabled() else "invalid setting"
-        elif not _api_key(route.provider):
+        elif route.provider.subscription and not _cli_path(route.provider):
+            state = f"'{route.provider.command}' not installed"
+        elif not route.provider.subscription and not _api_key(route.provider):
             state = f"no key ({route.provider.key_env})"
         else:
             state = "online"
@@ -268,6 +294,119 @@ def _openai(route: OnlineRoute, key: str, system: str, prompt: str, temperature:
     return OnlineResult(text, int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0))
 
 
+CLI_TIMEOUT_SECONDS = 900.0
+
+
+def _cli_workdir() -> Path:
+    """An empty folder: the tools run here so they never see or touch CONSENSUS files."""
+    from core.paths import SYSTEM_ROOT
+
+    folder = SYSTEM_ROOT / ".local" / "voter-cli"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def cli_command(route: OnlineRoute, system_text: str, prompt_file: Path, system_file: Path,
+                output_file: Path) -> list[str]:
+    """The tool's single-answer mode with its tools, web search and plugins switched off."""
+    exe = _cli_path(route.provider) or route.provider.command
+    model = [] if route.model.lower() == "default" else ["--model", route.model]
+    name = route.provider.name
+    if name == "claude-cli":
+        return [exe, "-p", "--output-format", "json", "--tools", "", "--strict-mcp-config", "--setting-sources", "",
+                "--no-session-persistence", "--system-prompt-file", str(system_file), *model]
+    if name == "codex-cli":
+        return [exe, "exec", "--skip-git-repo-check", "--sandbox", "read-only", "--ephemeral", "--ignore-user-config",
+                "--ignore-rules", "--color", "never", "-o", str(output_file), *model, "-"]
+    return [exe, "--prompt-file", str(prompt_file), "--system-prompt-override", system_text,
+            "--output-format", "plain", "--disable-web-search", "--no-subagents", "--max-turns", "1",
+            "--permission-mode", "dontAsk", *model]
+
+
+def _cli_env(provider: Provider) -> Dict[str, str]:
+    env = {key: value for key, value in os.environ.items() if key not in provider.strip_env}
+    env["NO_COLOR"] = "1"
+    return env
+
+
+def _cli_result(route: OnlineRoute, stdout: str, output_file: Path) -> OnlineResult:
+    import json
+
+    if route.provider.name == "claude-cli":
+        try:
+            data = json.loads(stdout.strip().splitlines()[-1])
+        except (ValueError, IndexError) as exc:
+            raise OnlineModelError(f"{route.label} returned an unreadable answer.") from exc
+        if data.get("is_error"):
+            raise OnlineModelError(f"{route.label} failed: {str(data.get('result') or data.get('subtype'))[:200]}")
+        usage = data.get("usage") or {}
+        tokens_in = sum(int(usage.get(key) or 0) for key in
+                        ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+        return OnlineResult(str(data.get("result") or ""), tokens_in, int(usage.get("output_tokens") or 0))
+    if route.provider.name == "codex-cli":
+        text = output_file.read_text(encoding="utf-8") if output_file.is_file() else ""
+        return OnlineResult(text, 0, 0)
+    return OnlineResult(stdout, 0, 0)
+
+
+def _wait(process, stdin_text: str, timeout: float, control) -> tuple[str, str]:
+    """Wait for the tool while honouring cancellation and the time limit."""
+    import threading
+
+    result: Dict[str, Any] = {}
+    worker = threading.Thread(target=lambda: result.update(out=process.communicate(stdin_text)), daemon=True)
+    worker.start()
+    started = time.monotonic()
+    while worker.is_alive():
+        if control is not None:
+            try:
+                control.check()
+            except BaseException:
+                process.kill()
+                raise
+        if time.monotonic() - started > timeout:
+            process.kill()
+            worker.join(5)
+            raise OnlineModelError("The subscription tool timed out.")
+        worker.join(0.2)
+    return result.get("out", ("", ""))
+
+
+def _call_cli(route: OnlineRoute, system: str, prompt: str, timeout: float, control=None) -> OnlineResult:
+    """Run the subscription tool once. The prompt goes through stdin or a file, never the command line."""
+    import subprocess
+    import tempfile
+
+    if not _cli_path(route.provider):
+        raise OnlineModelError(f"'{route.provider.command}' is not installed for {route.provider.label}.")
+    system_text = system or "You are a tribunal voter. Answer in the requested format."
+    # Codex has no separate system prompt; the instructions lead the prompt instead.
+    stdin_text = f"{system_text}\n\n{prompt}" if route.provider.name == "codex-cli" else prompt
+    with tempfile.TemporaryDirectory(prefix="consensus-voter-") as scratch:
+        folder = Path(scratch)
+        system_file, prompt_file, output_file = folder / "system.txt", folder / "prompt.txt", folder / "answer.txt"
+        system_file.write_text(system_text, encoding="utf-8")
+        prompt_file.write_text(prompt, encoding="utf-8")
+        process = subprocess.Popen(
+            cli_command(route, system_text, prompt_file, system_file, output_file),
+            cwd=_cli_workdir(), env=_cli_env(route.provider), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        try:
+            stdout, stderr = _wait(process, stdin_text, timeout, control)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+        if process.returncode != 0:
+            lines = (stderr or stdout or "").strip().splitlines()
+            message = lines[-1][:200] if lines else f"exit code {process.returncode}"
+            if any(word in message.lower() for word in ("sign", "login", "auth")):
+                message = f"not signed in ({message})"
+            raise OnlineModelError(f"{route.provider.label} failed: {message}")
+        return _cli_result(route, stdout, output_file)
+
+
 def _call(route: OnlineRoute, system: str, prompt: str, temperature: Optional[float], max_tokens: int,
           timeout: float, post: Poster) -> OnlineResult:
     key = _api_key(route.provider)
@@ -292,7 +431,15 @@ def complete(route: OnlineRoute, system: str, prompt: str, *, temperature: Optio
              post: Poster = _post) -> OnlineResult:
     """Ask the online model once. A cancelled submission stops waiting at once."""
     max_tokens = max(int(max_tokens), MIN_OUTPUT_TOKENS)
-    if control is None:
+    if route.provider.subscription:
+        if control is not None:
+            control.check()
+            control.progress("WAITING")
+        result = _call_cli(route, system, prompt, max(timeout, CLI_TIMEOUT_SECONDS), control)
+        if control is not None:
+            control.check()
+            control.progress("GENERATING")
+    elif control is None:
         result = _call(route, system, prompt, temperature, max_tokens, timeout, post)
     else:
         control.check()

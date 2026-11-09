@@ -1,33 +1,49 @@
 # Online models for tribunal voters
 
 Each tribunal voter (RATIONALIS, AETERNUM, BELLATOR) can use an online model instead of its
-local Msty model. ARBITER stays deterministic, and AURELIUS is not affected.
+local Msty model. ARBITER stays deterministic, and AURELIUS is not affected. Giving each voter
+a model from a different company gives the tribunal different reasoning styles.
 
-Supported providers:
+## Providers
 
-| Provider | Setting prefix | Key variable | Examples |
+**Subscriptions (no API bill).** CONSENSUS runs the company's own command-line tool in its
+single-answer mode. The tool must be installed and signed in with your subscription. Each
+deliberation makes 3 calls per voter, which count toward your plan's usage limits.
+
+| Setting | Tool | Signed in with | Sign in once with |
 |---|---|---|---|
-| Anthropic (Claude) | `anthropic:` | `ANTHROPIC_API_KEY` | `anthropic:claude-sonnet-5-5`, `anthropic:claude-opus-5-5` |
-| OpenAI (GPT / Codex) | `openai:` | `OPENAI_API_KEY` | an OpenAI model ID from your API dashboard |
-| DeepSeek | `deepseek:` | `DEEPSEEK_API_KEY` | `deepseek:deepseek-chat`, `deepseek:deepseek-reasoner` |
+| `claude-cli:sonnet` (or `opus`, `haiku`) | Claude Code (`claude`) | Claude Pro/Max | `claude` then `/login` |
+| `codex-cli:default` (or a model name) | Codex CLI (`codex`) | ChatGPT Plus/Pro | `codex login` |
+| `grok-cli:default` | Grok CLI (`grok`) | SuperGrok / X Premium | `grok login` |
 
-API access is billed separately from a Claude or ChatGPT subscription. You need an API key
-from each provider's console.
+The tools run in an empty folder (`.local\voter-cli`) with their own tools, web search and
+plugins switched off. Any API key for the same company is removed from their environment so
+that the subscription is used.
+
+**Paid APIs.** You need a key from the provider's console. A deliberation is 9 calls of
+roughly 4,000 to 8,000 input tokens each.
+
+| Setting | Key variable | Rough cost per deliberation |
+|---|---|---|
+| `anthropic:claude-sonnet-5-5` | `ANTHROPIC_API_KEY` | $0.10 to $0.50 |
+| `openai:<model id>` | `OPENAI_API_KEY` | $0.10 to $0.50 |
+| `deepseek:deepseek-chat` (or `deepseek-reasoner`) | `DEEPSEEK_API_KEY` | about $0.01 to $0.02 |
+| `xai:<grok model id>` | `XAI_API_KEY` | depends on the model |
 
 ## Setup
 
 Add the settings to the gitignored `.env` file in the CONSENSUS folder (see `.env.example`):
 
 ```
-CONSENSUS_ONLINE_MODEL_RATIONALIS=anthropic:claude-sonnet-5-5
+CONSENSUS_ONLINE_MODEL_RATIONALIS=claude-cli:sonnet
+CONSENSUS_ONLINE_MODEL_AETERNUM=codex-cli:default
 CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-chat
-ANTHROPIC_API_KEY=<your key>
 DEEPSEEK_API_KEY=<your key>
 ```
 
-A voter without a setting, or whose provider has no key, stays local. The settings are read
-on every call, so the next deliberation uses a change without restarting CONSENSUS. A value
-set in the shell overrides the one in `.env`.
+A voter without a setting, whose provider has no key, or whose tool is not installed stays
+local. The settings are read on every call, so the next deliberation uses a change without
+restarting CONSENSUS. A value set in the shell overrides the one in `.env`.
 
 To check the setup:
 
@@ -41,15 +57,14 @@ request to each online voter's model.
 
 ## Behaviour
 
-- **Fallback:** a failed online call (no network, rejected key, rate limit, an unfinished or
-  unparseable answer) is logged as `online_model_fallback`, and the voter answers with its
-  local model. The transcript records the online attempt and marks the turn as a model fallback.
+- **Fallback:** a failed online call (no network, not signed in, rejected key, usage limit,
+  an unfinished or unparseable answer) is logged as `online_model_fallback`, and the voter
+  answers with its local model. The transcript records the online attempt.
 - **Privacy:** an online voter's prompt leaves out the vault brief (`50 Agents/Shared
   Context.md`). The proposal, prior CONSENSUS decisions, public references and the BELLATOR and
   AETERNUM data packets are still sent. Set `CONSENSUS_ONLINE_SHARE_PERSONAL=1` to include the brief.
-- **Cost limit:** `CONSENSUS_ONLINE_TOKEN_BUDGET` (default 250000) caps the input plus output
-  tokens one deliberation may use online. Once it is reached, later calls use the local model.
-  A full deliberation is 9 calls of roughly 4,000 to 8,000 input tokens each.
+- **Cost limit:** `CONSENSUS_ONLINE_TOKEN_BUDGET` (default 250000) caps the tokens one
+  deliberation may use online. Once it is reached, later calls use the local model.
 - **Switch off:** `CONSENSUS_ONLINE_MODELS=0` sends every voter back to its local model.
 - **Keys** are sent only in the provider's request header and never appear in logs, errors,
   transcripts or the status command.

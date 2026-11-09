@@ -198,3 +198,36 @@ def test_token_budget_sends_later_rounds_to_the_local_model(monkeypatch):
     transcript = _deliberate(MstyRuntime(RuntimeConfig(base_model="base")))
     backends = [turn["backend"] for turn in transcript if turn["agent_id"] == AETERNUM]
     assert backends == ["online:openai", "local-test", "local-test"]
+
+
+def test_subscription_tools_route_when_installed_and_never_get_api_keys(monkeypatch, tmp_path):
+    monkeypatch.setattr("shutil.which", lambda name: f"C:/tools/{name}.exe" if name in {"claude", "codex"} else None)
+    monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "claude-cli:sonnet")
+    monkeypatch.setenv(online.ENV_PREFIX + AETERNUM, "codex-cli:default")
+    monkeypatch.setenv(online.ENV_PREFIX + BELLATOR, "grok-cli:default")
+    assert online.route_for(RATIONALIS).provider.subscription
+    assert online.route_for(AETERNUM).label == "codex-cli:default"
+    assert online.route_for(BELLATOR) is None
+    assert {row["agent_id"]: row["state"] for row in online.status_report()}[BELLATOR] == "'grok' not installed"
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", KEY)
+    assert "ANTHROPIC_API_KEY" not in online._cli_env(online.PROVIDERS["claude-cli"])
+
+    files = [tmp_path / name for name in ("prompt.txt", "system.txt", "answer.txt")]
+    claude = online.cli_command(online.route_for(RATIONALIS), "sys", *files)
+    codex = online.cli_command(online.route_for(AETERNUM), "sys", *files)
+    assert claude[1] == "-p" and claude[claude.index("--tools") + 1] == "" and "--model" in claude
+    assert codex[-1] == "-" and "--model" not in codex and "read-only" in codex
+
+
+def test_subscription_answers_are_read(tmp_path):
+    claude = online.parse_route(RATIONALIS, "claude-cli:sonnet")
+    stdout = json.dumps({"is_error": False, "result": "VOTE: APPROVE",
+                         "usage": {"input_tokens": 3, "cache_read_input_tokens": 1000, "output_tokens": 9}})
+    result = online._cli_result(claude, "log line\n" + stdout, tmp_path / "none")
+    assert (result.text, result.input_tokens, result.output_tokens) == ("VOTE: APPROVE", 1003, 9)
+    with pytest.raises(online.OnlineModelError):
+        online._cli_result(claude, json.dumps({"is_error": True, "result": "limit reached"}), tmp_path / "none")
+    answer = tmp_path / "answer.txt"
+    answer.write_text("VOTE: DENY", encoding="utf-8")
+    assert online._cli_result(online.parse_route(AETERNUM, "codex-cli:default"), "", answer).text == "VOTE: DENY"
