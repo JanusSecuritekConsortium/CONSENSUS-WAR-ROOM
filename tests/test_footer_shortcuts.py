@@ -31,6 +31,7 @@ def test_footer_lists_operator_shortcuts() -> None:
     assert "Ctrl+P DIRECTORATE" in text
     assert "Ctrl+H History" in text
     assert "Ctrl+E Export" in text
+    assert "Ctrl+M World Map" in text
 
 
 if __name__ == "__main__":
@@ -48,12 +49,12 @@ def test_footer_clicks_and_keyboard_share_actions(monkeypatch):
     page = FakePage()
     gui._render_page(page, state)
     buttons = page.controls[0].content.controls[2].content.controls[1].content.controls
-    assert len(buttons) == 6
+    assert len(buttons) == 7
     actions = []
     monkeypatch.setattr(gui, "_render_page", lambda *args: None)
     monkeypatch.setattr(gui, "execute_command_palette_action", lambda state, action: actions.append(action))
-    for button, key, attribute in zip(buttons, ("K", "D", "P", "T", "H", "E"),
-                                      ("command_palette_open", "diagnostics_drawer_open", "directorate_open", None, "proposal_history_open", None)):
+    for button, key, attribute in zip(buttons, ("K", "D", "P", "T", "H", "E", "M"),
+                                      ("command_palette_open", "diagnostics_drawer_open", "directorate_open", None, "proposal_history_open", None, "world_map_open")):
         assert button.on_click is not None
         button.on_click(None)
         if attribute:

@@ -95,6 +95,8 @@ from ui.components.status_panel import build_status_panel
 from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph_lines, telemetry_summary_lines
 from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
+from ui.components.world_map_view import build_world_map_overlay
+from core.intelligence.world_events import build_world_map_points
 from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
 from ui.war_room_runtime import (
@@ -218,6 +220,9 @@ class GuiState:
     proposal_file_mtime: float | None = None
     ui_interaction_hold_until: float = 0.0
     bellator_intelligence_diagnostics: Dict[str, object] = field(default_factory=dict)
+    world_map_open: bool = False
+    world_map_busy: bool = False
+    world_map_data: Dict[str, Any] = field(default_factory=dict)
     render_in_progress: bool = False
     render_lock: Any = field(default_factory=threading.RLock, repr=False)
     live_panels: Dict[str, Any] = field(default_factory=dict, repr=False)
@@ -518,7 +523,25 @@ def refresh_gui_status(state: GuiState, preserve_monolith_state: bool = True) ->
 
 def refresh_bellator_intelligence_status(state: GuiState) -> Dict[str, object]:
     state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload()
+    if not state.world_map_busy:
+        try:
+            state.world_map_data = build_world_map_points(live=False)  # cached events only: no network here
+        except Exception as exc:
+            log_error("gui_world_map_cache_error", exc)
     return state.bellator_intelligence_diagnostics
+
+
+def refresh_world_map_for_gui(state: GuiState) -> Dict[str, Any]:
+    """Fetch GDELT events if the cache is older than 15 minutes. Network: call from a worker thread."""
+    try:
+        state.world_map_data = build_world_map_points(live=True)
+    except Exception as exc:
+        log_error("gui_world_map_refresh_error", exc)
+    finally:
+        state.world_map_busy = False
+    log_event("gui_world_map_refresh", {key: state.world_map_data.get(key)
+                                        for key in ("feed_count", "news_count", "news_status")})
+    return state.world_map_data
 
 
 def refresh_bellator_intelligence_for_gui(state: GuiState) -> Dict[str, object]:
@@ -2131,7 +2154,7 @@ def build_gui_layout(
                     bgcolor=theme.surface_color,
                     data={"role": "footer_command", "key": key},
                 )
-                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"))
+                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"), ("M", "World Map"))
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=0,
@@ -2296,6 +2319,8 @@ def build_gui_layout(
                     timeline_events=state.timeline_events,
                     bellator_intelligence=state.bellator_intelligence_diagnostics,
                     refresh_bellator_intelligence=refresh_bellator_intelligence,
+                    world_map=state.world_map_data,
+                    world_map_busy=state.world_map_busy,
                     directorate_panel=build_activity(theme, state.directorate, state.directorate_collapsed,
                                                     toggle_directorate, open_directorate),
                 )),
@@ -2736,6 +2761,24 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
         def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
             refresh_bellator_intelligence_for_gui(state)
             _render_page(page, state)
+            refresh_world_map()
+
+        def refresh_world_map(_: ft.ControlEvent | None = None) -> None:
+            if state.world_map_busy:
+                return
+            state.world_map_busy = True
+            _render_page(page, state)
+
+            def worker() -> None:
+                refresh_world_map_for_gui(state)
+                if not state.ui_stopped.is_set():
+                    _render_page(page, state)
+
+            page.run_thread(worker)
+
+        def close_world_map(_: ft.ControlEvent | None = None) -> None:
+            state.world_map_open = False
+            _render_page(page, state)
 
         def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
             set_aurelius_voice_loop(state, bool(event.control.value))
@@ -2908,6 +2951,12 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     pass
                 _render_page(page, state)
                 _set_submission_feedback(page, state, state.operator_status)
+            elif key == "M":
+                state.world_map_open = not state.world_map_open
+                log_event("gui_world_map", {"open": state.world_map_open, "theme": state.theme_key})
+                _render_page(page, state)
+                if state.world_map_open:
+                    refresh_world_map()
 
         def on_keyboard_event(event) -> None:
             key = str(getattr(event, "key", "") or "").upper()
@@ -2983,6 +3032,7 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 "directorate_boot",
                 "directorate_desk",
                 "live_deliberation",
+                "world_map",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
             if state.deliberation_viewer_open:
@@ -3016,6 +3066,15 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     query=state.directorate_search, on_search=search_directorate),
                     top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
                     bgcolor=state.theme.background_color, data="directorate_desk"))
+            if state.world_map_open:
+                overlay.append(ft.Container(
+                    build_world_map_overlay(state.theme, state.world_map_data, busy=state.world_map_busy,
+                                            page_width=getattr(page, "width", None),
+                                            on_refresh=refresh_world_map, on_close=close_world_map),
+                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                    border=ft.border.all(2, state.theme.accent_color),
+                    bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data="world_map"))
             if state.diagnostics_drawer_open:
                 overlay.append(
                     ft.Container(

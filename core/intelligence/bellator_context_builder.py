@@ -242,6 +242,8 @@ def _compact_events(events: Iterable[Dict[str, Any]], limit: int) -> List[Dict[s
                 "event_type": event.get("event_type"),
                 "country": event.get("country"),
                 "region": event.get("region"),
+                "lat": event.get("lat"),
+                "lon": event.get("lon"),
                 "timestamp": event.get("timestamp"),
                 "severity": event.get("severity"),
                 "confidence": event.get("confidence"),

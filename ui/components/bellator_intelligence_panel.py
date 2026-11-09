@@ -33,7 +33,11 @@ def build_bellator_intelligence_panel(
     theme: Theme,
     diagnostics: Dict[str, Any] | None,
     on_refresh=None,
+    world_map: Dict[str, Any] | None = None,
+    world_map_busy: bool = False,
 ) -> ft.Control:
+    from ui.components.world_map_view import build_mini_map
+
     rows = [
         ft.Text(line, color=theme.text_color, font_family=theme.font_family, selectable=True, size=10, max_lines=2)
         for line in format_bellator_intelligence_diagnostics(diagnostics)
@@ -59,6 +63,7 @@ def build_bellator_intelligence_panel(
         [
             ft.Row(header_controls, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             *rows,
+            build_mini_map(theme, world_map, world_map_busy),
         ],
         spacing=3,
     )

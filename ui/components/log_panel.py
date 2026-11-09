@@ -120,6 +120,8 @@ def build_log_panel(
     bellator_intelligence: dict | None = None,
     refresh_bellator_intelligence=None,
     directorate_panel=None,
+    world_map: dict | None = None,
+    world_map_busy: bool = False,
 ) -> ft.Control:
     return ft.Container(
         content=ft.Column(
@@ -137,7 +139,8 @@ def build_log_panel(
                 ft.Text("RECENT DECISIONS", color=theme.accent_color, weight=ft.FontWeight.BOLD),
                 _decision_rows(theme, decisions),
                 ft.Divider(color=theme.secondary_color),
-                build_bellator_intelligence_panel(theme, bellator_intelligence, refresh_bellator_intelligence),
+                build_bellator_intelligence_panel(theme, bellator_intelligence, refresh_bellator_intelligence,
+                                                  world_map=world_map, world_map_busy=world_map_busy),
                 ft.Divider(color=theme.secondary_color),
                 ft.Text("TRIBUNAL TIMELINE", color=theme.primary_color, weight=ft.FontWeight.BOLD, size=12),
                 _timeline_rows(theme, timeline_events or []),
