@@ -155,10 +155,32 @@ def _api_key(provider: Provider) -> str:
     return setting(provider.key_env) if provider.key_env else ""
 
 
+_which_cache: Dict[str, tuple[float, Optional[str]]] = {}
+
+
 def _cli_path(provider: Provider) -> Optional[str]:
+    """The tool's path; looked up at most once a minute, because the GUI asks on every refresh."""
     import shutil
 
-    return shutil.which(provider.command) if provider.command else None
+    if not provider.command:
+        return None
+    now = time.monotonic()
+    cached = _which_cache.get(provider.command)
+    if cached is None or now - cached[0] > 60:
+        cached = (now, shutil.which(provider.command))
+        _which_cache[provider.command] = cached
+    return cached[1]
+
+
+SHORT_NAMES = {"anthropic": "Claude", "openai": "OpenAI", "deepseek": "DeepSeek", "xai": "Grok",
+               "claude-cli": "Claude", "codex-cli": "ChatGPT", "grok-cli": "Grok"}
+
+
+def display_name(route: OnlineRoute) -> str:
+    """A short card label, e.g. "Claude sonnet · subscription" or "DeepSeek deepseek-chat · API"."""
+    model = "" if route.model.lower() == "default" else f" {route.model}"
+    kind = "subscription" if route.provider.subscription else "API"
+    return f"{SHORT_NAMES.get(route.provider.name, route.provider.name)}{model} · {kind}"
 
 
 def _usable(provider: Provider) -> bool:

@@ -7,6 +7,7 @@ from typing import Dict
 import flet as ft
 
 from config.names import ARBITER, TRIBUNAL_AGENT_IDS
+from core.llm import online as online_models
 from core.models import NodeIdentity, Theme
 from ui.directorate import contrast_ratio
 
@@ -214,6 +215,11 @@ def build_monolith_panel(
         status = statuses.get(key, "ONLINE")
         model = nodes[key].model if key in nodes else "operator"
         compact_model = _compact_model_name(model)
+        route = online_models.route_for(key)
+        if route is not None:
+            # The voter tries its online model first and falls back to the local one.
+            model = f"Online: {route.label}. Falls back to the local model {model}."
+            compact_model = online_models.display_name(route)
         color = status_color(theme, status)
         border_color, border_width = card_border(theme, status, (feedback or {}).get(key), now,
                                                 reduced_motion=reduced_motion)

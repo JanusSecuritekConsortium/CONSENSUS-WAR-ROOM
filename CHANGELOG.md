@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.1.1 - Online Model Names on the Voter Cards (2026-11-09)
+
+### Changed
+- A voter's MONOLITH STATUS card names its online model, e.g. "Claude sonnet · subscription".
+  Hovering over it shows the local model it falls back to.
+
 ## 9.1.0 - Subscription Voters and a Sharper Map (2026-11-09)
 
 ### Added

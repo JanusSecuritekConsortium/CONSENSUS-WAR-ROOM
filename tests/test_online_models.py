@@ -25,6 +25,7 @@ def clean(monkeypatch):
                  *(online.ENV_PREFIX + agent for agent in (RATIONALIS, AETERNUM, BELLATOR, AURELIUS))):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("CONSENSUS_ONLINE_ENV_FILE", "")
+    online._which_cache.clear()
     for module in ("core.voting.orchestrator", "integrations.msty.runtime"):
         monkeypatch.setattr(module + ".log_event", lambda *a, **kw: None)
         monkeypatch.setattr(module + ".log_error", lambda *a, **kw: None)
@@ -231,3 +232,27 @@ def test_subscription_answers_are_read(tmp_path):
     answer = tmp_path / "answer.txt"
     answer.write_text("VOTE: DENY", encoding="utf-8")
     assert online._cli_result(online.parse_route(AETERNUM, "codex-cli:default"), "", answer).text == "VOTE: DENY"
+
+
+def test_monolith_cards_name_the_online_model(monkeypatch):
+    from tests.helpers.gui_harness import make_gui_state
+    from ui.components.monolith_panel import build_monolith_panel
+
+    monkeypatch.setattr("shutil.which", lambda name: f"C:/tools/{name}.exe")
+    online._which_cache.clear()
+    monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "claude-cli:sonnet")
+    monkeypatch.setenv(online.ENV_PREFIX + BELLATOR, "deepseek:deepseek-chat")  # no key: stays local
+    panel = build_monolith_panel(make_gui_state("janus").theme, DEFAULT_NODES, {})
+    cards = {}
+
+    def walk(control):
+        data = getattr(control, "data", None)
+        if isinstance(data, dict) and data.get("role") == "monolith_card":
+            cards[data["agent_id"]] = data["compact_model"]
+        for child in [getattr(control, "content", None), *(getattr(control, "controls", None) or [])]:
+            if child is not None:
+                walk(child)
+    walk(panel)
+    assert cards[RATIONALIS] == "Claude sonnet · subscription"
+    assert "·" not in cards[BELLATOR] and "·" not in cards[AETERNUM]
+    online._which_cache.clear()
