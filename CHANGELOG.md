@@ -1,8 +1,19 @@
 # Changelog
 
-## 8.1.0 - World Map and Online Voters (2026-11-09)
+## 12.0.0 - World Map and Online Voters (2026-11-09)
 
-Release of the work since 8.0.0, including both "Unreleased" sections below.
+First numbered release since 8.0.0. A major version marks a big change: an overhaul, a new
+theme or identity, or a new way the tribunal works. Three such changes went out without
+their own numbers; counting them, this release is 12.0.0:
+
+- 9.0.0 (2026-10-09): three-round deliberation (assessment, critique, revision) with traceable
+  peer arguments, and the consolidated Directorate UI.
+- 10.0.0 (2026-10-26): C2 corporate identity and A3 desktop emblem, submission cancel and retry,
+  evidence passage audit.
+- 11.0.0 (2026-11-04): owner-chosen characters for the three voters, tribunal outcome tracking
+  and precedent from real decisions only, CONSENSUS running from the portable SSD.
+
+Their details are in the two "Unreleased" sections below and in the git history.
 
 ### Added
 - BELLATOR world map: an ASCII mini map in the BELLATOR INTELLIGENCE panel and a full-screen map
