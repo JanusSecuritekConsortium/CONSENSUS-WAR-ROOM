@@ -1,5 +1,24 @@
 # Changelog
 
+## 8.1.0 - World Map and Online Voters (2026-11-09)
+
+Release of the work since 8.0.0, including both "Unreleased" sections below.
+
+### Added
+- BELLATOR world map: an ASCII mini map in the BELLATOR INTELLIGENCE panel and a full-screen map
+  (footer button or Ctrl+M) showing BELLATOR feed events and GDELT news events by severity.
+- Online models for tribunal voters: Claude (Anthropic), OpenAI and DeepSeek, set per voter in
+  `.env`, with local fallback, a per-deliberation token budget and the vault brief withheld
+  (see `docs/ONLINE_MODELS.md`).
+
+### Changed
+- The boot console hides once the War Room window opens instead of staying behind it.
+- The world map is centred in the full-screen view and in its panel.
+- The system log rotates at 25 MB into kept, readable parts.
+
+### Fixed
+- GitHub CI: window tests get their system libraries; tests no longer touch Aurelius' private store.
+
 ## Unreleased - Working-tree consolidation 2026-10-26
 
 Review branch `consolidate/2026-10-26-working-tree`, based on `e851f59`. Commits

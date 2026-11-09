@@ -3324,6 +3324,8 @@ def run_flet_gui(
             page.update()
             return
         state.directorate.emit("INTERFACE", "STARTUP_CHECK", "AVAILABLE", "Flet interface mounted", check=True)
+        from ui.console_window import hide_boot_console
+        hide_boot_console()
         marker = os.getenv("CONSENSUS_GUI_READY_MARKER")
         if marker:
             Path(marker).write_text("ready", encoding="utf-8")
