@@ -1,6 +1,6 @@
 # Changelog
 
-## 12.1.0 - Subscription Voters and a Sharper Map (2026-11-09)
+## 9.1.0 - Subscription Voters and a Sharper Map (2026-11-09)
 
 ### Added
 - Voters can run on your Claude, ChatGPT or Grok subscription through Claude Code, Codex CLI
@@ -11,20 +11,12 @@
 - The world map is bigger and sharper: 200x48 characters full screen (was 150x44) and 76x20 in
   the BELLATOR panel (was 60x16), in the same style.
 
-## 12.0.0 - World Map and Online Voters (2026-11-09)
+## 9.0.0 - World Map and Online Voters (2026-11-09)
 
-First numbered release since 8.0.0. A major version marks a big change: an overhaul, a new
-theme or identity, or a new way the tribunal works. Three such changes went out without
-their own numbers; counting them, this release is 12.0.0:
-
-- 9.0.0 (2026-10-09): three-round deliberation (assessment, critique, revision) with traceable
-  peer arguments, and the consolidated Directorate UI.
-- 10.0.0 (2026-10-26): C2 corporate identity and A3 desktop emblem, submission cancel and retry,
-  evidence passage audit.
-- 11.0.0 (2026-11-04): owner-chosen characters for the three voters, tribunal outcome tracking
-  and precedent from real decisions only, CONSENSUS running from the portable SSD.
-
-Their details are in the two "Unreleased" sections below and in the git history.
+First numbered release since 8.0.0 (2026-07-19). It also releases the work recorded in the two
+"Unreleased" sections below (three-round deliberation, Directorate UI, C2 identity, voter
+characters, outcome tracking, portable SSD). The version was briefly labelled 8.1.0 and then
+12.0.0 on 2026-11-09; neither was a separate release.
 
 ### Added
 - BELLATOR world map: an ASCII mini map in the BELLATOR INTELLIGENCE panel and a full-screen map
