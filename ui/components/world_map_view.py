@@ -52,13 +52,17 @@ def map_status_line(data: Dict[str, Any] | None, busy: bool = False) -> str:
 
 def build_mini_map(theme: Theme, data: Dict[str, Any] | None, busy: bool = False) -> ft.Control:
     width, height = MINI_SIZE
-    return ft.Column(
-        [
-            map_text(theme, data, width, height, size=7),
-            ft.Text(map_status_line(data, busy), color=theme.text_color, size=9, max_lines=2,
-                    font_family=theme.font_family),
-        ],
-        spacing=2,
+    return ft.Container(
+        ft.Column(
+            [
+                map_text(theme, data, width, height, size=7),
+                ft.Text(map_status_line(data, busy), color=theme.text_color, size=9, max_lines=2,
+                        font_family=theme.font_family, text_align=ft.TextAlign.CENTER),
+            ],
+            spacing=2,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+        alignment=ft.alignment.top_center,
         data={"role": "world_mini_map"},
     )
 
@@ -94,18 +98,21 @@ def build_world_map_overlay(theme: Theme, data: Dict[str, Any] | None, *, busy: 
                     ft.TextButton("CLOSE", on_click=on_close, style=button_style),
                 ]
             ),
-            ft.Text(map_status_line(data, busy), color=theme.text_color, size=10, font_family=theme.font_family),
+            ft.Text(map_status_line(data, busy), color=theme.text_color, size=10, font_family=theme.font_family,
+                    text_align=ft.TextAlign.CENTER),
             ft.Container(map_text(theme, data, width, height, size=size, regions=True),
                          border=ft.border.all(1, theme.secondary_color), padding=4),
-            ft.Text(LEGEND, color=theme.text_color, size=10, font_family=theme.font_family),
+            ft.Text(LEGEND, color=theme.text_color, size=10, font_family=theme.font_family, text_align=ft.TextAlign.CENTER),
             ft.Text("GDELT events are machine-coded from news reports and appear on the map only; BELLATOR does not "
-                    "vote on them.", color=theme.text_color, size=9, italic=True),
+                    "vote on them.", color=theme.text_color, size=9, italic=True, text_align=ft.TextAlign.CENTER),
             ft.Divider(color=theme.secondary_color),
-            ft.Text("STRONGEST EVENTS", color=theme.accent_color, weight=ft.FontWeight.BOLD, size=11),
-            *_event_rows(theme, data),
+            # The list keeps its rows aligned with each other; the block as a whole is centred.
+            ft.Column([ft.Text("STRONGEST EVENTS", color=theme.accent_color, weight=ft.FontWeight.BOLD, size=11),
+                       *_event_rows(theme, data)], spacing=4),
         ],
         spacing=4,
         scroll=ft.ScrollMode.AUTO,
         expand=True,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         data={"role": "world_map_overlay"},
     )
