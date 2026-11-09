@@ -13,6 +13,12 @@ CONSENSUS War Room is a Windows-first, local multi-agent tribunal for proposal
 review. RATIONALIS, AETERNUM, and BELLATOR assess a proposal from different
 perspectives; the ARBITER combines their votes into an auditable verdict.
 
+Each voter runs on a local model by default, or online on Claude, ChatGPT or Grok through
+your own subscription, or on a paid API such as DeepSeek. Giving the three voters models
+from different companies gives the tribunal different reasoning styles. A failed online call
+falls back to a shared backup model and then to the local model. See
+[online models](docs/ONLINE_MODELS.md).
+
 Each proposal now runs three rounds. All monoliths first assess it independently;
 then each critiques the complete set of initial assessments; finally each reads
 all critiques and submits a revised final vote. Dissent is preserved. The ARBITER
@@ -87,7 +93,7 @@ Diagnostics → System Checks.
 | --- | --- |
 | Tribunal | Deterministic classification, quorum, confidence, review triggers, voting, and decision traces |
 | Desktop UI | Flet War Room with proposal history, verdict export, diagnostics, telemetry, and six theme families |
-| Providers | Msty-first local routing, Ollama-compatible options, readiness checks, and controlled mock fallback |
+| Providers | Msty-first local routing, Ollama-compatible options, online voters (subscriptions or APIs), readiness checks, and controlled fallback |
 | Data | RSS-first cached enrichment with explicit unavailable/degraded states |
 | API | Local REST decisions and analytics plus status-only WebSocket lifecycle events |
 | Packaging | PyInstaller-based Windows executable and packaged self-test |
@@ -210,12 +216,16 @@ boundary.
 ## Operator Features
 
 The GUI command palette opens with `Ctrl+K`. Common shortcuts are `Ctrl+D` for
-diagnostics, `Ctrl+T` to cycle themes, `Ctrl+H` for proposal history, and
-`Ctrl+E` to export the latest verdict.
+diagnostics, `Ctrl+T` to cycle themes, `Ctrl+H` for proposal history,
+`Ctrl+E` to export the latest verdict, and `Ctrl+M` for the BELLATOR world map.
 
 The active release provides:
 
 - deterministic proposal classification and multi-agent voting;
+- voters on local models or online (Claude, ChatGPT and Grok subscriptions; Anthropic,
+  OpenAI, DeepSeek and xAI APIs), with fallback to a backup model and the local model;
+- an ASCII world map of BELLATOR feed events and GDELT news events, in the side panel
+  and full screen;
 - linked proposal, verdict, and simulation records;
 - Markdown, JSON, dossier, and analytics CSV exports;
 - deterministic geopolitical, economic, cyber, and security scenario scaffolds;
