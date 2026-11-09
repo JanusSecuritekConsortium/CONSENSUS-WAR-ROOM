@@ -10,6 +10,15 @@ if not os.environ.get("CONSENSUS_TEST_DECISION_DIR"):
     os.environ["CONSENSUS_TEST_DECISION_DIR"] = _folder
     atexit.register(shutil.rmtree, _folder, ignore_errors=True)
 
+# Aurelius' private store (accounts, interactions, voice relay) must not receive test data either.
+if not os.environ.get("AURELIUS_PRIVATE_DIR"):
+    _private = tempfile.mkdtemp(prefix="consensus-test-aurelius-private-")
+    os.environ["AURELIUS_PRIVATE_DIR"] = _private
+    atexit.register(shutil.rmtree, _private, ignore_errors=True)
+
+# The world map downloads GDELT news events; tests must not reach the network for them.
+os.environ.setdefault("BELLATOR_GDELT_EVENTS", "0")
+
 
 # ---- tests that open real CONSENSUS windows ---------------------------------------------------
 # A plain local `pytest` must not put the desktop app on the owner's screen. Tests marked

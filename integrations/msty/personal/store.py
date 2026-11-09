@@ -1,10 +1,13 @@
 from pathlib import Path
 import json
+import os
 import re
 
 from core.paths import on_portable_drive
 
-ROOT = on_portable_drive('.codex-work', 'aurelius-private')
+# AURELIUS_PRIVATE_DIR moves the private store; the test suite points it at a temporary folder
+# so tests never write into the owner's real store.
+ROOT = Path(os.environ['AURELIUS_PRIVATE_DIR']) if os.environ.get('AURELIUS_PRIVATE_DIR') else on_portable_drive('.codex-work', 'aurelius-private')
 CONFIG = ROOT / 'accounts.json'
 
 
