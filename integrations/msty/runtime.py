@@ -83,6 +83,7 @@ class MstyRuntime:
         self.telemetry_hooks = telemetry_hooks or []
         self.last_execution: Dict[str, Dict[str, Any]] = {}
         self._deliberation_models: Dict[tuple[str, str], tuple[str, str]] = {}
+        self._online_tokens: Dict[str, int] = {}
 
     def send_to_agent(
         self,
@@ -104,6 +105,28 @@ class MstyRuntime:
             or session.profile.model_preference
         )
         execution: Dict[str, Any] = {}
+        online_attempts: list[Dict[str, Any]] = []
+
+        if self.config.backend != "mock":
+            from core.llm import online
+
+            route = online.route_for(session.agent_id)
+            if route is not None:
+                try:
+                    response, execution = self._generate_online_response(
+                        route, session, rendered_prompt, context or {}, requested_model,
+                    )
+                    self.last_execution[session.agent_id] = {"status": "ready", **execution}
+                    self._record_telemetry(session, prompt, response, started, route.backend, "ready")
+                    return response
+                except SubmissionCancelled:
+                    self.last_execution[session.agent_id] = {"status": "cancelled", "model": route.label, "backend": route.backend}
+                    raise
+                except Exception as exc:
+                    online_attempts.append({"model": route.label, "backend": route.backend, "status": "failed",
+                                            "error_type": type(exc).__name__, "error": str(exc)})
+                    log_event("online_model_fallback", {"agent_id": session.agent_id, "online_model": route.label,
+                                                        "fallback": requested_model, "error": str(exc)}, level="WARNING")
 
         try:
             if self.config.backend == "mock":
@@ -125,6 +148,9 @@ class MstyRuntime:
                 provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
             if not response.strip():
                 raise RuntimeError("Provider returned an empty response")
+            if online_attempts:
+                execution = {**execution, "model_fallback": True, "model_fallback_reason": "online_model_failed",
+                             "model_attempts": online_attempts + list(execution.get("model_attempts", []))}
             self.last_execution[session.agent_id] = {
                 "status": "ready", "model": "mock" if provider == "mock" else requested_model, "backend": provider,
                 **execution,
@@ -166,6 +192,39 @@ class MstyRuntime:
             self.last_execution[session.agent_id] = {"status": "degraded", "model": "mock", "backend": "mock-fallback"}
             self._record_telemetry(session, prompt, response, started, "mock-fallback", "degraded")
             return response
+
+    def _generate_online_response(
+        self, route, session: MstySession, prompt: str, context: Dict[str, Any], requested_model: str,
+    ) -> tuple[str, Dict[str, Any]]:
+        from core.llm import online
+
+        deliberation_id = str(context.get("session_id") or "")
+        used = self._online_tokens.get(deliberation_id, 0)
+        budget = online.token_budget()
+        if deliberation_id and used >= budget:
+            raise online.OnlineModelError(f"Online token budget for this deliberation is used up ({used}/{budget}).")
+        configured_node = apply_node_overrides(DEFAULT_NODES, self.config.node_overrides).get(session.agent_id)
+        system_prompt = str(context.get("system_prompt") or (configured_node.prompt if configured_node else session.profile.system_prompt))
+        started = time.perf_counter()
+        result = online.complete(
+            route, system_prompt, prompt + f"\n\nExecution model: {route.label}. Preserve your assigned monolith instructions and parameters.",
+            temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
+            max_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
+            control=self.generation_control,
+        )
+        if deliberation_id:
+            self._online_tokens[deliberation_id] = used + result.input_tokens + result.output_tokens
+        if context.get("require_real_model") and configured_node:
+            from core.voting.parser import parse_vote
+            parsed = parse_vote(result.text, configured_node, time.perf_counter() - started, route.backend, context)
+            if parsed.validation_errors:
+                raise ValueError("Invalid deliberation response: " + ", ".join(parsed.validation_errors))
+        attempt = {"model": route.label, "backend": route.backend, "status": "completed",
+                   "response_time": time.perf_counter() - started,
+                   "input_tokens": result.input_tokens, "output_tokens": result.output_tokens}
+        log_event("online_model_call", {"agent_id": session.agent_id, "local_model": requested_model, **attempt})
+        return result.text, {"model": route.label, "backend": route.backend, "model_fallback": False,
+                             "model_fallback_reason": "", "model_attempts": [attempt]}
 
     def _generate_real_response(
         self, api_module, session: MstySession, preferred: str, prompt: str,

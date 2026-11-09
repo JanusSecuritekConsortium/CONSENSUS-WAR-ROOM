@@ -19,6 +19,12 @@ if not os.environ.get("AURELIUS_PRIVATE_DIR"):
 # The world map downloads GDELT news events; tests must not reach the network for them.
 os.environ.setdefault("BELLATOR_GDELT_EVENTS", "0")
 
+# Online voter models: ignore the owner's .env (keys and model choices) and any shell settings,
+# so no test reaches a paid API. Tests that need a route set it themselves.
+os.environ["CONSENSUS_ONLINE_ENV_FILE"] = ""
+for _name in [name for name in os.environ if name.startswith("CONSENSUS_ONLINE_MODEL_")]:
+    del os.environ[_name]
+
 
 # ---- tests that open real CONSENSUS windows ---------------------------------------------------
 # A plain local `pytest` must not put the desktop app on the owner's screen. Tests marked

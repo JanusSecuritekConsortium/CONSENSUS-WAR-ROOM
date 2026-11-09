@@ -9,6 +9,7 @@ from config.names import AETERNUM, BELLATOR, TRIBUNAL_AGENT_IDS
 from core.data_sources.enrichment import build_aeternum_data_enrichment
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION, build_bellator_context_packet
 from core.llm.prompts import build_node_prompt
+from core.llm import online as online_models
 from core.llm.generation import SubmissionCancelled
 from core.logging import log_error, log_event
 from core.models import NodeIdentity, Vote, VoteValue
@@ -79,6 +80,8 @@ class VotingOrchestrator:
                     "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
                 })
+                if not self.simulation and online_models.route_for(agent_id) and not online_models.share_personal_context():
+                    online_models.strip_personal_context(runtime_context)
                 runtime_context["evidence_passages"] = supplied_passages(query, runtime_context)
                 runtime_context["host_claim_reviews"] = deepcopy((memory_context or {}).get("host_claim_reviews", []))
                 runtime_context["evidence_source_ids"] = evidence_source_ids(runtime_context)
