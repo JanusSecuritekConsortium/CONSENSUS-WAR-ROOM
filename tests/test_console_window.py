@@ -62,3 +62,49 @@ def test_only_the_shutdown_noise_is_dropped():
         loop.close()
     assert reported == ["real"]
     assert quiet_shutdown_errors(None) is False
+
+
+def _terminal_api(console_class: str):
+    from types import SimpleNamespace
+
+    def class_name(hwnd, buffer, size):
+        buffer.value = console_class
+        return len(console_class)
+    return SimpleNamespace(kernel32=SimpleNamespace(GetConsoleWindow=lambda: 99),
+                           user32=SimpleNamespace(GetClassNameW=class_name))
+
+
+def test_a_plain_start_in_windows_terminal_restarts_in_the_classic_console(monkeypatch):
+    import sys
+    from ui import console_window
+
+    started = []
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.delenv(console_window.RELAUNCHED_ENV, raising=False)
+    start = lambda command, env: started.append((command, env))
+    ours = lambda kernel32: True
+    assert console_window.relaunch_in_classic_console([], _terminal_api("PseudoConsoleWindow"), owned=ours, start=start)
+    (command, env), = started
+    assert command[0].lower().endswith("conhost.exe") and command[1] == sys.executable
+    assert env[console_window.RELAUNCHED_ENV] == "1" and env["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
+
+
+def test_no_restart_outside_that_one_case(monkeypatch):
+    import sys
+    from ui import console_window
+
+    started = []
+    start = lambda command, env: started.append(command)
+    ours = lambda kernel32: True
+    terminal = _terminal_api("PseudoConsoleWindow")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.delenv(console_window.RELAUNCHED_ENV, raising=False)
+    assert not console_window.relaunch_in_classic_console(["--safe"], terminal, owned=ours, start=start)  # a command
+    assert not console_window.relaunch_in_classic_console([], _terminal_api("ConsoleWindowClass"), owned=ours, start=start)
+    assert not console_window.relaunch_in_classic_console([], terminal, owned=lambda kernel32: False, start=start)  # shell
+    monkeypatch.setenv(console_window.RELAUNCHED_ENV, "1")
+    assert not console_window.relaunch_in_classic_console([], terminal, owned=ours, start=start)  # never twice
+    monkeypatch.delenv(console_window.RELAUNCHED_ENV)
+    monkeypatch.setattr(sys, "frozen", False)
+    assert not console_window.relaunch_in_classic_console([], terminal, owned=ours, start=start)  # source runs
+    assert started == []

@@ -352,8 +352,15 @@ def get_gui_theme_key(theme_key: str) -> str:
     return GUI_THEME_FAMILY_KEYS.get(resolved, resolved)
 
 
+def pick_random_gui_theme(rng) -> str:
+    """A War Room theme key chosen with the operator's odds (GUI_THEME_WEIGHTS)."""
+    keys = [theme.key for theme in get_gui_theme_options()]
+    return rng.choices(keys, weights=[GUI_THEME_WEIGHTS.get(key, 0.0) for key in keys])[0]
+
+
 def get_gui_theme_options() -> List[Theme]:
-    return [THEMES[key] for key in GUI_THEME_KEYS]
+    """The War Room themes in alphabetical order of the names the theme menu shows."""
+    return sorted((THEMES[key] for key in GUI_THEME_KEYS), key=lambda theme: theme.display_name.casefold())
 
 
 def validate_theme_catalog() -> None:

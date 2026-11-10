@@ -1,5 +1,18 @@
 # Changelog
 
+## 9.6.1 - Alphabetical Themes, Odds and Console Fixes (2026-11-10)
+
+### Changed
+- The theme menu lists the themes alphabetically by name, and Ctrl+T cycles through them in the
+  same order.
+
+### Fixed
+- The theme odds from 9.6.0 now apply to CONSENSUS.exe as well; before, only the command-line start
+  used them and the exe still picked every theme equally often.
+- Starting CONSENSUS.exe from the taskbar or by double-click no longer leaves a Windows Terminal tab
+  behind: a plain start that lands in Windows Terminal restarts itself at once in the classic console,
+  which is hidden when the War Room opens and closes with CONSENSUS.
+
 ## 9.6.0 - Weighted Themes, Bigger Map, Quiet Console (2026-11-10)
 
 ### Changed

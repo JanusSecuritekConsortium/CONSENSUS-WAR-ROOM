@@ -66,6 +66,55 @@ def hide_boot_console(api: Optional[Any] = None, *, owned=console_is_ours) -> bo
         return False
 
 
+RELAUNCHED_ENV = "CONSENSUS_CLASSIC_CONSOLE"
+
+
+def _console_class(api: Any, hwnd: Any) -> str:
+    import ctypes
+
+    buffer = ctypes.create_unicode_buffer(64)
+    api.user32.GetClassNameW(hwnd, buffer, 64)
+    return buffer.value
+
+
+def relaunch_in_classic_console(argv: Optional[list] = None, api: Optional[Any] = None, *,
+                                owned=console_is_ours, start=None) -> bool:
+    """Restart a plain double-click or taskbar start of CONSENSUS.exe in the classic console.
+
+    Windows 11 opens console programs in Windows Terminal, whose tab CONSENSUS cannot hide and which
+    stays on screen after CONSENSUS closes. The classic console host (conhost.exe) gives a window that
+    hide_boot_console() can hide. Returns True when the new copy was started and this one should exit.
+    Only the packaged exe started with no arguments, alone in a Windows Terminal tab, is restarted.
+    """
+    import os
+
+    argv = sys.argv[1:] if argv is None else argv
+    if argv or not getattr(sys, "frozen", False) or os.environ.get(RELAUNCHED_ENV):
+        return False
+    api = api if api is not None else _windows_api()
+    if api is None:
+        return False
+    try:
+        hwnd = api.kernel32.GetConsoleWindow()
+        if not hwnd or _console_class(api, hwnd) != "PseudoConsoleWindow" or not owned(api.kernel32):
+            return False
+        conhost = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "conhost.exe")
+        if not os.path.isfile(conhost):
+            return False
+        # A fresh PyInstaller start, not a child of this one; the marker stops a second restart.
+        env = {**os.environ, RELAUNCHED_ENV: "1", "PYINSTALLER_RESET_ENVIRONMENT": "1"}
+        if start is None:
+            import subprocess
+
+            def start(command, environment):
+                flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                subprocess.Popen(command, env=environment, cwd=os.getcwd(), creationflags=flags, close_fds=True)
+        start([conhost, sys.executable], env)
+        return True
+    except Exception:
+        return False
+
+
 def _is_shutdown_noise(context: dict) -> bool:
     error = context.get("exception")
     return isinstance(error, RuntimeError) and "after shutdown" in str(error)
@@ -96,4 +145,4 @@ def quiet_shutdown_errors(loop: Any) -> bool:
     return True
 
 
-__all__ = ["hide_boot_console", "quiet_shutdown_errors"]
+__all__ = ["hide_boot_console", "quiet_shutdown_errors", "relaunch_in_classic_console"]

@@ -18,7 +18,7 @@ from core.paths import CONFIG_PATH
 from integrations.msty.api import health_check
 from tools.check_dependencies import build_dependency_report, print_human_report
 from ui.animations.bios_boot import render_bios_boot_console
-from ui.themes.catalog import get_gui_theme_options, resolve_theme_key
+from ui.themes.catalog import get_gui_theme_options, pick_random_gui_theme, resolve_theme_key
 
 
 THEME_VALIDATION_TESTS = [
@@ -39,7 +39,7 @@ def resolve_startup_theme(startup_theme: str | None, *, seed: int | None = None)
     configured = str(startup_theme or "RANDOM").strip()
     available = [theme.key for theme in get_gui_theme_options()]
     if configured.upper() == "RANDOM":
-        return random.Random(seed).choice(available)
+        return pick_random_gui_theme(random.Random(seed))
     resolved = resolve_theme_key(configured)
     if resolved not in available:
         raise ValueError(f"Unknown startup theme: {startup_theme}")
@@ -272,6 +272,10 @@ def run_telemetry_layout_debug() -> int:
 
 
 def main() -> int:
+    from ui.console_window import relaunch_in_classic_console
+
+    if relaunch_in_classic_console():  # a taskbar or double-click start that landed in Windows Terminal
+        return 0
     parser = argparse.ArgumentParser(description="Boot CONSENSUS War Room.")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--safe", action="store_true", help="Run diagnostics without starting the GUI.")
