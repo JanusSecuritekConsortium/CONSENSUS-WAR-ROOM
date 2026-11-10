@@ -82,6 +82,12 @@ Executor responses are capped at 2048 generated tokens. The character context
 budget includes local evidence and descriptors; choose a smaller budget for a
 backend with a small token window. Oversized inputs/schemas fail closed.
 
+Sizing rule: keep `AURELIUS_AGENT_CONTEXT_CHARS / 3 + 2048` below the token
+window the backend loads the model with. The default 24000 needs about 10,000
+tokens, so it can overflow an 8,192-token window on long tool results; 40000
+with `AURELIUS_AGENT_RESULT_CHARS=10000` fits a 16,384-token window. Three
+characters per token is a cautious estimate for Spanish and JSON-escaped text.
+
 Ajax is **disabled**. Configuration naming Ajax is rejected until weights,
 license and backend compatibility have been verified and a reviewed executor
 adapter is added. The public [Ajax page](https://data.pewdiepie.com/) was still
