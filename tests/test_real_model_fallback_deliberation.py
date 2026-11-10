@@ -130,8 +130,11 @@ def test_exhausted_real_candidates_are_audited_and_never_simulated(monkeypatch):
     orchestration.attach_audit(result)
     assert result.verdict == FinalVerdict.NO_CONSENSUS
     assert not result.deliberation_complete and not result.simulation
-    assert len(result.deliberation_transcript) == 3
-    assert all([attempt["model"] for attempt in turn["model_attempts"]] == ["base", "another"] for turn in result.deliberation_transcript)
+    first, *rest = result.deliberation_transcript
+    assert first["status"] == "failed" and [attempt["model"] for attempt in first["model_attempts"]] == ["base", "another"]
+    # The round stops at the first failure: the other voters are recorded as not asked, with no model calls.
+    assert [turn["status"] for turn in rest] == ["not_asked", "not_asked"]
+    assert all(turn["model_attempts"] == [] for turn in rest)
 
 
 def test_a_timeout_stops_instead_of_loading_more_models(monkeypatch):
