@@ -231,24 +231,111 @@ def routes_for(agent_id: str) -> list[OnlineRoute]:
     return [route for index, route in enumerate(routes) if route.label not in {r.label for r in routes[:index]}]
 
 
+def setting_state(agent_id: str, raw: str) -> tuple[Optional[bool], str]:
+    """(ready, plain words) for one stored setting: True ready, False needs attention, None stays local."""
+    if not raw:
+        return None, "local"
+    if not online_enabled():
+        return None, "disabled"
+    route = parse_route(agent_id, raw)
+    if route is None:
+        return False, "invalid setting"
+    if route.provider.subscription and not _cli_path(route.provider):
+        return False, f"'{route.provider.command}' not installed"
+    if not route.provider.subscription and not _api_key(route.provider):
+        return False, f"no key ({route.provider.key_env})"
+    return True, "online" if agent_id in TRIBUNAL_AGENT_IDS else "ready"
+
+
 def status_report() -> list[Dict[str, Any]]:
     """Per voter: the configured online model and whether its key is present. Never the key itself."""
     rows = []
     for agent_id in TRIBUNAL_AGENT_IDS:
         raw = setting(ENV_PREFIX + agent_id)
         route = configured_route(agent_id)
-        if not raw:
-            state = "local"
-        elif route is None:
-            state = "disabled" if not online_enabled() else "invalid setting"
-        elif route.provider.subscription and not _cli_path(route.provider):
-            state = f"'{route.provider.command}' not installed"
-        elif not route.provider.subscription and not _api_key(route.provider):
-            state = f"no key ({route.provider.key_env})"
-        else:
-            state = "online"
-        rows.append({"agent_id": agent_id, "setting": raw, "model": route.label if route else "", "state": state})
+        rows.append({"agent_id": agent_id, "setting": raw, "model": route.label if route else "",
+                     "state": setting_state(agent_id, raw)[1]})
     return rows
+
+
+# ---- the Online voters screen ------------------------------------------------------------------
+
+BACKUP_ENV = "CONSENSUS_ONLINE_FALLBACK"
+# The choices offered on the Online voters screen; any other stored value is kept and shown as is.
+CHOICES: list[tuple[str, str]] = [
+    ("", "Local model (Msty)"),
+    ("claude-cli:sonnet", "Claude Sonnet - subscription"),
+    ("claude-cli:opus", "Claude Opus - subscription"),
+    ("codex-cli:default", "ChatGPT - subscription"),
+    ("grok-cli:default", "Grok - subscription"),
+    ("deepseek:deepseek-chat", "DeepSeek chat - paid API"),
+    ("deepseek:deepseek-reasoner", "DeepSeek reasoner - paid API"),
+    ("anthropic:claude-sonnet-5-5", "Claude Sonnet - paid API"),
+]
+
+
+def choice_label(value: str) -> str:
+    return next((label for key, label in CHOICES if key == value), value)
+
+
+def voter_overview() -> list[Dict[str, Any]]:
+    """One row per voter plus the shared backup, for the Online voters screen. Never contains a key."""
+    rows = []
+    for agent_id, env in [*((a, ENV_PREFIX + a) for a in TRIBUNAL_AGENT_IDS), ("BACKUP", BACKUP_ENV)]:
+        raw = setting(env)
+        ready, state = setting_state(agent_id, raw)
+        rows.append({"key": agent_id, "env": env, "value": raw, "label": choice_label(raw), "ready": ready,
+                     "state": state, "overridden": os.environ.get(env) is not None})
+    return rows
+
+
+def _env_line_key(line: str) -> str:
+    text = line.strip()
+    if not text or text.startswith("#") or "=" not in text:
+        return ""
+    name = text.split("=", 1)[0].strip()
+    return name[len("export "):].strip() if name.startswith("export ") else name
+
+
+def save_settings(updates: Dict[str, str]) -> Path:
+    """Write non-secret online settings into the .env file, keeping every other line as it is.
+
+    Only CONSENSUS_ONLINE_* names are accepted, so this can never write or move an API key.
+    """
+    for name, value in updates.items():
+        if not name.startswith("CONSENSUS_ONLINE_") or any(c in str(value) for c in "\r\n"):
+            raise ValueError(f"Not an online-voter setting: {name}")
+    path = _env_file()
+    if path is None:
+        raise ValueError("No settings file is configured (CONSENSUS_ONLINE_ENV_FILE is empty).")
+    original = path.read_bytes().decode("utf-8") if path.is_file() else ""
+    lines = original.splitlines()
+    newline = "\r\n" if "\r\n" in original else "\n"
+    pending = dict(updates)
+    for index, line in enumerate(lines):
+        name = _env_line_key(line)
+        if name in pending:
+            lines[index] = f"{name}={pending.pop(name)}"
+    lines.extend(f"{name}={value}" for name, value in pending.items())
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_bytes((newline.join(lines) + newline).encode("utf-8"))  # keeps the file's line endings
+    temporary.replace(path)
+    _env_file_cache.update(path=None, mtime=None, values={})
+    return path
+
+
+def test_setting(agent_id: str, raw: str, timeout: float = 120.0) -> tuple[bool, str]:
+    """Send one tiny question to the model a setting names; (worked, plain words)."""
+    ready, state = setting_state(agent_id, raw)
+    if not ready:
+        return False, "Nothing to test: local model." if ready is None else f"Not ready: {state}."
+    route = parse_route(agent_id if agent_id in TRIBUNAL_AGENT_IDS else TRIBUNAL_AGENT_IDS[0], raw)
+    started = time.monotonic()
+    try:
+        complete(route, "", "Reply with the single word READY.", temperature=None, max_tokens=16, timeout=timeout)
+    except OnlineModelError as exc:
+        return False, str(exc)[:300]
+    return True, f"Answered in {time.monotonic() - started:.0f} s."
 
 
 def strip_personal_context(context: Dict[str, Any]) -> bool:
@@ -507,18 +594,9 @@ def main() -> int:
 
     for row in status_report():
         print(f"{row['agent_id']:<11} {row['state']:<28} {row['model'] or row['setting'] or '-'}")
-    backup = setting("CONSENSUS_ONLINE_FALLBACK")
+    backup = setting(BACKUP_ENV)
     if backup:
-        route = parse_route(TRIBUNAL_AGENT_IDS[0], backup)
-        if route is None:
-            state = "invalid setting"
-        elif route.provider.subscription and not _cli_path(route.provider):
-            state = f"'{route.provider.command}' not installed"
-        elif not route.provider.subscription and not _api_key(route.provider):
-            state = f"no key ({route.provider.key_env})"
-        else:
-            state = "ready"
-        print(f"{'BACKUP':<11} {state:<28} {backup}")
+        print(f"{'BACKUP':<11} {setting_state('BACKUP', backup)[1]:<28} {backup}")
     print(f"Personal context sent online: {'yes' if share_personal_context() else 'no'}; "
           f"token budget per deliberation: {token_budget()}")
     if "--ping" not in sys.argv[1:]:

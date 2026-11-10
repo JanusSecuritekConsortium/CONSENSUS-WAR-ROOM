@@ -42,6 +42,7 @@ def test_only_actual_action_targets_protect_submit_from_pointer_down(monkeypatch
     ("P", "directorate_open", "directorate_desk"),
     ("H", "proposal_history_open", "proposal_history_viewer"),
     ("M", "world_map_open", "world_map"),
+    ("O", "online_voters_open", "online_voters"),
 ])
 def test_footer_click_targets_reopen_and_close_viewers_above_the_footer(key, attribute, role):
     page, state = scene()

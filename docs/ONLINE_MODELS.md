@@ -32,7 +32,11 @@ roughly 4,000 to 8,000 input tokens each.
 
 ## Setup
 
-Add the settings to the gitignored `.env` file in the CONSENSUS folder (see `.env.example`):
+The easiest way is the Online voters screen in the War Room (Ctrl+O): pick a model for
+each voter and the backup, and press TEST. It writes the same settings described below.
+Keys are not entered there; they stay in `.env`.
+
+By hand, add the settings to the gitignored `.env` file in the CONSENSUS folder (see `.env.example`):
 
 ```
 CONSENSUS_ONLINE_MODEL_RATIONALIS=claude-cli:sonnet

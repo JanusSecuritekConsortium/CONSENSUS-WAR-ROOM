@@ -217,7 +217,7 @@ boundary.
 
 The GUI command palette opens with `Ctrl+K`. Common shortcuts are `Ctrl+D` for
 diagnostics, `Ctrl+T` to cycle themes, `Ctrl+H` for proposal history,
-`Ctrl+E` to export the latest verdict, and `Ctrl+M` for the BELLATOR world map.
+`Ctrl+E` to export the latest verdict, `Ctrl+M` for the BELLATOR world map, and `Ctrl+O` to choose and test each voter's online model.
 
 The active release provides:
 

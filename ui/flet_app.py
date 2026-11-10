@@ -96,6 +96,7 @@ from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph
 from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
 from ui.components.world_map_view import build_world_map_overlay
+from ui.components.online_voters_view import build_online_voters_overlay
 from core.intelligence.world_events import build_world_map_points
 from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
@@ -223,6 +224,10 @@ class GuiState:
     world_map_open: bool = False
     world_map_busy: bool = False
     world_map_data: Dict[str, Any] = field(default_factory=dict)
+    online_voters_open: bool = False
+    online_voter_tests: Dict[str, str] = field(default_factory=dict)
+    online_voters_testing: set = field(default_factory=set)
+    online_voters_message: str = ""
     render_in_progress: bool = False
     render_lock: Any = field(default_factory=threading.RLock, repr=False)
     live_panels: Dict[str, Any] = field(default_factory=dict, repr=False)
@@ -2154,7 +2159,7 @@ def build_gui_layout(
                     bgcolor=theme.surface_color,
                     data={"role": "footer_command", "key": key},
                 )
-                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"), ("M", "World Map"))
+                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"), ("M", "World Map"), ("O", "Online Voters"))
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=0,
@@ -2780,6 +2785,46 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             state.world_map_open = False
             _render_page(page, state)
 
+        def close_online_voters(_: ft.ControlEvent | None = None) -> None:
+            state.online_voters_open = False
+            _render_page(page, state)
+
+        def save_online_settings(updates: Dict[str, str]) -> None:
+            from core.llm import online as online_models
+            try:
+                online_models.save_settings(updates)
+                state.online_voters_message = ""
+                log_event("gui_online_voters_saved", {"settings": sorted(updates)})
+            except (OSError, ValueError) as exc:
+                state.online_voters_message = f"Could not save: {exc}"
+            _render_page(page, state)
+
+        def choose_online_voter(key: str, value: str) -> None:
+            from core.llm import online as online_models
+            env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
+            state.online_voter_tests.pop(key, None)
+            save_online_settings({env: value})
+
+        def toggle_online_voters(enabled: bool) -> None:
+            save_online_settings({"CONSENSUS_ONLINE_MODELS": "1" if enabled else "0"})
+
+        def test_online_voter(key: str) -> None:
+            from core.llm import online as online_models
+            env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
+            state.online_voters_testing.add(key)
+            state.online_voter_tests[key] = "Asking the model a one-word question..."
+            _render_page(page, state)
+
+            def worker() -> None:
+                worked, detail = online_models.test_setting(key, online_models.setting(env))
+                state.online_voter_tests[key] = ("OK: " if worked else "FAILED: ") + detail
+                state.online_voters_testing.discard(key)
+                log_event("gui_online_voter_test", {"voter": key, "worked": worked})
+                if not state.ui_stopped.is_set():
+                    _render_page(page, state)
+
+            page.run_thread(worker)
+
         def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
             set_aurelius_voice_loop(state, bool(event.control.value))
             _render_page(page, state)
@@ -2957,6 +3002,11 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 _render_page(page, state)
                 if state.world_map_open:
                     refresh_world_map()
+            elif key == "O":
+                state.online_voters_open = not state.online_voters_open
+                state.online_voters_message = ""
+                log_event("gui_online_voters", {"open": state.online_voters_open, "theme": state.theme_key})
+                _render_page(page, state)
 
         def on_keyboard_event(event) -> None:
             key = str(getattr(event, "key", "") or "").upper()
@@ -3033,6 +3083,7 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                 "directorate_desk",
                 "live_deliberation",
                 "world_map",
+                "online_voters",
             }
             overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
             if state.deliberation_viewer_open:
@@ -3075,6 +3126,19 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     border=ft.border.all(2, state.theme.accent_color),
                     bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data="world_map"))
+            if state.online_voters_open:
+                from core.llm import online as online_models
+                overlay.append(ft.Container(
+                    build_online_voters_overlay(state.theme, online_models.voter_overview(),
+                                                test_results=state.online_voter_tests,
+                                                testing=state.online_voters_testing,
+                                                message=state.online_voters_message,
+                                                on_choose=choose_online_voter, on_test=test_online_voter,
+                                                on_toggle=toggle_online_voters, on_close=close_online_voters),
+                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                    border=ft.border.all(2, state.theme.accent_color),
+                    bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data="online_voters"))
             if state.diagnostics_drawer_open:
                 overlay.append(
                     ft.Container(

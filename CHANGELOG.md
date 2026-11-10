@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.3.0 - Online Voters Screen (2026-11-10)
+
+### Added
+- An Online voters screen (Ctrl+O, or the footer button). Each voter and the shared backup get a
+  menu: local model, Claude, ChatGPT or Grok subscriptions, DeepSeek or Claude paid APIs. A light
+  shows whether the choice is ready (tool installed, key present). A TEST button asks the model a
+  one-word question and shows the answer time or the error, for example an empty DeepSeek balance.
+- A switch at the bottom left sends every voter back to its local model without losing the choices.
+- Choices are saved into the .env file. Only CONSENSUS_ONLINE_* lines are changed; API keys and
+  every other line stay as they were.
+
 ## 9.2.2 - Memory Check Skips Online Voters (2026-11-09)
 
 ### Fixed

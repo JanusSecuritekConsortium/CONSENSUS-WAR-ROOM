@@ -282,3 +282,63 @@ def test_shared_backup_answers_when_the_voter_model_fails(monkeypatch):
     assert all(turn["backend"] == "online:deepseek" and turn["model_fallback"] for turn in bellator)
     assert [attempt["model"] for attempt in bellator[0]["model_attempts"]] == ["openai:gpt-5", "deepseek:deepseek-chat"]
     assert not any(agent == BELLATOR for where, agent, _ in calls)  # never needed the local model
+
+
+def test_the_online_voters_screen_saves_only_online_settings(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_bytes(f"# keep me\r\nDEEPSEEK_API_KEY={KEY}\r\n{online.ENV_PREFIX}BELLATOR=grok-cli:default\r\n".encode())
+    monkeypatch.setenv("CONSENSUS_ONLINE_ENV_FILE", str(env_file))
+    online.save_settings({online.ENV_PREFIX + BELLATOR: "deepseek:deepseek-chat", online.BACKUP_ENV: ""})
+    text = env_file.read_bytes().decode()
+    assert text == (f"# keep me\r\nDEEPSEEK_API_KEY={KEY}\r\n{online.ENV_PREFIX}BELLATOR=deepseek:deepseek-chat\r\n"
+                    f"{online.BACKUP_ENV}=\r\n")
+    rows = {row["key"]: row for row in online.voter_overview()}
+    assert rows[BELLATOR]["label"] == "DeepSeek chat - paid API" and rows[BELLATOR]["ready"] is True
+    assert rows[RATIONALIS]["ready"] is None and rows["BACKUP"]["state"] == "local"
+    assert KEY not in json.dumps(list(rows.values()))
+    for bad in ({"DEEPSEEK_API_KEY": "x"}, {online.ENV_PREFIX + BELLATOR: "a\nDEEPSEEK_API_KEY=x"}):
+        with pytest.raises(ValueError):
+            online.save_settings(bad)
+    assert env_file.read_bytes().decode() == text
+    monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "claude-cli:sonnet")
+    assert {row["key"]: row for row in online.voter_overview()}[RATIONALIS]["overridden"] is True
+
+
+def test_the_test_button_reports_in_plain_words(monkeypatch):
+    assert online.test_setting(BELLATOR, "") == (False, "Nothing to test: local model.")
+    assert online.test_setting(BELLATOR, "deepseek:deepseek-chat") == (False, "Not ready: no key (DEEPSEEK_API_KEY).")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", KEY)
+    monkeypatch.setattr(online, "complete", lambda *a, **kw: online.OnlineResult("READY", 1, 1))
+    worked, detail = online.test_setting("BACKUP", "deepseek:deepseek-chat")
+    assert worked and detail.startswith("Answered in")
+
+    def broke(*a, **kw):
+        raise online.OnlineModelError("DeepSeek: Insufficient Balance")
+    monkeypatch.setattr(online, "complete", broke)
+    assert online.test_setting(BELLATOR, "deepseek:deepseek-chat") == (False, "DeepSeek: Insufficient Balance")
+
+
+def test_the_online_voters_screen_lists_every_voter_and_the_backup(monkeypatch):
+    import flet as ft
+    from tests.helpers.gui_harness import make_gui_state
+    from ui.components.online_voters_view import build_online_voters_overlay
+
+    monkeypatch.setenv(online.ENV_PREFIX + BELLATOR, "custom-cli:thing")
+    chosen = []
+    view = build_online_voters_overlay(make_gui_state("janus").theme, online.voter_overview(), test_results={},
+                                       testing=set(), on_choose=lambda key, value: chosen.append((key, value)))
+
+    def walk(control):
+        yield control
+        for child in [getattr(control, "content", None), *(getattr(control, "controls", None) or [])]:
+            if isinstance(child, ft.Control):
+                yield from walk(child)
+    pickers = {c.data["key"]: c for c in walk(view) if isinstance(c.data, dict) and c.data.get("role") == "online_voter_choice"}
+    assert list(pickers) == [*online.TRIBUNAL_AGENT_IDS, "BACKUP"]
+    assert pickers[BELLATOR].value == "custom-cli:thing" and pickers[BELLATOR].disabled  # set by the shell
+    picker = pickers[RATIONALIS]
+    picker.value = "codex-cli:default"
+    picker.on_change(type("Event", (), {"control": picker})())
+    picker.value = "local"
+    picker.on_change(type("Event", (), {"control": picker})())
+    assert chosen == [(RATIONALIS, "codex-cli:default"), (RATIONALIS, "")]
