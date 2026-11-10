@@ -74,7 +74,7 @@ ONLY. Three rounds require nine model calls, so latency is higher than the
 previous single-round flow. Running source processes need a reload; packaged
 executables need a rebuild to include the changes.
 
-The current release is **v8.0.0**. It includes a Flet desktop interface, CLI and
+The current release is listed at the top of [CHANGELOG.md](CHANGELOG.md). CONSENSUS includes a Flet desktop interface, CLI and
 local API entry points, deterministic offline operation, Msty/Ollama-compatible
 provider adapters, real-data enrichment, simulations, voice integrations, and
 Windows packaging.
