@@ -97,6 +97,7 @@ from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
 from ui.components.world_map_view import build_world_map_overlay
 from ui.components.online_voters_view import build_online_voters_overlay
+from core.voting.sources import vote_sources_for_file
 from core.intelligence.world_events import build_world_map_points
 from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
@@ -1566,6 +1567,10 @@ def build_proposal_history_viewer(
                         text(str(proposal.get("title") or "Untitled Proposal"), theme.accent_color, bold=True),
                         text(f"{proposal.get('template_id') or 'manual'} | {proposal_id}", theme.panel_value or theme.text_color),
                         text(f"{proposal.get('decision_timestamp') or '--'} | {verdict_text}", status_color(decision_status)),
+                        *([ft.Text(f"Answered by: {sources}", color=theme.secondary_text or theme.secondary_color,
+                                   size=9, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS, tooltip=sources,
+                                   data={"role": "proposal_vote_sources"})]
+                          if (sources := vote_sources_for_file(proposal.get("linked_verdict_export_json"))) else []),
                         ft.Row(
                             [
                                 action_button("RESEND", "resend", proposal_id),

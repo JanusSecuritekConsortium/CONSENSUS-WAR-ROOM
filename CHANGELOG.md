@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.5.0 - History Shows Who Answered (2026-11-10)
+
+### Added
+- Each verdict in Proposal History (Ctrl+H) has an "Answered by" line naming, per voter, the
+  company (Claude, ChatGPT, Grok, DeepSeek; subscription or API) or the local model that answered.
+  It also marks when the shared backup stepped in, when a local model answered because the online
+  one failed, and voters that failed, were not asked or were simulated.
+
 ## 9.4.0 - A Failed Voter Stops the Round (2026-11-10)
 
 ### Changed
