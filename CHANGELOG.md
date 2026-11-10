@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.7.0 - Guest Door (2026-11-10)
+
+### Added
+- A guest door (docs/GUEST_DOOR.md): a separate, password-protected API through which another AI
+  system can ask the tribunal for advice. It returns a ticket at once, and the guest collects a
+  summary verdict later. A daily limit applies, and the door listens only on this PC unless a
+  private (for example Tailscale) address is set.
+- Guest deliberations use none of the owner's context: no vault brief, prior decisions or data
+  packets. They run on local models only and are not saved to history or memory or announced by
+  voice. A guest sees only its own tickets.
+
 ## 9.6.1 - Alphabetical Themes, Odds and Console Fixes (2026-11-10)
 
 ### Changed

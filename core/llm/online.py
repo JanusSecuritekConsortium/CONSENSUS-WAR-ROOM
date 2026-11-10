@@ -297,14 +297,17 @@ def _env_line_key(line: str) -> str:
     return name[len("export "):].strip() if name.startswith("export ") else name
 
 
-def save_settings(updates: Dict[str, str]) -> Path:
-    """Write non-secret online settings into the .env file, keeping every other line as it is.
+def save_settings(updates: Dict[str, str], *, prefix: str = "CONSENSUS_ONLINE_") -> Path:
+    """Write CONSENSUS settings into the .env file, keeping every other line as it is.
 
-    Only CONSENSUS_ONLINE_* names are accepted, so this can never write or move an API key.
+    Only names starting with `prefix` (online-voter settings by default; the guest door passes
+    CONSENSUS_GUEST_) are accepted, so this can never write or move a provider API key.
     """
+    if not prefix.startswith("CONSENSUS_"):
+        raise ValueError("Only CONSENSUS settings can be saved here.")
     for name, value in updates.items():
-        if not name.startswith("CONSENSUS_ONLINE_") or any(c in str(value) for c in "\r\n"):
-            raise ValueError(f"Not an online-voter setting: {name}")
+        if not name.startswith(prefix) or any(c in str(value) for c in "\r\n"):
+            raise ValueError(f"Not a {prefix}* setting: {name}")
     path = _env_file()
     if path is None:
         raise ValueError("No settings file is configured (CONSENSUS_ONLINE_ENV_FILE is empty).")

@@ -133,7 +133,12 @@ def memory_note() -> Optional[str]:
 
 def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
           check_memory: Callable[[], Optional[str]] = memory_note,
-          free_local_ai: Callable[[], list] = lambda: _free_local_ai()) -> Dict[str, Any]:
+          free_local_ai: Callable[[], list] = lambda: _free_local_ai(), guest: bool = False) -> Dict[str, Any]:
+    """Queue a deliberation and return a ticket.
+
+    guest=True is a question from another system (integrations.guest): it never unloads the owner's
+    Local AI models, never learns about the owner's own deliberations, and runs as a guest deliberation.
+    """
     query = " ".join(str(query or "").split())
     if not query:
         raise ValueError("A question is required")
@@ -145,17 +150,22 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
         raise ValueError("The question is an unfilled template; fill in " + ", ".join(blanks) + " first")
     busy = _running(jobs_dir)
     if busy:
+        if guest:
+            return {"status": "busy", "detail": "The tribunal is busy with another deliberation; try again later."}
         return {"status": "busy", "ticket": busy["ticket"],
                 "detail": "Another deliberation is running; ask again when tribunal_verdict reports it finished."}
-    try:  # before measuring: Local AI's assistant model is memory the tribunal can reclaim
-        free_local_ai()
-    except Exception:
-        pass
+    if not guest:
+        try:  # before measuring: Local AI's assistant model is memory the tribunal can reclaim
+            free_local_ai()
+        except Exception:
+            pass
     warning = check_memory()
     if warning:
         return {"status": "not_started", "detail": warning}
     ticket = uuid.uuid4().hex[:12]
     record = {"ticket": ticket, "query": query, "status": "queued", "requested_at": _now().isoformat(timespec="seconds")}
+    if guest:
+        record["guest"] = True
     _write(_path(ticket, jobs_dir), record)
     launch(ticket)
     return {"status": "queued", "ticket": ticket,
@@ -206,13 +216,14 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
     heartbeat = threading.Thread(target=beat, daemon=True)
     heartbeat.start()
     try:
-        if deliberate is None:
+        guest = bool(record.get("guest"))
+        if deliberate is None and not guest:
             try:  # a 9B assistant model on the GPU pushes the 18 GB voter models into the page file
                 record["freed_models"] = _free_local_ai()
             except Exception:
                 pass
         from core.history import result_to_dict
-        result = (deliberate or _deliberate)(record["query"])
+        result = deliberate(record["query"]) if deliberate else _deliberate(record["query"], guest=guest)
         record.update(status="finished", result=summary(result_to_dict(result)))
     except Exception as error:  # the record is the only place a windowless run can report
         record.update(status="failed", error=str(error)[:500])
@@ -225,8 +236,31 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
     return record
 
 
-def _deliberate(query: str):
-    """The same tribunal the command line builds from the runtime config."""
+def guest_daily_count(jobs_dir: Path = JOBS_DIR, *, now: Optional[datetime] = None) -> int:
+    """Guest deliberations requested in the last 24 hours."""
+    since = (now or _now()) - timedelta(hours=24)
+    count = 0
+    for path in jobs_dir.glob("*.json") if jobs_dir.exists() else ():
+        try:
+            record = _read(path)
+            if record.get("guest") and datetime.fromisoformat(record["requested_at"]) >= since:
+                count += 1
+        except (OSError, ValueError, KeyError):
+            continue
+    return count
+
+
+def _deliberate(query: str, guest: bool = False):
+    """The same tribunal the command line builds from the runtime config.
+
+    A guest deliberation uses local models only unless CONSENSUS_GUEST_ONLINE=1, so another system's
+    questions never go out on the owner's Claude, ChatGPT or Grok subscriptions.
+    """
+    import os
+    if guest:
+        from core.llm import online
+        if online.setting("CONSENSUS_GUEST_ONLINE", "0") != "1":
+            os.environ["CONSENSUS_ONLINE_MODELS"] = "0"  # this process runs only this one deliberation
     from config.nodes import DEFAULT_NODES, apply_node_overrides
     from config.runtime import load_runtime_config
     from core.paths import CONFIG_PATH
@@ -242,7 +276,8 @@ def _deliberate(query: str):
         tie_break_priority=config.tie_break_priority, proposal_taxonomy=config.proposal_taxonomy,
         monolith_domain_map=config.monolith_domain_map,
     )
-    return Tribunal(nodes, MstyRuntime(config), rules=rules, theme_key=config.theme).deliberate(query, sequential=config.sequential)
+    return Tribunal(nodes, MstyRuntime(config), rules=rules, theme_key=config.theme).deliberate(
+        query, sequential=config.sequential, guest=guest)
 
 
 def main(argv=None) -> int:

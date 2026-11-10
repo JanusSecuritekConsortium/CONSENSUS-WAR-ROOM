@@ -19,6 +19,10 @@ from different companies gives the tribunal different reasoning styles. A failed
 falls back to a shared backup model and then to the local model. See
 [online models](docs/ONLINE_MODELS.md).
 
+Another AI system can ask the tribunal for advice through the password-protected
+[guest door](docs/GUEST_DOOR.md). Guest questions run on local models without the owner's
+personal context, and nothing about them is saved to the owner's history.
+
 Each proposal now runs three rounds. All monoliths first assess it independently;
 then each critiques the complete set of initial assessments; finally each reads
 all critiques and submits a revised final vote. Dissent is preserved. The ARBITER

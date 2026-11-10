@@ -15,6 +15,13 @@ from core.voting.orchestrator import AgentRuntime, VotingOrchestrator
 from core.voting.rules import ConsensusRules
 
 
+# What the voters see as memory in a guest deliberation: nothing of the owner's.
+GUEST_MEMORY_CONTEXT: Dict[str, Any] = {
+    "prior_decisions_used": 0, "items": [],
+    "summary": "Guest deliberation: no prior decisions or personal context are used.",
+}
+
+
 class Tribunal:
     def __init__(
         self,
@@ -32,9 +39,15 @@ class Tribunal:
         self.consensus_engine = ConsensusEngine(self.rules, self.theme_key)
         self.voice_announcer = voice_announcer
 
-    def deliberate(self, query: str, sequential: bool = False) -> TribunalResult:
+    def deliberate(self, query: str, sequential: bool = False, *, guest: bool = False) -> TribunalResult:
+        """Deliberate on a proposal.
+
+        guest=True is for questions from another system: no personal vault brief, prior decisions or
+        references reach the voters, and nothing is saved to history, session memory or decision traces,
+        or announced by voice.
+        """
         session_id = uuid.uuid4().hex[:12]
-        memory_context = build_context_packet(query)
+        memory_context = GUEST_MEMORY_CONTEXT.copy() if guest else build_context_packet(query)
         provider_context = self._provider_context()
         log_event(
             "proposal",
@@ -44,15 +57,19 @@ class Tribunal:
                 "sequential": sequential,
                 "query": query,
                 "prior_decisions_used": memory_context.get("prior_decisions_used", 0),
+                "guest": guest,
             },
         )
         started = time.perf_counter()
-        votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context)
+        # A guest gets no data packets either: they come from the owner's configured sources (one is a brokerage).
+        votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context,
+                                             include_enrichment=not guest)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
         self.orchestrator.attach_audit(result)
-        record_result(result)
-        log_decision_trace(result)
-        self._record_session_memory(result, memory_context, provider_context)
+        if not guest:
+            record_result(result)
+            log_decision_trace(result)
+            self._record_session_memory(result, memory_context, provider_context)
         log_event(
             "verdict",
             {
@@ -64,8 +81,9 @@ class Tribunal:
                 "elapsed": round(time.perf_counter() - started, 6),
             },
         )
-        self._announce_verdict(result)
-        self._queue_verdict_note(result)
+        if not guest:
+            self._announce_verdict(result)
+            self._queue_verdict_note(result)
         return result
 
     def _queue_verdict_note(self, result: TribunalResult) -> None:
