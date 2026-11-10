@@ -1,5 +1,18 @@
 # Changelog
 
+## 9.7.2 - AURELIUS Honesty Fixes (2026-11-10)
+
+### Fixed
+- AURELIUS no longer credits a figure, date or name to a report or tool that did not contain it.
+  In a check it had answered an exchange-rate question with a number "from the morning report",
+  which held no such number.
+- When a tool has nothing to return (for example, no weekly briefing exists), AURELIUS now says it
+  is unavailable instead of guessing a reason.
+
+### Changed
+- docs/AURELIUS_AGENT.md explains how to size the agent's context budget against the model's token
+  window.
+
 ## 9.7.1 - Review Fixes (2026-11-10)
 
 ### Fixed

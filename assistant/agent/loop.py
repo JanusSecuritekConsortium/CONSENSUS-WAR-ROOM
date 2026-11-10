@@ -164,5 +164,7 @@ class AgentRuntime:
                 if tool.impact != Impact.READ:
                     return self._finish(run, 'uncertain', 'AURELIUS could not verify the action outcome; inspect it before retrying.', 'write_outcome_unknown')
                 run.errors = True
-                run.context.record(call, {'status': 'unavailable', 'error_type': type(error).__name__}, True)
+                # The note keeps the model from guessing why, or what the missing content says.
+                run.context.record(call, {'status': 'unavailable', 'error_type': type(error).__name__,
+                    'note': 'No data was returned. Say it is unavailable; do not guess the cause or the content.'}, True)
             run.pending = None
