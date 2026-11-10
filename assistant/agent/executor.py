@@ -36,6 +36,9 @@ class MstyExecutor:
                     'name': t['name'], 'description': t['description'], 'parameters': t['inputSchema']}}
                     for t in tools]
                 payload['tool_choice'] = 'auto'
+            if os.getenv('AURELIUS_AGENT_THINKING', '').strip().lower() == 'off':
+                # llama.cpp chat-template switch; reasoning tripled latency without better tool choice.
+                payload['extra_body'] = {'chat_template_kwargs': {'enable_thinking': False}}
             response = client.chat.completions.create(**payload)
         message = response.choices[0].message
         calls = message.tool_calls or []

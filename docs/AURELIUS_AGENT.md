@@ -59,7 +59,8 @@ can run the new tests with its existing `.[dev]` installation command.
 | --- | --- | --- |
 | `AURELIUS_AGENT_ENABLED` | false | Opt into agent execution for AURELIUS requests |
 | `AURELIUS_AGENT_MAX_ROUNDS` | 8 | Maximum executor rounds, including final response |
-| `AURELIUS_AGENT_MAX_TOOLS` | 6 | Retrieved descriptors per round |
+| `AURELIUS_AGENT_MAX_TOOLS` | 6 | Retrieved descriptors per round; retrieval scores English keywords, so set it to the tool count for other languages |
+| `AURELIUS_AGENT_THINKING` | unset | `off` asks a llama.cpp provider to skip model reasoning; any other value keeps the model default |
 | `AURELIUS_AGENT_CONTEXT_CHARS` | 24000 | Serialized character budget; not a token guarantee |
 | `AURELIUS_AGENT_RESULT_CHARS` | 6000 | Evidence and final-response bound |
 | `AURELIUS_AGENT_DEADLINE_SECONDS` | 120 | Cooperative end-to-end deadline |

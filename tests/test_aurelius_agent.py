@@ -240,6 +240,13 @@ class AgentTests(unittest.TestCase):
             message.tool_calls = [SimpleNamespace(function=SimpleNamespace(name='read', arguments='{}'))]*2
             with self.assertRaises(ValueError): MstyExecutor('existing-executor', factory).step([], [], 3)
         self.assertEqual(payloads[0]['model'], 'existing-executor')
+        self.assertNotIn('extra_body', payloads[0])
+        message.tool_calls = []
+        with patch('integrations.msty.aurelius_provider.resolve_aurelius_provider_config', return_value=provider), \
+             patch.dict('os.environ', {'AURELIUS_AGENT_THINKING': 'off'}):
+            MstyExecutor('existing-executor', factory).step([{'role': 'user', 'content': 'task'}], [], 3)
+        self.assertEqual(payloads.pop()['extra_body'], {'chat_template_kwargs': {'enable_thinking': False}})
+        options.pop()
         self.assertEqual(options[0]['timeout'], 3)
         self.assertEqual(options[0]['max_retries'], 0)
         self.assertEqual(options[0]['base_url'], provider.api_base_url)
