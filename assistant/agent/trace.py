@@ -22,11 +22,11 @@ def tool_definitions(descriptors):
         for t in descriptors]
 
 
-def target_message(messages, step: Step):
+def target_message(step: Step, exchange_index: int):
     """The assistant turn the model produced, in the shape Context.record replays."""
     if step.call is None:
         return {'role': 'assistant', 'content': step.text}
-    call_id = 'call_' + str(sum(1 for m in messages if m.get('role') == 'tool'))
+    call_id = f'call_{exchange_index}'
     return {'role': 'assistant', 'content': None, 'tool_calls': [{'id': call_id, 'type': 'function',
             'function': {'name': step.call.name,
                          'arguments': json.dumps(step.call.arguments, ensure_ascii=False)}}]}
@@ -47,8 +47,10 @@ class RecordingExecutor:
         return result
 
     def examples(self, meta=None):
-        """One supervised example per round: context and offered tools -> assistant turn."""
-        return [{'messages': messages + [target_message(messages, step)],
+        """One supervised example per round of a completed run."""
+        # Before the final answer, every recorded round adds one tool exchange.
+        # Context.record counts all exchanges, including ones trimmed from the prompt.
+        return [{'messages': messages + [target_message(step, index - 1)],
                  'tools': tool_definitions(tools),
                  'meta': dict(meta or {}, round=index)}
                 for index, (messages, tools, step) in enumerate(self.steps, 1)]
@@ -88,10 +90,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Record AURELIUS agent traces for fine-tuning')
     parser.add_argument('--prompts', required=True, help='UTF-8 text file, one operator request per line')
     parser.add_argument('--out', help='JSONL output; default is the git-ignored agent runtime directory')
-    parser.add_argument('--model', default='', help='Teacher model id on the Msty provider')
+    parser.add_argument('--model', default='',
+                        help='Teacher model id; defaults to the AURELIUS model settings in the environment or project .env')
     args = parser.parse_args(argv)
     try:
         import os
+        from dotenv import load_dotenv
         from core.paths import ARBITER_DIR
         from integrations.msty.aurelius import AureliusOperator
         from .adapters import Filesystem, build_registry
@@ -99,12 +103,13 @@ def main(argv=None):
         from .executor import MstyExecutor
         from .loop import AgentRuntime
         from .permissions import PermissionPolicy
+        root = Path(__file__).resolve().parents[2]
+        load_dotenv(root / '.env', override=False)
         settings = AgentConfig.from_env()
         model = args.model or settings.executor_model or os.getenv('AURELIUS_MODEL', '')
         # Explicit invocation is the opt-in; auto-approved writes stay off regardless of environment.
         settings = replace(settings, enabled=True, auto_write_tools=frozenset(), executor_model=model)
         recorder = RecordingExecutor(MstyExecutor(model))
-        root = Path(__file__).resolve().parents[2]
         # No write root and no Telegram sender: recording has read tools only at its disposal.
         registry = build_registry(AureliusOperator(), Filesystem(root))
         runtime = AgentRuntime(recorder, registry, settings, PermissionPolicy())

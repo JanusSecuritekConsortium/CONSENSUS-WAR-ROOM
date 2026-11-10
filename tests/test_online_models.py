@@ -121,6 +121,7 @@ def test_errors_never_contain_the_key_and_temperature_is_retried(monkeypatch):
 
 
 def _local_provider(monkeypatch, calls):
+    monkeypatch.setattr(api, "loaded_models", lambda _: [])
     monkeypatch.setattr(api, "health_check", lambda *a, **kw: {
         "status": "ready", "models": ["base:latest"], "base_url": "http://localhost:1", "active_backend": "local-test"})
 
@@ -128,12 +129,15 @@ def _local_provider(monkeypatch, calls):
         context = json.JSONDecoder().raw_decode(prompt.split("Shared machine context:\n", 1)[1])[0]
         agent = next(a for a in (RATIONALIS, AETERNUM, BELLATOR) if f"Agent: {a}\n" in prompt)
         calls.append(("local", agent, prompt))
-        return _vote(agent, context)
+        marker = "PRIVATE-OWNER-NOTE" if "PRIVATE-OWNER-NOTE" in prompt else ""
+        return _vote(agent, context, marker)
     monkeypatch.setattr(api, "send_prompt", send)
 
 
-def _vote(agent, context):
+def _vote(agent, context, marker=""):
     reason = f"{agent} reviewed the prototype resources"
+    if marker:
+        reason += f" and repeated {marker}"
     return ("VOTE: APPROVE\nCONFIDENCE: 0.90\nEVIDENCE_QUALITY: 0.80\nCRITICAL_RISK: false\n"
             f"RATIONALE: {reason}\nRISKS: resources\nCONDITIONS: audit" + argument_fields(reason, agent, context))
 
@@ -145,7 +149,9 @@ def _deliberate(runtime):
     return orchestration.transcript
 
 
-def test_online_voter_deliberates_without_personal_context(monkeypatch):
+@pytest.mark.parametrize("sharing", [False, True])
+def test_mixed_deliberation_keeps_private_brief_out_of_peer_rounds_by_default(monkeypatch, sharing):
+    monkeypatch.setenv("CONSENSUS_ONLINE_SHARE_PERSONAL", "1" if sharing else "0")
     monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "anthropic:claude-sonnet-5-5")
     monkeypatch.setenv("ANTHROPIC_API_KEY", KEY)
     calls = []
@@ -165,8 +171,26 @@ def test_online_voter_deliberates_without_personal_context(monkeypatch):
         else:
             assert turn["backend"] == "local-test"
     for where, agent, prompt in calls:
-        assert ("PRIVATE-OWNER-NOTE" in prompt) == (where == "local")
+        assert ("PRIVATE-OWNER-NOTE" in prompt) == sharing
         assert (where == "online") == (agent == RATIONALIS)
+
+
+def test_deliberation_using_private_brief_stays_local_when_route_is_enabled_mid_run(monkeypatch):
+    monkeypatch.setenv("CONSENSUS_ONLINE_SHARE_PERSONAL", "0")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", KEY)
+    calls = []
+    _local_provider(monkeypatch, calls)
+    local_send = api.send_prompt
+
+    def enable_after_start(*args, **kwargs):
+        monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "anthropic:claude-sonnet-5-5")
+        return local_send(*args, **kwargs)
+
+    monkeypatch.setattr(api, "send_prompt", enable_after_start)
+    monkeypatch.setattr(online, "complete", lambda *a, **kw: pytest.fail("private run reached an online model"))
+    transcript = _deliberate(MstyRuntime(RuntimeConfig(base_model="base")))
+    assert len(calls) == len(transcript) == 9
+    assert all("PRIVATE-OWNER-NOTE" in prompt for _, _, prompt in calls)
 
 
 def test_failed_online_call_falls_back_to_the_local_model(monkeypatch):
@@ -201,6 +225,31 @@ def test_token_budget_sends_later_rounds_to_the_local_model(monkeypatch):
     assert backends == ["online:openai", "local-test", "local-test"]
 
 
+@pytest.mark.parametrize("provider, reported", [("codex-cli", False), ("codex-cli", True), ("grok-cli", False)])
+def test_subscription_reserves_budget_before_launch(monkeypatch, provider, reported):
+    calls = []
+    usage = (230, 40) if reported else (0, 0)
+    monkeypatch.setattr(online, "complete", lambda *a, **kw: calls.append(a) or online.OnlineResult("answer", *usage))
+    runtime = MstyRuntime(RuntimeConfig(base_model="base"))
+    route = online.parse_route(RATIONALIS, provider + ":default")
+    session = runtime.session_registry.get_or_create(RATIONALIS)
+    context = {"session_id": "subscription-budget-test", "system_prompt": "Synthetic instructions", "max_output_tokens": 100}
+    response, execution = runtime._generate_online_response(route, session, "Synthetic prompt", context, "base")
+    assert response == "answer"
+    attempt = execution["model_attempts"][0]
+    assert attempt["token_usage_estimated"] is not reported
+    if reported:
+        assert (attempt["input_tokens"], attempt["output_tokens"]) == usage
+    else:
+        assert attempt["input_tokens"] > 0 and attempt["output_tokens"] >= 100
+    cost = attempt["input_tokens"] + attempt["output_tokens"]
+    assert runtime._online_tokens[context["session_id"]] == cost
+    monkeypatch.setenv("CONSENSUS_ONLINE_TOKEN_BUDGET", str(cost + 1))
+    with pytest.raises(online.OnlineModelError, match="remaining online token budget"):
+        runtime._generate_online_response(route, session, "Synthetic prompt", context, "base")
+    assert len(calls) == 1
+
+
 def test_subscription_tools_route_when_installed_and_never_get_api_keys(monkeypatch, tmp_path):
     monkeypatch.setattr("shutil.which", lambda name: f"C:/tools/{name}.exe" if name in {"claude", "codex"} else None)
     monkeypatch.setenv(online.ENV_PREFIX + RATIONALIS, "claude-cli:sonnet")
@@ -218,7 +267,7 @@ def test_subscription_tools_route_when_installed_and_never_get_api_keys(monkeypa
     claude = online.cli_command(online.route_for(RATIONALIS), "sys", *files)
     codex = online.cli_command(online.route_for(AETERNUM), "sys", *files)
     assert claude[1] == "-p" and claude[claude.index("--tools") + 1] == "" and "--model" in claude
-    assert codex[-1] == "-" and "--model" not in codex and "read-only" in codex
+    assert codex[-1] == "-" and "--model" not in codex and "read-only" in codex and "--json" in codex
 
 
 def test_subscription_answers_are_read(tmp_path):
@@ -231,7 +280,11 @@ def test_subscription_answers_are_read(tmp_path):
         online._cli_result(claude, json.dumps({"is_error": True, "result": "limit reached"}), tmp_path / "none")
     answer = tmp_path / "answer.txt"
     answer.write_text("VOTE: DENY", encoding="utf-8")
-    assert online._cli_result(online.parse_route(AETERNUM, "codex-cli:default"), "", answer).text == "VOTE: DENY"
+    codex = online.parse_route(AETERNUM, "codex-cli:default")
+    assert online._cli_result(codex, "", answer) == online.OnlineResult("VOTE: DENY", 0, 0)
+    usage = json.dumps({"type": "turn.completed", "usage": {
+        "input_tokens": 1003, "cached_input_tokens": 300, "output_tokens": 25, "reasoning_output_tokens": 10}})
+    assert online._cli_result(codex, usage, answer) == online.OnlineResult("VOTE: DENY", 1003, 25)
 
 
 def test_monolith_cards_name_the_online_model(monkeypatch):

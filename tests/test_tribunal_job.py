@@ -67,6 +67,30 @@ class TribunalJobTest(unittest.TestCase):
             # BELLATOR on an online model loads nothing locally, so its 30 GB file no longer counts.
             with mock.patch("core.llm.online.routes_for", side_effect=lambda agent: ["online"] if agent == "BELLATOR" else []):
                 self.assertIsNone(job.memory_note())
+                self.assertIn("BELLATOR's model", job.memory_note(local_only=True))
+
+    def test_guest_default_memory_check_uses_local_models(self):
+        from unittest import mock
+
+        with mock.patch.object(job, "_guest_local_only", return_value=True), \
+                mock.patch.object(job, "memory_note", return_value="Low memory") as check:
+            response = job.start("Synthetic question?", jobs_dir=self.jobs, guest=True, launch=self.launched.append)
+        check.assert_called_once_with(local_only=True)
+        self.assertEqual(response["status"], "not_started")
+        self.assertEqual(self.launched, [])
+
+    def test_failed_launch_frees_admission_and_preserves_quota(self):
+        def fail(_):
+            raise OSError("synthetic launch error")
+
+        response = job.start("Synthetic question?", jobs_dir=self.jobs, guest=True, guest_limit=1,
+                             launch=fail, check_memory=lambda: None)
+        self.assertEqual(response["status"], "not_started")
+        self.assertFalse(job.deliberation_running(self.jobs))
+        self.assertEqual(job.guest_daily_count(self.jobs), 0)
+        retry = job.start("Synthetic retry?", jobs_dir=self.jobs, guest=True, guest_limit=1,
+                          launch=self.launched.append, check_memory=lambda: None)
+        self.assertEqual(retry["status"], "queued")
 
     def test_start_returns_a_ticket_and_launches_once(self):
         started = self.start("  Should   we move the backups? ")

@@ -71,11 +71,16 @@ falling back to its local model. Voters without an online model never use the ba
   an unfinished or unparseable answer) is logged as `online_model_fallback`. The voter then
   tries the shared backup model, if one is set, and otherwise answers with its local model.
   The transcript records every attempt.
-- **Privacy:** an online voter's prompt leaves out the vault brief (`50 Agents/Shared
-  Context.md`). The proposal, prior CONSENSUS decisions, public references and the BELLATOR and
-  AETERNUM data packets are still sent. Set `CONSENSUS_ONLINE_SHARE_PERSONAL=1` to include the brief.
-- **Cost limit:** `CONSENSUS_ONLINE_TOKEN_BUDGET` (default 250000) caps the tokens one
-  deliberation may use online. Once it is reached, later calls use the local model.
+- **Privacy.** When any voter can go online, every voter leaves out the vault brief
+  (`50 Agents/Shared Context.md`) so private facts cannot pass between voters in later rounds.
+  A deliberation that uses the brief locally stays local if a route becomes available mid-run.
+  The proposal, prior CONSENSUS decisions, public references and the BELLATOR and AETERNUM
+  data packets are still sent online. Set `CONSENSUS_ONLINE_SHARE_PERSONAL=1` to share the brief.
+- **Token budget.** `CONSENSUS_ONLINE_TOKEN_BUDGET` (default 250000) uses reported usage where
+  available, including usage reported by the Codex CLI. Codex and Grok subscription calls
+  reserve a conservative estimate before starting, based on the prompt's UTF-8 size and the
+  requested output allowance. The estimate is used when usage is unavailable. Later calls
+  fall back to local models when the budget is exhausted.
 - **Switch off:** `CONSENSUS_ONLINE_MODELS=0` sends every voter back to its local model.
 - **Keys** are sent only in the provider's request header and never appear in logs, errors,
   transcripts or the status command.

@@ -58,6 +58,14 @@ class VotingOrchestrator:
             "require_real_model": not self.simulation,
             "require_traceable_argument": True,
         }
+        if not self.simulation and not online_models.share_personal_context():
+            # Local turns can repeat private facts in peer responses sent in later rounds.
+            if any(online_models.routes_for(agent) for agent in agents):
+                base_context["memory_context"] = deepcopy(base_context["memory_context"])
+                online_models.strip_personal_context(base_context)
+            elif "second_brain" in base_context["memory_context"]:
+                # A route enabled mid-run must not receive turns that used the private brief.
+                base_context["local_only"] = True
         packets = {
             BELLATOR: {"bellator_context_packet": self._build_bellator_context_packet(query)},
             AETERNUM: {"aeternum_data_packet": build_aeternum_data_enrichment(query, live=False)},
@@ -100,8 +108,6 @@ class VotingOrchestrator:
                     "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
                 })
-                if not self.simulation and online_models.routes_for(agent_id) and not online_models.share_personal_context():
-                    online_models.strip_personal_context(runtime_context)
                 runtime_context["evidence_passages"] = supplied_passages(query, runtime_context)
                 runtime_context["host_claim_reviews"] = deepcopy((memory_context or {}).get("host_claim_reviews", []))
                 runtime_context["evidence_source_ids"] = evidence_source_ids(runtime_context)

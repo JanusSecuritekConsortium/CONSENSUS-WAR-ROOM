@@ -107,7 +107,7 @@ class MstyRuntime:
         execution: Dict[str, Any] = {}
         online_attempts: list[Dict[str, Any]] = []
 
-        if self.config.backend != "mock":
+        if self.config.backend != "mock" and not (context or {}).get("local_only"):
             from core.llm import online
 
             # The voter's own online model first, then the shared backup, then the local model below.
@@ -208,15 +208,33 @@ class MstyRuntime:
             raise online.OnlineModelError(f"Online token budget for this deliberation is used up ({used}/{budget}).")
         configured_node = apply_node_overrides(DEFAULT_NODES, self.config.node_overrides).get(session.agent_id)
         system_prompt = str(context.get("system_prompt") or (configured_node.prompt if configured_node else session.profile.system_prompt))
+        prompt += f"\n\nExecution model: {route.label}. Preserve your assigned monolith instructions and parameters."
+        max_tokens = int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900))
+        reserve_usage = route.provider.name in {"codex-cli", "grok-cli"}
+        if reserve_usage:
+            # Reserve before launch in case usage is missing or the invocation fails.
+            # Use one token per UTF-8 input byte plus the requested output allowance.
+            estimated_input = len(system_prompt.encode("utf-8")) + len(prompt.encode("utf-8"))
+            estimated_output = max(max_tokens, online.MIN_OUTPUT_TOKENS)
+            estimated_total = estimated_input + estimated_output
+            if deliberation_id and used + estimated_total > budget:
+                raise online.OnlineModelError("Estimated subscription call exceeds the remaining online token budget.")
+            if deliberation_id:
+                self._online_tokens[deliberation_id] = used + estimated_total
         started = time.perf_counter()
         result = online.complete(
-            route, system_prompt, prompt + f"\n\nExecution model: {route.label}. Preserve your assigned monolith instructions and parameters.",
+            route, system_prompt, prompt,
             temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
-            max_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
+            max_tokens=max_tokens,
             control=self.generation_control,
         )
+        input_tokens, output_tokens = result.input_tokens, result.output_tokens
+        estimate_usage = reserve_usage and input_tokens + output_tokens == 0
+        if estimate_usage:
+            input_tokens = estimated_input
+            output_tokens = max(estimated_output, len(result.text.encode("utf-8")))
         if deliberation_id:
-            self._online_tokens[deliberation_id] = used + result.input_tokens + result.output_tokens
+            self._online_tokens[deliberation_id] = used + input_tokens + output_tokens
         if context.get("require_real_model") and configured_node:
             from core.voting.parser import parse_vote
             parsed = parse_vote(result.text, configured_node, time.perf_counter() - started, route.backend, context)
@@ -224,7 +242,8 @@ class MstyRuntime:
                 raise ValueError("Invalid deliberation response: " + ", ".join(parsed.validation_errors))
         attempt = {"model": route.label, "backend": route.backend, "status": "completed",
                    "response_time": time.perf_counter() - started,
-                   "input_tokens": result.input_tokens, "output_tokens": result.output_tokens}
+                   "input_tokens": input_tokens, "output_tokens": output_tokens,
+                   "token_usage_estimated": estimate_usage}
         log_event("online_model_call", {"agent_id": session.agent_id, "local_model": requested_model, **attempt})
         return result.text, {"model": route.label, "backend": route.backend, "model_fallback": False,
                              "model_fallback_reason": "", "model_attempts": [attempt]}

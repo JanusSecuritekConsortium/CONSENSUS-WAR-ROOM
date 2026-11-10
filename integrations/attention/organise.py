@@ -21,6 +21,7 @@ import json
 import re
 import sqlite3
 import sys
+from uuid import uuid4
 
 from . import classify, config, sources, store
 
@@ -86,16 +87,35 @@ def connect(home=None):
         db.close()
 
 
-def claim(db, now: datetime) -> bool:
+class _ClaimLost(RuntimeError):
+    """Another sorting run took over the lease."""
+
+
+def claim(db, now: datetime) -> str | None:
     """Only one sorting run at a time; a crashed run's claim lapses."""
-    cursor = db.execute('''INSERT INTO meta(key,value) VALUES('claim',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value
-                           WHERE meta.value<?''', ((now + timedelta(minutes=CLAIM_MINUTES)).isoformat(), now.isoformat()))
+    owner = uuid4().hex
+    value = json.dumps({'owner': owner, 'until': store.iso(now + timedelta(minutes=CLAIM_MINUTES))})
+    taken = db.execute(
+        "INSERT INTO meta(key,value) VALUES('claim',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value "
+        "WHERE CASE WHEN json_valid(meta.value) THEN json_extract(meta.value,'$.until') ELSE meta.value END <= ?",
+        (value, store.iso(now)),
+    ).rowcount
     db.commit()
-    return cursor.rowcount == 1
+    return owner if taken else None
 
 
-def release(db) -> None:
-    db.execute("DELETE FROM meta WHERE key='claim'")
+def renew(db, owner: str, now: datetime) -> bool:
+    updated = db.execute(
+        "UPDATE meta SET value=json_set(value,'$.until',?) WHERE key='claim' "
+        "AND json_extract(value,'$.owner')=?",
+        (store.iso(now + timedelta(minutes=CLAIM_MINUTES)), owner),
+    ).rowcount
+    db.commit()
+    return bool(updated)
+
+
+def release(db, owner: str) -> None:
+    db.execute("DELETE FROM meta WHERE key='claim' AND json_extract(value,'$.owner')=?", (owner,))
     db.commit()
 
 
@@ -257,12 +277,13 @@ def new_raw(account: dict, name: str, folders: list[dict]) -> str:
     return utf7_encode(prefix + name)
 
 
-def learn(db, box, account: dict, targets: list[dict], now: datetime) -> None:
+def learn(db, box, account: dict, targets: list[dict], now: datetime, *, hold=lambda: None) -> None:
     """Senders and lists that are only ever filed in one folder become rules. Owner answers always win.
     Each folder also gets a profile (usual sender domains, recent subjects) that shows the model its pattern."""
     seen: dict[str, dict[str, int]] = {}
     profiles = {}
     for folder in targets:
+        hold()
         domains: dict[str, int] = {}
         subjects = []
         for uid in box.uids(folder['raw'])[-LEARN_PER_FOLDER:]:
@@ -277,6 +298,7 @@ def learn(db, box, account: dict, targets: list[dict], now: datetime) -> None:
                 subjects.append(re.sub(r'\s+', ' ', head['subject'])[:80])
         profiles[folder['raw']] = {'domains': sorted(domains, key=domains.get, reverse=True)[:4],
                                    'subjects': subjects[-PROFILE_SUBJECTS:]}
+    hold()
     db.execute('INSERT OR REPLACE INTO meta VALUES(?,?)', ('profile:' + account['id'], json.dumps(profiles, ensure_ascii=False)))
     db.execute("DELETE FROM rules WHERE account=? AND source='folder'", (account['id'],))
     for key, counts in seen.items():
@@ -354,14 +376,14 @@ def moved(db, account_id, email, source, target, now):
                (account_id, email['message_id'], source, target, email['subject'], now.isoformat()))
 
 
-def sort_account(db, box, account: dict, settings: dict, now: datetime, budget: int, *, post=None) -> dict:
+def sort_account(db, box, account: dict, settings: dict, now: datetime, budget: int, *, post=None, hold=lambda: None) -> dict:
     folders = box.folders()
     inbox = next((f['raw'] for f in folders if f['name'].casefold() == 'inbox'), 'INBOX')
     targets = candidates(account, folders)
     learned = db.execute('SELECT value FROM meta WHERE key=?', ('learned:' + account['id'],)).fetchone()
     profiled = db.execute('SELECT 1 FROM meta WHERE key=?', ('profile:' + account['id'],)).fetchone()
     if not learned or not profiled or learned[0] < (now - timedelta(days=1)).isoformat():
-        learn(db, box, account, targets, now)
+        learn(db, box, account, targets, now, hold=hold)
     rules = {row['key']: row['folder'] for row in db.execute(
         "SELECT key,folder FROM rules WHERE account=? ORDER BY source='answer'", (account['id'],))}
     profiles = json.loads((db.execute('SELECT value FROM meta WHERE key=?', ('profile:' + account['id'],)).fetchone()
@@ -377,6 +399,7 @@ def sort_account(db, box, account: dict, settings: dict, now: datetime, budget: 
         ref = f'{box.validity}:{uid.decode()}'
         if ref in done:
             continue
+        hold()
         head = box.headers(inbox, uid, 'FROM SUBJECT LIST-ID MESSAGE-ID REFERENCES IN-REPLY-TO')
         if not head:
             continue
@@ -385,12 +408,14 @@ def sort_account(db, box, account: dict, settings: dict, now: datetime, budget: 
         email = {'ref': ref, 'uid': uid, 'message_id': head.get('message-id', '').strip(), 'sender': sender,
                  'from': head.get('from', '')[:200], 'subject': head.get('subject', '')[:200],
                  'list_id': head.get('list-id', '')[:200], 'key': rule_key(sender, head.get('list-id', ''))}
+        hold()
         if head.get('flagged') or thread_key(account['id'], head, ref) in busy or not email['message_id']:
             record(db, account['id'], email, 'held', None, {'reason': 'flagged, open attention item or no id'}, now)
             counts['held'] += 1
             continue
         email['snippet'] = '' if email['key'] in rules else box.snippet(inbox, uid)
         decision = decide(email, targets, account, rules, settings, examples, post=post)
+        hold()
         if decision['action'] == 'move':
             if box.move(inbox, uid, decision['folder']):
                 moved(db, account['id'], email, inbox, decision['folder'], now)
@@ -406,12 +431,14 @@ def sort_account(db, box, account: dict, settings: dict, now: datetime, budget: 
             counts['asked'] += 1
         db.commit()
     for group in groups.values():
+        hold()
         name = group[0][1]['new']
         if len(group) >= settings['organise_new_folder_min']:
             raw = new_raw(account, name, folders)
             box.create(raw)
             counts['created'] += 1
             for email, decision in group:
+                hold()
                 if box.move(inbox, email['uid'], raw):
                     moved(db, account['id'], email, inbox, raw, now)
                     record(db, account['id'], email, 'moved', raw, decision, now)
@@ -456,16 +483,25 @@ def run(*, settings=None, now=None, opener=Mailbox, notify=None, post=None, home
     if not settings['organise_mail']:
         return {'status': 'off'}
     with connect(home) as db:
-        if not claim(db, now):
+        owner = claim(db, now)
+        if not owner:
             return {'status': 'busy'}
+
+        def hold():
+            if not renew(db, owner, max(now, store.utcnow())):
+                raise _ClaimLost
+
         try:
             result, chosen = {}, accounts(settings)
             share = max(1, settings['organise_per_run'] // max(1, len(chosen)))  # a big inbox must not starve the others
             for account in chosen:
                 box = None
                 try:
+                    hold()
                     box = opener(account)
-                    result[account['id']] = sort_account(db, box, account, settings, now, share, post=post)
+                    result[account['id']] = sort_account(db, box, account, settings, now, share, post=post, hold=hold)
+                except _ClaimLost:
+                    raise
                 except classify.ModelUnavailable:
                     result[account['id']] = {'status': 'model unavailable'}
                     break
@@ -474,10 +510,15 @@ def run(*, settings=None, now=None, opener=Mailbox, notify=None, post=None, home
                 finally:
                     if box:
                         box.close()
-            asked = (notify or telegram_questions)(db, settings['organise_questions_per_run'], now)
+            hold()
+            limit = settings['organise_questions_per_run']
+            asked = notify(db, limit, now) if notify else telegram_questions(db, limit, now, hold=hold)
             return {'status': 'ok', 'accounts': result, 'questions_sent': asked}
+        except _ClaimLost:
+            db.rollback()
+            return {'status': 'busy'}
         finally:
-            release(db)
+            release(db, owner)
 
 
 def pending(db=None, limit=50) -> list[dict]:
@@ -490,7 +531,7 @@ def pending(db=None, limit=50) -> list[dict]:
         return query(db)
 
 
-def telegram_questions(db, limit: int, now: datetime) -> int:
+def telegram_questions(db, limit: int, now: datetime, *, hold=lambda: None) -> int:
     """Send unasked questions to the owner's Aurelius chat, a few per run."""
     from integrations.msty.personal import interaction_store, publication
     rows = db.execute('SELECT * FROM questions WHERE answer IS NULL AND asked_at IS NULL ORDER BY id LIMIT ?', (limit,)).fetchall()
@@ -499,6 +540,7 @@ def telegram_questions(db, limit: int, now: datetime) -> int:
     route = publication.telegram_route()
     sent = 0
     for row in rows:
+        hold()
         options = json.loads(row['options'])
         buttons = [[(option['label'], 'file', {'q': row['id'], 'choice': index})] for index, option in enumerate(options)]
         buttons.append([('Keep in inbox', 'file', {'q': row['id'], 'choice': 'keep'})])

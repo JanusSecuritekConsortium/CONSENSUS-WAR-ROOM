@@ -1,7 +1,9 @@
 """The guest door: password, daily limit, privacy of the owner's tickets, and guest deliberations."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import json
+from threading import Event
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -19,10 +21,11 @@ def door(tmp_path, monkeypatch):
     launched = []
     monkeypatch.setattr(server, "daily_limit", lambda: 2)
 
-    def start(question, *, jobs_dir, guest):
+    def start(question, *, jobs_dir, guest, guest_limit):
         assert guest is True
         return job.start(question, jobs_dir=jobs_dir, launch=launched.append, check_memory=lambda: None,
-                         free_local_ai=lambda: pytest.fail("a guest never unloads the owner's models"), guest=True)
+                         free_local_ai=lambda: pytest.fail("a guest never unloads the owner's models"),
+                         guest=True, guest_limit=guest_limit)
     app = server.create_app(password=PASSWORD, jobs_dir=tmp_path, start=start, sleep=lambda seconds: None)
     client = TestClient(app)
     client.headers["Authorization"] = f"Bearer {PASSWORD}"
@@ -85,6 +88,40 @@ def test_busy_and_limit_reveal_nothing_of_the_owner(door):
     assert job.guest_daily_count(jobs_dir) == 0
 
 
+def test_admission_is_shared_and_guest_limit_is_atomic(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    checking, proceed = Event(), Event()
+    monkeypatch.setattr(server, "daily_limit", lambda: 1)
+
+    def check_memory():
+        checking.set()
+        assert proceed.wait(10)
+
+    def start(question, **kwargs):
+        return job.start(question, launch=lambda _: None, check_memory=check_memory, **kwargs)
+
+    client = TestClient(server.create_app(password=PASSWORD, jobs_dir=tmp_path, start=start))
+    client.headers["Authorization"] = f"Bearer {PASSWORD}"
+
+    def post():
+        return client.post("/guest/v1/deliberations", json={"question": "Synthetic question?"})
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        first = pool.submit(post)
+        try:
+            assert checking.wait(10)
+            assert post().status_code == 409
+            owner = job.start("Owner question?", jobs_dir=tmp_path,
+                              free_local_ai=lambda: pytest.fail("admission already locked"))
+            assert owner["status"] == "busy"
+        finally:
+            proceed.set()
+        assert first.result(timeout=10).status_code == 202
+    assert job.guest_daily_count(tmp_path) == 1
+    assert post().status_code == 429
+
+
 def test_bad_questions_are_refused(door):
     client, _, launched = door
     assert client.post("/guest/v1/deliberations", json={"question": ""}).status_code == 422
@@ -122,6 +159,7 @@ def test_a_guest_deliberation_uses_and_saves_nothing_of_the_owner(monkeypatch):
 
 
 def test_the_password_is_saved_only_as_a_guest_setting(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
     from core.llm import online
 
     env_file = tmp_path / ".env"
@@ -129,7 +167,11 @@ def test_the_password_is_saved_only_as_a_guest_setting(tmp_path, monkeypatch):
     monkeypatch.setenv("CONSENSUS_ONLINE_ENV_FILE", str(env_file))
     monkeypatch.delenv(server.PASSWORD_ENV, raising=False)
     first = server.new_password()
+    client = TestClient(server.create_app(jobs_dir=tmp_path, sleep=lambda _: None))
+    assert client.get("/guest/v1/health", headers={"Authorization": f"Bearer {first}"}).status_code == 200
     second = server.new_password()
+    assert client.get("/guest/v1/health", headers={"Authorization": f"Bearer {first}"}).status_code == 401
+    assert client.get("/guest/v1/health", headers={"Authorization": f"Bearer {second}"}).status_code == 200
     text = env_file.read_text(encoding="utf-8")
     assert len(first) >= server.MIN_PASSWORD_LENGTH and first != second
     assert text == f"DEEPSEEK_API_KEY=keep\n{server.PASSWORD_ENV}={second}\n"

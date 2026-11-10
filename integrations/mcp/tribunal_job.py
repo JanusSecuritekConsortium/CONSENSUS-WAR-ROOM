@@ -8,9 +8,11 @@ at a time because the voters share one GPU. Records live in the git-ignored _ARB
 """
 from __future__ import annotations
 
+from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -98,7 +100,12 @@ def _free_gpu_bytes() -> int:
         return 0
 
 
-def memory_note() -> Optional[str]:
+def _guest_local_only() -> bool:
+    from core.llm import online
+    return online.setting("CONSENSUS_GUEST_ONLINE", "0") != "1"
+
+
+def memory_note(*, local_only: bool = False) -> Optional[str]:
     """A warning when the largest voter model will not fit in the free RAM and graphics memory; None if it fits.
 
     A model larger than what is free makes the model server refuse it, or pushes the whole PC out of memory.
@@ -114,7 +121,7 @@ def memory_note() -> Optional[str]:
         from core.llm import online
         # Voters on an online model load nothing locally unless every online attempt fails.
         voters = {agent: api.match_model_alias(name, list(sizes))[0] for agent, name in config.agent_model_overrides.items()
-                  if not online.routes_for(agent)}
+                  if local_only or not online.routes_for(agent)}
         needed = {agent: sizes[model] for agent, model in voters.items() if model}
         if not needed:
             return None
@@ -132,8 +139,9 @@ def memory_note() -> Optional[str]:
 
 
 def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
-          check_memory: Callable[[], Optional[str]] = memory_note,
-          free_local_ai: Callable[[], list] = lambda: _free_local_ai(), guest: bool = False) -> Dict[str, Any]:
+          check_memory: Optional[Callable[[], Optional[str]]] = None,
+          free_local_ai: Callable[[], list] = lambda: _free_local_ai(), guest: bool = False,
+          guest_limit: Optional[int] = None) -> Dict[str, Any]:
     """Queue a deliberation and return a ticket.
 
     guest=True is a question from another system (integrations.guest): it never unloads the owner's
@@ -148,6 +156,23 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
     blanks = unfilled_template_fields(query)
     if len(blanks) >= 2:
         raise ValueError("The question is an unfilled template; fill in " + ", ".join(blanks) + " first")
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    # Both entry points reserve jobs under the same cross-process SQLite writer lock.
+    # SQLite releases the lock if the admitting process exits unexpectedly.
+    with closing(sqlite3.connect(jobs_dir / "admission.sqlite3", timeout=0)) as gate:
+        try:
+            gate.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError as error:
+            if str(error) != "database is locked":
+                raise
+            return {"status": "busy", "detail": "The tribunal is admitting another request; try again later."}
+        with gate:
+            return _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit)
+
+
+def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit):
+    if guest and guest_limit is not None and guest_daily_count(jobs_dir) >= guest_limit:
+        return {"status": "limit_reached", "detail": "The daily limit of guest questions is reached."}
     busy = _running(jobs_dir)
     if busy:
         if guest:
@@ -159,15 +184,23 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
             free_local_ai()
         except Exception:
             pass
-    warning = check_memory()
+    local_only = guest and _guest_local_only()
+    warning = check_memory() if check_memory is not None else memory_note(local_only=local_only)
     if warning:
         return {"status": "not_started", "detail": warning}
     ticket = uuid.uuid4().hex[:12]
     record = {"ticket": ticket, "query": query, "status": "queued", "requested_at": _now().isoformat(timespec="seconds")}
     if guest:
-        record["guest"] = True
-    _write(_path(ticket, jobs_dir), record)
-    launch(ticket)
+        record.update(guest=True, guest_local_only=local_only)
+    path = _path(ticket, jobs_dir)
+    _write(path, record)
+    try:
+        launch(ticket)
+    except Exception:
+        detail = "The tribunal worker could not start."
+        record.update(status="failed", error=detail, launch_failed=True, finished_at=_now().isoformat())
+        _write(path, record)
+        return {"status": "not_started", "detail": detail}
     return {"status": "queued", "ticket": ticket,
             "detail": "The tribunal is deliberating; on local models this can take an hour. Check with tribunal_verdict."}
 
@@ -223,7 +256,8 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
             except Exception:
                 pass
         from core.history import result_to_dict
-        result = deliberate(record["query"]) if deliberate else _deliberate(record["query"], guest=guest)
+        result = deliberate(record["query"]) if deliberate else _deliberate(
+            record["query"], guest=guest, guest_local_only=record.get("guest_local_only"))
         record.update(status="finished", result=summary(result_to_dict(result)))
     except Exception as error:  # the record is the only place a windowless run can report
         record.update(status="failed", error=str(error)[:500])
@@ -243,24 +277,23 @@ def guest_daily_count(jobs_dir: Path = JOBS_DIR, *, now: Optional[datetime] = No
     for path in jobs_dir.glob("*.json") if jobs_dir.exists() else ():
         try:
             record = _read(path)
-            if record.get("guest") and datetime.fromisoformat(record["requested_at"]) >= since:
+            if (record.get("guest") and not record.get("launch_failed")
+                    and datetime.fromisoformat(record["requested_at"]) >= since):
                 count += 1
         except (OSError, ValueError, KeyError):
             continue
     return count
 
 
-def _deliberate(query: str, guest: bool = False):
+def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[bool] = None):
     """The same tribunal the command line builds from the runtime config.
 
     A guest deliberation uses local models only unless CONSENSUS_GUEST_ONLINE=1, so another system's
     questions never go out on the owner's Claude, ChatGPT or Grok subscriptions.
     """
     import os
-    if guest:
-        from core.llm import online
-        if online.setting("CONSENSUS_GUEST_ONLINE", "0") != "1":
-            os.environ["CONSENSUS_ONLINE_MODELS"] = "0"  # this process runs only this one deliberation
+    if guest and (guest_local_only is True or _guest_local_only()):
+        os.environ["CONSENSUS_ONLINE_MODELS"] = "0"  # this process runs only this one deliberation
     from config.nodes import DEFAULT_NODES, apply_node_overrides
     from config.runtime import load_runtime_config
     from core.paths import CONFIG_PATH

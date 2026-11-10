@@ -53,7 +53,8 @@ def daily_limit() -> int:
 
 
 def configured_password() -> str:
-    return _setting(PASSWORD_ENV)
+    from core.llm import online
+    return online.setting(PASSWORD_ENV, fresh=True)
 
 
 def new_password() -> str:
@@ -89,7 +90,8 @@ def create_app(*, password: Optional[str] = None, jobs_dir: Path = tribunal_job.
 
     def check_password(authorization: str = Header(default="")) -> None:
         supplied = authorization[7:] if authorization.lower().startswith("bearer ") else ""
-        if not hmac.compare_digest(supplied.encode(), expected.encode()):
+        current = password if password is not None else configured_password()
+        if len(current) < MIN_PASSWORD_LENGTH or not hmac.compare_digest(supplied.encode(), current.encode()):
             sleep(WRONG_PASSWORD_DELAY)
             raise HTTPException(status_code=401, detail="Wrong or missing password.",
                                 headers={"WWW-Authenticate": "Bearer"})
@@ -103,12 +105,12 @@ def create_app(*, password: Optional[str] = None, jobs_dir: Path = tribunal_job.
 
     @app.post("/guest/v1/deliberations", status_code=202, dependencies=[Depends(check_password)])
     def deliberate(body: Question) -> Dict[str, Any]:
-        if tribunal_job.guest_daily_count(jobs_dir) >= daily_limit():
-            raise HTTPException(status_code=429, detail="The daily limit of guest questions is reached.")
         try:
-            started = start(body.question, jobs_dir=jobs_dir, guest=True)
+            started = start(body.question, jobs_dir=jobs_dir, guest=True, guest_limit=daily_limit())
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
+        if started.get("status") == "limit_reached":
+            raise HTTPException(status_code=429, detail=started["detail"])
         if started.get("status") == "busy":
             raise HTTPException(status_code=409, detail=started["detail"])
         if started.get("status") != "queued":

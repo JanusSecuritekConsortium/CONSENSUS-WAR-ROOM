@@ -1,7 +1,7 @@
 """Email folder sorting with a fake mailbox and model. No mail server, Msty or Telegram is touched."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
@@ -120,6 +120,21 @@ class OrganiseTest(unittest.TestCase):
 
     def run_once(self, box, post):
         return organise.run(settings=self.settings, now=NOW, opener=lambda account: box, notify=self.notify, post=post)
+
+    def test_an_expired_sorter_cannot_renew_or_release_a_newer_claim(self):
+        with organise.connect(self.home) as first, organise.connect(self.home) as second:
+            old = organise.claim(first, NOW)
+            renewed_at = NOW + timedelta(minutes=20)
+            self.assertTrue(organise.renew(first, old, renewed_at))
+            self.assertIsNone(organise.claim(second, NOW + timedelta(minutes=31)))
+            later = NOW + timedelta(minutes=51)
+            new = organise.claim(second, later)
+            self.assertNotEqual(old, new)
+            self.assertFalse(organise.renew(first, old, later))
+            organise.release(first, old)
+            self.assertIsNone(organise.claim(first, later))
+            organise.release(second, new)
+            self.assertIsNotNone(organise.claim(first, later))
 
     def test_learned_sender_moves_without_the_model(self):
         box = FakeBox({'INBOX': [mail(10, 'bills@power.test', 'Your bill')], 'Sent': [], 'Trash': [],

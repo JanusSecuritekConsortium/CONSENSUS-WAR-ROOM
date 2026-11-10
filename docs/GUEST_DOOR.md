@@ -54,7 +54,10 @@ such as [Tailscale](https://tailscale.com):
 3. Restart the door. Only devices on the shared Tailscale network can reach it, and they still
    need the password.
 
-To shut the door, close its window. To lock the friend out for good, run `--new-password` again.
+To shut the door, close its window. Running `--new-password` replaces the password
+in `.env` and the open door reads it on the next request. If you set
+`CONSENSUS_GUEST_TOKEN` in the server's environment, change that value and restart
+the door to rotate it.
 
 ## For the guest system: the API
 

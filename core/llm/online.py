@@ -105,26 +105,28 @@ def _env_file() -> Optional[Path]:
     return SYSTEM_ROOT / ".env"
 
 
-def _file_values() -> Dict[str, str]:
+def _file_values(*, fresh: bool = False) -> Dict[str, str]:
     path = _env_file()
     if path is None or not path.is_file():
         return {}
     mtime = path.stat().st_mtime
-    if _env_file_cache["path"] != path or _env_file_cache["mtime"] != mtime:
+    if fresh or _env_file_cache["path"] != path or _env_file_cache["mtime"] != mtime:
         try:
             from dotenv import dotenv_values
             values = {key: value for key, value in dotenv_values(path).items() if value is not None}
         except Exception:
             values = {}
+        if fresh:
+            return values
         _env_file_cache.update(path=path, mtime=mtime, values=values)
     return _env_file_cache["values"]
 
 
-def setting(name: str, default: str = "") -> str:
+def setting(name: str, default: str = "", *, fresh: bool = False) -> str:
     """The process environment wins over the .env file, so one run can override a stored choice."""
     value = os.environ.get(name)
     if value is None:
-        value = _file_values().get(name)
+        value = _file_values(fresh=fresh).get(name)
     return default if value is None else str(value).strip()
 
 
@@ -447,7 +449,7 @@ def cli_command(route: OnlineRoute, system_text: str, prompt_file: Path, system_
                 "--no-session-persistence", "--system-prompt-file", str(system_file), *model]
     if name == "codex-cli":
         return [exe, "exec", "--skip-git-repo-check", "--sandbox", "read-only", "--ephemeral", "--ignore-user-config",
-                "--ignore-rules", "--color", "never", "-o", str(output_file), *model, "-"]
+                "--ignore-rules", "--color", "never", "--json", "-o", str(output_file), *model, "-"]
     return [exe, "--prompt-file", str(prompt_file), "--system-prompt-override", system_text,
             "--output-format", "plain", "--disable-web-search", "--no-subagents", "--max-turns", "1",
             "--permission-mode", "dontAsk", *model]
@@ -475,6 +477,19 @@ def _cli_result(route: OnlineRoute, stdout: str, output_file: Path) -> OnlineRes
         return OnlineResult(str(data.get("result") or ""), tokens_in, int(usage.get("output_tokens") or 0))
     if route.provider.name == "codex-cli":
         text = output_file.read_text(encoding="utf-8") if output_file.is_file() else ""
+        for line in reversed(stdout.splitlines()):
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(event, dict) or event.get("type") != "turn.completed":
+                continue
+            usage = event.get("usage")
+            if isinstance(usage, dict):
+                input_tokens, output_tokens = usage.get("input_tokens"), usage.get("output_tokens")
+                if type(input_tokens) is int and type(output_tokens) is int and min(input_tokens, output_tokens) >= 0:
+                    return OnlineResult(text, input_tokens, output_tokens)
+            break
         return OnlineResult(text, 0, 0)
     return OnlineResult(stdout, 0, 0)
 

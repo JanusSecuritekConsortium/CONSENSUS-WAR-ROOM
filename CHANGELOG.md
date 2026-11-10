@@ -1,5 +1,26 @@
 # Changelog
 
+## 9.7.1 - Review Fixes (2026-11-10)
+
+### Fixed
+- When any voter can go online, every voter now leaves out the vault brief, so private facts cannot
+  pass to an online voter through another voter's earlier answer. A deliberation that started with
+  the brief stays local if an online route appears halfway.
+- Guest questions and the owner's own tribunal requests now queue through one shared gate, so two
+  requests at the same moment cannot both start, and the guest daily limit cannot be overshot.
+  A guest request that fails to start no longer counts against the limit.
+- A new guest password works at once on an open door; no restart needed.
+- The online token budget now counts ChatGPT (Codex) subscription usage when Codex reports it, and
+  reserves an estimate for Codex and Grok calls before they start.
+- Mail sorting: two sorting runs can no longer overlap; a run that loses its turn stops cleanly.
+- AURELIUS trace recorder: tool call numbers stay correct when old turns are trimmed, and it reads
+  the AURELIUS model from .env.
+
+### Changed
+- AURELIUS answers general knowledge, translations and sums directly without a tool, says it has no
+  current data for live prices or news unless a tool returned them, and sends questions to the
+  tribunal only when asked. AURELIUS_AGENT_THINKING=off can switch off model reasoning for speed.
+
 ## 9.7.0 - Guest Door (2026-11-10)
 
 ### Added

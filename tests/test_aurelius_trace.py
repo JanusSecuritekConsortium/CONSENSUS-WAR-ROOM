@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from assistant.agent import trace
 from assistant.agent.adapters import schema, text
 from assistant.agent.config import AgentConfig
 from assistant.agent.contracts import Impact, Step, Tool, ToolCall
@@ -52,9 +53,10 @@ class TraceTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.out = Path(self.directory.name) / 'nested' / 'traces.jsonl'
 
-    def run_record(self, prompts, *steps):
+    def run_record(self, prompts, *steps, context_chars=24000):
         recorder = RecordingExecutor(Script(*steps))
-        runtime = AgentRuntime(recorder, self.registry, AgentConfig(enabled=True), PermissionPolicy())
+        settings = AgentConfig(enabled=True, context_chars=context_chars)
+        runtime = AgentRuntime(recorder, self.registry, settings, PermissionPolicy())
         counts = record(runtime, recorder, prompts, self.out, 'teacher-model')
         rows = [json.loads(line) for line in self.out.read_text(encoding='utf-8').splitlines()] \
             if self.out.exists() else []
@@ -81,6 +83,51 @@ class TraceTests(unittest.TestCase):
         self.assertEqual((first['meta']['round'], final['meta']['round']), (1, 2))
         self.assertEqual(final['meta']['teacher'], 'teacher-model')
         self.assertEqual(final['meta']['tools_used'], ['search'])
+
+    def test_trimmed_context_keeps_tool_ids_in_sync_with_runtime(self):
+        self.registry.register(Tool('lookup', 'lookup evidence',
+            schema({'value': text()}, ['value']), lambda _: {'evidence': 'x' * 4200}, Impact.READ, 'memory'))
+        counts, rows = self.run_record(
+            ['lookup evidence'], call('lookup', value='first'), call('lookup', value='second'),
+            call('lookup', value='third'), Step(text='Done.'), context_chars=8000)
+        self.assertEqual(counts['kept_runs'], 1)
+        ids = [
+            [item['id'] for message in row['messages'] for item in message.get('tool_calls', [])]
+            for row in rows
+        ]
+        self.assertEqual(ids, [['call_0'], ['call_0', 'call_1'], ['call_1', 'call_2'], ['call_2']])
+        self.assertEqual(rows[2]['messages'][-1], rows[3]['messages'][-3])
+        self.assertEqual(rows[3]['messages'][-2]['tool_call_id'], 'call_2')
+
+    def test_cli_loads_project_dotenv_without_overriding_process_settings(self):
+        from integrations.msty.aurelius_provider import resolve_aurelius_provider_config
+
+        root = Path(self.directory.name)
+        fake_module = root / 'assistant' / 'agent' / 'trace.py'
+        (root / '.env').write_text(
+            'AURELIUS_EXECUTOR_MODEL=dotenv-teacher\nAURELIUS_MSTY_BASE_URL=http://127.0.0.1:1\n',
+            encoding='utf-8')
+        prompts = root / 'prompts.txt'
+        prompts.write_text('Synthetic prompt\n', encoding='utf-8')
+        cases = [
+            ({}, [], 'dotenv-teacher'),
+            ({'AURELIUS_EXECUTOR_MODEL': 'environment-teacher'}, [], 'environment-teacher'),
+            ({'AURELIUS_EXECUTOR_MODEL': 'environment-teacher'}, ['--model', 'explicit-teacher'], 'explicit-teacher'),
+        ]
+
+        def record_without_provider(runtime, recorder, prompts, out, model):
+            self.assertTrue(resolve_aurelius_provider_config().ready)
+            return {'kept_runs': 1}
+
+        for env, args, expected in cases:
+            with self.subTest(model=expected), patch.dict('os.environ', env, clear=True), \
+                    patch.object(trace, '__file__', str(fake_module)), \
+                    patch('integrations.msty.aurelius.AureliusOperator'), \
+                    patch('assistant.agent.adapters.build_registry', return_value=self.registry), \
+                    patch('assistant.agent.executor.MstyExecutor') as executor, \
+                    patch.object(trace, 'record', side_effect=record_without_provider), patch('builtins.print'):
+                self.assertEqual(trace.main(['--prompts', str(prompts), '--out', str(self.out), *args]), 0)
+                executor.assert_called_once_with(expected)
 
     def test_write_requests_are_never_executed_or_kept(self):
         counts, rows = self.run_record(['store memory'], call('store', value='x'))
