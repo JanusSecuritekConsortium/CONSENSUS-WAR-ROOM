@@ -78,9 +78,14 @@ def test_a_plain_start_in_windows_terminal_restarts_in_the_classic_console(monke
     import sys
     from ui import console_window
 
+    import os
+
     started = []
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.delenv(console_window.RELAUNCHED_ENV, raising=False)
+    real_isfile = os.path.isfile
+    # CI runs on Linux, where there is no conhost.exe to find.
+    monkeypatch.setattr(os.path, "isfile", lambda path: str(path).lower().endswith("conhost.exe") or real_isfile(path))
     start = lambda command, env: started.append((command, env))
     ours = lambda kernel32: True
     assert console_window.relaunch_in_classic_console([], _terminal_api("PseudoConsoleWindow"), owned=ours, start=start)
