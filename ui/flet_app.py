@@ -826,6 +826,12 @@ def submit_proposal_live_for_gui(
                     state.directorate.emit("REFERENCES", "SOURCE_FOUND", "AVAILABLE", "Attributed reference retrieved", session_id)
             if agent_id == BELLATOR and isinstance(packet, dict):
                 state.bellator_intelligence_diagnostics = build_bellator_diagnostics_payload(packet)
+        elif event_type == "agent_skipped":
+            agent_id = str(event["agent_id"])
+            note = f"{agent_id} not asked: {event['failed_first']} failed first in {phase}, so the round stopped"
+            state.monolith_activity_states[agent_id] = "IDLE"
+            append_reasoning_event(state.reasoning_stream, note)
+            state.directorate.emit(agent_id, "ASSESSMENT_SKIPPED", "DEGRADED", note, session_id)
         elif event_type == "vote_received":
             agent_id = str(event["agent_id"])
             vote = event["vote"]

@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.4.0 - A Failed Voter Stops the Round (2026-11-10)
+
+### Changed
+- When a voter's model fails or gives an unusable answer, the voters after it in that round are no
+  longer asked. Their answers could not count, and on local models each one cost minutes. They are
+  recorded as "not asked" in the transcript and the War Room.
+- The incomplete verdict now says why the voter failed and which voters were not asked, instead
+  of only naming the failed voter.
+
 ## 9.3.0 - Online Voters Screen (2026-11-10)
 
 ### Added

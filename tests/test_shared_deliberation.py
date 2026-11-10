@@ -78,7 +78,8 @@ def test_every_agent_sees_completed_assessments_and_critiques(sequential):
     assert orchestrator.transcript[6]["vote"] == "DENY"
 
 
-@pytest.mark.parametrize("phase,turn_count", [("assessment", 3), ("critique", 6), ("revision", 9)])
+# BELLATOR answers first, so its failure leaves AETERNUM and RATIONALIS unasked in that round.
+@pytest.mark.parametrize("phase,turn_count", [("assessment", 1), ("critique", 4), ("revision", 7)])
 @pytest.mark.parametrize("malformed", [False, True])
 def test_failed_or_malformed_turn_blocks_majority_and_stops_later_rounds(phase, turn_count, malformed):
     runtime = DiscussionRuntime((BELLATOR, phase), malformed)
@@ -93,6 +94,15 @@ def test_failed_or_malformed_turn_blocks_majority_and_stops_later_rounds(phase, 
     assert result.terminal_branch == "deliberation_incomplete"
     assert votes[BELLATOR].validation_errors
     assert not result.simulation
+    assert TRIBUNAL_AGENT_IDS[0] == BELLATOR
+    from core.models import NOT_ASKED
+    for agent in (AETERNUM, RATIONALIS):
+        assert votes[agent].validation_errors == [NOT_ASKED]
+        assert f"voter_not_asked:{agent}" in result.review_triggers
+    assert "vote_validation_failed:AETERNUM" not in result.review_triggers
+    assert result.reason.startswith("Deliberation incomplete: failed or malformed model responses from BELLATOR (BELLATOR: ")
+    assert "Not asked after that failure: AETERNUM, RATIONALIS." in result.reason
+    assert [turn["status"] for turn in orchestrator.transcript[-3:]] == ["failed", "not_asked", "not_asked"]
 
 
 def test_strict_real_tribunal_never_uses_mock_fallback_or_another_available_model(monkeypatch):

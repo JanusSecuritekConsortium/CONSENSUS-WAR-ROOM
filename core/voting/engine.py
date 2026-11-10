@@ -4,7 +4,7 @@ from collections import Counter
 from statistics import mean
 from typing import Dict, List
 
-from core.models import FinalVerdict, TribunalResult, Vote, VoteValue
+from core.models import NOT_ASKED, FinalVerdict, TribunalResult, Vote, VoteValue
 from core.voting.classifier import assign_critical_domain_relevance, classify_proposal
 from core.voting.rules import (
     ConsensusRules,
@@ -26,12 +26,20 @@ class ConsensusEngine:
         review_triggers: List[str] = []
         voting_votes = list(votes.values())
         distribution = Counter(v.vote.value for v in voting_votes)
-        failed_agents = [vote.node_key for vote in voting_votes if vote.validation_errors]
-        if failed_agents:
+        not_asked = [vote.node_key for vote in voting_votes if NOT_ASKED in vote.validation_errors]
+        failed_agents = [vote.node_key for vote in voting_votes
+                         if vote.validation_errors and vote.node_key not in not_asked]
+        if failed_agents or not_asked:
+            causes = "; ".join(f"{vote.node_key}: {' '.join(str(vote.reasoning or 'invalid response').split())[:220]}"
+                               for vote in voting_votes if vote.node_key in failed_agents)
+            reason = ("Deliberation incomplete: failed or malformed model responses from " + ", ".join(failed_agents)
+                      + (f" ({causes})" if causes else "") + ".")
+            if not_asked:
+                reason += " Not asked after that failure: " + ", ".join(not_asked) + "."
             return self._terminal_result(
-                query, FinalVerdict.NO_CONSENSUS,
-                "Deliberation incomplete: failed or malformed model responses from " + ", ".join(failed_agents) + ". No normal verdict was issued.",
-                votes, distribution, ["deliberation_incomplete", *[f"vote_validation_failed:{key}" for key in failed_agents]],
+                query, FinalVerdict.NO_CONSENSUS, reason + " No normal verdict was issued.",
+                votes, distribution, ["deliberation_incomplete", *[f"vote_validation_failed:{key}" for key in failed_agents],
+                                      *[f"voter_not_asked:{key}" for key in not_asked]],
                 session_id, "deliberation_incomplete", {}, quorum_met=False,
             )
         for vote in voting_votes:

@@ -12,7 +12,7 @@ from core.llm.prompts import build_node_prompt
 from core.llm import online as online_models
 from core.llm.generation import SubmissionCancelled
 from core.logging import log_error, log_event
-from core.models import NodeIdentity, Vote, VoteValue
+from core.models import NOT_ASKED, NodeIdentity, Vote, VoteValue
 from core.voting.parser import parse_vote
 from core.voting.arguments import evidence_source_ids
 from core.voting.evidence import supplied_passages
@@ -73,6 +73,26 @@ class VotingOrchestrator:
                 if control:
                     control.check()
                 node = self.nodes[agent_id]
+                failed_first = next((key for key, earlier in round_votes.items() if earlier.validation_errors), "")
+                if failed_first:
+                    # The round cannot count once a voter has failed; on local models each further call costs minutes.
+                    round_votes[agent_id] = Vote(
+                        node_key=agent_id, role=node.role, vote=VoteValue.ABSTAIN, confidence=0.0,
+                        reasoning=f"Not asked: {failed_first} failed first in {phase}, so the round stopped.",
+                        validation_errors=[NOT_ASKED], model=node.model, response_time=0.0, raw_response="",
+                        backend="not-asked",
+                    )
+                    self.transcript.append({"round": number, "phase": phase, "agent_id": agent_id, "status": "not_asked",
+                                            "model": node.model, "requested_model": node.model, "backend": "not-asked",
+                                            "vote": VoteValue.ABSTAIN.value, "confidence": 0.0,
+                                            "reasoning": round_votes[agent_id].reasoning,
+                                            "validation_errors": [NOT_ASKED], "raw_response": "", "response_time": 0.0,
+                                            "model_fallback": False, "model_fallback_reason": "", "model_attempts": []})
+                    log_event("deliberation_turn_skipped", {"session_id": session_id, "round": number, "phase": phase,
+                                                            "agent_id": agent_id, "failed_first": failed_first})
+                    self._emit(on_event, {"type": "agent_skipped", "round": number, "phase": phase,
+                                          "agent_id": agent_id, "failed_first": failed_first})
+                    continue
                 runtime_context = deepcopy(base_context)
                 runtime_context.update(deepcopy(packets.get(agent_id, {})))
                 runtime_context.update({

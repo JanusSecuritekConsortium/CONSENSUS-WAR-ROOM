@@ -108,6 +108,10 @@ class Theme:
         return list(get_boot_profile(self.boot_profile_id).boot_lines)
 
 
+# A vote's validation error for a voter that was not called because an earlier voter in the round failed.
+NOT_ASKED = "not_asked_after_failure"
+
+
 @dataclass
 class Vote:
     node_key: str
