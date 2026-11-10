@@ -80,3 +80,16 @@ if __name__ == "__main__":
     test_gui_magi_option_applies_eva_nerv_visual_family()
     test_gui_boot_selection_and_runtime_theme_stay_aligned()
     print("test_gui_theme_selector PASS")
+
+
+def test_random_start_follows_the_operator_theme_odds():
+    from collections import Counter
+    from ui.themes.catalog import GUI_THEME_WEIGHTS
+
+    assert set(GUI_THEME_WEIGHTS) == {theme.key for theme in get_gui_theme_options()}
+    assert sum(GUI_THEME_WEIGHTS.values()) == 100.0
+    counts = Counter(resolve_selected_gui_theme(None, seed=seed) for seed in range(4000))
+    assert counts["military"] > counts["eva"] + counts["arasaka"] - 400
+    assert min(counts["eva"], counts["arasaka"]) > counts["wh40k"] > counts["helldivers"] > counts["janus"]
+    assert abs(counts["eva"] - counts["arasaka"]) < 200  # MAGI and Arasaka are equally likely
+    assert counts["janus"] < 60  # about 1 start in 200

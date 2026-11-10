@@ -25,6 +25,7 @@ from ui.animations.boot import export_legacy_visual_reference, export_theme_prev
 from ui.animations.loading import render_loading_console
 from ui.themes.catalog import (
     THEME_ALIASES,
+    GUI_THEME_WEIGHTS,
     THEMES,
     get_gui_theme_key,
     get_gui_theme_options,
@@ -44,7 +45,8 @@ def resolve_selected_gui_theme(cli_theme: str | None, seed: int | None = None) -
     if cli_theme:
         return get_gui_theme_key(cli_theme)
     rng = random.Random(seed)
-    return rng.choice([theme.key for theme in get_gui_theme_options()])
+    keys = [theme.key for theme in get_gui_theme_options()]
+    return rng.choices(keys, weights=[GUI_THEME_WEIGHTS.get(key, 0.0) for key in keys])[0]
 
 
 def resolve_gui_window_mode(fullscreen: bool = False, maximized: bool = False, windowed: bool = False) -> str:

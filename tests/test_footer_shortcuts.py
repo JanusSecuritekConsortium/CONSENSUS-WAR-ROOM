@@ -54,8 +54,8 @@ def test_footer_clicks_and_keyboard_share_actions(monkeypatch):
     actions = []
     monkeypatch.setattr(gui, "_render_page", lambda *args: None)
     monkeypatch.setattr(gui, "execute_command_palette_action", lambda state, action: actions.append(action))
-    for button, key, attribute in zip(buttons, ("K", "D", "P", "T", "H", "E", "M", "O"),
-                                      ("command_palette_open", "diagnostics_drawer_open", "directorate_open", None, "proposal_history_open", None, "world_map_open", "online_voters_open")):
+    for button, key, attribute in zip(buttons, ("D", "E", "H", "K", "M", "O", "P", "T"),  # alphabetical, left to right
+                                      ("diagnostics_drawer_open", None, "proposal_history_open", "command_palette_open", "world_map_open", "online_voters_open", "directorate_open", None)):
         assert button.on_click is not None
         button.on_click(None)
         if attribute:
@@ -63,4 +63,4 @@ def test_footer_clicks_and_keyboard_share_actions(monkeypatch):
         page.on_keyboard_event(SimpleNamespace(key=key, ctrl=True))
         if attribute:
             assert getattr(state, attribute) is False
-    assert actions == ["Toggle Theme", "Toggle Theme", "Export Latest Verdict", "Export Latest Verdict"]
+    assert actions == ["Export Latest Verdict", "Export Latest Verdict", "Toggle Theme", "Toggle Theme"]

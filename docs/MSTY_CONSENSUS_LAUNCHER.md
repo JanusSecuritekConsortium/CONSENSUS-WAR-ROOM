@@ -1,6 +1,6 @@
 # Msty CONSENSUS Launcher
 
-Canonical launcher version: `MstyConsensusLauncher v1.1.3`
+Canonical launcher version: `MstyConsensusLauncher v1.1.4`
 
 Operational status: `ACCEPTED / RELEASE-STABLE`
 
@@ -15,7 +15,7 @@ G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher.exe
 Backup launcher:
 
 ```text
-G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher-1.1.3.exe
+G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher-1.1.4.exe
 ```
 
 Config:
@@ -140,6 +140,13 @@ API_FALLBACK_READY <url> count=<n>
 API_SELECTED <url>
 API_NO_ENDPOINT_READY
 ```
+
+## Classic Console (v1.1.4)
+
+Windows 11 normally opens console programs in Windows Terminal, where CONSENSUS cannot hide its
+boot console once the War Room window is up. Since v1.1.4 the launcher starts CONSENSUS through
+the classic console host (`%WINDIR%\System32\conhost.exe "<consensus_exe_path>"`), so the boot
+console is hidden when the War Room opens. Without `conhost.exe` it starts the executable directly.
 
 ## Environment Injection
 

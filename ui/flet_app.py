@@ -2170,7 +2170,7 @@ def build_gui_layout(
                     bgcolor=theme.surface_color,
                     data={"role": "footer_command", "key": key},
                 )
-                for key, label in (("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"), ("M", "World Map"), ("O", "Online Voters"))
+                for key, label in sorted((("K", "Command"), ("D", "Diagnostics"), ("P", "DIRECTORATE"), ("T", "Theme"), ("H", "History"), ("E", "Export"), ("M", "World Map"), ("O", "Online Voters")))  # by key, left to right
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=0,
@@ -3131,9 +3131,9 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             if state.world_map_open:
                 overlay.append(ft.Container(
                     build_world_map_overlay(state.theme, state.world_map_data, busy=state.world_map_busy,
-                                            page_width=getattr(page, "width", None),
+                                            page_width=getattr(page, "width", None), page_height=getattr(page, "height", None),
                                             on_refresh=refresh_world_map, on_close=close_world_map),
-                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                    top=6, bottom=FOOTER_HEIGHT + 6, left=6, right=6, padding=8,
                     border=ft.border.all(2, state.theme.accent_color),
                     bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data="world_map"))
@@ -3399,8 +3399,9 @@ def run_flet_gui(
             page.update()
             return
         state.directorate.emit("INTERFACE", "STARTUP_CHECK", "AVAILABLE", "Flet interface mounted", check=True)
-        from ui.console_window import hide_boot_console
+        from ui.console_window import hide_boot_console, quiet_shutdown_errors
         hide_boot_console()
+        quiet_shutdown_errors(getattr(page, "loop", None))
         marker = os.getenv("CONSENSUS_GUI_READY_MARKER")
         if marker:
             Path(marker).write_text("ready", encoding="utf-8")

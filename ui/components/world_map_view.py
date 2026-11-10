@@ -10,7 +10,7 @@ from core.intelligence.world_map import kind_runs, render_world_map
 from core.models import Theme
 
 MINI_SIZE = (76, 20)
-BIG_SIZE = (200, 48)
+BIG_SIZE = (240, 58)  # characters; more cells keep countries apart across narrow seas
 LEGEND = "x/X BELLATOR feed event   + * # GDELT news: low / medium / high severity   +--+ strategic region"
 
 
@@ -83,11 +83,14 @@ def _event_rows(theme: Theme, data: Dict[str, Any] | None, limit: int = 12) -> L
 
 
 def build_world_map_overlay(theme: Theme, data: Dict[str, Any] | None, *, busy: bool, page_width: float | None,
-                            on_refresh=None, on_close=None) -> ft.Control:
+                            page_height: float | None = None, on_refresh=None, on_close=None) -> ft.Control:
     width, height = BIG_SIZE
-    available = max(600.0, float(page_width or 1400) - 100)
-    # Consolas characters are about 0.55 em wide; size the font so the map fills the overlay width.
+    available = max(600.0, float(page_width or 1400) - 40)
+    # Consolas characters are about 0.55 em wide; size the font so the map fills the overlay width,
+    # and keep the whole map on screen below the title and above the footer (about 170 px).
     size = max(6.0, min(13.0, available / (width * 0.56)))
+    if page_height:
+        size = max(6.0, min(size, (float(page_height) - 170) / height))
     button_style = ft.ButtonStyle(color=theme.accent_color, shape=ft.RoundedRectangleBorder(radius=0))
     return ft.Column(
         [

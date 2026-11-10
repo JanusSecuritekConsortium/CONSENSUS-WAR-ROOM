@@ -44,3 +44,21 @@ def test_ownership_counts_the_packaged_starter_as_consensus():
 
     assert console_is_ours(kernel32_with(10, 11), own_ids={10, 11})
     assert not console_is_ours(kernel32_with(10, 11, 99), own_ids={10, 11})  # a terminal shares it
+
+
+def test_only_the_shutdown_noise_is_dropped():
+    import asyncio
+    from ui.console_window import quiet_shutdown_errors
+
+    loop = asyncio.new_event_loop()
+    reported = []
+    loop.set_exception_handler(lambda event_loop, context: reported.append(context["message"]))
+    try:
+        assert quiet_shutdown_errors(loop)
+        handler = loop.get_exception_handler()
+        handler(loop, {"message": "noise", "exception": RuntimeError("cannot schedule new futures after shutdown")})
+        handler(loop, {"message": "real", "exception": ValueError("broken")})
+    finally:
+        loop.close()
+    assert reported == ["real"]
+    assert quiet_shutdown_errors(None) is False

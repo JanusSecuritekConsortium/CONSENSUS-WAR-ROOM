@@ -13,15 +13,15 @@ using System.Web.Script.Serialization;
 [assembly: System.Reflection.AssemblyTitle("Msty CONSENSUS Launcher")]
 [assembly: System.Reflection.AssemblyDescription("Starts Msty background services and launches CONSENSUS with duplicate-process protection.")]
 [assembly: System.Reflection.AssemblyProduct("Msty CONSENSUS Launcher")]
-[assembly: System.Reflection.AssemblyVersion("1.1.3.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.1.3.0")]
-[assembly: System.Reflection.AssemblyInformationalVersion("1.1.3")]
+[assembly: System.Reflection.AssemblyVersion("1.1.4.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.1.4.0")]
+[assembly: System.Reflection.AssemblyInformationalVersion("1.1.4")]
 
 namespace MstyConsensusLauncher
 {
     internal static class Program
     {
-        private const string LauncherVersion = "1.1.3";
+        private const string LauncherVersion = "1.1.4";
         private const string MutexName = @"Global\MstyConsensusLauncher";
         private const string LauncherExePath = @"G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher.exe";
         private const string LauncherWorkingDirectory = @"G:\Tools\MstyConsensusLauncher";
@@ -459,10 +459,15 @@ namespace MstyConsensusLauncher
 
             string selectedUrl = selection.SelectedProbe.ConfiguredApiUrl;
             Log("CONSENSUS_LAUNCH_ENDPOINT " + selectedUrl);
-            Log("Launching CONSENSUS executable.");
+            // Windows 11 hosts new consoles in Windows Terminal, where CONSENSUS cannot hide its boot console
+            // once the War Room opens. The classic console host (conhost.exe) gives it a window it can hide.
+            string conhost = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "conhost.exe");
+            bool classicConsole = File.Exists(conhost);
+            Log("Launching CONSENSUS executable" + (classicConsole ? " in the classic console." : "."));
             var psi = new ProcessStartInfo
             {
-                FileName = Config.ConsensusExePath,
+                FileName = classicConsole ? conhost : Config.ConsensusExePath,
+                Arguments = classicConsole ? "\"" + Config.ConsensusExePath + "\"" : "",
                 WorkingDirectory = ConsensusRoot,
                 UseShellExecute = false
             };

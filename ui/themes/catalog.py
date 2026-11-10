@@ -336,6 +336,10 @@ THEME_ALIASES: Dict[str, str] = {
 
 GUI_THEME_KEYS = ("eva", "arasaka", "janus", "wh40k", "helldivers", "military")
 GUI_THEME_FAMILY_KEYS = {"nerv": "eva"}
+# Chance (in %) that a random start picks each theme, and with it its boot sequence.
+# The operator's choice: mostly the war room, then MAGI and Arasaka equally, then Warhammer, rarely
+# Helldivers, and Janus about once in two hundred starts.
+GUI_THEME_WEIGHTS = {"military": 50.0, "eva": 20.0, "arasaka": 20.0, "wh40k": 6.0, "helldivers": 3.5, "janus": 0.5}
 
 
 def resolve_theme_key(theme_key: str) -> str:

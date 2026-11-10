@@ -66,4 +66,34 @@ def hide_boot_console(api: Optional[Any] = None, *, owned=console_is_ours) -> bo
         return False
 
 
-__all__ = ["hide_boot_console"]
+def _is_shutdown_noise(context: dict) -> bool:
+    error = context.get("exception")
+    return isinstance(error, RuntimeError) and "after shutdown" in str(error)
+
+
+def quiet_shutdown_errors(loop: Any) -> bool:
+    """Drop the harmless "cannot schedule new futures after shutdown" traceback printed when the window closes.
+
+    Flet hands one last callback to its thread pool after the pool has stopped. Every other loop error
+    is still reported as before. Returns True when the handler was installed.
+    """
+    if loop is None or not hasattr(loop, "set_exception_handler"):
+        return False
+    previous = loop.get_exception_handler() if hasattr(loop, "get_exception_handler") else None
+
+    def handler(event_loop, context):
+        if _is_shutdown_noise(context):
+            return
+        if previous is not None:
+            previous(event_loop, context)
+        else:
+            event_loop.default_exception_handler(context)
+
+    try:
+        loop.set_exception_handler(handler)
+    except Exception:
+        return False
+    return True
+
+
+__all__ = ["hide_boot_console", "quiet_shutdown_errors"]

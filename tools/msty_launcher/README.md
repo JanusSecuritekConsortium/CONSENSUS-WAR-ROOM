@@ -1,10 +1,10 @@
-# MstyConsensusLauncher v1.1.3
+# MstyConsensusLauncher v1.1.4
 
 `MstyConsensusLauncher` is the canonical Windows boot wrapper for keeping Msty available and launching CONSENSUS against the same semantically-ready Msty backend.
 
 Release state: `ACCEPTED / RELEASE-STABLE`
 
-Canonical release-stable launcher: `MstyConsensusLauncher v1.1.3`
+Canonical release-stable launcher: `MstyConsensusLauncher v1.1.4`
 
 ## Purpose
 
@@ -27,7 +27,7 @@ G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher.exe
 Backup EXE:
 
 ```text
-G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher-1.1.3.exe
+G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher-1.1.4.exe
 ```
 
 Config:
@@ -296,4 +296,4 @@ G:\Tools\MstyConsensusLauncher\MstyConsensusLauncher.exe --tail-log
 
 ## Release Policy
 
-`v1.1.3` is the canonical release-stable boot wrapper. Do not add launcher features unless there is a concrete operational bug or integration requirement.
+`v1.1.4` is the canonical release-stable boot wrapper. Do not add launcher features unless there is a concrete operational bug or integration requirement.

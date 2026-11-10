@@ -1,5 +1,19 @@
 # Changelog
 
+## 9.6.0 - Weighted Themes, Bigger Map, Quiet Console (2026-11-10)
+
+### Changed
+- A random start now favours some themes, and with them their boot sequences: War Room (XCOM) 50%,
+  MAGI 20%, Arasaka 20%, Warhammer 6%, Helldivers 3.5% and Janus 0.5%.
+- The full world map (Ctrl+M) is drawn at 240 x 58 characters instead of 200 x 48 and fills almost
+  the whole window, so countries no longer run together across narrow seas.
+- The footer buttons are in alphabetical order of their keys: D, E, H, K, M, O, P, T.
+
+### Fixed
+- The boot console now closes when the War Room opens: MstyConsensusLauncher 1.1.4 starts CONSENSUS
+  in the classic Windows console, which CONSENSUS can hide, instead of Windows Terminal.
+- Closing CONSENSUS no longer prints "cannot schedule new futures after shutdown" in the console.
+
 ## 9.5.0 - History Shows Who Answered (2026-11-10)
 
 ### Added
