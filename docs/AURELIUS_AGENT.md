@@ -248,6 +248,33 @@ Telegram recipient scope, MCP handshake/errors/timeouts, queue ownership,
 deduplication/restart and factual scheduled execution. They make no live model
 calls or Telegram sends.
 
+## Fine-tuning trace recorder (opt-in)
+
+`assistant/agent/trace.py` records supervised examples from the real loop. It
+is never part of the normal agent route and runs only through its explicit CLI:
+
+```powershell
+python -m assistant.agent.trace --prompts prompts.txt --model <teacher-model-id>
+python tests/test_aurelius_trace.py
+```
+
+`--prompts` is a UTF-8 file with one operator request per line (`#` comments
+and blank lines are skipped). The teacher is an existing model on the
+configured loopback Msty provider; the Ajax name guard still applies. Each
+executor round of a run that finishes `completed` becomes one JSONL row holding
+the exact `messages` sent, the `tools` offered in the provider wire shape, and
+the assistant turn produced. Degraded, uncertain and approval-pending runs are
+dropped and counted by reason.
+
+Recording attaches the confined read-only project filesystem and no write root
+or Telegram sender. It uses a fresh permission policy with no grants, so
+non-read tools are never executed; a requested write cancels that run. Unlike
+the audit log, rows contain private prompts, tool arguments and evidence. The
+default output is the ignored `_ARBITER/aurelius_agent/traces/traces.jsonl`;
+keep any other output path outside Git. Rows are appended, not deduplicated,
+and are a teacher's unreviewed behavior: review them before training. Offline
+tests make no live model calls; no live recording run has been validated.
+
 ## Provenance and licensing boundary
 
 The architectural ideas were inspired by the public
