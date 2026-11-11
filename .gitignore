@@ -58,7 +58,13 @@ _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json
 
 # Heavy/generated historical backups
-archive/
+archive/*
+# The first versions are published; their personal and third-party files stay local.
+!archive/legacy/
+!archive/legacy/*/*.log
+archive/legacy/RATIONALIS/memory/
+archive/legacy/RATIONALIS/agent/
+archive/legacy/RATIONALIS/write_memory.py
 future_implementations/
 
 # Nested repositories and model/artifact blobs
