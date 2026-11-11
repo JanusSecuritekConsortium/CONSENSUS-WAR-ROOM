@@ -83,7 +83,7 @@ local API entry points, deterministic offline operation, Msty/Ollama-compatible
 provider adapters, real-data enrichment, simulations, voice integrations, and
 Windows packaging.
 
-Maintained by the CONSENSUS project contributors.
+Created by Erhardt Von Grupten Mundt, Chief Architect. The first versions are kept in [archive/legacy](archive/legacy/README.md).
 
 The Flet desktop includes [DIRECTORATE](docs/DIRECTORATE.md): a teletype dispatch
 desk with numbered decisions, public justifications, dissent, conditions and
