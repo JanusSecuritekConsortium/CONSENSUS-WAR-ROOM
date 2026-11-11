@@ -34,7 +34,7 @@ def test_eva_dummy_preserves_identity_and_adds_dense_startup_sections() -> None:
 
     assert f"MAGI / NERV BIOS v{SYSTEM_VERSION}" in text
     assert "Copyright (C) NERV / MAGI Tactical Systems" in text
-    assert "Chief Architect: Project contributors" in text
+    assert "Chief Architect: Erhardt Von Grupten Mundt" in text
     assert f"LAST PATCH: 2026-07-16 | BUILD: v{SYSTEM_VERSION}" in text
     assert "SYSTEM DIAGNOSTICS" in text
     assert "CPU CORES" in text

@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Dict
 
-from config.version import SYSTEM_VERSION
+from config.version import SYSTEM_AUTHOR, SYSTEM_VERSION
 from core.models import Theme
 from core.paths import ARBITER_DIR, RESOURCE_ROOT
 from ui.animations.loading import build_loading_sample_text, render_loading_sample
@@ -35,7 +35,7 @@ def build_global_boot_text() -> str:
     lines = [
         load_logo_asset("nerv_logo.txt"),
         f"CONSENSUS TACTICAL BIOS v{SYSTEM_VERSION} - (C) ARASAKA CORPORATION",
-        "Chief Architect: Project contributors",
+        f"Chief Architect: {SYSTEM_AUTHOR}",
         "Quantum Computing Division / Tactical AI Systems",
         "-" * 79,
         f"WAR ROOM INIT PROTOCOL | S/N: 0xC0A57A71C | BUILD: v{SYSTEM_VERSION}",

@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.7.5 - Author Credit and Legacy Folder (2026-11-11)
+
+### Changed
+- The boot sequences now credit the author: "Chief Architect: Erhardt Von Grupten Mundt",
+  instead of "Project contributors". The name comes from one setting, so every boot screen agrees.
+- The first versions of CONSENSUS (the three original monoliths with their first vote logs from
+  May 2025, and the first Telegram bot) are kept in `archive/legacy` and published on GitHub.
+  About 28 GB of unused 2025 voice-model downloads were sent to the Recycle Bin.
+
 ## 9.7.4 - Token Form Opens by Itself (2026-11-11)
 
 ### Changed

@@ -34,7 +34,7 @@ from ui.boot.registry import boot_registry_for_theme
 from ui.themes.catalog import THEMES, resolve_theme_key
 
 
-AUTHOR_LINE = "Chief Architect: Project contributors"
+AUTHOR_LINE = "Chief Architect: Erhardt Von Grupten Mundt"
 ORGANIZATION_LINE = "CONSENSUS project"
 DEFAULT_WIDTH = 100
 MIN_PREVIEW_WIDTH = 64

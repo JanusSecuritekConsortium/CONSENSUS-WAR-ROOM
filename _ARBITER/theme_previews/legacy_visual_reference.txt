@@ -133,7 +133,7 @@ GLOBAL BOOT SAMPLE
                                                       '
 
 CONSENSUS TACTICAL BIOS v7.2.4 - (C) ARASAKA CORPORATION
-Chief Architect: Project contributors
+Chief Architect: Erhardt Von Grupten Mundt
 Quantum Computing Division / Tactical AI Systems
 -------------------------------------------------------------------------------
 WAR ROOM INIT PROTOCOL | S/N: 0xC0A57A71C | BUILD: v7.2.4
