@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import importlib.util
 import logging
 import sys
@@ -109,14 +108,10 @@ def test_provider_error_gate_logs_once() -> None:
     assert gate.should_log("manual:msty-missing") is True
 
 
-def test_active_aurelius_config_is_msty_only() -> None:
-    config = json.loads((ROOT / "_ARBITER" / "config.json").read_text(encoding="utf-8"))
-    llm = config["llm"]
-
-    assert llm["provider"] == "msty"
-    assert llm["base_url"] == ""
-    assert llm["base_url_env"] == "AURELIUS_MSTY_BASE_URL"
-    assert llm["fallback_enabled"] is False
+def test_old_arbiter_config_is_retired() -> None:
+    # Its 2025 monolith prompts contradicted the current voters; nothing reads it, so it lives in legacy.
+    assert not (ROOT / "_ARBITER" / "config.json").exists()
+    assert (ROOT / "archive" / "legacy" / "arbiter_config_2025.json").is_file()
 
 
 def test_aurelius_bot_no_direct_ollama_endpoint() -> None:

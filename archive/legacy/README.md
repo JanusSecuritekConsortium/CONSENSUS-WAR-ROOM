@@ -6,6 +6,7 @@ current system.
 | Item | What it was |
 | --- | --- |
 | `AETERNUM/`, `BELLATOR/`, `RATIONALIS/` | The first three monoliths (spring 2025): one folder each with placeholder programs and a vote log. The logs hold the first recorded tribunal votes, from 13 May 2025. |
+| `arbiter_config_2025.json` | The first tribunal settings file: the original monolith prompts, temperatures and voting rules. Retired because its BELLATOR (a cautious risk assessor) contradicts the current one. |
 | `anima_bot.py` | The first Telegram assistant bot, the forerunner of AURELIUS. It read its keys from `.env`. |
 
 The 2025 monoliths were replaced by the modular tribunal in `core/` and the models now run in
