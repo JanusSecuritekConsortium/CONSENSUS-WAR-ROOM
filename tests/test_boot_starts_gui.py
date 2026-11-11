@@ -26,9 +26,11 @@ def test_normal_boot_runs_bios_then_starts_gui() -> None:
                 config_path=config,
                 render_bios=lambda **kwargs: events.append(f"bios:{kwargs['theme_id']}"),
                 launch_gui=lambda theme, *_args, **_kwargs: events.append(f"gui:{theme}"),
+                hide_console=lambda: events.append("hide console"),
             )
             assert code == 0
-            assert events == ["bios:janus", "gui:janus"]
+            # The boot window disappears as soon as Enter ends the animation, before the War Room opens.
+            assert events == ["bios:janus", "hide console", "gui:janus"]
         finally:
             boot.build_dependency_report = original_dependencies
             boot.health_check = original_provider

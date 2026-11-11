@@ -110,13 +110,13 @@ _THEME_NODE_SUBJECTS: Mapping[str, Mapping[str, Tuple[str, ...]]] = {
     "arasaka": {
         RATIONALIS: ("compliance logic grid", "due-diligence core", "board analysis lattice", "rationalis executive logic"),
         AETERNUM: ("capital ledger node", "executive yield forecast", "asset continuity table", "aeternum capital forecast"),
-        BELLATOR: ("counterintelligence grid", "black/red security core", "threat acquisition channel", "bellator counter-intrusion matrix"),
+        BELLATOR: ("hostile takeover division", "black/red expansion core", "market capture channel", "bellator acquisition matrix"),
         ARBITER: ("executive verdict channel", "clearance authority bus", "corporate sanction gate", "arbiter corporate oversight"),
     },
     "janus": {
         RATIONALIS: ("analytic mirror", "cold logic core", "first-face proof channel", "rationalis dual-vector mirror"),
         AETERNUM: ("counterpart horizon", "dual-front forecast core", "second-face archive", "aeternum bifurcated horizon"),
-        BELLATOR: ("Janus gatekeeper", "mirror threat core", "countermove lattice", "bellator mirrored response"),
+        BELLATOR: ("Janus vanguard", "mirror strike core", "forward move lattice", "bellator mirrored advance"),
         ARBITER: ("dual mandate gate", "reversibility tribunal", "one-will verdict channel", "arbiter twin-core gate"),
     },
 }

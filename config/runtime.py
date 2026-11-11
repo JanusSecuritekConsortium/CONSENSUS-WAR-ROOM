@@ -36,13 +36,14 @@ class RuntimeConfig:
             "geopolitics",
             "risk",
             "operations",
+            "growth",
         ]
     )
     monolith_domain_map: Dict[str, list[str]] = field(
         default_factory=lambda: {
-            "RATIONALIS": ["logic", "governance", "ethics", "analysis"],
+            "RATIONALIS": ["logic", "governance", "ethics", "analysis", "security", "risk"],
             "AETERNUM": ["finance", "forecasting", "economics", "historical_patterns"],
-            "BELLATOR": ["security", "geopolitics", "risk", "operations"],
+            "BELLATOR": ["growth", "security", "geopolitics", "risk", "operations"],
         }
     )
     ollama_base_url: str = "http://127.0.0.1:11434"

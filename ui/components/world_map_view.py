@@ -14,9 +14,35 @@ BIG_SIZE = (240, 58)  # characters; more cells keep countries apart across narro
 LEGEND = "x/X BELLATOR feed event   + * # GDELT news: low / medium / high severity   +--+ strategic region"
 
 
+LAND_FALLBACK = "#8a8a8a"  # neutral grey for themes whose secondary colour vanishes on their background
+MIN_LAND_CONTRAST = 3.0
+
+
+def _luminance(colour: str) -> float:
+    value = colour.lstrip("#")
+    channels = [int(value[index:index + 2], 16) / 255 for index in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast(first: str, second: str) -> float:
+    """WCAG contrast ratio between two #rrggbb colours (1 = none, 21 = black on white)."""
+    light, dark = sorted((_luminance(first), _luminance(second)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def land_colour(theme: Theme) -> str:
+    try:
+        if contrast(theme.secondary_color, theme.background_color) >= MIN_LAND_CONTRAST:
+            return theme.secondary_color
+    except (ValueError, IndexError, AttributeError):
+        pass
+    return LAND_FALLBACK
+
+
 def _colour(theme: Theme, kind: str) -> Optional[str]:
     return {
-        "l": theme.secondary_color,
+        "l": land_colour(theme),
         "r": theme.accent_color,
         "1": theme.text_color,
         "2": theme.warning_color,
@@ -104,7 +130,7 @@ def build_world_map_overlay(theme: Theme, data: Dict[str, Any] | None, *, busy: 
             ft.Text(map_status_line(data, busy), color=theme.text_color, size=10, font_family=theme.font_family,
                     text_align=ft.TextAlign.CENTER),
             ft.Container(map_text(theme, data, width, height, size=size, regions=True),
-                         border=ft.border.all(1, theme.secondary_color), padding=4),
+                         border=ft.border.all(1, land_colour(theme)), padding=4),
             ft.Text(LEGEND, color=theme.text_color, size=10, font_family=theme.font_family, text_align=ft.TextAlign.CENTER),
             ft.Text("GDELT events are machine-coded from news reports and appear on the map only; BELLATOR does not "
                     "vote on them.", color=theme.text_color, size=9, italic=True, text_align=ft.TextAlign.CENTER),

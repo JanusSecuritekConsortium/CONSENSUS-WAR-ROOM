@@ -39,7 +39,7 @@ class MockBackend:
         score = 0
         score += sum(1 for term in approve_terms if term in lowered)
         score -= sum(1 for term in deny_terms if term in lowered) * 2
-        score -= 1 if node.role == "Security" and any(term in lowered for term in conditional_terms) else 0
+        score -= 1 if node.role == "Growth" and any(term in lowered for term in conditional_terms) else 0
         score -= 1 if node.role == "Finance" and any(term in lowered for term in ["spend", "buy", "investment"]) else 0
 
         critical_risk = any(term in lowered for term in critical_terms)
@@ -66,9 +66,9 @@ class MockBackend:
 
         risk = "No major role-specific risk detected."
         condition = "Proceed with normal audit logging."
-        if node.role == "Security":
-            risk = "Operational exposure should be checked before execution."
-            condition = "Run a security review before live deployment."
+        if node.role == "Growth":
+            risk = "The upside is real only if a failed move can be survived."
+            condition = "Name the prize and the fallback before committing."
         elif node.role == "Finance":
             risk = "Cost and opportunity-cost assumptions may be incomplete."
             condition = "Attach budget ceiling and expected value estimate."

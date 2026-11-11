@@ -25,14 +25,17 @@
     "security",
     "geopolitics",
     "risk",
-    "operations"
+    "operations",
+    "growth"
   ],
   "monolith_domain_map": {
     "RATIONALIS": [
       "logic",
       "governance",
       "ethics",
-      "analysis"
+      "analysis",
+      "security",
+      "risk"
     ],
     "AETERNUM": [
       "finance",
@@ -41,6 +44,7 @@
       "historical_patterns"
     ],
     "BELLATOR": [
+      "growth",
       "security",
       "geopolitics",
       "risk",

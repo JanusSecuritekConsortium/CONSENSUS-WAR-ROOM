@@ -53,6 +53,7 @@ def run_boot(
     config_path: Path = CONFIG_PATH,
     launch_gui: Callable[..., Any] | None = None,
     render_bios: Callable[..., Any] | None = None,
+    hide_console: Callable[[], Any] | None = None,
 ) -> int:
     dependencies = build_dependency_report()
     print_human_report(dependencies)
@@ -90,6 +91,11 @@ def run_boot(
         renderer = render_bios or render_bios_boot_console
         renderer(theme_id=theme_key, speed="random", seed=seed,
                  provider_status={"status": "unknown", "active_backend": config.backend})
+        # Enter was pressed: the boot window goes away now, not once the War Room has finished mounting.
+        # It is only hidden when CONSENSUS opened it, never a terminal the owner started it from.
+        if hide_console is None:
+            from ui.console_window import hide_boot_console as hide_console
+        hide_console()
     if launch_gui is None:
         from ui.flet_app import run_flet_gui
 

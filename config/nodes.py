@@ -10,9 +10,9 @@ from core.models import NodeIdentity
 
 DEFAULT_NODES: Dict[str, NodeIdentity] = {
     BELLATOR: NodeIdentity(
-        role="Security",
+        role="Growth",
         codename=BELLATOR,
-        core_name="Security Core",
+        core_name="Growth Core",
         monolith_name=BELLATOR,
         symbol="B",
         model=AGENT_PROFILES[BELLATOR].model_preference,
@@ -43,7 +43,7 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="R",
         model=AGENT_PROFILES[RATIONALIS].model_preference,
         temperature=0.2,
-        mission="strategy, planning, sequencing, contingencies, contradictions, hidden assumptions",
+        mission="strategy, planning, sequencing, contingencies, contradictions, hidden assumptions, risks and security exposure",
         prompt=(
             AGENT_PROFILES[RATIONALIS].system_prompt
         ),

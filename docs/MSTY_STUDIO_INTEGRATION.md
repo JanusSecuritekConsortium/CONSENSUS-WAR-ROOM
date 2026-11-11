@@ -200,7 +200,7 @@ The default monolith model assignments are:
 ```text
 RATIONALIS / Logic: deepseek-coder:33b
 AETERNUM / Finance: llama3.3:70b
-BELLATOR / Security: mixtral:8x7b
+BELLATOR / Growth: mixtral:8x7b
 ```
 
 Adjust these in:

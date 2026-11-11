@@ -267,8 +267,8 @@ THEMES: Dict[str, Theme] = {
             "DUE-DILIGENCE CORE",
             "CAPITAL LEDGER NODE",
             "EXECUTIVE YIELD CORE",
-            "COUNTERINTELLIGENCE GRID",
-            "BLACK/RED SECURITY CORE",
+            "HOSTILE TAKEOVER DIVISION",
+            "BLACK/RED EXPANSION CORE",
         ),
         interface_labels=_interface_labels(
             "CORPORATE MEMORY VAULT",
@@ -308,8 +308,8 @@ THEMES: Dict[str, Theme] = {
             "COLD LOGIC CORE",
             "COUNTERPART HORIZON",
             "DUAL-FRONT FORECAST CORE",
-            "JANUS GATEKEEPER",
-            "MIRROR THREAT CORE",
+            "JANUS VANGUARD",
+            "MIRROR STRIKE CORE",
         ),
         interface_labels=_interface_labels(
             "DUAL-FACE CASE ARCHIVE",

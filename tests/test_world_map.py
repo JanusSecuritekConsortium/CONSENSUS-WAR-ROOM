@@ -179,3 +179,13 @@ def test_gui_controls_build():
     overlay = build_world_map_overlay(theme, data, busy=False, page_width=1600)
     assert overlay.data == {"role": "world_map_overlay"}
     assert "1 GDELT" in map_status_line(data) and "not loaded" in map_status_line({})
+
+
+def test_map_land_stays_readable_on_every_theme():
+    from ui.components.world_map_view import LAND_FALLBACK, MIN_LAND_CONTRAST, contrast, land_colour
+    from ui.themes.catalog import THEMES
+    for key, theme in THEMES.items():
+        colour = land_colour(theme)
+        assert contrast(colour, theme.background_color) >= MIN_LAND_CONTRAST, key
+    assert land_colour(THEMES["arasaka"]) == LAND_FALLBACK  # its secondary colour is near-black
+    assert land_colour(THEMES["military"]) == THEMES["military"].secondary_color

@@ -26,5 +26,6 @@ TRIBUNAL_AGENT_IDS: Tuple[str, ...] = (
 LEGACY_ROLE_TO_AGENT_ID: Dict[str, str] = {
     "LOGIC": RATIONALIS,
     "FINANCE": AETERNUM,
-    "SECURITY": BELLATOR,
+    "SECURITY": BELLATOR,  # BELLATOR's role before it became the Growth Core
+    "GROWTH": BELLATOR,
 }

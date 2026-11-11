@@ -1,5 +1,25 @@
 # Changelog
 
+## 9.8.0 - BELLATOR the Bold (2026-11-11)
+
+### Changed
+- BELLATOR is now one character: the bold risk-taker. It is the Growth Core, its role speaks of
+  growth, opportunity, momentum and decisive action, and the Arasaka and Janus themes call it
+  HOSTILE TAKEOVER DIVISION and JANUS VANGUARD instead of security posts. It keeps its
+  conflicts-and-threats feed, because a bold player still needs to know where danger is.
+- A new topic, growth (expansion, opportunities, scaling, launches; English and Spanish), belongs
+  to BELLATOR. Security and risk now have two guardians, RATIONALIS and BELLATOR, so a warning that
+  something could not be survived counts from either. RATIONALIS's mission now names risks and
+  security exposure.
+- A confident "no" from BELLATOR still sends the decision to you for review: the voter that argues
+  for bold moves refusing one is a strong warning.
+
+### Fixed
+- The boot window now disappears as soon as you press Enter, instead of staying until the War Room
+  has finished opening.
+- The world map's land and frame are readable on the Arasaka theme: when a theme's colour is too dark
+  for its background, the map uses grey.
+
 ## 9.7.5 - Author Credit and Legacy Folder (2026-11-11)
 
 ### Changed

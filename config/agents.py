@@ -60,7 +60,7 @@ AGENT_PROFILES: Dict[str, AgentProfile] = {
     BELLATOR: AgentProfile(
         id=BELLATOR,
         display_name="BELLATOR",
-        role="security, geopolitics, tactical exposure, and threat analysis",
+        role="growth, opportunity, momentum and decisive action, with an eye on threats in the field",
         model_preference="mixtral:8x7b",
         system_prompt=(
             "You are BELLATOR, the Bold monolith. Press for growth and advantage: name the prize, "

@@ -41,14 +41,15 @@ class ConsensusRules:
                 "geopolitics",
                 "risk",
                 "operations",
+                "growth",
             ]
         )
         self.monolith_domain_map = dict(
             monolith_domain_map
             or {
-                RATIONALIS: ["logic", "governance", "ethics", "analysis"],
+                RATIONALIS: ["logic", "governance", "ethics", "analysis", "security", "risk"],
                 AETERNUM: ["finance", "forecasting", "economics", "historical_patterns"],
-                BELLATOR: ["security", "geopolitics", "risk", "operations"],
+                BELLATOR: ["growth", "security", "geopolitics", "risk", "operations"],
             }
         )
 
@@ -110,9 +111,11 @@ def priority_ordered_votes(votes: Sequence[Vote], priority: Sequence[str]) -> Li
 
 
 def should_force_review(votes: Dict[str, Vote]) -> bool:
-    security = votes.get(BELLATOR)
+    # BELLATOR argues for bold moves and denies only what could not be survived, so its confident DENY
+    # is a strong warning; AETERNUM's long-horizon DENY needs more confidence to stop the decision.
+    bold = votes.get(BELLATOR)
     finance = votes.get(AETERNUM)
-    if security and security.vote == VoteValue.DENY and security.confidence >= 0.75:
+    if bold and bold.vote == VoteValue.DENY and bold.confidence >= 0.75:
         return True
     if finance and finance.vote == VoteValue.DENY and finance.confidence >= 0.85:
         return True

@@ -44,6 +44,10 @@ DEFAULT_KEYWORD_MAP: Dict[str, tuple[str, ...]] = {
                    "migrat", "install", "upgrade", "backup",
                    "operac", "despleg", "desplieg", "ejecuc", "implement", "migra", "instal",
                    "mover", "mudanza"),
+    "growth": ("growth", "grow", "expan", "opportunit", "scale", "scaling", "launch", "advantage", "ambiti",
+               "momentum", "seize", "capture", "conquer",
+               "crecim", "crecer", "oportunidad", "escalar", "lanzar", "lanzamiento", "ventaja", "ambici",
+               "aprovechar", "conquist"),
 }
 
 # Decision wording says a choice is being made, not what it is about; a specific class wins when one matches.

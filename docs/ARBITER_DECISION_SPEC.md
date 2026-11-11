@@ -50,6 +50,14 @@ The Arbiter derives it from:
 A monolith is domain-critical when its configured domain classes intersect the
 proposal classes for the current command.
 
+Default map: RATIONALIS holds logic, governance, ethics, analysis, security and
+risk; AETERNUM holds finance, forecasting, economics and historical patterns;
+BELLATOR, the Growth Core, holds growth, security, geopolitics, risk and operations.
+Every class has a holder, and security and risk have two (RATIONALIS and BELLATOR):
+BELLATOR flags only what could not be survived, so that warning always counts.
+A confident BELLATOR `DENY` (0.75 or more) still forces review: the voter that
+argues for bold moves refusing one is a strong warning.
+
 ## Proposal Classification
 
 Classification is mandatory before a decision can be certified.

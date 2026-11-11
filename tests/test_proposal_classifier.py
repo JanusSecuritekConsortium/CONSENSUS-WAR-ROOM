@@ -47,5 +47,37 @@ class ProposalClassifierTest(unittest.TestCase):
         self.assertTrue(classify("runtime integration vote").ok)
 
 
+
+class BoldBellatorDomainTest(unittest.TestCase):
+    """BELLATOR is the Growth Core; security and risk keep two guardians, BELLATOR and RATIONALIS."""
+
+    def test_growth_questions_are_classified_in_both_languages(self):
+        for text in ("Should we expand into Asia and seize the opportunity?",
+                     "¿Aprovechamos la oportunidad para crecer y lanzar el producto?"):
+            result = classify(text)
+            self.assertTrue(result.ok, result.failure_reason)
+            self.assertIn("growth", result.classification.proposal_classes)
+
+    def test_every_class_still_has_a_guardian(self):
+        from config.runtime import RuntimeConfig
+        for domain_map in (RULES.monolith_domain_map, RuntimeConfig().monolith_domain_map):
+            covered = {domain for domains in domain_map.values() for domain in domains}
+            self.assertEqual(covered, set(RULES.proposal_taxonomy))
+            self.assertIn("growth", domain_map["BELLATOR"])
+            for guardian in ("RATIONALIS", "BELLATOR"):
+                self.assertTrue({"security", "risk"} <= set(domain_map[guardian]), guardian)
+
+    def test_security_critical_risk_counts_for_both_guardians(self):
+        from core.models import Vote, VoteValue
+        from core.voting.classifier import assign_critical_domain_relevance
+        votes = [Vote("RATIONALIS", "Logic", VoteValue.DENY, 0.9, "breach", critical_risk=True),
+                 Vote("BELLATOR", "Growth", VoteValue.DENY, 0.8, "unsurvivable", critical_risk=True),
+                 Vote("AETERNUM", "Finance", VoteValue.APPROVE, 0.8, "fine")]
+        assign_critical_domain_relevance(votes, ["security"], RULES.monolith_domain_map)
+        self.assertEqual([vote.critical_domain_relevance for vote in votes], [True, True, False])
+        assign_critical_domain_relevance(votes, ["growth"], RULES.monolith_domain_map)
+        self.assertEqual([vote.critical_domain_relevance for vote in votes], [False, True, False])
+
+
 if __name__ == "__main__":
     unittest.main()
