@@ -159,6 +159,9 @@ def test_receiver_polls_choices_while_agent_waits(isolated,monkeypatch):
     monkeypatch.setattr(relay.time,'sleep',lambda seconds:None)
     relay.run()
     assert processed==[101] and calls[0]['timeout']==0
+    health=json.loads((relay.store.ROOT/'voice-relay-health.json').read_text(encoding='utf-8'))
+    assert health['telegram_receiver'] is True and health['msty_ready'] is False
+    assert health['msty_failure']=='unreachable' and health['msty_checked_at']
 
 def test_msty_outage_alerts_once_and_reports_recovery(isolated,monkeypatch):
     sent=[];monkeypatch.setattr(relay,'api',lambda route,method,data:sent.append(data['text']))
@@ -171,6 +174,21 @@ def test_msty_outage_alerts_once_and_reports_recovery(isolated,monkeypatch):
     assert 'send them again' in sent[0]  # offline requests are answered with an error, not replayed
     relay.msty_alert(route,True,0,None);relay.msty_alert(route,True,0,None)
     assert len(sent)==2 and 'again' in sent[1]
+
+
+def test_msty_outage_alert_follows_up_when_server_returns_with_new_token(isolated,monkeypatch):
+    sent=[]
+    monkeypatch.setattr(relay,'api',lambda route,method,data:sent.append(data['text']))
+    route={'chat_id':'42'}
+    for reason in ('unreachable','unreachable','unauthorized','unreachable','unauthorized'):
+        relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER,reason)
+    assert len(sent)==2
+    assert 'Built-in Server' in sent[0]
+    assert 'token' in sent[1] and 'voice_setup' in sent[1]
+    relay.msty_alert(route,True,0,None)
+    assert len(sent)==3 and 'again' in sent[2]
+    relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER,'unreachable')
+    assert len(sent)==4
 
 
 def test_msty_alert_retries_when_telegram_send_fails(isolated,monkeypatch):

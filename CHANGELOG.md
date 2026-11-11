@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.7.3 - Telegram Outage Notes (2026-11-11)
+
+### Fixed
+- When Msty Go restarts and its built-in server comes back with a new token, the Telegram voice
+  receiver now sends one follow-up telling you to paste the new token, even if it had already sent
+  an "unreachable" alert. Before, that second, more useful message was swallowed.
+- The receiver's status now shows why Msty Go was last unreachable (not running or wrong token)
+  and when it last checked.
+
 ## 9.7.2 - AURELIUS Honesty Fixes (2026-11-10)
 
 ### Fixed

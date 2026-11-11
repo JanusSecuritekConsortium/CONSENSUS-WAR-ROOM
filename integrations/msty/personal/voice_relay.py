@@ -350,30 +350,36 @@ def msty_failure(error):
 
 
 def msty_alert(route, ready, failures, reason):
-    """Tell the user once when Telegram has lost Msty for a while, and once when it is back."""
+    """Report a sustained outage, a new token requirement, and recovery."""
     path=store.ROOT/'msty-alert.json'
-    try:alerted=json.loads(path.read_text(encoding='utf-8')).get('alerted') is True
-    except (OSError,ValueError):alerted=False
+    try:previous=json.loads(path.read_text(encoding='utf-8'))
+    except (OSError,ValueError):previous={}
+    if not isinstance(previous,dict):previous={}
+    alerted=previous.get('alerted') is True
+    # A server can come back mid-outage and begin rejecting the old token.
+    token_followup=reason=='unauthorized' and previous.get('reason')!='unauthorized'
     if ready and alerted:
         text='Aurelius is reachable on Telegram again.'
-    elif not ready and not alerted and failures>=MSTY_ALERT_AFTER:
+    elif not ready and failures>=MSTY_ALERT_AFTER and (not alerted or token_followup):
         text=('Aurelius cannot reach Msty Go: its built-in server rejected the saved token, which changes whenever Msty restarts. '
               'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and run integrations.msty.personal.voice_setup.'
               if reason=='unauthorized' else
-              f'Aurelius has not been able to reach Msty Go for {failures} minutes. Check that Msty Go is running on the PC.')
+              f'Aurelius has not been able to reach Msty Go for {failures} minutes. '
+              'Open Msty Go > Settings > Tools > Built-in Server and check that the local server is running.')
         # Undispatched requests get an offline reply; replaying them later could repeat an action.
         text+=' Until then, messages sent here get an offline reply: send them again once it is back.'
     else:return
     try:api(route,'sendMessage',{'chat_id':route['chat_id'],'text':text})
     except Exception:return  # Telegram unavailable too; try again at the next check.
-    path.write_text(json.dumps({'alerted':not ready,'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
+    path.write_text(json.dumps({'alerted':not ready,'reason':None if ready else reason,
+                                'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
 
 
 def run():
     with single_instance():
         last_check=0
         msty_ready=False
-        failures=0;reason=None
+        failures=0;reason=None;msty_checked_at=None
         while store.load().get('telegram_voice_relay_enabled'):
             try:
                 # Startup can precede Msty/database readiness. Retry instead of exiting.
@@ -385,12 +391,13 @@ def run():
                     client=None
                     try:
                         client=Client()
-                        client.initialize();msty_ready=True;failures=0
+                        client.initialize();msty_ready=True;failures=0;reason=None
                     except Exception as error:
                         msty_ready=False;failures+=1;reason=msty_failure(error)
                     finally:
                         if client:client.close()
                         last_check=time.monotonic()
+                        msty_checked_at=datetime.now(timezone.utc).isoformat()
                     msty_alert(route,msty_ready,failures,reason)
                 with database() as db:
                     offset=db.execute('SELECT offset FROM cursor WHERE id=1').fetchone()[0]
@@ -402,7 +409,11 @@ def run():
                     row=db.execute("SELECT * FROM inbox WHERE state IN ('queued','prepared','dispatching','awaiting_reply','reply_ready') ORDER BY CASE WHEN state='queued' THEN 0 WHEN state='reply_ready' THEN 1 ELSE 2 END,update_id LIMIT 1").fetchone()
                 if row:
                     process(dict(row),route);time.sleep(1)
-                (store.ROOT/'voice-relay-health.json').write_text(json.dumps({'status':'running' if msty_ready else 'waiting_for_msty','telegram_receiver':True,'msty_ready':msty_ready,'at':datetime.now(timezone.utc).isoformat()}))
+                (store.ROOT/'voice-relay-health.json').write_text(json.dumps({
+                    'status':'running' if msty_ready else 'waiting_for_msty',
+                    'telegram_receiver':True,'msty_ready':msty_ready,'msty_failure':reason,
+                    'msty_checked_at':msty_checked_at,'at':datetime.now(timezone.utc).isoformat()}),
+                    encoding='utf-8')
             except Exception as error:
                 (store.ROOT/'voice-relay-health.json').write_text(json.dumps({'status':'retrying','error_type':type(error).__name__,'at':datetime.now(timezone.utc).isoformat()}))
                 time.sleep(10)

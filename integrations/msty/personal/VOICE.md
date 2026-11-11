@@ -49,13 +49,18 @@ retain their identifiers locally. Never commit the populated store.
 - `G:\Tools\Aurelius Voice Receiver.cmd` starts the receiver; a single-instance
   lock prevents competing copies. A Windows Startup shortcut runs it at sign-in.
 - `python -m integrations.msty.personal.voice_relay status` reports health;
-  `waiting_for_msty` means reception is alive but the agent endpoint is unavailable.
+  `waiting_for_msty` means Telegram reception is alive. Read `msty_failure` and
+  `msty_checked_at` for the last Msty Go check. For `unreachable`, check that the
+  local Built-in Server is running. For `unauthorized`, refresh the saved token.
+  After a sustained outage the relay sends one outage alert. If the server returns
+  and rejects the saved token, the relay sends one follow-up with the token instructions.
 - `python -m integrations.msty.personal.voice_setup` opens the local URL/token
   form. Tokens are stored with Windows DPAPI and are never placed in chat or source.
 - Msty Go currently changes its local MCP bearer token after restart. Open
   Settings → Tools → Built-in Server, copy its current Auth into the local setup
-  form, and save. No receiver restart is necessary. An unavailable endpoint leaves
-  prepared requests waiting; it does not authorize replaying uncertain actions.
+  form, and save. No receiver restart is necessary. If the relay cannot reach
+  Msty Go before dispatch, it returns an offline reply. Requests with an uncertain
+  dispatch outcome are never retried automatically.
 - `python -m integrations.msty.personal.voice_relay stop` stops reception after its
   current work. It deliberately does not restart native polling automatically.
 
