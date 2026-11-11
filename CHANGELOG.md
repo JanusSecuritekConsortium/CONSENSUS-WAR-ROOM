@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.7.4 - Token Form Opens by Itself (2026-11-11)
+
+### Changed
+- When Msty Go restarts and rejects the saved token, the Telegram voice receiver now opens the
+  token form on the PC by itself, once per restart, with the address already filled in: copy the
+  Auth from Msty Go and paste it. Msty Go keeps that token only in memory, so it cannot be read
+  automatically. Set `open_token_form` to false in the local account store to turn it off.
+
 ## 9.7.3 - Telegram Outage Notes (2026-11-11)
 
 ### Fixed

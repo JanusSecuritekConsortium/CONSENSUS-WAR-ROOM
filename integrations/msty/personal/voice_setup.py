@@ -8,6 +8,16 @@ from . import store
 from .msty_local import Client
 
 
+DEFAULT_URL='http://127.0.0.1:6274/mcp'
+
+
+def saved_url():
+    """The endpoint saved last time, so only the new token has to be pasted after a Msty restart."""
+    try:address=store.secret_read('msty-local-mcp').get('url','')
+    except Exception:address=''
+    return address if isinstance(address,str) and address.startswith('http://') else DEFAULT_URL
+
+
 def main():
     root=tk.Tk()
     root.title('Aurelius — conexión local para audio')
@@ -15,7 +25,7 @@ def main():
     frame=ttk.Frame(root,padding=18);frame.pack(fill='both',expand=True)
     ttk.Label(frame,text='Copia estos datos desde Msty Go → Settings → Tools.\nEl token se guarda cifrado en este PC; no lo envíes por chat.',wraplength=600).pack(anchor='w',pady=(0,12))
     ttk.Label(frame,text='URL del endpoint MCP local').pack(anchor='w')
-    url=tk.StringVar(value='http://127.0.0.1:6274/mcp');ttk.Entry(frame,textvariable=url,width=80).pack(fill='x',pady=(0,8))
+    url=tk.StringVar(value=saved_url());ttk.Entry(frame,textvariable=url,width=80).pack(fill='x',pady=(0,8))
     ttk.Label(frame,text='Token de autorización (con o sin «Bearer»)').pack(anchor='w')
     token=tk.StringVar();ttk.Entry(frame,textvariable=token,show='•',width=80).pack(fill='x')
     state=tk.StringVar(value='Solo se comprueba la conexión; no se envían mensajes ni se cambia la agenda.')

@@ -362,7 +362,8 @@ def msty_alert(route, ready, failures, reason):
         text='Aurelius is reachable on Telegram again.'
     elif not ready and failures>=MSTY_ALERT_AFTER and (not alerted or token_followup):
         text=('Aurelius cannot reach Msty Go: its built-in server rejected the saved token, which changes whenever Msty restarts. '
-              'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and run integrations.msty.personal.voice_setup.'
+              'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and paste it into the setup form '
+              '(it opens by itself; otherwise run integrations.msty.personal.voice_setup).'
               if reason=='unauthorized' else
               f'Aurelius has not been able to reach Msty Go for {failures} minutes. '
               'Open Msty Go > Settings > Tools > Built-in Server and check that the local server is running.')
@@ -373,6 +374,34 @@ def msty_alert(route, ready, failures, reason):
     except Exception:return  # Telegram unavailable too; try again at the next check.
     path.write_text(json.dumps({'alerted':not ready,'reason':None if ready else reason,
                                 'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
+
+
+def launch_token_form():
+    """Open the local token form in its own windowless process; the receiver keeps polling."""
+    import subprocess,sys
+    python=Path(sys.executable)
+    windowless=python.with_name('pythonw.exe')
+    root=Path(__file__).resolve().parents[3]
+    subprocess.Popen([str(windowless if windowless.is_file() else python),'-m','integrations.msty.personal.voice_setup'],
+                     cwd=root,close_fds=True)
+
+
+def token_form(ready, reason):
+    """Open the token form on the PC once each time Msty Go starts rejecting the saved token.
+
+    The token lives only in Msty Go's memory, so the owner must paste it; opening the form saves a step.
+    Set open_token_form to false in the local account store to turn this off.
+    """
+    path=store.ROOT/'msty-token-form.json'
+    try:opened=json.loads(path.read_text(encoding='utf-8')).get('opened') is True
+    except (OSError,ValueError,AttributeError):opened=False
+    if reason!='unauthorized':
+        if ready and opened:path.write_text(json.dumps({'opened':False}),encoding='utf-8')
+        return
+    if opened or store.load().get('open_token_form',True) is False:return
+    try:launch_token_form()
+    except Exception:return  # no desktop session; the Telegram alert still explains the fix
+    path.write_text(json.dumps({'opened':True,'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
 
 
 def run():
@@ -399,6 +428,7 @@ def run():
                         last_check=time.monotonic()
                         msty_checked_at=datetime.now(timezone.utc).isoformat()
                     msty_alert(route,msty_ready,failures,reason)
+                    token_form(msty_ready,reason)
                 with database() as db:
                     offset=db.execute('SELECT offset FROM cursor WHERE id=1').fetchone()[0]
                 # Continue receiving format choices even while an agent request waits.

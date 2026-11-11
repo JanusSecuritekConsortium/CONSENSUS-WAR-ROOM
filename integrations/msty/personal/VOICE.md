@@ -58,7 +58,11 @@ retain their identifiers locally. Never commit the populated store.
   form. Tokens are stored with Windows DPAPI and are never placed in chat or source.
 - Msty Go currently changes its local MCP bearer token after restart. Open
   Settings → Tools → Built-in Server, copy its current Auth into the local setup
-  form, and save. No receiver restart is necessary. If the relay cannot reach
+  form, and save. The token exists only in Msty Go's memory, so it cannot be read
+  automatically; instead, the first time the server rejects the saved token the relay
+  opens this form on the PC, once per restart, with the saved URL already filled in.
+  Set `open_token_form` to false in the local account store to turn that off.
+  No receiver restart is necessary. If the relay cannot reach
   Msty Go before dispatch, it returns an offline reply. Requests with an uncertain
   dispatch outcome are never retried automatically.
 - `python -m integrations.msty.personal.voice_relay stop` stops reception after its

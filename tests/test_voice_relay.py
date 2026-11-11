@@ -7,6 +7,7 @@ from integrations.msty.personal import voice_relay as relay
 @pytest.fixture
 def isolated(tmp_path,monkeypatch):
     monkeypatch.setattr(relay.store,'ROOT',tmp_path)
+    monkeypatch.setattr(relay,'launch_token_form',lambda:pytest.fail('tests never open the real token form'))
 
 
 def update(uid=100, sender=42):
@@ -189,6 +190,39 @@ def test_msty_outage_alert_follows_up_when_server_returns_with_new_token(isolate
     assert len(sent)==3 and 'again' in sent[2]
     relay.msty_alert(route,False,relay.MSTY_ALERT_AFTER,'unreachable')
     assert len(sent)==4
+
+
+def test_token_form_opens_once_per_rejected_token(isolated,monkeypatch):
+    opened=[];monkeypatch.setattr(relay,'launch_token_form',lambda:opened.append(1))
+    monkeypatch.setattr(relay.store,'load',lambda:{})
+    relay.token_form(False,'unreachable')
+    assert opened==[]  # Msty Go simply not running: nothing to paste yet
+    for _ in range(3):relay.token_form(False,'unauthorized')
+    relay.token_form(False,'unreachable');relay.token_form(False,'unauthorized')
+    assert opened==[1]  # one form for one outage, however long it lasts
+    relay.token_form(True,None)
+    relay.token_form(False,'unauthorized')
+    assert opened==[1,1]  # the next Msty restart gets a fresh form
+
+
+def test_token_form_can_be_turned_off_and_survives_no_desktop(isolated,monkeypatch):
+    monkeypatch.setattr(relay.store,'load',lambda:{'open_token_form':False})
+    relay.token_form(False,'unauthorized')  # the fixture fails if it launches
+    monkeypatch.setattr(relay.store,'load',lambda:{})
+    def no_desktop():raise OSError('no desktop session')
+    monkeypatch.setattr(relay,'launch_token_form',no_desktop)
+    relay.token_form(False,'unauthorized')
+    assert not (relay.store.ROOT/'msty-token-form.json').exists()  # retried at the next check
+
+
+def test_token_form_keeps_the_saved_address(monkeypatch):
+    pytest.importorskip('tkinter')
+    from integrations.msty.personal import voice_setup
+    monkeypatch.setattr(voice_setup.store,'secret_read',lambda name:{'url':'http://127.0.0.1:7000/mcp','token':'x'})
+    assert voice_setup.saved_url()=='http://127.0.0.1:7000/mcp'
+    def missing(name):raise ImportError('no win32crypt')
+    monkeypatch.setattr(voice_setup.store,'secret_read',missing)
+    assert voice_setup.saved_url()==voice_setup.DEFAULT_URL
 
 
 def test_msty_alert_retries_when_telegram_send_fails(isolated,monkeypatch):
