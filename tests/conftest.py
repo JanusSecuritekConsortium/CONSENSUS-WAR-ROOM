@@ -16,6 +16,12 @@ if not os.environ.get("AURELIUS_PRIVATE_DIR"):
     os.environ["AURELIUS_PRIVATE_DIR"] = _private
     atexit.register(shutil.rmtree, _private, ignore_errors=True)
 
+# Operator profiles and PINs: tests use an empty throwaway file, never the owner's, so the PIN lock is off.
+if not os.environ.get("CONSENSUS_USERS_FILE"):
+    _users = tempfile.mkdtemp(prefix="consensus-test-users-")
+    os.environ["CONSENSUS_USERS_FILE"] = os.path.join(_users, "users.json")
+    atexit.register(shutil.rmtree, _users, ignore_errors=True)
+
 # The world map downloads GDELT news events; tests must not reach the network for them.
 os.environ.setdefault("BELLATOR_GDELT_EVENTS", "0")
 

@@ -76,6 +76,7 @@ def log_error(event_type: str, error: Exception, payload: Optional[Dict[str, Any
 
 
 def log_decision_trace(result: Any) -> None:
+    from core.identity import current_operator_name
     from core.voting.follow_up import unresolved_next_steps
     votes = {
         agent_id: {
@@ -97,6 +98,7 @@ def log_decision_trace(result: Any) -> None:
         {
             "proposal_id": result.session_id,
             "session_id": result.session_id,
+            "submitted_by": current_operator_name(),  # None while the PIN lock is off
             "taxonomy": result.proposal_classification,
             "votes": votes,
             "final_verdict": result.verdict.value,

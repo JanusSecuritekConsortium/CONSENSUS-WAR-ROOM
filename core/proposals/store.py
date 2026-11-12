@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
+from core.identity import current_operator_name
 from core.paths import SYSTEM_ROOT
 
 
@@ -96,6 +97,7 @@ def create_proposal(
     status: str = "DRAFT",
     linked_decision_trace_id: str | None = None,
     parent_proposal_id: str | None = None,
+    submitted_by: str | None = None,
     path: Path = PROPOSAL_HISTORY_PATH,
 ) -> Dict[str, Any]:
     clean_body = body.strip()
@@ -119,6 +121,8 @@ def create_proposal(
         "linked_verdict_export_md": None,
         "decision_timestamp": None,
         "parent_proposal_id": parent_proposal_id,
+        # Who was signed in when this was written; None while the PIN lock is off.
+        "submitted_by": submitted_by or current_operator_name(),
     }
     _append_record(record, path)
     return dict(record)

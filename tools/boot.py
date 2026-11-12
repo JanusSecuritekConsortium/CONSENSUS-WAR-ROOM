@@ -54,6 +54,7 @@ def run_boot(
     launch_gui: Callable[..., Any] | None = None,
     render_bios: Callable[..., Any] | None = None,
     hide_console: Callable[[], Any] | None = None,
+    unlock: Callable[[], Any] | None = None,
 ) -> int:
     dependencies = build_dependency_report()
     print_human_report(dependencies)
@@ -83,6 +84,14 @@ def run_boot(
         report = run_health_check(config_path, config_override=config)
         print_health_report(report, verbose=True)
         return 0 if report["status"] != "fail" else 1
+
+    # Identity check, before anything of the War Room is shown. With no operator
+    # profiles the lock is off and this passes straight through.
+    if unlock is None:
+        from core.identity.gate import unlock_console as unlock
+    allowed, _operator = unlock()
+    if not allowed:
+        return 1
 
     # Preserve the themed animation on ordinary executable launches. Provider
     # readiness is still resolved by DIRECTORATE after the desktop mounts.
@@ -288,11 +297,16 @@ def main() -> int:
     mode.add_argument("--validate", action="store_true", help="Run release validation: fast tests, active compile, and theme screenshots.")
     mode.add_argument("--test-theme", action="store_true", help="Run targeted theme/layout validation only.")
     mode.add_argument("--self-test", action="store_true", help="Validate packaged assets, voice config, and simulation scaffold.")
+    mode.add_argument("--users", action="store_true", help="Manage operator profiles and PINs, then exit.")
     mode.add_argument("--telemetry-layout-debug", action="store_true", help="Print themed telemetry and logo layout diagnostics without starting the GUI.")
     parser.add_argument("--seed", type=int, default=None, help="Optional deterministic startup theme seed.")
     args = parser.parse_args()
     if args.self_test:
         return run_self_test()
+    if args.users:
+        from tools.users import run_menu
+
+        return run_menu()
     if args.telemetry_layout_debug:
         return run_telemetry_layout_debug()
     if args.validate:

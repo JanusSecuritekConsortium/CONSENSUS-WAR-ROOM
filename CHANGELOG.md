@@ -1,5 +1,25 @@
 # Changelog
 
+## 9.10.0 - Operator profiles and a PIN before boot (2026-11-12)
+
+### Added
+- An identity check before the boot sequence (docs/OPERATOR_LOCK.md). Each person has a named
+  profile with their own PIN; the boot window asks for it before anything else is shown. The lock
+  is off until the first profile is created, so nothing changes until you add one.
+- `tools\launchers\manage_users.cmd` (or `CONSENSUS.exe --users`): a menu to add profiles, change
+  PINs, remove profiles and switch Windows Hello on or off. The first profile is the owner; later
+  changes need an owner's PIN.
+- Windows Hello (fingerprint, face or the Windows PIN) as an optional shortcut for a profile. If it
+  is cancelled or fails, the CONSENSUS PIN is asked.
+- Proposals and decisions record who was signed in (`submitted_by`). The War Room status line
+  shows the signed-in operator.
+
+### Security notes
+- PINs are not stored; `_ARBITER/users.json` holds a salted scrypt digest and is not published.
+  Three wrong PINs start a wait that doubles up to 5 minutes and survives a restart.
+- This locks the application, it does not encrypt the records on the drive. It covers the normal
+  start of the app, not the developer command line, the local API or the guest door.
+
 ## 9.9.1 - Faster start and status refresh (2026-11-12)
 
 ### Changed

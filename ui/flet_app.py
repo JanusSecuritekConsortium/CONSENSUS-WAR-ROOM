@@ -28,6 +28,7 @@ from core.export.cable import export_cable, export_dispatch, render_cable, retri
 from ui.directorate import add_cable_controls, build_activity, build_boot, build_dispatch_desk, build_dispatch_roll, build_dispatch_actions
 from ui.deliberation import assessment_record, build_assessments
 from core.decision_trace import list_recent_traces, read_latest_trace
+from core.identity import current_operator_name
 from core.health import run_health_check
 from core.intelligence.bellator_context_builder import (
     build_bellator_context_packet,
@@ -326,7 +327,11 @@ def create_gui_state(
         append_timeline([], "SYSTEM", f"{state.theme.display_name} interface online")[0]
     ]
     refresh_bellator_intelligence_status(state)
-    log_war_room_runtime("gui_state_created", {"theme": state.theme_key, "window_mode": window_mode})
+    operator_name = current_operator_name()
+    if operator_name:
+        state.operator_status = f"OPERATOR {operator_name.upper()} SIGNED IN"
+    log_war_room_runtime("gui_state_created", {"theme": state.theme_key, "window_mode": window_mode,
+                                               "operator": operator_name})
     return state
 
 
