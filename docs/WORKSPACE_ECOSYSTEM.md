@@ -38,7 +38,8 @@ Known model families and runtime folders observed under `G:\AI_MODELS`:
 - `huggingface\DeepSeek`
 - `huggingface\Mistral`
 - `huggingface\YI-34B`
-- `mradermacher\Mixtral-8x7B-Instruct-v0.1-i1-GGUF` (BELLATOR's current model)
+- `unsloth\Mistral-Small-3.2-24B-Instruct-2506-GGUF` (BELLATOR's current model)
+- `mradermacher\Mixtral-8x7B-Instruct-v0.1-i1-GGUF` (BELLATOR's previous model; too big for 32 GB of RAM)
 - `TheBloke\Mixtral-8x7B-Instruct-v0.1-GGUF` (older files; current llama.cpp cannot load them)
 - `TheBloke\Yi-34B-Chat-GGUF`
 - `TheBloke\deepseek-coder-33B-instruct-GGUF`
