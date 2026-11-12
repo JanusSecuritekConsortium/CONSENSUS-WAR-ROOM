@@ -1,5 +1,19 @@
 # Changelog
 
+## 9.9.1 - Faster start and status refresh (2026-11-12)
+
+### Changed
+- The window's routine status check no longer re-reads every program file each time. It remembers
+  each file's fingerprint and only reads a file again when its size or modified time has changed.
+  The memory is kept in `.local/integrity_hash_cache.json`, so it also helps the next start. The
+  Verify Integrity command, the runtime snapshot tool and the runtime bundle export still read
+  every file in full. Limit: the routine check would miss a file altered without changing its size
+  or modified time; Verify Integrity would catch it. Results now say which check ran (`check`:
+  `quick` or `full`).
+- Finding the latest decision no longer decodes the whole system log. The log is read from the
+  newest entry backwards, older rotated parts are only opened when needed, and entries that are
+  not decisions are skipped without being decoded.
+
 ## 9.9.0 - Command palette becomes a square grid (2026-11-12)
 
 ### Changed

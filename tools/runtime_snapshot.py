@@ -94,7 +94,7 @@ def build_runtime_snapshot(config_path: Path | None = None) -> Dict[str, Any]:
             "state_field": "render_in_progress",
             "reentrant_event": "ui_render_skipped_reentrant",
         },
-        "latest_decision_trace": read_latest_trace(),
+        "latest_decision_trace": latest_trace,
         "latest_runtime_log": _latest_jsonl_record(WAR_ROOM_RUNTIME_LOG_PATH),
         "test_manifest_path": _test_manifest_path(),
         "integrity_status": verify_active_manifest(),

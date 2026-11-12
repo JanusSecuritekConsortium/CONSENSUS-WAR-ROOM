@@ -58,6 +58,30 @@ def test_decision_trace_reader_finds_rotated_parts_without_a_current_file(tmp_pa
     assert read_latest_trace(path)["proposal_id"] == "only"
 
 
+def test_latest_trace_does_not_open_older_parts_or_decode_other_events(tmp_path: Path, monkeypatch) -> None:
+    import core.decision_trace as reader
+
+    path = tmp_path / "system.jsonl"
+    old = tmp_path / "system.jsonl.20260501-120000-000000001"
+    old.write_text(_trace("older") + "\n", encoding="utf-8")
+    other = json.dumps({"event_type": "gui_command_palette", "payload": {"open": True}})
+    path.write_text("\n".join([other, _trace("newest"), other, other]) + "\n", encoding="utf-8")
+
+    opened: list[str] = []
+    real_read_text = Path.read_text
+    monkeypatch.setattr(Path, "read_text", lambda self, *a, **k: opened.append(self.name) or real_read_text(self, *a, **k))
+    decoded: list[str] = []
+    real_loads = json.loads
+    monkeypatch.setattr(reader.json, "loads", lambda line, *a, **k: decoded.append(line) or real_loads(line, *a, **k))
+
+    assert read_latest_trace(path)["proposal_id"] == "newest"
+    assert opened == ["system.jsonl"]
+    assert len(decoded) == 1
+
+    assert [item["proposal_id"] for item in list_recent_traces(1, path)] == ["newest"]
+    assert [item["proposal_id"] for item in list_recent_traces(5, path)] == ["older", "newest"]
+
+
 if __name__ == "__main__":
     import tempfile
 

@@ -35,7 +35,12 @@ def _file_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return result
 
 
-def verify_active_manifest(manifest_path: Path | None = None, root: Path = ROOT) -> dict[str, Any]:
+def verify_active_manifest(manifest_path: Path | None = None, root: Path = ROOT, quick: bool = False) -> dict[str, Any]:
+    """Compare the active files with the approved manifest.
+
+    The default reads every file in full. quick=True is for routine status
+    displays: files whose size and modified time have not changed since they
+    were last read are not read again."""
     baseline_path = manifest_path or latest_active_manifest()
     if baseline_path is None or not baseline_path.exists():
         return {
@@ -60,7 +65,7 @@ def verify_active_manifest(manifest_path: Path | None = None, root: Path = ROOT)
             "modified": [],
         }
 
-    current = build_active_manifest(root)
+    current = build_active_manifest(root, reuse_hashes=quick)
     baseline_files = _file_map(baseline)
     current_files = _file_map(current)
     baseline_paths = set(baseline_files)
@@ -77,6 +82,7 @@ def verify_active_manifest(manifest_path: Path | None = None, root: Path = ROOT)
     return {
         "version": SYSTEM_VERSION,
         "status": status,
+        "check": "quick" if quick else "full",
         "manifest_path": str(baseline_path),
         "baseline_version": baseline.get("version"),
         "current_file_count": current.get("file_count"),

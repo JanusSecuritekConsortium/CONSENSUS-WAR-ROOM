@@ -448,7 +448,8 @@ def runtime_snapshot_from_gui_state(state: GuiState) -> Dict[str, Any]:
         "latest_decision_trace": read_latest_trace(),
         "latest_runtime_log": None,
         "test_manifest_path": str(latest_test_manifest_path()),
-        "integrity_status": verify_active_manifest(),
+        # Routine refresh: reuse fingerprints of unchanged files. The Verify Integrity command re-reads everything.
+        "integrity_status": verify_active_manifest(quick=True),
         "screenshot_status": visual_review.get("screenshot_status", "MANUAL_REVIEW_REQUIRED"),
         "visual_review": visual_review,
         "telemetry": state.telemetry_snapshot or sample_telemetry(TELEMETRY_HISTORY),
