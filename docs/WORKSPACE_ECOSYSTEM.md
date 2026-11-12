@@ -38,7 +38,8 @@ Known model families and runtime folders observed under `G:\AI_MODELS`:
 - `huggingface\DeepSeek`
 - `huggingface\Mistral`
 - `huggingface\YI-34B`
-- `TheBloke\Mixtral-8x7B-Instruct-v0.1-GGUF`
+- `mradermacher\Mixtral-8x7B-Instruct-v0.1-i1-GGUF` (BELLATOR's current model)
+- `TheBloke\Mixtral-8x7B-Instruct-v0.1-GGUF` (older files; current llama.cpp cannot load them)
 - `TheBloke\Yi-34B-Chat-GGUF`
 - `TheBloke\deepseek-coder-33B-instruct-GGUF`
 - `lmstudio-community\Meta-Llama-3.1-8B-Instruct-GGUF`

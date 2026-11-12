@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.8.1 - BELLATOR's model loads again (2026-11-12)
+
+### Fixed
+- BELLATOR now uses a current conversion of its Mixtral model. The old file could no longer be read
+  by the llama.cpp engine in Msty, so BELLATOR could not vote. The new file loads and answers; on
+  this PC it is slow, because the model does not fit in the graphics card's memory.
+
 ## 9.8.0 - BELLATOR the Bold (2026-11-11)
 
 ### Changed
