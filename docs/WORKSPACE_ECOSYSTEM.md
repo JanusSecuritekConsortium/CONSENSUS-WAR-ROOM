@@ -39,7 +39,6 @@ Known model families and runtime folders observed under `G:\AI_MODELS`:
 - `huggingface\Mistral`
 - `huggingface\YI-34B`
 - `unsloth\Mistral-Small-3.2-24B-Instruct-2506-GGUF` (BELLATOR's current model)
-- `TheBloke\Mixtral-8x7B-Instruct-v0.1-GGUF` (only the unused Q5_K_M file is left; Mixtral is too big for this PC's free memory)
 - `TheBloke\Yi-34B-Chat-GGUF`
 - `TheBloke\deepseek-coder-33B-instruct-GGUF`
 - `lmstudio-community\Meta-Llama-3.1-8B-Instruct-GGUF`
