@@ -234,6 +234,8 @@ class GuiState:
     live_panels: Dict[str, Any] = field(default_factory=dict, repr=False)
     diagnostics_drawer_open: bool = False
     command_palette_open: bool = False
+    command_palette_index: int = 0
+    command_palette_view: Any = field(default=None, repr=False)
     trace_viewer_open: bool = False
     proposal_history_open: bool = False
     visual_review_viewer_open: bool = False
@@ -1314,13 +1316,140 @@ def apply_gui_window_mode(page: ft.Page, mode: GuiWindowMode = "maximized") -> N
             setattr(page, attr, value)
 
 
-def build_command_palette(state: GuiState, on_action: Callable[[str], None] | None = None) -> ft.Control:
+COMMAND_PALETTE_PADDING = 12
+COMMAND_PALETTE_SPACING = 8
+COMMAND_PALETTE_TILE_MIN_WIDTH = 140
+COMMAND_PALETTE_TILE_HEIGHT = 64
+COMMAND_PALETTE_MAX_SIDE = 760
+COMMAND_PALETTE_CHROME_HEIGHT = 110  # title, key hint, status line, padding and gaps around the grid
+
+
+def command_palette_geometry(page_width: float | None = None, page_height: float | None = None) -> Dict[str, int]:
+    """Size the square palette from the window, and the grid from the square."""
+    available_width = int(page_width or 1280)
+    available_height = int(page_height or 720) - FOOTER_HEIGHT
+    room = max(120, min(available_width, available_height) - 16)
+    side = min(room, max(min(room, 260), min(int(room * 0.86), COMMAND_PALETTE_MAX_SIDE)))
+    inner = side - 2 * COMMAND_PALETTE_PADDING - 2
+    columns = max(1, (inner + COMMAND_PALETTE_SPACING) // (COMMAND_PALETTE_TILE_MIN_WIDTH + COMMAND_PALETTE_SPACING))
+    tile_width = max(1, (inner - (columns - 1) * COMMAND_PALETTE_SPACING) // columns)
+    return {
+        "side": side,
+        "columns": columns,
+        "tile_width": tile_width,
+        "tile_height": COMMAND_PALETTE_TILE_HEIGHT,
+        "viewport_height": max(COMMAND_PALETTE_TILE_HEIGHT, side - COMMAND_PALETTE_CHROME_HEIGHT),
+    }
+
+
+def move_command_palette_selection(index: int, key: str, columns: int, count: int) -> int:
+    """Return the tile an arrow, Home or End key moves to in a wrapped grid."""
+    if count <= 0:
+        return 0
+    columns = max(1, columns)
+    index = max(0, min(index, count - 1))
+    key = key.upper()
+    if key == "ARROW LEFT":
+        return max(0, index - 1)
+    if key == "ARROW RIGHT":
+        return min(count - 1, index + 1)
+    if key == "ARROW UP":
+        return index - columns if index >= columns else index
+    if key == "ARROW DOWN":
+        if index + columns < count:
+            return index + columns
+        # A short last row: step down onto its last tile instead of doing nothing.
+        return count - 1 if index // columns < (count - 1) // columns else index
+    if key == "HOME":
+        return 0
+    if key == "END":
+        return count - 1
+    return index
+
+
+def command_palette_scroll_offset(index: int, columns: int, current: float, viewport_height: float,
+                                  tile_height: float = COMMAND_PALETTE_TILE_HEIGHT) -> float:
+    """Smallest scroll that keeps the selected tile's row inside the grid."""
+    top = (index // max(1, columns)) * (tile_height + COMMAND_PALETTE_SPACING)
+    bottom = top + tile_height
+    if top < current:
+        return float(top)
+    if bottom > current + viewport_height:
+        return float(bottom - viewport_height)
+    return float(current)
+
+
+def _style_command_palette_tile(tile: ft.Container, theme: Any, selected: bool) -> None:
+    tile.border = ft.border.all(2 if selected else 1, theme.accent_color if selected else theme.secondary_color)
+    tile.bgcolor = theme.surface_color if selected else theme.background_color
+    tile.content.color = theme.accent_color if selected else theme.text_color
+    tile.content.weight = ft.FontWeight.BOLD if selected else None
+    tile.data = {**tile.data, "selected": selected}
+
+
+def select_command_palette_tile(panel: Any, index: int, theme: Any) -> List[ft.Control]:
+    """Move the highlight on a built palette; return the tiles that changed."""
+    tiles = panel.tiles
+    if not tiles:
+        return []
+    index = max(0, min(index, len(tiles) - 1))
+    previous = panel.selected_index
+    panel.selected_index = index
+    panel.scroll_offset = command_palette_scroll_offset(
+        index, panel.geometry["columns"], panel.scroll_offset, panel.geometry["viewport_height"])
+    if previous == index:
+        return []
+    _style_command_palette_tile(tiles[previous], theme, False)
+    _style_command_palette_tile(tiles[index], theme, True)
+    return [tiles[previous], tiles[index]]
+
+
+def build_command_palette(
+    state: GuiState,
+    on_action: Callable[[str], None] | None = None,
+    page_width: float | None = None,
+    page_height: float | None = None,
+) -> ft.Control:
+    """A square panel with one tile per command. The grid wraps and scrolls on
+    its own, so adding a command to COMMAND_PALETTE_ACTIONS needs no layout work."""
     theme = state.theme
+    geometry = command_palette_geometry(page_width, page_height)
+    selected_index = max(0, min(state.command_palette_index, len(COMMAND_PALETTE_ACTIONS) - 1))
 
     def run_action(action: str):
         return (lambda _: on_action(action)) if on_action is not None else None
 
-    return ft.Container(
+    tiles: List[ft.Container] = []
+    for index, action in enumerate(COMMAND_PALETTE_ACTIONS):
+        tile = ft.Container(
+            content=ft.Text(
+                action,
+                size=12,
+                font_family=theme.font_family,
+                text_align=ft.TextAlign.CENTER,
+                max_lines=2,
+                overflow=ft.TextOverflow.ELLIPSIS,
+            ),
+            alignment=ft.alignment.center,
+            padding=6,
+            ink=on_action is not None,
+            on_click=run_action(action),
+            tooltip=action,
+            data={"role": "command_palette_tile", "action": action, "index": index},
+        )
+        _style_command_palette_tile(tile, theme, index == selected_index)
+        tiles.append(tile)
+
+    grid = ft.GridView(
+        controls=tiles,
+        runs_count=geometry["columns"],
+        child_aspect_ratio=geometry["tile_width"] / geometry["tile_height"],
+        spacing=COMMAND_PALETTE_SPACING,
+        run_spacing=COMMAND_PALETTE_SPACING,
+        expand=True,
+        data={"role": "command_palette_grid"},
+    )
+    panel = ft.Container(
         content=ft.Column(
             [
                 ft.Row(
@@ -1330,33 +1459,31 @@ def build_command_palette(state: GuiState, on_action: Callable[[str], None] | No
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
-                *[
-                    ft.TextButton(
-                        action,
-                        on_click=run_action(action),
-                        style=ft.ButtonStyle(
-                            color=theme.text_color,
-                            bgcolor=theme.background_color,
-                            side=ft.BorderSide(1, theme.secondary_color),
-                            shape=ft.RoundedRectangleBorder(radius=0),
-                            padding=ft.padding.symmetric(horizontal=10, vertical=8),
-                            text_style=ft.TextStyle(size=12, font_family=theme.font_family),
-                        ),
-                        height=38,
-                    )
-                    for action in COMMAND_PALETTE_ACTIONS
-                ],
-                ft.Text(state.operator_status, color=theme.panel_value or theme.text_color, size=10, max_lines=2),
+                ft.Text("ARROWS move   ENTER run   ESC close", color=theme.muted_text or theme.secondary_color,
+                        size=10, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
+                grid,
+                ft.Text(state.operator_status, color=theme.panel_value or theme.text_color, size=10,
+                        max_lines=1, overflow=ft.TextOverflow.ELLIPSIS),
             ],
-            spacing=7,
-            tight=True,
+            spacing=COMMAND_PALETTE_SPACING,
         ),
-        width=460,
-        padding=12,
+        width=geometry["side"],
+        height=geometry["side"],
+        padding=COMMAND_PALETTE_PADDING,
         border=ft.border.all(1, theme.accent_color),
         bgcolor=theme.surface_color,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        # Swallow clicks on the panel itself so only clicks outside it close the palette.
+        on_click=(lambda _: None) if on_action is not None else None,
+        data={"role": "command_palette_panel", **geometry},
     )
+    panel.tiles = tiles  # type: ignore[attr-defined]
+    panel.grid = grid  # type: ignore[attr-defined]
+    panel.geometry = geometry  # type: ignore[attr-defined]
+    panel.selected_index = selected_index  # type: ignore[attr-defined]
+    panel.scroll_offset = command_palette_scroll_offset(  # type: ignore[attr-defined]
+        selected_index, geometry["columns"], 0.0, geometry["viewport_height"])
+    return panel
 
 
 def build_data_sources_viewer(state: GuiState, status: Dict[str, Any] | None = None) -> ft.Control:
@@ -2956,6 +3083,28 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
         def handle_simulation_export(scenario_id: str) -> None:
             handle_simulation_action("export", scenario_id)
 
+        def close_command_palette(_=None) -> None:
+            if not state.command_palette_open:
+                return
+            state.command_palette_open = False
+            log_event("gui_command_palette", {"open": False, "theme": state.theme_key})
+            _render_page(page, state)
+
+        def move_command_palette(key: str) -> None:
+            with state.render_lock:
+                panel = state.command_palette_view
+                if panel is None:
+                    return
+                target = move_command_palette_selection(
+                    state.command_palette_index, key, panel.geometry["columns"], len(panel.tiles))
+                state.command_palette_index = target
+                changed = select_command_palette_tile(panel, target, state.theme)
+                if changed:
+                    page.update(*changed)
+                # Always re-seat the grid: the mouse wheel may have moved it since the last key.
+                if getattr(panel.grid, "page", None) is not None:
+                    panel.grid.scroll_to(offset=panel.scroll_offset, duration=80)
+
         def handle_command_action(action: str) -> None:
             state.command_palette_open = False
             if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict", "Refresh Data Sources"}:
@@ -2984,6 +3133,7 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             _set_proposal_editing(page, state, False)
             if key == "K":
                 state.command_palette_open = not state.command_palette_open
+                state.command_palette_index = 0
                 log_event(
                     "gui_command_palette",
                     {"open": state.command_palette_open, "theme": state.theme_key},
@@ -3026,6 +3176,14 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                     submit(state.proposal_input_text)
                 else:
                     handle_footer_command(key)
+            elif state.command_palette_open:
+                if key == "ESCAPE":
+                    close_command_palette()
+                elif key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
+                    index = max(0, min(state.command_palette_index, len(COMMAND_PALETTE_ACTIONS) - 1))
+                    handle_command_action(COMMAND_PALETTE_ACTIONS[index])
+                elif key in {"ARROW LEFT", "ARROW RIGHT", "ARROW UP", "ARROW DOWN", "HOME", "END"}:
+                    move_command_palette(key)
 
         if hasattr(page, "on_keyboard_event"):
             page.on_keyboard_event = on_keyboard_event
@@ -3034,7 +3192,10 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
             if state.ui_stopped.is_set():
                 return
             narrow = bool(getattr(page, "width", 0) and page.width < 1150)
-            if narrow != state.narrow_layout:
+            palette = state.command_palette_view if state.command_palette_open else None
+            palette_resized = palette is not None and palette.geometry != command_palette_geometry(
+                getattr(page, "width", None), getattr(page, "height", None))
+            if narrow != state.narrow_layout or palette_resized:
                 state.narrow_layout = narrow
                 _render_page(page, state)
 
@@ -3185,11 +3346,19 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
                         data="diagnostics_drawer",
                     )
                 )
+            state.command_palette_view = None
             if state.command_palette_open:
+                state.command_palette_view = build_command_palette(
+                    state, on_action=handle_command_action,
+                    page_width=getattr(page, "width", None), page_height=getattr(page, "height", None))
                 overlay.append(
                     ft.Container(
-                        content=build_command_palette(state, on_action=handle_command_action),
+                        content=state.command_palette_view,
                         alignment=ft.alignment.center,
+                        # Dimmed backdrop over everything but the command bar; a click on it closes the palette.
+                        top=0, left=0, right=0, bottom=FOOTER_HEIGHT,
+                        bgcolor=ft.Colors.with_opacity(0.6, state.theme.background_color),
+                        on_click=close_command_palette,
                         data="command_palette",
                     )
                 )
@@ -3431,6 +3600,10 @@ __all__ = [
     "build_gui_layout",
     "build_diagnostics_drawer",
     "build_command_palette",
+    "command_palette_geometry",
+    "command_palette_scroll_offset",
+    "move_command_palette_selection",
+    "select_command_palette_tile",
     "build_decision_trace_viewer",
     "build_proposal_history_viewer",
     "build_simulation_viewer",

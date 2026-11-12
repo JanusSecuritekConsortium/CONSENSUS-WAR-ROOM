@@ -1,5 +1,21 @@
 # Changelog
 
+## 9.9.0 - Command palette becomes a square grid (2026-11-12)
+
+### Changed
+- Ctrl+K now opens a square panel in the middle of the window, with the commands as a grid of
+  tiles instead of one long list. The square is sized from the window, so it also fits small
+  windows, and follows the window when it is resized. When there are more commands than fit, the
+  grid scrolls inside the square; the square does not grow. New commands appear as new tiles
+  with no layout work.
+- The rest of the window dims while the palette is open.
+
+### Added
+- Keyboard control of the palette: the arrow keys move the highlight across the grid in all four
+  directions, Home and End jump to the first and last command, Enter runs the highlighted
+  command and Esc closes the palette.
+- Clicking outside the square closes the palette. Clicking a tile still runs its command.
+
 ## 9.8.1 - BELLATOR's model loads again (2026-11-12)
 
 ### Fixed

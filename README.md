@@ -219,7 +219,9 @@ boundary.
 
 ## Operator Features
 
-The GUI command palette opens with `Ctrl+K`. Common shortcuts are `Ctrl+D` for
+The GUI command palette opens with `Ctrl+K` as a square grid of command tiles in
+the middle of the window: arrow keys move, `Enter` runs, `Esc` or a click outside
+closes. Common shortcuts are `Ctrl+D` for
 diagnostics, `Ctrl+T` to cycle themes, `Ctrl+H` for proposal history,
 `Ctrl+E` to export the latest verdict, `Ctrl+M` for the BELLATOR world map, and `Ctrl+O` to choose and test each voter's online model.
 
