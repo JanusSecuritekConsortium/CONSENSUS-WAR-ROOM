@@ -57,10 +57,11 @@ recorded so that limits can be added later.
 
 ## What this does and does not protect
 
-Profiles live in `_ARBITER/users.json`, which is not published to GitHub. The
-packaged app keeps its own copy next to `CONSENSUS.exe` (`dist\_ARBITER\users.json`),
-separate from the one used when CONSENSUS is run from source; the launcher above
-manages the packaged app's profiles whenever `dist\CONSENSUS.exe` exists. A PIN
+Profiles live in `_ARBITER/users.json` in the project folder, which is not
+published to GitHub. `CONSENSUS.exe` in the project's `dist` folder uses that same
+file, so the desktop lock and the phone page (docs/PHONE_ACCESS.md) know the same
+people. A copy of `CONSENSUS.exe` placed anywhere else keeps its own
+`_ARBITER\users.json` beside it. A PIN
 is never stored: the file holds a salted scrypt digest, so reading it does not
 reveal the PIN.
 

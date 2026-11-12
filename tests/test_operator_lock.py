@@ -199,6 +199,22 @@ def test_proposals_and_decisions_record_who_was_signed_in(users: Path, tmp_path:
     assert json.loads(history.read_text(encoding="utf-8").splitlines()[1])["submitted_by"] == "Owner"
 
 
+def test_exe_in_the_project_shares_the_projects_profile_file(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("CONSENSUS_USERS_FILE", raising=False)
+    project = tmp_path / "project"
+    (project / "_ARBITER").mkdir(parents=True)
+    (project / "dist").mkdir()
+    shared = project / "_ARBITER" / "users.json"
+    assert store.default_users_path(project / "dist", frozen=True) == shared  # CONSENSUS.exe in dist
+    assert store.default_users_path(project, frozen=False) == shared  # run from source
+    # An exe copied somewhere else keeps its own file beside it.
+    elsewhere = tmp_path / "usb" / "dist"
+    elsewhere.mkdir(parents=True)
+    assert store.default_users_path(elsewhere, frozen=True) == elsewhere / "_ARBITER" / "users.json"
+    monkeypatch.setenv("CONSENSUS_USERS_FILE", str(tmp_path / "override.json"))
+    assert store.default_users_path(project / "dist", frozen=True) == tmp_path / "override.json"
+
+
 def test_user_menu_requires_an_owner_once_profiles_exist(users: Path) -> None:
     from tools.users import run_menu
 

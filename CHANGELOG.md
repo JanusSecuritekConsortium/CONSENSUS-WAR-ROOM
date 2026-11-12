@@ -1,5 +1,20 @@
 # Changelog
 
+## 9.11.0 - Phone page (2026-11-12)
+
+### Added
+- A phone page (docs/PHONE_ACCESS.md): from a phone's browser, sign in with your operator profile
+  and PIN, submit a proposal to the tribunal and read the verdict, confidence and reason when it
+  has finished. Start it with `tools\launchers\start_phone_page.cmd`. It is meant to be reached
+  over Tailscale, a private network between your own devices; it listens only on this PC or on
+  one address you give it and refuses to listen on every network.
+- Proposals sent from the phone carry the operator's name on the ticket and on the decision.
+
+### Changed
+- `CONSENSUS.exe` in the project's `dist` folder now uses the project's profile file
+  (`_ARBITER\users.json`), so the lock before boot and the phone page know the same people. An exe
+  copied elsewhere keeps its own file beside it.
+
 ## 9.10.0 - Operator profiles and a PIN before boot (2026-11-12)
 
 ### Added

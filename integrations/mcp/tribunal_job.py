@@ -141,8 +141,11 @@ def memory_note(*, local_only: bool = False) -> Optional[str]:
 def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
           check_memory: Optional[Callable[[], Optional[str]]] = None,
           free_local_ai: Callable[[], list] = lambda: _free_local_ai(), guest: bool = False,
-          guest_limit: Optional[int] = None) -> Dict[str, Any]:
+          guest_limit: Optional[int] = None, submitted_by: Optional[str] = None) -> Dict[str, Any]:
     """Queue a deliberation and return a ticket.
+
+    submitted_by names the signed-in operator (the phone page passes it); the worker
+    records it on the decision.
 
     guest=True is a question from another system (integrations.guest): it never unloads the owner's
     Local AI models, never learns about the owner's own deliberations, and runs as a guest deliberation.
@@ -167,10 +170,10 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
                 raise
             return {"status": "busy", "detail": "The tribunal is admitting another request; try again later."}
         with gate:
-            return _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit)
+            return _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by)
 
 
-def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit):
+def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by=None):
     if guest and guest_limit is not None and guest_daily_count(jobs_dir) >= guest_limit:
         return {"status": "limit_reached", "detail": "The daily limit of guest questions is reached."}
     busy = _running(jobs_dir)
@@ -192,6 +195,8 @@ def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_li
     record = {"ticket": ticket, "query": query, "status": "queued", "requested_at": _now().isoformat(timespec="seconds")}
     if guest:
         record.update(guest=True, guest_local_only=local_only)
+    elif submitted_by:
+        record["submitted_by"] = str(submitted_by)[:64]
     path = _path(ticket, jobs_dir)
     _write(path, record)
     try:
@@ -256,6 +261,10 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
             except Exception:
                 pass
         from core.history import result_to_dict
+        if record.get("submitted_by"):
+            # This worker runs one deliberation; its decision record carries who asked for it.
+            from core import identity
+            identity.sign_in(identity.Operator(name=str(record["submitted_by"])))
         result = deliberate(record["query"]) if deliberate else _deliberate(
             record["query"], guest=guest, guest_local_only=record.get("guest_local_only"))
         record.update(status="finished", result=summary(result_to_dict(result)))

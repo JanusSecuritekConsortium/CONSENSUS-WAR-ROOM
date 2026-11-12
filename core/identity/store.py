@@ -17,9 +17,23 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from core.paths import ARBITER_DIR
+from core.paths import SYSTEM_ROOT, is_frozen_runtime
 
-USERS_PATH = Path(os.environ["CONSENSUS_USERS_FILE"]) if os.environ.get("CONSENSUS_USERS_FILE") else ARBITER_DIR / "users.json"
+def default_users_path(system_root: Path = SYSTEM_ROOT, frozen: bool | None = None) -> Path:
+    """Where the profiles live. CONSENSUS.exe inside the project's dist folder shares the project's
+    file, so the desktop lock and the services run from source (the phone page) know the same
+    people. An exe copied anywhere else keeps its own file beside it."""
+    configured = os.environ.get("CONSENSUS_USERS_FILE")
+    if configured:
+        return Path(configured)
+    frozen = is_frozen_runtime() if frozen is None else frozen
+    project = system_root.parent / "_ARBITER"
+    if frozen and system_root.name.lower() == "dist" and project.is_dir():
+        return project / "users.json"
+    return system_root / "_ARBITER" / "users.json"
+
+
+USERS_PATH = default_users_path()
 ROLES = ("owner", "operator")
 PIN_MIN_LENGTH = 4
 PIN_MAX_LENGTH = 64
