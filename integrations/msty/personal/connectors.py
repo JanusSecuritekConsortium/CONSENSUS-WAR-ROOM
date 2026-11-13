@@ -244,6 +244,8 @@ def calendar_events(account, now, mode='weekly'):
     if events and all(e['title'].strip().casefold() in ('busy', 'busy / no title', 'occupied', 'ocupado', 'private event', '') for e in events):
         warnings.append('Calendar exposes busy times only; full-view sharing is required for event titles')
     source_identity = str(Path(path).resolve()) if path else url
+    from .title_language import remember
+    remember(events)  # lets speech read each title in its own language's voice
     return {'events': sorted([event for event in events if event['status'].upper() != 'CANCELLED'], key=lambda e: e['start']),
             'cancelled_events': [event for event in events if event['status'].upper() == 'CANCELLED'], 'warnings': warnings,
             'window_start': start.isoformat(), 'window_end': end.isoformat(),

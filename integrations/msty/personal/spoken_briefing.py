@@ -99,19 +99,32 @@ def audio_file(text, lang='en'):
     from voice.voice_profiles import get_voice_profile
     store.ROOT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='narration-', dir=store.ROOT) as folder:
+        from .title_language import segments
         profile = get_voice_profile('AURELIUS')
-        profile = replace(profile, settings={**profile.settings, 'output_dir': folder})
-        if lang == 'es':
-            profile = replace(profile, settings=spanish_settings(profile.settings))
-        with redirect_stdout(io.StringIO()):
-            result = AureliusAdapter(profile=profile).save_only(narration(text, lang))
-        if not result.ok or not result.audio_path:
-            raise RuntimeError('Local Aurelius narration unavailable')
+        voices = {'en': profile.settings}
+        voices[lang] = spanish_settings(profile.settings) if lang == 'es' else profile.settings
+        wavs = []
+        # Calendar titles in the other language are read in that language's voice; the rest keeps the reply's.
+        for index, (part, part_lang) in enumerate(segments(narration(text, lang), lang)):
+            if part_lang not in voices:
+                try:
+                    voices[part_lang] = spanish_settings(profile.settings)
+                except RuntimeError:
+                    voices[part_lang] = voices[lang]
+            settings = {**voices[part_lang], 'output_dir': str(Path(folder)/f'part{index}')}
+            with redirect_stdout(io.StringIO()):
+                result = AureliusAdapter(profile=replace(profile, settings=settings)).save_only(part)
+            if not result.ok or not result.audio_path:
+                raise RuntimeError('Local Aurelius narration unavailable')
+            wavs.append(result.audio_path)
         ffmpeg = shutil.which('ffmpeg')
         if not ffmpeg:
             raise RuntimeError('Local audio encoder unavailable')
         output = Path(folder)/'briefing.ogg'
-        subprocess.run([ffmpeg, '-nostdin', '-y', '-i', result.audio_path,
+        inputs = [argument for wav in wavs for argument in ('-i', wav)]
+        joined = ''.join(f'[{i}:a]aresample=48000,aformat=sample_fmts=s16:channel_layouts=mono[a{i}];' for i in range(len(wavs)))
+        joined += ''.join(f'[a{i}]' for i in range(len(wavs)))+f'concat=n={len(wavs)}:v=0:a=1[out]'
+        subprocess.run([ffmpeg, '-nostdin', '-y', *inputs, '-filter_complex', joined, '-map', '[out]',
                         '-vn', '-ac', '1', '-c:a', 'libopus', '-b:a', '32k', str(output)],
                        check=True, capture_output=True, timeout=120,
                        creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))

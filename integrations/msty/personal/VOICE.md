@@ -20,6 +20,15 @@ recorded in the inbox row (`voice_reply_failed:…`) and never resent; the text 
 already arrived. Set `telegram_spoken_replies` to false in the local account store
 to turn it off.
 
+Spanish starts from the Spanish male voice Pablo, reshaped more gently than English
+(the `spanish` block of `voice/voice_config.json`); English is unchanged. Calendar
+titles keep their own language: each time the calendar is read, every title is marked
+Spanish or English from its accents and common words (`title_language.py`; kept in the
+private folder as `calendar-title-languages.json`, never in the repository). In a note,
+a known title in the other language is read in that language's voice and the pieces
+are joined into one recording. A title with no clear signal, such as a name alone,
+keeps the reply's voice.
+
 There is one Telegram polling owner. The native Msty Telegram connection must stay
 disconnected, its auto-connect flag disabled, and the original agent's Telegram
 binding removed while this receiver is enabled. The previous binding is saved in
