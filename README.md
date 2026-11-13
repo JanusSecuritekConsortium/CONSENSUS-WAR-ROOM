@@ -165,10 +165,11 @@ real tribunal and the voices need files that are not in Git:
 - **Language models.** Each agent's model is named in
   `_ARBITER/genesis_config.json` (`agent_model_overrides`). The GGUF files are
   public downloads; serve them with Msty Studio (llama.cpp) or an
-  Ollama-compatible runtime. The current voters need about 18–19 GB each, so plan
-  for a GPU with 24 GB or enough RAM to offload. BELLATOR uses Mistral
-  Small 3.2 24B (about 14 GB); Mixtral 8x7B needs more memory than a 32 GB PC
-  has free. `python -m integrations.mcp.voter_check` reports
+  Ollama-compatible runtime. The current voters need about 14–19 GB each, so plan
+  for a GPU with 24 GB or enough RAM to offload. RATIONALIS uses Qwen 3.8
+  27B (about 17 GB, with thinking turned off in Msty's model settings) and
+  BELLATOR uses Mistral Small 3.2 24B (about 14 GB); each voter's model comes
+  from a different maker. `python -m integrations.mcp.voter_check` reports
   whether each voter's model loads.
 - **Voice models.** ARBITER and AURELIUS can speak through RVC voice models and
   an RVC Python environment, set in `voice/voice_config.json`. Neither is

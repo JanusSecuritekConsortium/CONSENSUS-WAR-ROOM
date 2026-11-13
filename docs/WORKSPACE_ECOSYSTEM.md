@@ -40,7 +40,8 @@ Known model families and runtime folders observed under `G:\AI_MODELS`:
 - `huggingface\YI-34B`
 - `unsloth\Mistral-Small-3.2-24B-Instruct-2506-GGUF` (BELLATOR's current model)
 - `TheBloke\Yi-34B-Chat-GGUF`
-- `TheBloke\deepseek-coder-33B-instruct-GGUF`
+- `unsloth\Qwen3.8-27B-GGUF` (RATIONALIS's current model)
+- `TheBloke\deepseek-coder-33B-instruct-GGUF` (RATIONALIS's previous model, a coding model)
 - `lmstudio-community\Meta-Llama-3.1-8B-Instruct-GGUF`
 - `lmstudio-community\DeepSeek-R1-Distill-Qwen-7B-GGUF`
 - `lmstudio-community\Mistral-7B-Instruct-v0.3-GGUF`

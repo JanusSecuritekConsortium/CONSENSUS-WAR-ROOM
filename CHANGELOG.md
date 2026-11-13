@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.12.2 - RATIONALIS thinks with a reasoning model (2026-11-13)
+
+### Changed
+- RATIONALIS, the strategist, now runs on Qwen 3.8 27B (Alibaba) instead of DeepSeek Coder, a model
+  built for writing code. Qwen is a general reasoning model and about 2 GB smaller. In a test on a
+  real tribunal question it gave a clear, valid vote in about 16 minutes, inside the 25-minute limit.
+  Every voter still comes from a different maker: Alibaba, 01.AI, Mistral AI and Nous Research.
+
 ## 9.12.1 - Aurelius speaks clearer Spanish (2026-11-13)
 
 ### Fixed

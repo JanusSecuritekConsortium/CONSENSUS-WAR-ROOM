@@ -62,7 +62,7 @@
   "api_port": 8888,
   "node_overrides": {
     "RATIONALIS": {
-      "model": "deepseek-coder-33b-instruct.Q4_K_S:latest"
+      "model": "unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf"
     },
     "AETERNUM": {
       "model": "yi-34b-chat.Q4_K_S:latest"
@@ -73,7 +73,7 @@
   },
   "agent_model_overrides": {
     "ARBITER": "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf",
-    "RATIONALIS": "deepseek-coder-33b-instruct.Q4_K_S:latest",
+    "RATIONALIS": "unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf",
     "AETERNUM": "yi-34b-chat.Q4_K_S:latest",
     "BELLATOR": "unsloth/Mistral-Small-3.2-24B-Instruct-2506-GGUF/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"
   }
