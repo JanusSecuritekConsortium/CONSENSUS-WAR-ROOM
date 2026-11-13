@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.13.2 - Spoken agendas skip the timezone (2026-11-13)
+
+### Changed
+- Aurelius's voice notes no longer read "Europe/Madrid" from the agenda heading, nor the
+  "00:00–24:00" window when it covers the whole day. The text reply is unchanged.
+
 ## 9.13.1 - Housekeeping from the code review (2026-11-13)
 
 ### Changed

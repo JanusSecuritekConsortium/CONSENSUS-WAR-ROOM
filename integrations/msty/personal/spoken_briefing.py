@@ -58,6 +58,9 @@ FINE_PRINT = (
 
 def narration(text, lang='en'):
     text = chr(10).join(line for line in str(text).splitlines() if line.strip() not in FINE_PRINT)
+    # The agenda heading's timezone and whole-day window are for reading, not listening.
+    text = re.sub(r'\s*·\s*Europe/Madrid\b', '', text)
+    text = re.sub(r'\s*·\s*00:00[–-]24:00(?=\s*(?:·|$))', '', text, flags=re.MULTILINE)
     # Keep facts and qualifiers verbatim; URLs are useful in text, not speech.
     text = re.sub(r'\[([^\]\n]+)\]\(https?://[^\s)]+\)', r'\1', text)
     text = re.sub(r'https?://\S+', '', text)

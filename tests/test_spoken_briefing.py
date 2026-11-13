@@ -156,3 +156,12 @@ def test_voice_notes_skip_standing_fine_print_but_keep_real_warnings():
     spoken = s.narration(text, 'es')
     assert 'Quedada con August' in spoken and 'SOLAPAMIENTOS' in spoken and 'intencional' in spoken
     assert 'confirman asistencia' not in spoken and 'tardar en actualizarse' not in spoken and 'No se detectaron' not in spoken
+
+
+def test_voice_notes_skip_the_agenda_headings_timezone():
+    from pathlib import Path
+    assert '· Europe/Madrid' in (Path(s.__file__).parent/'agenda_query.py').read_text(encoding='utf-8')
+    spoken = s.narration('AURELIUS — AGENDA · 13/11/2026 · 00:00–24:00 · Europe/Madrid\nViernes 13/11', 'es')
+    assert 'Europe' not in spoken and 'Madrid' not in spoken and '24' not in spoken and 'AGENDA' in spoken
+    kept = s.narration('AURELIUS — AGENDA · 13/11/2026 · 08:00–14:00 · Europe/Madrid', 'es')
+    assert 'Madrid' not in kept and '14' in kept  # a partial window is still news
