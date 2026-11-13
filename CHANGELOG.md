@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.13.0 - Calendar titles in their own language (2026-11-13)
+
+### Added
+- Aurelius reads each calendar title in its own language's voice. Spanish titles inside an English
+  voice note are read by the Spanish voice, and English titles inside a Spanish note by the English
+  voice. Titles are marked Spanish or English when the calendar is read; a name alone keeps the
+  reply's voice.
+
 ## 9.12.2 - RATIONALIS thinks with a reasoning model (2026-11-13)
 
 ### Changed
