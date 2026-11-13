@@ -92,6 +92,11 @@ changes, use relevant existing tests (see [README](README.md) and
 paths, terminology and the final diff. Record exact commands, results and
 unrun checks. Offline tests do not prove live-provider or deployed behavior.
 
+GitHub CI runs on Linux, where Linux-only settings apply (for example
+`voice/voice_config.linux.json`) and Windows files do not exist. Before pushing,
+run the tests you touched there too: `wsl -d Ubuntu -- bash tools/linux_tests.sh
+tests/test_x.py` (see the script header for its one-time setup).
+
 ## Task record and handoff
 
 Use one Markdown file per task in the canonical coordination folder; do not have
