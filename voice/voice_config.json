@@ -56,6 +56,11 @@
       "fallback": "windows_sapi",
       "rate": 145,
       "volume": 0.9,
+      "catalan": {
+        "transpose": 0,
+        "index_rate": 0.45,
+        "protect": 0.5
+      },
       "spanish": {
         "base_voice_name": [
           "Microsoft Pablo",

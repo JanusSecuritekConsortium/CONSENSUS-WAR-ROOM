@@ -111,19 +111,52 @@ def spanish_settings(settings, sapi_voices=None):
             'base_voice_language': 'es', 'speech_language': 'es'}
 
 
+def installed_voices(language_code):
+    """Names of the Windows (OneCore) voices for one language, e.g. '403' for Catalan; [] off Windows."""
+    try:
+        import winreg
+        root = r'SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens'
+        names = []
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, root) as tokens:
+            for index in range(winreg.QueryInfoKey(tokens)[0]):
+                with winreg.OpenKey(tokens, winreg.EnumKey(tokens, index)+r'\Attributes') as attributes:
+                    if str(winreg.QueryValueEx(attributes, 'Language')[0]).lower() == language_code:
+                        names.append(str(winreg.QueryValueEx(attributes, 'Name')[0]))
+        return names
+    except (ImportError, OSError):
+        return []
+
+
+def catalan_settings(settings, voices=None):
+    """AURELIUS's settings for Catalan titles, from an installed Catalan Windows voice (Windows' language
+    settings add one). Without it Catalan is read in Spanish."""
+    names = installed_voices('403') if voices is None else list(voices)
+    if not names:
+        raise RuntimeError('Local Catalan voice unavailable')
+    catalan = {key: value for key, value in dict(settings.get('catalan') or {}).items() if key != 'base_voice_name'}
+    return {**settings, 'base_voice_gender': '', **catalan, 'base_voice_name': names,
+            'base_voice_language': 'ca', 'speech_language': 'ca'}
+
+
 @contextmanager
 def audio_file(text, lang='en'):
     from voice.aurelius_adapter import AureliusAdapter
     from voice.voice_profiles import get_voice_profile
     store.ROOT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='narration-', dir=store.ROOT) as folder:
-        from .title_language import segments
+        from .title_language import merge, segments
         profile = get_voice_profile('AURELIUS')
         voices = {'en': profile.settings}
         voices[lang] = spanish_settings(profile.settings) if lang == 'es' else profile.settings
         wavs = []
-        # Calendar titles in the other language are read in that language's voice; the rest keeps the reply's.
-        for index, (part, part_lang) in enumerate(segments(narration(text, lang), lang)):
+        # Calendar titles in another language are read in that language's voice; the rest keeps the reply's.
+        parts = segments(narration(text, lang), lang)
+        if any(part_lang == 'ca' for _, part_lang in parts):
+            try:
+                voices['ca'] = catalan_settings(profile.settings)
+            except RuntimeError:  # no Catalan voice yet: Catalan joins the Spanish parts
+                parts = merge([(part, 'es' if part_lang == 'ca' else part_lang) for part, part_lang in parts])
+        for index, (part, part_lang) in enumerate(parts):
             if part_lang not in voices:
                 try:
                     voices[part_lang] = spanish_settings(profile.settings)

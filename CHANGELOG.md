@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.13.3 - Catalan calendar titles (2026-11-13)
+
+### Added
+- Aurelius recognises Catalan calendar titles (as well as Spanish and English) and reads
+  them with a Catalan Windows voice once one is installed. Until then they are read in
+  Spanish, as before, without being split into a separate piece.
+
 ## 9.13.2 - Spoken agendas skip the timezone (2026-11-13)
 
 ### Changed
