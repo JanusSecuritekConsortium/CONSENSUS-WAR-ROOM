@@ -14,6 +14,7 @@ from config.nodes import DEFAULT_NODES
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION
 from core.tribunal import Tribunal
 from core.voting.rules import ConsensusRules
+from core.voting.orchestrator import round_order
 from tests.argument_fixture import argument_fields
 
 
@@ -58,7 +59,7 @@ def test_voting_uses_runtime() -> None:
     result = tribunal.deliberate("runtime integration vote")
 
     assert result.verdict.value == "APPROVE"
-    assert [call["agent_id"] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS) * 3
+    assert [call["agent_id"] for call in runtime.calls] == [agent for number in (1, 2, 3) for agent in round_order(TRIBUNAL_AGENT_IDS, number)]
     assert result.deliberation_complete
     assert len(result.deliberation_transcript) == 9
     assert set(result.votes) == set(TRIBUNAL_AGENT_IDS)

@@ -15,7 +15,7 @@ from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.voting.engine import ConsensusEngine
 from core.voting.follow_up import unresolved_next_steps
-from core.voting.orchestrator import DELIBERATION_PHASES, VotingOrchestrator
+from core.voting.orchestrator import DELIBERATION_PHASES, VotingOrchestrator, round_order
 from core.voting.rules import ConsensusRules
 
 STRATEGIES = ("single", "independent", "debate")
@@ -57,7 +57,7 @@ def load_cases(path: Path) -> list[dict]:
 def protocol_errors(turns: list[dict], strategy: str, simulation: bool) -> list[str]:
     agents = (RATIONALIS,) if strategy == "single" else TRIBUNAL_AGENT_IDS
     phases = DELIBERATION_PHASES if strategy == "debate" else DELIBERATION_PHASES[:1]
-    expected = [(number, phase, agent) for number, phase in enumerate(phases, 1) for agent in agents]
+    expected = [(number, phase, agent) for number, phase in enumerate(phases, 1) for agent in round_order(agents, number)]
     errors = []
     if [(t.get("round"), t.get("phase"), t.get("agent_id")) for t in turns] != expected:
         errors.append("incomplete_or_out_of_order_protocol")

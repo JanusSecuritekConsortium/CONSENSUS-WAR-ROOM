@@ -21,6 +21,15 @@ from core.voting.evidence import supplied_passages
 DELIBERATION_PHASES = ("assessment", "critique", "revision")
 
 
+def round_order(agents, number):
+    """Speaking order for round `number` (1-based): forward on odd rounds, reversed on even ones.
+
+    Voters only see earlier rounds, so the order inside a round changes no argument. Alternating it lets each
+    round start with the model the previous round ended on, which is still loaded; on a local PC every
+    reload of a 24-34B model costs minutes."""
+    return tuple(agents) if number % 2 else tuple(reversed(tuple(agents)))
+
+
 class AgentRuntime(Protocol):
     def send_to_agent(self, agent_id: str, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
         ...
@@ -76,7 +85,7 @@ class VotingOrchestrator:
         for number, phase in enumerate(phases, 1):
             self._emit(on_event, {"type": "round_started", "round": number, "phase": phase})
             round_votes: Dict[str, Vote] = {}
-            for agent_id in agents:
+            for agent_id in round_order(agents, number):
                 control = getattr(self.runtime, "generation_control", None)
                 if control:
                     control.check()

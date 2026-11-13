@@ -233,3 +233,11 @@ def test_deadline_audit_preserves_observed_turns_and_omits_raw_text(tmp_path):
     turns = observed_turns(path)
     assert len(turns) == 1 and turns[0]["vote"] == "DENY"
     assert "PRIVATE_MARKER" not in json.dumps(turns)
+
+
+def test_each_round_starts_with_the_model_the_last_one_ended_on():
+    from core.voting.orchestrator import round_order
+    agents = ("BELLATOR", "AETERNUM", "RATIONALIS")
+    orders = [round_order(agents, number) for number in (1, 2, 3)]
+    assert orders[0] == agents and orders[1] == tuple(reversed(agents)) and orders[2] == agents
+    assert all(orders[i][-1] == orders[i + 1][0] for i in range(2))  # one reload saved per round boundary

@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.13.5 - Fewer model reloads per deliberation (2026-11-13)
+
+### Changed
+- Voters speak in alternating order: forward in rounds 1 and 3, reversed in round 2. Each round
+  now starts with the model the previous round ended on, which is still loaded, so a full
+  deliberation reloads a model 7 times instead of 9. On this PC each reload of a 24-34B model
+  takes several minutes. Voters only see earlier rounds, so the order changes no argument.
+- If BELLATOR fails in round 2, the other two voters have already answered (it now speaks last there).
+
 ## 9.13.4 - Honest receiver status (2026-11-13)
 
 ### Fixed

@@ -10,6 +10,7 @@ from config.runtime import RuntimeConfig
 from core.history import result_to_dict
 from core.models import FinalVerdict
 from core.tribunal import Tribunal
+from core.voting.orchestrator import round_order
 from core.voting.engine import ConsensusEngine
 from core.voting.orchestrator import VotingOrchestrator
 from core.voting.rules import ConsensusRules
@@ -56,7 +57,7 @@ def test_every_agent_sees_completed_assessments_and_critiques(sequential):
     runtime = DiscussionRuntime()
     orchestrator = VotingOrchestrator(DEFAULT_NODES, runtime)
     votes = orchestrator.cast_votes("Analyze a prototype with audit and rollback", "test", "military", sequential)
-    assert [call[0] for call in runtime.calls] == list(TRIBUNAL_AGENT_IDS) * 3
+    assert [call[0] for call in runtime.calls] == [agent for number in (1, 2, 3) for agent in round_order(TRIBUNAL_AGENT_IDS, number)]
     for agent, prompt, context in runtime.calls:
         rounds = context["deliberation"]["previous_rounds"]
         phase = context["deliberation"]["phase"]
@@ -78,8 +79,9 @@ def test_every_agent_sees_completed_assessments_and_critiques(sequential):
     assert orchestrator.transcript[6]["vote"] == "DENY"
 
 
-# BELLATOR answers first, so its failure leaves AETERNUM and RATIONALIS unasked in that round.
-@pytest.mark.parametrize("phase,turn_count", [("assessment", 1), ("critique", 4), ("revision", 7)])
+# BELLATOR answers first in rounds 1 and 3, so its failure there leaves the others unasked;
+# in round 2 it answers last (the order alternates), so all three were asked.
+@pytest.mark.parametrize("phase,turn_count", [("assessment", 1), ("critique", 6), ("revision", 7)])
 @pytest.mark.parametrize("malformed", [False, True])
 def test_failed_or_malformed_turn_blocks_majority_and_stops_later_rounds(phase, turn_count, malformed):
     runtime = DiscussionRuntime((BELLATOR, phase), malformed)
@@ -96,11 +98,16 @@ def test_failed_or_malformed_turn_blocks_majority_and_stops_later_rounds(phase, 
     assert not result.simulation
     assert TRIBUNAL_AGENT_IDS[0] == BELLATOR
     from core.models import NOT_ASKED
+    assert "vote_validation_failed:AETERNUM" not in result.review_triggers
+    assert result.reason.startswith("Deliberation incomplete: failed or malformed model responses from BELLATOR (BELLATOR: ")
+    if phase == "critique":  # BELLATOR spoke last in round 2, after the others had answered
+        assert all(not votes[agent].validation_errors for agent in (AETERNUM, RATIONALIS))
+        assert "Not asked after that failure" not in result.reason
+        assert orchestrator.transcript[-1]["agent_id"] == BELLATOR and orchestrator.transcript[-1]["status"] == "failed"
+        return
     for agent in (AETERNUM, RATIONALIS):
         assert votes[agent].validation_errors == [NOT_ASKED]
         assert f"voter_not_asked:{agent}" in result.review_triggers
-    assert "vote_validation_failed:AETERNUM" not in result.review_triggers
-    assert result.reason.startswith("Deliberation incomplete: failed or malformed model responses from BELLATOR (BELLATOR: ")
     assert "Not asked after that failure: AETERNUM, RATIONALIS." in result.reason
     assert [turn["status"] for turn in orchestrator.transcript[-3:]] == ["failed", "not_asked", "not_asked"]
 
