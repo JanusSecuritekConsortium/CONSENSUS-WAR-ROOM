@@ -186,7 +186,7 @@ def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_li
         try:  # before measuring: Local AI's assistant model is memory the tribunal can reclaim
             free_local_ai()
         except Exception:
-            pass
+            pass  # best effort; the worker tries again and records a failure on the ticket
     local_only = guest and _guest_local_only()
     warning = check_memory() if check_memory is not None else memory_note(local_only=local_only)
     if warning:
@@ -258,8 +258,8 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
         if deliberate is None and not guest:
             try:  # a 9B assistant model on the GPU pushes the 18 GB voter models into the page file
                 record["freed_models"] = _free_local_ai()
-            except Exception:
-                pass
+            except Exception as error:  # deliberate anyway, but leave a trace of why memory was not freed
+                record["free_models_error"] = type(error).__name__
         from core.history import result_to_dict
         if record.get("submitted_by"):
             # This worker runs one deliberation; its decision record carries who asked for it.

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tests.helpers.gui_harness import build_layout_for, header_logo_control_for
+from tests.helpers.gui_harness import build_layout_for
 from ui.assets.registry import THEME_GRAPHIC_ASSETS
 from ui.components.header import logo_runtime_diagnostics, logo_text_control_from_box
 from ui.components.telemetry_widgets import build_themed_telemetry, telemetry_control_signature

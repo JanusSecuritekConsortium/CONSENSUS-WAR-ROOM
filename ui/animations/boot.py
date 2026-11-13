@@ -7,7 +7,7 @@ from typing import Dict
 from config.version import SYSTEM_AUTHOR, SYSTEM_VERSION
 from core.models import Theme
 from core.paths import ARBITER_DIR, RESOURCE_ROOT
-from ui.animations.loading import build_loading_sample_text, render_loading_sample
+from ui.animations.loading import build_loading_sample_text
 from ui.themes.boot_profiles import get_boot_profile
 
 

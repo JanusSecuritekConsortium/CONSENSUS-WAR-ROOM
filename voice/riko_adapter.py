@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 from core.paths import ARBITER_DIR
 

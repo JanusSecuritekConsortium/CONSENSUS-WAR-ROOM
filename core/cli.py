@@ -28,7 +28,6 @@ from ui.themes.catalog import (
     pick_random_gui_theme,
     THEMES,
     get_gui_theme_key,
-    get_gui_theme_options,
     list_themes,
     resolve_theme_key,
 )

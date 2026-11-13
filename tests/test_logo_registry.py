@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from ui.assets.logo_normalizer import read_normalized_logo
-from ui.assets.registry import THEME_GRAPHIC_ASSETS, get_theme_graphic_asset, validate_graphic_registry
+from ui.assets.registry import get_theme_graphic_asset, validate_graphic_registry
 
 
 def test_logo_registry_covers_active_gui_themes() -> None:

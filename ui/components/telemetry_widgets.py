@@ -11,7 +11,6 @@ from core.telemetry import (
     CPU_TEMP_THRESHOLDS,
     GPU_TEMP_THRESHOLDS,
     TEMPERATURE_STALE_SECONDS,
-    classify_temperature,
     validate_temperature_c,
     worst_thermal_state,
 )

@@ -7,7 +7,6 @@ from tests.helpers.gui_harness import make_gui_state
 from tests.test_directorate_interaction import walk, button
 from tools.gui_smoke_check import SmokePage
 from ui import flet_app as gui
-from ui.directorate import build_boot
 
 
 class Page(SmokePage):

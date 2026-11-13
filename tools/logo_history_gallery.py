@@ -10,7 +10,6 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -18,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 import flet as ft
 
-from ui.components.header import GUI_LOGO_BOX_HEIGHT, LOGO_CHAR_WIDTH_FACTOR, LOGO_FONT_FAMILY
+from ui.components.header import LOGO_CHAR_WIDTH_FACTOR, LOGO_FONT_FAMILY
 from ui.themes.catalog import THEMES
 
 SEARCH_TERMS = ("eva", "nerv", "magi", "wh40k", "warhammer", "cogitator")

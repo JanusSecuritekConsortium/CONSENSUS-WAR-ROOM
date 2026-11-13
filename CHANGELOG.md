@@ -1,5 +1,27 @@
 # Changelog
 
+## 9.13.1 - Housekeeping from the code review (2026-11-13)
+
+### Changed
+- The function that draws the main window was about 800 lines long. It is now three smaller ones:
+  the actions behind buttons and keys, the overlays, and a short one that ties them together. The
+  code was moved, not rewritten; the window looks and behaves the same.
+- Aurelius's voice notes no longer read the standing fine print at the end of an agenda ("no
+  overlaps found", the note on events without an end time, "the calendar feed may lag"). The text
+  reply keeps it; real overlap warnings are still spoken.
+- `_ARBITER\launch_war_room.bat` opens the current CONSENSUS. It used to start the retired 2025
+  text console, which no longer runs.
+
+### Fixed
+- Three errors that used to be ignored without a trace now leave one: a failure to free memory
+  before a deliberation is noted on the ticket, and a damaged model cache or a theme preview folder
+  that will not open are written to the system log.
+
+### Removed
+- 27 unused imports across 23 files.
+- Five dead files in `_ARBITER`: two empty placeholders, a placeholder launcher, and a broken copy
+  of the old ANIMA bot with its stub. The working copy of that bot stays in `archive/legacy`.
+
 ## 9.13.0 - Calendar titles in their own language (2026-11-13)
 
 ### Added

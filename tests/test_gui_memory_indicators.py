@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from config.runtime import RuntimeConfig
 from ui.components.status_panel import build_status_panel
 from ui.components.verdict_panel import build_verdict_panel
 from ui.themes.catalog import THEMES

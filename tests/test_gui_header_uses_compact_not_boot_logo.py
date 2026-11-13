@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tests.helpers.gui_harness import build_layout_for, header_logo_control_for, make_gui_state
-from ui.components.header import compact_logo_text, header_logo_text, theme_logo_layout_mode
+from ui.components.header import header_logo_text, theme_logo_layout_mode
 
 
 def _header_logo_for(theme_key: str) -> str:

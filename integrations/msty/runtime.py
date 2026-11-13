@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from config.agents import AgentProfile, get_agent_profile
-from config.names import AETERNUM, AURELIUS, BELLATOR, RATIONALIS
+from config.names import AURELIUS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from core.llm.backends import MockBackend

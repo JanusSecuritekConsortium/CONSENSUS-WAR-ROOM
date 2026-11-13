@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, List
 
 try:
     from core.intelligence.bellator_context_builder import FEED_CACHE_DIR

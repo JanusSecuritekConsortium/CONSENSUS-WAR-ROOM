@@ -185,8 +185,9 @@ def _load_model_cache() -> Dict[str, Any]:
         payload = json.loads(MODEL_CACHE_PATH.read_text(encoding="utf-8"))
         if isinstance(payload, dict) and isinstance(payload.get("entries"), dict):
             return payload
-    except Exception:
-        pass
+        log_event("model_cache_unreadable", {"path": str(MODEL_CACHE_PATH), "error": "unexpected shape"}, level="WARN")
+    except Exception as exc:  # start from an empty cache, but say that the saved one was dropped
+        log_event("model_cache_unreadable", {"path": str(MODEL_CACHE_PATH), "error": type(exc).__name__}, level="WARN")
     return {"version": 1, "entries": {}}
 
 

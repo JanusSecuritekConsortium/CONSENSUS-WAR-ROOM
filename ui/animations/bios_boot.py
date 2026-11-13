@@ -15,7 +15,7 @@ from config.version import SYSTEM_AUTHOR, SYSTEM_LAST_PATCH_DATE, SYSTEM_ORGANIZ
 from core.paths import RESOURCE_ROOT
 from ui.boot.phrases import node_boot_lines
 from ui.boot.registry import select_detected_devices, select_post_checks
-from ui.animations.loading import format_loading_bar, get_loading_style, render_loading_console
+from ui.animations.loading import format_loading_bar, get_loading_style
 from ui.themes.catalog import THEMES, resolve_theme_key
 
 

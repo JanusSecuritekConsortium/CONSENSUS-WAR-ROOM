@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from integrations.attention import api, classify, config, export, scan, sources, store, tools
+from integrations.attention import api, classify, config, scan, sources, store, tools
 
 NOW = datetime(2026, 10, 29, 16, 0, tzinfo=timezone.utc)
 

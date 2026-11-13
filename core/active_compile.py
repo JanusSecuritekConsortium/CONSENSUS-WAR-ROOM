@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Iterable, List
 
 from core.paths import SYSTEM_ROOT
 

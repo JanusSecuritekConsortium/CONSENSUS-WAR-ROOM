@@ -12,12 +12,13 @@ import importlib.util
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable, Dict, List, Literal
 
 import flet as ft
 
 from assistant.aurelius_runtime import AureliusRuntime, get_aurelius_runtime
-from config.names import AETERNUM, ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
+from config.names import ARBITER, BELLATOR, TRIBUNAL_AGENT_IDS
 from config.nodes import DEFAULT_NODES, apply_node_overrides
 from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
@@ -55,7 +56,6 @@ from core.proposals.templates import get_template, list_templates, render_templa
 from core.export.simulation import export_simulation_dossier, latest_simulation_dossier_status
 from core.simulation.registry import SCENARIO_TYPES
 from core.simulation.store import (
-    branches_for_scenario,
     create_stored_scenario,
     expand_stored_branch,
     get_scenario,
@@ -63,7 +63,6 @@ from core.simulation.store import (
     list_recent_scenarios,
 )
 from core.telemetry import TELEMETRY_HISTORY, sample_telemetry
-from core.tribunal import Tribunal
 from core.tribunal_events import (
     TRIBUNAL_PHASES,
     append_bounded_event,
@@ -93,7 +92,7 @@ from ui.components.monolith_panel import build_monolith_panel, card_border, VERD
 from ui.components.proposal_panel import build_proposal_panel
 from ui.components.proposal_panel import EMPTY_PROPOSAL_HINT
 from ui.components.status_panel import build_status_panel
-from ui.components.telemetry_panel import build_telemetry_panel, telemetry_graph_lines, telemetry_summary_lines
+from ui.components.telemetry_panel import telemetry_graph_lines, telemetry_summary_lines
 from ui.components.theme_switcher import build_theme_switcher
 from ui.components.verdict_panel import build_verdict_panel
 from ui.components.world_map_view import build_world_map_overlay
@@ -1129,8 +1128,8 @@ def open_theme_preview_folder() -> Path:
             os.startfile(path)  # type: ignore[attr-defined]
         else:
             subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(path)])
-    except Exception:
-        pass
+    except Exception as exc:
+        log_error("gui_open_theme_preview_folder_error", exc, {"path": str(path)})
     log_event("gui_open_theme_preview_folder", {"path": str(path)})
     return path
 
@@ -2664,6 +2663,757 @@ def _render_page(page: ft.Page, state: GuiState) -> None:
         _render_page_locked(page, state)
 
 
+def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
+    """Everything the operator can trigger on the page: buttons, keys, overlays. Returned as
+    one object so the layout and the overlays can be wired up outside this function."""
+
+    def submit(proposal: str) -> None:
+        if not proposal.strip():
+            _set_submission_feedback(page, state, "Enter a proposal before submitting.")
+            return
+        if state.directorate_config_failed:
+            _set_submission_feedback(page, state, "Configuration needs attention. Open Diagnostics > SYSTEM CHECKS to retry.")
+            return
+        if not state.submission_lock.acquire(blocking=False):
+            _set_submission_feedback(page, state, "A proposal is already being reviewed. Open LIVE DELIBERATION for progress.")
+            return
+        state.proposal_expanded = False
+        state.deliberation_viewer_open = state.watch_deliberation
+        state.deliberation_records = []
+        state.deliberation_pending = {}
+        state.current_result = None
+        state.current_proposal = proposal.strip()
+        state.last_proposal_record_id = ""
+        state.retry_proposal = proposal.strip()
+        state.retry_available = False
+        control = GenerationControl()
+        state.generation_control = control
+        state.submission_message = "Proposal accepted. Tribunal starting..."
+        def worker() -> None:
+            def update() -> None:
+                _refresh_live_page(page, state)
+
+            try:
+                submit_proposal_live_for_gui(state, proposal, on_update=update)
+                _set_submission_feedback(page, state, "Verdict recorded. See the result below.")
+                state.retry_available = bool(state.current_result and not getattr(state.current_result, "deliberation_complete", True))
+            except SubmissionCancelled:
+                _cancel_submission_state(state)
+                _set_submission_feedback(page, state, "Submission cancelled. RETRY resubmits the same proposal.")
+            except Exception as exc:
+                state.retry_available = state.current_result is None
+                log_error("gui_submission_error", exc, {"theme": state.theme_key})
+                state.deliberation_pending = {}
+                state.monolith_statuses = {agent_id: "ERROR" for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]}
+                state.monolith_feedback = {agent_id: ("ERROR", time.monotonic() + VERDICT_FEEDBACK_SECONDS)
+                                           for agent_id in state.monolith_statuses}
+                state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
+                state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Submission failed; local diagnostics available", state.directorate_session_id)
+                _set_submission_feedback(page, state, "Submission failed. Review DIRECTORATE or Diagnostics, then retry.")
+            finally:
+                state.submission_lock.release()
+                _refresh_submission_controls(page, state)
+            _refresh_live_page(page, state)
+
+        try:
+            _render_page(page, state)
+            page.run_thread(worker)
+        except Exception as exc:
+            state.submission_lock.release()
+            state.retry_available = True
+            log_error("gui_submission_dispatch_error", exc, {"theme": state.theme_key})
+            state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Could not start submission; retry available")
+            _set_submission_feedback(page, state, "Could not start submission. Please retry or open Diagnostics.")
+            _refresh_submission_controls(page, state)
+
+    def cancel_submission(_=None) -> None:
+        control = state.generation_control
+        if not state.submission_lock.locked() or control is None:
+            return
+        if control.cancel():
+            _set_submission_feedback(page, state, "Cancelling submission; closing the response before retry...")
+        else:
+            _set_submission_feedback(page, state, "Verdict finalized; finishing its local record.")
+
+    def retry_submission(_=None) -> None:
+        if state.retry_available and not state.submission_lock.locked() and state.retry_proposal:
+            submit(state.retry_proposal)
+
+    def search_directorate(query: str) -> None:
+        state.directorate_search = query.strip()[:240]
+        _refresh_live_page(page, state)
+
+    def switch_theme(next_theme: str) -> None:
+        resolved = resolve_theme_key(next_theme)
+        if resolved in THEMES:
+            state.theme_key = resolved
+            state.config.theme = resolved
+            state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
+            append_timeline(state.timeline_events, "SYSTEM", f"theme switched to {state.theme.display_name}")
+            _render_page(page, state)
+
+    def refresh(_: ft.ControlEvent | None = None) -> None:
+        retry_directorate()
+
+    def recheck_provider(_: ft.ControlEvent | None = None) -> None:
+        retry_directorate()
+
+    def retry_directorate(_: ft.ControlEvent | None = None) -> None:
+        if state.directorate_busy:
+            return
+        state.directorate_busy = True
+        _render_page(page, state)
+        page.run_thread(initialize_directorate, state, lambda: _refresh_live_page(page, state))
+
+    def preference_update() -> None:
+        try:
+            save_directorate_preferences(state)
+        except OSError:
+            state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Preferences apply for this session; local save failed")
+        _render_page(page, state)
+
+    def toggle_directorate(_=None) -> None:
+        state.directorate_collapsed = not state.directorate_collapsed
+        _render_page(page, state)
+
+    def toggle_cable(_=None) -> None:
+        state.directorate_cable = not state.directorate_cable
+        preference_update()
+
+    def handle_proposal_focus(_=None) -> None:
+        state.proposal_input_focused = True
+        state.proposal_actions_hovered = False
+        _set_proposal_editing(page, state, True)
+
+    def handle_proposal_blur(_=None) -> None:
+        state.proposal_input_focused = False
+        if not state.proposal_actions_hovered:
+            _set_proposal_editing(page, state, False)
+
+    def handle_proposal_tap_outside(event) -> None:
+        # Flutter emits this on pointer down. Keep the action target fixed
+        # until its click is delivered; blank/action-row space is outside.
+        if state.proposal_actions_hovered:
+            return
+        state.proposal_input_focused = False
+        event.control.blur()
+        _set_proposal_editing(page, state, False)
+
+    def handle_proposal_actions_hover(event) -> None:
+        state.proposal_actions_hovered = str(event.data).lower() == "true"
+        if not state.proposal_actions_hovered and not state.proposal_input_focused:
+            _set_proposal_editing(page, state, False)
+
+    def change_watch_deliberation(event) -> None:
+        state.watch_deliberation = bool(event.control.value)
+        # Save without rebuilding the editor (and disturbing typing focus).
+        try:
+            save_directorate_preferences(state)
+        except OSError:
+            state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Watch option applies for this session")
+        state.proposal_input_focused = False
+        state.proposal_actions_hovered = False
+        _set_proposal_editing(page, state, False)
+
+    def open_deliberation(_=None) -> None:
+        state.deliberation_viewer_open = True
+        _render_page(page, state)
+
+    def close_deliberation(_=None) -> None:
+        state.deliberation_viewer_open = False
+        _render_page(page, state)
+
+    def open_directorate_boot(_=None) -> None:
+        state.diagnostics_drawer_open = False
+        state.directorate_open = False
+        state.directorate_boot_open = True
+        _render_page(page, state)
+
+    def open_directorate(_=None) -> None:
+        state.directorate_open = True
+        _render_page(page, state)
+
+    def close_directorate(_=None) -> None:
+        state.directorate_open = False
+        _render_page(page, state)
+
+    def directorate_history(_=None) -> None:
+        state.directorate_open = False
+        state.proposal_history_open = True
+        _render_page(page, state)
+
+    def copy_latest_dispatch(_=None) -> None:
+        dispatches = state.directorate.dispatches()
+        if dispatches:
+            dispatch = dispatches[-1]
+            page.set_clipboard(dispatch.report)
+            state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Dispatch copied to clipboard", dispatch.session_id)
+            _refresh_live_page(page, state)
+
+    def export_latest_dispatch(_=None) -> None:
+        dispatches = state.directorate.dispatches()
+        if not dispatches:
+            return
+        dispatch = dispatches[-1]
+        def worker() -> None:
+            try:
+                path = export_dispatch(dispatch)
+                state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Dispatch exported locally: {path.name}", dispatch.session_id)
+            except Exception:
+                state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", "Dispatch export failed; retry available", dispatch.session_id)
+            _refresh_live_page(page, state)
+        page.run_thread(worker)
+
+    def continue_directorate(_=None) -> None:
+        if not state.directorate_config_failed:
+            state.directorate_boot_open = False
+            _render_page(page, state)
+
+    def change_animation(event) -> None:
+        state.directorate_animation = bool(event.control.value)
+        preference_update()
+
+    def change_motion(event) -> None:
+        state.reduced_motion = bool(event.control.value)
+        state.cursor_visible = False
+        preference_update()
+
+    def copy_cable(_=None) -> None:
+        if state.current_result:
+            page.set_clipboard(render_cable(state.current_result, state.directorate_sources))
+            state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Cable copied to clipboard", state.current_result.session_id)
+            _refresh_live_page(page, state)
+
+    def save_cable(_=None) -> None:
+        if state.current_result is None:
+            return
+        result = state.current_result
+        sources = list(state.directorate_sources)
+        def worker() -> None:
+            try:
+                path = export_cable(result, sources)
+                state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Cable exported locally: {path.name}", result.session_id)
+            except Exception as exc:
+                state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", f"Cable export failed ({type(exc).__name__}); retry available", result.session_id)
+            _refresh_live_page(page, state)
+        page.run_thread(worker)
+
+    def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
+        refresh_bellator_intelligence_for_gui(state)
+        _render_page(page, state)
+        refresh_world_map()
+
+    def refresh_world_map(_: ft.ControlEvent | None = None) -> None:
+        if state.world_map_busy:
+            return
+        state.world_map_busy = True
+        _render_page(page, state)
+
+        def worker() -> None:
+            refresh_world_map_for_gui(state)
+            if not state.ui_stopped.is_set():
+                _render_page(page, state)
+
+        page.run_thread(worker)
+
+    def close_world_map(_: ft.ControlEvent | None = None) -> None:
+        state.world_map_open = False
+        _render_page(page, state)
+
+    def close_online_voters(_: ft.ControlEvent | None = None) -> None:
+        state.online_voters_open = False
+        _render_page(page, state)
+
+    def save_online_settings(updates: Dict[str, str]) -> None:
+        from core.llm import online as online_models
+        try:
+            online_models.save_settings(updates)
+            state.online_voters_message = ""
+            log_event("gui_online_voters_saved", {"settings": sorted(updates)})
+        except (OSError, ValueError) as exc:
+            state.online_voters_message = f"Could not save: {exc}"
+        _render_page(page, state)
+
+    def choose_online_voter(key: str, value: str) -> None:
+        from core.llm import online as online_models
+        env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
+        state.online_voter_tests.pop(key, None)
+        save_online_settings({env: value})
+
+    def toggle_online_voters(enabled: bool) -> None:
+        save_online_settings({"CONSENSUS_ONLINE_MODELS": "1" if enabled else "0"})
+
+    def test_online_voter(key: str) -> None:
+        from core.llm import online as online_models
+        env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
+        state.online_voters_testing.add(key)
+        state.online_voter_tests[key] = "Asking the model a one-word question..."
+        _render_page(page, state)
+
+        def worker() -> None:
+            worked, detail = online_models.test_setting(key, online_models.setting(env))
+            state.online_voter_tests[key] = ("OK: " if worked else "FAILED: ") + detail
+            state.online_voters_testing.discard(key)
+            log_event("gui_online_voter_test", {"voter": key, "worked": worked})
+            if not state.ui_stopped.is_set():
+                _render_page(page, state)
+
+        page.run_thread(worker)
+
+    def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
+        set_aurelius_voice_loop(state, bool(event.control.value))
+        _render_page(page, state)
+
+    def run_health(_: ft.ControlEvent | None = None) -> None:
+        report = run_health_check()
+        state.logs = [f"HEALTH {report['status'].upper()}", *state.logs[:10]]
+        _render_page(page, state)
+
+    def close_diagnostics(_: ft.ControlEvent | None = None) -> None:
+        set_diagnostics_drawer_open(state, False)
+        _render_page(page, state)
+
+    def toggle_diagnostics(_: ft.ControlEvent | None = None) -> None:
+        set_diagnostics_drawer_open(state)
+        _render_page(page, state)
+
+    def open_trace_viewer(_: ft.ControlEvent | None = None) -> None:
+        state.trace_viewer_open = True
+        log_event("gui_decision_trace_viewer", {"open": True, "theme": state.theme_key})
+        _render_page(page, state)
+
+    def handle_template_select(template_id: str) -> None:
+        state.proposal_template_id = template_id
+        if template_id:
+            state.proposal_input_text = render_template_draft(template_id)
+        state.operator_status = f"Template loaded: {template_id or 'manual'}"
+        _render_page(page, state)
+
+    def handle_proposal_change(value: str) -> None:
+        state.proposal_input_text = value
+        if state.submission_message and not state.submission_lock.locked():
+            _set_submission_feedback(page, state, "")
+
+    def handle_proposal_history_action(action: str, proposal_id: str) -> None:
+        try:
+            if action == "resend":
+                record = resend_proposal(proposal_id)
+                state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                state.operator_status = f"Proposal resent: {state.last_proposal_record_id}"
+            elif action in {"duplicate", "reopen"}:
+                record = duplicate_proposal(proposal_id)
+                state.proposal_input_text = str(record.get("body") or "")
+                state.proposal_template_id = str(record.get("template_id") or "")
+                state.last_proposal_record_id = str(record.get("proposal_id") or "")
+                state.operator_status = f"Draft reopened: {state.last_proposal_record_id}" if action == "reopen" else f"Draft duplicated: {state.last_proposal_record_id}"
+            elif action == "open_verdict":
+                proposal = next((item for item in list_recent_proposals(5000, include_archived=True) if item.get("proposal_id") == proposal_id), None)
+                verdict_path = str((proposal or {}).get("linked_verdict_export_md") or (proposal or {}).get("linked_verdict_export_json") or "")
+                state.operator_status = f"Verdict: {verdict_path or 'Awaiting tribunal resolution.'}"
+            elif action == "export_dossier":
+                result = export_dossier(proposal_id)
+                state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
+                state.operator_status = f"Dossier exported: {result['markdown_path']}"
+            elif action == "archive":
+                archive_proposal(proposal_id)
+                state.operator_status = f"Proposal archived: {proposal_id}"
+            state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
+            state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
+        except Exception as exc:
+            state.operator_status = f"Proposal history action failed: {exc}"
+            log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
+        _render_page(page, state)
+
+    def handle_simulation_create(values: Dict[str, Any]) -> None:
+        try:
+            scenario = create_stored_scenario(
+                **values,
+                proposal_id=state.last_proposal_record_id or None,
+                branch_depth=1,
+                status="DRAFT",
+            )
+            state.selected_simulation_id = scenario.scenario_id
+            state.simulation_create_open = False
+            state.simulation_viewer_open = True
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.operator_status = f"Simulation created: {scenario.scenario_id}"
+        except Exception as exc:
+            state.operator_status = f"Simulation creation failed: {exc}"
+            log_error("gui_simulation_create_error", exc)
+        _render_page(page, state)
+
+    def handle_simulation_action(action: str, scenario_id: str) -> None:
+        state.selected_simulation_id = scenario_id
+        try:
+            if action == "tree":
+                state.branch_tree_viewer_open = True
+                state.operator_status = f"Branch tree opened: {scenario_id}"
+            elif action == "export":
+                exported = export_simulation_dossier(scenario_id)
+                state.runtime_snapshot_cache["latest_simulation_dossier"] = latest_simulation_dossier_status()
+                state.operator_status = f"Simulation dossier exported: {exported['json_path']}"
+        except Exception as exc:
+            state.operator_status = f"Simulation action failed: {exc}"
+            log_error("gui_simulation_action_error", exc, {"action": action, "scenario_id": scenario_id})
+        _render_page(page, state)
+
+    def handle_branch_expand_request(branch_id: str) -> None:
+        state.selected_simulation_branch_id = branch_id
+        state.simulation_branch_expand_open = True
+        _render_page(page, state)
+
+    def handle_branch_expand(values: Dict[str, Any]) -> None:
+        try:
+            branch = expand_stored_branch(
+                state.selected_simulation_id,
+                state.selected_simulation_branch_id,
+                **values,
+            )
+            state.simulation_branch_expand_open = False
+            state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
+            state.operator_status = f"Branch expanded: {branch.branch_id}"
+        except Exception as exc:
+            state.operator_status = f"Branch expansion failed: {exc}"
+            log_error("gui_simulation_branch_expand_error", exc)
+        _render_page(page, state)
+
+    def handle_simulation_export(scenario_id: str) -> None:
+        handle_simulation_action("export", scenario_id)
+
+    def close_command_palette(_=None) -> None:
+        if not state.command_palette_open:
+            return
+        state.command_palette_open = False
+        log_event("gui_command_palette", {"open": False, "theme": state.theme_key})
+        _render_page(page, state)
+
+    def move_command_palette(key: str) -> None:
+        with state.render_lock:
+            panel = state.command_palette_view
+            if panel is None:
+                return
+            target = move_command_palette_selection(
+                state.command_palette_index, key, panel.geometry["columns"], len(panel.tiles))
+            state.command_palette_index = target
+            changed = select_command_palette_tile(panel, target, state.theme)
+            if changed:
+                page.update(*changed)
+            # Always re-seat the grid: the mouse wheel may have moved it since the last key.
+            if getattr(panel.grid, "page", None) is not None:
+                panel.grid.scroll_to(offset=panel.scroll_offset, duration=80)
+
+    def handle_command_action(action: str) -> None:
+        state.command_palette_open = False
+        if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict", "Refresh Data Sources"}:
+            state.operator_status = f"{action} running"
+            _render_page(page, state)
+
+            def worker() -> None:
+                try:
+                    execute_command_palette_action(state, action)
+                except Exception:
+                    pass  # already logged and put in the status line by execute_command_palette_action
+                _render_page(page, state)
+
+            page.run_thread(worker)
+            return
+        execute_command_palette_action(state, action)
+        _render_page(page, state)
+
+    def handle_trace_filter(value: str) -> None:
+        state.trace_filter = value
+        _render_page(page, state)
+
+    def handle_footer_command(key: str) -> None:
+        state.proposal_input_focused = False
+        state.proposal_actions_hovered = False
+        _set_proposal_editing(page, state, False)
+        if key == "K":
+            state.command_palette_open = not state.command_palette_open
+            state.command_palette_index = 0
+            log_event(
+                "gui_command_palette",
+                {"open": state.command_palette_open, "theme": state.theme_key},
+            )
+            _render_page(page, state)
+        elif key == "D":
+            toggle_diagnostics(None)
+        elif key == "P":
+            state.directorate_open = not state.directorate_open
+            _render_page(page, state)
+        elif key == "T":
+            execute_command_palette_action(state, "Toggle Theme")
+            _render_page(page, state)
+        elif key == "H":
+            state.proposal_history_open = not state.proposal_history_open
+            _render_page(page, state)
+        elif key == "E":
+            try:
+                execute_command_palette_action(state, "Export Latest Verdict")
+            except Exception:
+                pass  # already logged and put in the status line by execute_command_palette_action
+            _render_page(page, state)
+            _set_submission_feedback(page, state, state.operator_status)
+        elif key == "M":
+            state.world_map_open = not state.world_map_open
+            log_event("gui_world_map", {"open": state.world_map_open, "theme": state.theme_key})
+            _render_page(page, state)
+            if state.world_map_open:
+                refresh_world_map()
+        elif key == "O":
+            state.online_voters_open = not state.online_voters_open
+            state.online_voters_message = ""
+            log_event("gui_online_voters", {"open": state.online_voters_open, "theme": state.theme_key})
+            _render_page(page, state)
+
+    def on_keyboard_event(event) -> None:
+        key = str(getattr(event, "key", "") or "").upper()
+        if getattr(event, "ctrl", False) or getattr(event, "meta", False):
+            if key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
+                submit(state.proposal_input_text)
+            else:
+                handle_footer_command(key)
+        elif state.command_palette_open:
+            if key == "ESCAPE":
+                close_command_palette()
+            elif key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
+                index = max(0, min(state.command_palette_index, len(COMMAND_PALETTE_ACTIONS) - 1))
+                handle_command_action(COMMAND_PALETTE_ACTIONS[index])
+            elif key in {"ARROW LEFT", "ARROW RIGHT", "ARROW UP", "ARROW DOWN", "HOME", "END"}:
+                move_command_palette(key)
+
+    def on_resized(_=None) -> None:
+        if state.ui_stopped.is_set():
+            return
+        narrow = bool(getattr(page, "width", 0) and page.width < 1150)
+        palette = state.command_palette_view if state.command_palette_open else None
+        palette_resized = palette is not None and palette.geometry != command_palette_geometry(
+            getattr(page, "width", None), getattr(page, "height", None))
+        if narrow != state.narrow_layout or palette_resized:
+            state.narrow_layout = narrow
+            _render_page(page, state)
+
+    return SimpleNamespace(**{name: value for name, value in locals().items() if name not in {"page", "state"}})
+
+
+def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None:
+    """Rebuild the operator overlays (drawers, viewers, palette) that are currently open."""
+    overlay = getattr(page, "overlay", None)
+    if isinstance(overlay, list):
+        operator_overlays = {
+            "diagnostics_drawer",
+            "command_palette",
+            "decision_trace_viewer",
+            "proposal_history_viewer",
+            "visual_review_status",
+            "telemetry_snapshot",
+            "simulation_viewer",
+            "simulation_create_overlay",
+            "branch_tree_viewer",
+            "simulation_branch_expand_overlay",
+            "data_sources_viewer",
+            "directorate_boot",
+            "directorate_desk",
+            "live_deliberation",
+            "world_map",
+            "online_voters",
+        }
+        overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
+        if state.deliberation_viewer_open:
+            overlay.append(ft.Container(
+                ft.Column([
+                    ft.Row([ft.Text("LIVE DELIBERATION", color=state.theme.primary_color,
+                                    weight=ft.FontWeight.BOLD, expand=True),
+                            ft.TextButton("CLOSE", on_click=h.close_deliberation,
+                                          style=ft.ButtonStyle(color=state.theme.accent_color))]),
+                    _register_live_panel(state, "deliberation_assessments", lambda: build_assessments(state)),
+                ], expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH),
+                top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                border=ft.border.all(2, state.theme.accent_color),
+                bgcolor=state.theme.surface_color, data="live_deliberation"))
+        if state.directorate_boot_open:
+            overlay.append(ft.Container(
+                _register_live_panel(state, "directorate_boot", lambda: build_boot(
+                    state.theme, state.directorate, state.directorate_busy, h.retry_directorate,
+                    h.continue_directorate, state.directorate_animation, state.reduced_motion,
+                    h.change_animation, h.change_motion)),
+                top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
+                bgcolor=state.theme.background_color, data="directorate_boot"))
+        if state.directorate_open:
+            roll = _register_live_panel(state, "directorate_roll", lambda: build_dispatch_roll(
+                state.directorate, animation=state.directorate_animation, reduced_motion=state.reduced_motion,
+                query=state.directorate_search))
+            actions = _register_live_panel(state, "directorate_actions", lambda: build_dispatch_actions(
+                state.theme, state.directorate, h.copy_latest_dispatch, h.export_latest_dispatch, h.directorate_history))
+            overlay.append(ft.Container(build_dispatch_desk(state.theme, state.directorate, roll,
+                h.close_directorate, h.copy_latest_dispatch, h.export_latest_dispatch, h.directorate_history, actions,
+                query=state.directorate_search, on_search=h.search_directorate),
+                top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
+                bgcolor=state.theme.background_color, data="directorate_desk"))
+        if state.world_map_open:
+            overlay.append(ft.Container(
+                build_world_map_overlay(state.theme, state.world_map_data, busy=state.world_map_busy,
+                                        page_width=getattr(page, "width", None), page_height=getattr(page, "height", None),
+                                        on_refresh=h.refresh_world_map, on_close=h.close_world_map),
+                top=6, bottom=FOOTER_HEIGHT + 6, left=6, right=6, padding=8,
+                border=ft.border.all(2, state.theme.accent_color),
+                bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                data="world_map"))
+        if state.online_voters_open:
+            from core.llm import online as online_models
+            overlay.append(ft.Container(
+                build_online_voters_overlay(state.theme, online_models.voter_overview(),
+                                            test_results=state.online_voter_tests,
+                                            testing=state.online_voters_testing,
+                                            message=state.online_voters_message,
+                                            on_choose=h.choose_online_voter, on_test=h.test_online_voter,
+                                            on_toggle=h.toggle_online_voters, on_close=h.close_online_voters),
+                top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
+                border=ft.border.all(2, state.theme.accent_color),
+                bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                data="online_voters"))
+        if state.diagnostics_drawer_open:
+            overlay.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Row(
+                                [ft.IconButton(
+                                    icon=ft.Icons.CLOSE,
+                                    icon_color=state.theme.accent_color,
+                                    tooltip="Close diagnostics",
+                                    on_click=h.close_diagnostics,
+                                    data="close_diagnostics",
+                                )],
+                                alignment=ft.MainAxisAlignment.END,
+                            ),
+                            ft.Container(
+                                build_diagnostics_drawer(state, open_trace_viewer=h.open_trace_viewer,
+                                                         open_system_checks=h.open_directorate_boot),
+                                expand=True,
+                            ),
+                        ],
+                        spacing=0,
+                        expand=True,
+                    ),
+                    width=380,
+                    top=8,
+                    right=8,
+                    bottom=FOOTER_HEIGHT + 8,
+                    padding=10,
+                    border=ft.border.all(1, state.theme.accent_color),
+                    bgcolor=state.theme.surface_color,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    data="diagnostics_drawer",
+                )
+            )
+        state.command_palette_view = None
+        if state.command_palette_open:
+            state.command_palette_view = build_command_palette(
+                state, on_action=h.handle_command_action,
+                page_width=getattr(page, "width", None), page_height=getattr(page, "height", None))
+            overlay.append(
+                ft.Container(
+                    content=state.command_palette_view,
+                    alignment=ft.alignment.center,
+                    # Dimmed backdrop over everything but the command bar; a click on it closes the palette.
+                    top=0, left=0, right=0, bottom=FOOTER_HEIGHT,
+                    bgcolor=ft.Colors.with_opacity(0.6, state.theme.background_color),
+                    on_click=h.close_command_palette,
+                    data="command_palette",
+                )
+            )
+        if state.trace_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_decision_trace_viewer(state, on_filter=h.handle_trace_filter),
+                    alignment=ft.alignment.center_left,
+                    padding=ft.padding.only(left=24),
+                    data="decision_trace_viewer",
+                )
+            )
+        if state.proposal_history_open:
+            overlay.append(
+                ft.Container(
+                    content=build_proposal_history_viewer(state, on_action=h.handle_proposal_history_action),
+                    alignment=ft.alignment.center,
+                    data="proposal_history_viewer",
+                )
+            )
+        if state.visual_review_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_visual_review_status_viewer(state),
+                    alignment=ft.alignment.center,
+                    data="visual_review_status",
+                )
+            )
+        if state.telemetry_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_telemetry_snapshot_viewer(state),
+                    alignment=ft.alignment.center,
+                    data="telemetry_snapshot",
+                )
+            )
+        if state.simulation_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_simulation_viewer(state, on_action=h.handle_simulation_action),
+                    alignment=ft.alignment.center,
+                    data="simulation_viewer",
+                )
+            )
+        if state.simulation_create_open:
+            overlay.append(
+                ft.Container(
+                    content=build_simulation_create_overlay(state, on_create=h.handle_simulation_create),
+                    alignment=ft.alignment.center,
+                    data="simulation_create_overlay",
+                )
+            )
+        if state.branch_tree_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_branch_tree_viewer(
+                        state,
+                        on_expand=h.handle_branch_expand_request,
+                        on_export=h.handle_simulation_export,
+                    ),
+                    alignment=ft.alignment.center,
+                    data="branch_tree_viewer",
+                )
+            )
+        if state.simulation_branch_expand_open:
+            overlay.append(
+                ft.Container(
+                    content=build_branch_expand_overlay(state, on_expand=h.handle_branch_expand),
+                    alignment=ft.alignment.center,
+                    data="simulation_branch_expand_overlay",
+                )
+            )
+        if state.data_sources_viewer_open:
+            overlay.append(
+                ft.Container(
+                    content=build_data_sources_viewer(state),
+                    alignment=ft.alignment.center,
+                    data="data_sources_viewer",
+                )
+            )
+        # Transparent full-page overlay containers still take part in hit
+        # testing. Keep every operator viewer above the command bar.
+        for control in overlay:
+            if getattr(control, "data", None) in operator_overlays:
+                if control.top is None:
+                    control.top = 8
+                if control.bottom is None:
+                    control.bottom = FOOTER_HEIGHT + 8
+                if control.left is None and control.right is None:
+                    control.left = 8
+                    control.right = 8
+                control.clip_behavior = ft.ClipBehavior.HARD_EDGE
+
+
 def _render_page_locked(page: ft.Page, state: GuiState) -> None:
     if state.render_in_progress:
         log_war_room_runtime("ui_render_skipped_reentrant", {"theme": state.theme_key}, level="WARN")
@@ -2676,787 +3426,48 @@ def _render_page_locked(page: ft.Page, state: GuiState) -> None:
         _apply_page_theme(page, state)
         apply_gui_window_mode(page, state.window_mode)
 
-        def submit(proposal: str) -> None:
-            if not proposal.strip():
-                _set_submission_feedback(page, state, "Enter a proposal before submitting.")
-                return
-            if state.directorate_config_failed:
-                _set_submission_feedback(page, state, "Configuration needs attention. Open Diagnostics > SYSTEM CHECKS to retry.")
-                return
-            if not state.submission_lock.acquire(blocking=False):
-                _set_submission_feedback(page, state, "A proposal is already being reviewed. Open LIVE DELIBERATION for progress.")
-                return
-            state.proposal_expanded = False
-            state.deliberation_viewer_open = state.watch_deliberation
-            state.deliberation_records = []
-            state.deliberation_pending = {}
-            state.current_result = None
-            state.current_proposal = proposal.strip()
-            state.last_proposal_record_id = ""
-            state.retry_proposal = proposal.strip()
-            state.retry_available = False
-            control = GenerationControl()
-            state.generation_control = control
-            state.submission_message = "Proposal accepted. Tribunal starting..."
-            def worker() -> None:
-                def update() -> None:
-                    _refresh_live_page(page, state)
-
-                try:
-                    submit_proposal_live_for_gui(state, proposal, on_update=update)
-                    _set_submission_feedback(page, state, "Verdict recorded. See the result below.")
-                    state.retry_available = bool(state.current_result and not getattr(state.current_result, "deliberation_complete", True))
-                except SubmissionCancelled:
-                    _cancel_submission_state(state)
-                    _set_submission_feedback(page, state, "Submission cancelled. RETRY resubmits the same proposal.")
-                except Exception as exc:
-                    state.retry_available = state.current_result is None
-                    log_error("gui_submission_error", exc, {"theme": state.theme_key})
-                    state.deliberation_pending = {}
-                    state.monolith_statuses = {agent_id: "ERROR" for agent_id in [*TRIBUNAL_AGENT_IDS, ARBITER]}
-                    state.monolith_feedback = {agent_id: ("ERROR", time.monotonic() + VERDICT_FEEDBACK_SECONDS)
-                                               for agent_id in state.monolith_statuses}
-                    state.logs = [f"ERROR gui_submission_error: {exc}", *state.logs[:10]]
-                    state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Submission failed; local diagnostics available", state.directorate_session_id)
-                    _set_submission_feedback(page, state, "Submission failed. Review DIRECTORATE or Diagnostics, then retry.")
-                finally:
-                    state.submission_lock.release()
-                    _refresh_submission_controls(page, state)
-                _refresh_live_page(page, state)
-
-            try:
-                _render_page(page, state)
-                page.run_thread(worker)
-            except Exception as exc:
-                state.submission_lock.release()
-                state.retry_available = True
-                log_error("gui_submission_dispatch_error", exc, {"theme": state.theme_key})
-                state.directorate.emit("TRIBUNAL", "PROCESSING_FAILED", "FAILED", "Could not start submission; retry available")
-                _set_submission_feedback(page, state, "Could not start submission. Please retry or open Diagnostics.")
-                _refresh_submission_controls(page, state)
-
-        def cancel_submission(_=None) -> None:
-            control = state.generation_control
-            if not state.submission_lock.locked() or control is None:
-                return
-            if control.cancel():
-                _set_submission_feedback(page, state, "Cancelling submission; closing the response before retry...")
-            else:
-                _set_submission_feedback(page, state, "Verdict finalized; finishing its local record.")
-
-        def retry_submission(_=None) -> None:
-            if state.retry_available and not state.submission_lock.locked() and state.retry_proposal:
-                submit(state.retry_proposal)
-
-        def search_directorate(query: str) -> None:
-            state.directorate_search = query.strip()[:240]
-            _refresh_live_page(page, state)
-
-        def switch_theme(next_theme: str) -> None:
-            resolved = resolve_theme_key(next_theme)
-            if resolved in THEMES:
-                state.theme_key = resolved
-                state.config.theme = resolved
-                state.heartbeat_text = ambient_message(state.theme_key, state.pulse_index)
-                append_timeline(state.timeline_events, "SYSTEM", f"theme switched to {state.theme.display_name}")
-                _render_page(page, state)
-
-        def refresh(_: ft.ControlEvent | None = None) -> None:
-            retry_directorate()
-
-        def recheck_provider(_: ft.ControlEvent | None = None) -> None:
-            retry_directorate()
-
-        def retry_directorate(_: ft.ControlEvent | None = None) -> None:
-            if state.directorate_busy:
-                return
-            state.directorate_busy = True
-            _render_page(page, state)
-            page.run_thread(initialize_directorate, state, lambda: _refresh_live_page(page, state))
-
-        def preference_update() -> None:
-            try:
-                save_directorate_preferences(state)
-            except OSError:
-                state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Preferences apply for this session; local save failed")
-            _render_page(page, state)
-
-        def toggle_directorate(_=None) -> None:
-            state.directorate_collapsed = not state.directorate_collapsed
-            _render_page(page, state)
-
-        def toggle_cable(_=None) -> None:
-            state.directorate_cable = not state.directorate_cable
-            preference_update()
-
-        def handle_proposal_focus(_=None) -> None:
-            state.proposal_input_focused = True
-            state.proposal_actions_hovered = False
-            _set_proposal_editing(page, state, True)
-
-        def handle_proposal_blur(_=None) -> None:
-            state.proposal_input_focused = False
-            if not state.proposal_actions_hovered:
-                _set_proposal_editing(page, state, False)
-
-        def handle_proposal_tap_outside(event) -> None:
-            # Flutter emits this on pointer down. Keep the action target fixed
-            # until its click is delivered; blank/action-row space is outside.
-            if state.proposal_actions_hovered:
-                return
-            state.proposal_input_focused = False
-            event.control.blur()
-            _set_proposal_editing(page, state, False)
-
-        def handle_proposal_actions_hover(event) -> None:
-            state.proposal_actions_hovered = str(event.data).lower() == "true"
-            if not state.proposal_actions_hovered and not state.proposal_input_focused:
-                _set_proposal_editing(page, state, False)
-
-        def change_watch_deliberation(event) -> None:
-            state.watch_deliberation = bool(event.control.value)
-            # Save without rebuilding the editor (and disturbing typing focus).
-            try:
-                save_directorate_preferences(state)
-            except OSError:
-                state.directorate.emit("INTERFACE", "PREFERENCE_SAVE_FAILED", "FAILED", "Watch option applies for this session")
-            state.proposal_input_focused = False
-            state.proposal_actions_hovered = False
-            _set_proposal_editing(page, state, False)
-
-        def open_deliberation(_=None) -> None:
-            state.deliberation_viewer_open = True
-            _render_page(page, state)
-
-        def close_deliberation(_=None) -> None:
-            state.deliberation_viewer_open = False
-            _render_page(page, state)
-
-        def open_directorate_boot(_=None) -> None:
-            state.diagnostics_drawer_open = False
-            state.directorate_open = False
-            state.directorate_boot_open = True
-            _render_page(page, state)
-
-        def open_directorate(_=None) -> None:
-            state.directorate_open = True
-            _render_page(page, state)
-
-        def close_directorate(_=None) -> None:
-            state.directorate_open = False
-            _render_page(page, state)
-
-        def directorate_history(_=None) -> None:
-            state.directorate_open = False
-            state.proposal_history_open = True
-            _render_page(page, state)
-
-        def copy_latest_dispatch(_=None) -> None:
-            dispatches = state.directorate.dispatches()
-            if dispatches:
-                dispatch = dispatches[-1]
-                page.set_clipboard(dispatch.report)
-                state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Dispatch copied to clipboard", dispatch.session_id)
-                _refresh_live_page(page, state)
-
-        def export_latest_dispatch(_=None) -> None:
-            dispatches = state.directorate.dispatches()
-            if not dispatches:
-                return
-            dispatch = dispatches[-1]
-            def worker() -> None:
-                try:
-                    path = export_dispatch(dispatch)
-                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Dispatch exported locally: {path.name}", dispatch.session_id)
-                except Exception:
-                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", "Dispatch export failed; retry available", dispatch.session_id)
-                _refresh_live_page(page, state)
-            page.run_thread(worker)
-
-        def continue_directorate(_=None) -> None:
-            if not state.directorate_config_failed:
-                state.directorate_boot_open = False
-                _render_page(page, state)
-
-        def change_animation(event) -> None:
-            state.directorate_animation = bool(event.control.value)
-            preference_update()
-
-        def change_motion(event) -> None:
-            state.reduced_motion = bool(event.control.value)
-            state.cursor_visible = False
-            preference_update()
-
-        def copy_cable(_=None) -> None:
-            if state.current_result:
-                page.set_clipboard(render_cable(state.current_result, state.directorate_sources))
-                state.directorate.emit("INTERFACE", "REPORT_COPIED", "AVAILABLE", "Cable copied to clipboard", state.current_result.session_id)
-                _refresh_live_page(page, state)
-
-        def save_cable(_=None) -> None:
-            if state.current_result is None:
-                return
-            result = state.current_result
-            sources = list(state.directorate_sources)
-            def worker() -> None:
-                try:
-                    path = export_cable(result, sources)
-                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_ARCHIVED", "AVAILABLE", f"Cable exported locally: {path.name}", result.session_id)
-                except Exception as exc:
-                    state.directorate.emit("LOCAL ARCHIVE", "REPORT_EXPORT_FAILED", "FAILED", f"Cable export failed ({type(exc).__name__}); retry available", result.session_id)
-                _refresh_live_page(page, state)
-            page.run_thread(worker)
-
-        def refresh_bellator_intelligence(_: ft.ControlEvent | None = None) -> None:
-            refresh_bellator_intelligence_for_gui(state)
-            _render_page(page, state)
-            refresh_world_map()
-
-        def refresh_world_map(_: ft.ControlEvent | None = None) -> None:
-            if state.world_map_busy:
-                return
-            state.world_map_busy = True
-            _render_page(page, state)
-
-            def worker() -> None:
-                refresh_world_map_for_gui(state)
-                if not state.ui_stopped.is_set():
-                    _render_page(page, state)
-
-            page.run_thread(worker)
-
-        def close_world_map(_: ft.ControlEvent | None = None) -> None:
-            state.world_map_open = False
-            _render_page(page, state)
-
-        def close_online_voters(_: ft.ControlEvent | None = None) -> None:
-            state.online_voters_open = False
-            _render_page(page, state)
-
-        def save_online_settings(updates: Dict[str, str]) -> None:
-            from core.llm import online as online_models
-            try:
-                online_models.save_settings(updates)
-                state.online_voters_message = ""
-                log_event("gui_online_voters_saved", {"settings": sorted(updates)})
-            except (OSError, ValueError) as exc:
-                state.online_voters_message = f"Could not save: {exc}"
-            _render_page(page, state)
-
-        def choose_online_voter(key: str, value: str) -> None:
-            from core.llm import online as online_models
-            env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
-            state.online_voter_tests.pop(key, None)
-            save_online_settings({env: value})
-
-        def toggle_online_voters(enabled: bool) -> None:
-            save_online_settings({"CONSENSUS_ONLINE_MODELS": "1" if enabled else "0"})
-
-        def test_online_voter(key: str) -> None:
-            from core.llm import online as online_models
-            env = online_models.BACKUP_ENV if key == "BACKUP" else online_models.ENV_PREFIX + key
-            state.online_voters_testing.add(key)
-            state.online_voter_tests[key] = "Asking the model a one-word question..."
-            _render_page(page, state)
-
-            def worker() -> None:
-                worked, detail = online_models.test_setting(key, online_models.setting(env))
-                state.online_voter_tests[key] = ("OK: " if worked else "FAILED: ") + detail
-                state.online_voters_testing.discard(key)
-                log_event("gui_online_voter_test", {"voter": key, "worked": worked})
-                if not state.ui_stopped.is_set():
-                    _render_page(page, state)
-
-            page.run_thread(worker)
-
-        def toggle_aurelius_voice(event: ft.ControlEvent) -> None:
-            set_aurelius_voice_loop(state, bool(event.control.value))
-            _render_page(page, state)
-
-        def run_health(_: ft.ControlEvent | None = None) -> None:
-            report = run_health_check()
-            state.logs = [f"HEALTH {report['status'].upper()}", *state.logs[:10]]
-            _render_page(page, state)
-
-        def close_diagnostics(_: ft.ControlEvent | None = None) -> None:
-            set_diagnostics_drawer_open(state, False)
-            _render_page(page, state)
-
-        def toggle_diagnostics(_: ft.ControlEvent | None = None) -> None:
-            set_diagnostics_drawer_open(state)
-            _render_page(page, state)
-
-        def open_trace_viewer(_: ft.ControlEvent | None = None) -> None:
-            state.trace_viewer_open = True
-            log_event("gui_decision_trace_viewer", {"open": True, "theme": state.theme_key})
-            _render_page(page, state)
-
-        def handle_template_select(template_id: str) -> None:
-            state.proposal_template_id = template_id
-            if template_id:
-                state.proposal_input_text = render_template_draft(template_id)
-            state.operator_status = f"Template loaded: {template_id or 'manual'}"
-            _render_page(page, state)
-
-        def handle_proposal_change(value: str) -> None:
-            state.proposal_input_text = value
-            if state.submission_message and not state.submission_lock.locked():
-                _set_submission_feedback(page, state, "")
-
-        def handle_proposal_history_action(action: str, proposal_id: str) -> None:
-            try:
-                if action == "resend":
-                    record = resend_proposal(proposal_id)
-                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
-                    state.operator_status = f"Proposal resent: {state.last_proposal_record_id}"
-                elif action in {"duplicate", "reopen"}:
-                    record = duplicate_proposal(proposal_id)
-                    state.proposal_input_text = str(record.get("body") or "")
-                    state.proposal_template_id = str(record.get("template_id") or "")
-                    state.last_proposal_record_id = str(record.get("proposal_id") or "")
-                    state.operator_status = f"Draft reopened: {state.last_proposal_record_id}" if action == "reopen" else f"Draft duplicated: {state.last_proposal_record_id}"
-                elif action == "open_verdict":
-                    proposal = next((item for item in list_recent_proposals(5000, include_archived=True) if item.get("proposal_id") == proposal_id), None)
-                    verdict_path = str((proposal or {}).get("linked_verdict_export_md") or (proposal or {}).get("linked_verdict_export_json") or "")
-                    state.operator_status = f"Verdict: {verdict_path or 'Awaiting tribunal resolution.'}"
-                elif action == "export_dossier":
-                    result = export_dossier(proposal_id)
-                    state.runtime_snapshot_cache["latest_dossier_export"] = latest_dossier_export_status()
-                    state.operator_status = f"Dossier exported: {result['markdown_path']}"
-                elif action == "archive":
-                    archive_proposal(proposal_id)
-                    state.operator_status = f"Proposal archived: {proposal_id}"
-                state.runtime_snapshot_cache["proposal_history_status"] = proposal_history_status()
-                state.runtime_snapshot_cache["proposal_lifecycle_summary"] = proposal_lifecycle_summary()
-            except Exception as exc:
-                state.operator_status = f"Proposal history action failed: {exc}"
-                log_error("gui_proposal_history_action_error", exc, {"action": action, "proposal_id": proposal_id})
-            _render_page(page, state)
-
-        def handle_simulation_create(values: Dict[str, Any]) -> None:
-            try:
-                scenario = create_stored_scenario(
-                    **values,
-                    proposal_id=state.last_proposal_record_id or None,
-                    branch_depth=1,
-                    status="DRAFT",
-                )
-                state.selected_simulation_id = scenario.scenario_id
-                state.simulation_create_open = False
-                state.simulation_viewer_open = True
-                state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
-                state.operator_status = f"Simulation created: {scenario.scenario_id}"
-            except Exception as exc:
-                state.operator_status = f"Simulation creation failed: {exc}"
-                log_error("gui_simulation_create_error", exc)
-            _render_page(page, state)
-
-        def handle_simulation_action(action: str, scenario_id: str) -> None:
-            state.selected_simulation_id = scenario_id
-            try:
-                if action == "tree":
-                    state.branch_tree_viewer_open = True
-                    state.operator_status = f"Branch tree opened: {scenario_id}"
-                elif action == "export":
-                    exported = export_simulation_dossier(scenario_id)
-                    state.runtime_snapshot_cache["latest_simulation_dossier"] = latest_simulation_dossier_status()
-                    state.operator_status = f"Simulation dossier exported: {exported['json_path']}"
-            except Exception as exc:
-                state.operator_status = f"Simulation action failed: {exc}"
-                log_error("gui_simulation_action_error", exc, {"action": action, "scenario_id": scenario_id})
-            _render_page(page, state)
-
-        def handle_branch_expand_request(branch_id: str) -> None:
-            state.selected_simulation_branch_id = branch_id
-            state.simulation_branch_expand_open = True
-            _render_page(page, state)
-
-        def handle_branch_expand(values: Dict[str, Any]) -> None:
-            try:
-                branch = expand_stored_branch(
-                    state.selected_simulation_id,
-                    state.selected_simulation_branch_id,
-                    **values,
-                )
-                state.simulation_branch_expand_open = False
-                state.runtime_snapshot_cache["simulation_status"] = get_simulation_status()
-                state.operator_status = f"Branch expanded: {branch.branch_id}"
-            except Exception as exc:
-                state.operator_status = f"Branch expansion failed: {exc}"
-                log_error("gui_simulation_branch_expand_error", exc)
-            _render_page(page, state)
-
-        def handle_simulation_export(scenario_id: str) -> None:
-            handle_simulation_action("export", scenario_id)
-
-        def close_command_palette(_=None) -> None:
-            if not state.command_palette_open:
-                return
-            state.command_palette_open = False
-            log_event("gui_command_palette", {"open": False, "theme": state.theme_key})
-            _render_page(page, state)
-
-        def move_command_palette(key: str) -> None:
-            with state.render_lock:
-                panel = state.command_palette_view
-                if panel is None:
-                    return
-                target = move_command_palette_selection(
-                    state.command_palette_index, key, panel.geometry["columns"], len(panel.tiles))
-                state.command_palette_index = target
-                changed = select_command_palette_tile(panel, target, state.theme)
-                if changed:
-                    page.update(*changed)
-                # Always re-seat the grid: the mouse wheel may have moved it since the last key.
-                if getattr(panel.grid, "page", None) is not None:
-                    panel.grid.scroll_to(offset=panel.scroll_offset, duration=80)
-
-        def handle_command_action(action: str) -> None:
-            state.command_palette_open = False
-            if action in {"Export Runtime Bundle", "Run Verification", "Verify Integrity", "Export Latest Verdict", "Refresh Data Sources"}:
-                state.operator_status = f"{action} running"
-                _render_page(page, state)
-
-                def worker() -> None:
-                    try:
-                        execute_command_palette_action(state, action)
-                    except Exception:
-                        pass
-                    _render_page(page, state)
-
-                page.run_thread(worker)
-                return
-            execute_command_palette_action(state, action)
-            _render_page(page, state)
-
-        def handle_trace_filter(value: str) -> None:
-            state.trace_filter = value
-            _render_page(page, state)
-
-        def handle_footer_command(key: str) -> None:
-            state.proposal_input_focused = False
-            state.proposal_actions_hovered = False
-            _set_proposal_editing(page, state, False)
-            if key == "K":
-                state.command_palette_open = not state.command_palette_open
-                state.command_palette_index = 0
-                log_event(
-                    "gui_command_palette",
-                    {"open": state.command_palette_open, "theme": state.theme_key},
-                )
-                _render_page(page, state)
-            elif key == "D":
-                toggle_diagnostics(None)
-            elif key == "P":
-                state.directorate_open = not state.directorate_open
-                _render_page(page, state)
-            elif key == "T":
-                execute_command_palette_action(state, "Toggle Theme")
-                _render_page(page, state)
-            elif key == "H":
-                state.proposal_history_open = not state.proposal_history_open
-                _render_page(page, state)
-            elif key == "E":
-                try:
-                    execute_command_palette_action(state, "Export Latest Verdict")
-                except Exception:
-                    pass
-                _render_page(page, state)
-                _set_submission_feedback(page, state, state.operator_status)
-            elif key == "M":
-                state.world_map_open = not state.world_map_open
-                log_event("gui_world_map", {"open": state.world_map_open, "theme": state.theme_key})
-                _render_page(page, state)
-                if state.world_map_open:
-                    refresh_world_map()
-            elif key == "O":
-                state.online_voters_open = not state.online_voters_open
-                state.online_voters_message = ""
-                log_event("gui_online_voters", {"open": state.online_voters_open, "theme": state.theme_key})
-                _render_page(page, state)
-
-        def on_keyboard_event(event) -> None:
-            key = str(getattr(event, "key", "") or "").upper()
-            if getattr(event, "ctrl", False) or getattr(event, "meta", False):
-                if key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
-                    submit(state.proposal_input_text)
-                else:
-                    handle_footer_command(key)
-            elif state.command_palette_open:
-                if key == "ESCAPE":
-                    close_command_palette()
-                elif key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
-                    index = max(0, min(state.command_palette_index, len(COMMAND_PALETTE_ACTIONS) - 1))
-                    handle_command_action(COMMAND_PALETTE_ACTIONS[index])
-                elif key in {"ARROW LEFT", "ARROW RIGHT", "ARROW UP", "ARROW DOWN", "HOME", "END"}:
-                    move_command_palette(key)
-
+        h = _page_handlers(page, state)
         if hasattr(page, "on_keyboard_event"):
-            page.on_keyboard_event = on_keyboard_event
-
-        def on_resized(_=None) -> None:
-            if state.ui_stopped.is_set():
-                return
-            narrow = bool(getattr(page, "width", 0) and page.width < 1150)
-            palette = state.command_palette_view if state.command_palette_open else None
-            palette_resized = palette is not None and palette.geometry != command_palette_geometry(
-                getattr(page, "width", None), getattr(page, "height", None))
-            if narrow != state.narrow_layout or palette_resized:
-                state.narrow_layout = narrow
-                _render_page(page, state)
-
+            page.on_keyboard_event = h.on_keyboard_event
         if hasattr(page, "on_resized"):
-            page.on_resized = on_resized
+            page.on_resized = h.on_resized
         state.narrow_layout = bool(getattr(page, "width", 0) and page.width < 1150)
 
         state.live_panels.clear()
         layout = build_gui_layout(
             state,
-            submit,
-            switch_theme,
-            refresh,
-            run_health,
+            h.submit,
+            h.switch_theme,
+            h.refresh,
+            h.run_health,
             lambda _: page.close(),
-            recheck_provider=recheck_provider,
-            toggle_aurelius_voice=toggle_aurelius_voice,
-            refresh_bellator_intelligence=refresh_bellator_intelligence,
-            toggle_diagnostics=toggle_diagnostics,
-            open_trace_viewer=open_trace_viewer,
-            on_template_select=handle_template_select,
-            on_proposal_change=handle_proposal_change,
-            on_footer_command=handle_footer_command,
-            toggle_directorate=toggle_directorate,
-            open_directorate_boot=open_directorate_boot,
-            open_directorate=open_directorate,
-            toggle_cable=toggle_cable,
-            copy_cable=copy_cable,
-            save_cable=save_cable,
+            recheck_provider=h.recheck_provider,
+            toggle_aurelius_voice=h.toggle_aurelius_voice,
+            refresh_bellator_intelligence=h.refresh_bellator_intelligence,
+            toggle_diagnostics=h.toggle_diagnostics,
+            open_trace_viewer=h.open_trace_viewer,
+            on_template_select=h.handle_template_select,
+            on_proposal_change=h.handle_proposal_change,
+            on_footer_command=h.handle_footer_command,
+            toggle_directorate=h.toggle_directorate,
+            open_directorate_boot=h.open_directorate_boot,
+            open_directorate=h.open_directorate,
+            toggle_cable=h.toggle_cable,
+            copy_cable=h.copy_cable,
+            save_cable=h.save_cable,
             viewport_width=getattr(page, "width", None),
-            on_proposal_focus=handle_proposal_focus,
-            on_proposal_blur=handle_proposal_blur,
-            on_proposal_tap_outside=handle_proposal_tap_outside,
-            on_proposal_actions_hover=handle_proposal_actions_hover,
-            change_watch_deliberation=change_watch_deliberation,
-            open_deliberation=open_deliberation,
-            cancel_submission=cancel_submission,
-            retry_submission=retry_submission,
+            on_proposal_focus=h.handle_proposal_focus,
+            on_proposal_blur=h.handle_proposal_blur,
+            on_proposal_tap_outside=h.handle_proposal_tap_outside,
+            on_proposal_actions_hover=h.handle_proposal_actions_hover,
+            change_watch_deliberation=h.change_watch_deliberation,
+            open_deliberation=h.open_deliberation,
+            cancel_submission=h.cancel_submission,
+            retry_submission=h.retry_submission,
         )
         page.controls.clear()
         page.add(layout)
-        overlay = getattr(page, "overlay", None)
-        if isinstance(overlay, list):
-            operator_overlays = {
-                "diagnostics_drawer",
-                "command_palette",
-                "decision_trace_viewer",
-                "proposal_history_viewer",
-                "visual_review_status",
-                "telemetry_snapshot",
-                "simulation_viewer",
-                "simulation_create_overlay",
-                "branch_tree_viewer",
-                "simulation_branch_expand_overlay",
-                "data_sources_viewer",
-                "directorate_boot",
-                "directorate_desk",
-                "live_deliberation",
-                "world_map",
-                "online_voters",
-            }
-            overlay[:] = [control for control in overlay if getattr(control, "data", None) not in operator_overlays]
-            if state.deliberation_viewer_open:
-                overlay.append(ft.Container(
-                    ft.Column([
-                        ft.Row([ft.Text("LIVE DELIBERATION", color=state.theme.primary_color,
-                                        weight=ft.FontWeight.BOLD, expand=True),
-                                ft.TextButton("CLOSE", on_click=close_deliberation,
-                                              style=ft.ButtonStyle(color=state.theme.accent_color))]),
-                        _register_live_panel(state, "deliberation_assessments", lambda: build_assessments(state)),
-                    ], expand=True, horizontal_alignment=ft.CrossAxisAlignment.STRETCH),
-                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
-                    border=ft.border.all(2, state.theme.accent_color),
-                    bgcolor=state.theme.surface_color, data="live_deliberation"))
-            if state.directorate_boot_open:
-                overlay.append(ft.Container(
-                    _register_live_panel(state, "directorate_boot", lambda: build_boot(
-                        state.theme, state.directorate, state.directorate_busy, retry_directorate,
-                        continue_directorate, state.directorate_animation, state.reduced_motion,
-                        change_animation, change_motion)),
-                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
-                    bgcolor=state.theme.background_color, data="directorate_boot"))
-            if state.directorate_open:
-                roll = _register_live_panel(state, "directorate_roll", lambda: build_dispatch_roll(
-                    state.directorate, animation=state.directorate_animation, reduced_motion=state.reduced_motion,
-                    query=state.directorate_search))
-                actions = _register_live_panel(state, "directorate_actions", lambda: build_dispatch_actions(
-                    state.theme, state.directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history))
-                overlay.append(ft.Container(build_dispatch_desk(state.theme, state.directorate, roll,
-                    close_directorate, copy_latest_dispatch, export_latest_dispatch, directorate_history, actions,
-                    query=state.directorate_search, on_search=search_directorate),
-                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24,
-                    bgcolor=state.theme.background_color, data="directorate_desk"))
-            if state.world_map_open:
-                overlay.append(ft.Container(
-                    build_world_map_overlay(state.theme, state.world_map_data, busy=state.world_map_busy,
-                                            page_width=getattr(page, "width", None), page_height=getattr(page, "height", None),
-                                            on_refresh=refresh_world_map, on_close=close_world_map),
-                    top=6, bottom=FOOTER_HEIGHT + 6, left=6, right=6, padding=8,
-                    border=ft.border.all(2, state.theme.accent_color),
-                    bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                    data="world_map"))
-            if state.online_voters_open:
-                from core.llm import online as online_models
-                overlay.append(ft.Container(
-                    build_online_voters_overlay(state.theme, online_models.voter_overview(),
-                                                test_results=state.online_voter_tests,
-                                                testing=state.online_voters_testing,
-                                                message=state.online_voters_message,
-                                                on_choose=choose_online_voter, on_test=test_online_voter,
-                                                on_toggle=toggle_online_voters, on_close=close_online_voters),
-                    top=24, bottom=FOOTER_HEIGHT + 24, left=24, right=24, padding=16,
-                    border=ft.border.all(2, state.theme.accent_color),
-                    bgcolor=state.theme.background_color, clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                    data="online_voters"))
-            if state.diagnostics_drawer_open:
-                overlay.append(
-                    ft.Container(
-                        content=ft.Column(
-                            [
-                                ft.Row(
-                                    [ft.IconButton(
-                                        icon=ft.Icons.CLOSE,
-                                        icon_color=state.theme.accent_color,
-                                        tooltip="Close diagnostics",
-                                        on_click=close_diagnostics,
-                                        data="close_diagnostics",
-                                    )],
-                                    alignment=ft.MainAxisAlignment.END,
-                                ),
-                                ft.Container(
-                                    build_diagnostics_drawer(state, open_trace_viewer=open_trace_viewer,
-                                                             open_system_checks=open_directorate_boot),
-                                    expand=True,
-                                ),
-                            ],
-                            spacing=0,
-                            expand=True,
-                        ),
-                        width=380,
-                        top=8,
-                        right=8,
-                        bottom=FOOTER_HEIGHT + 8,
-                        padding=10,
-                        border=ft.border.all(1, state.theme.accent_color),
-                        bgcolor=state.theme.surface_color,
-                        clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                        data="diagnostics_drawer",
-                    )
-                )
-            state.command_palette_view = None
-            if state.command_palette_open:
-                state.command_palette_view = build_command_palette(
-                    state, on_action=handle_command_action,
-                    page_width=getattr(page, "width", None), page_height=getattr(page, "height", None))
-                overlay.append(
-                    ft.Container(
-                        content=state.command_palette_view,
-                        alignment=ft.alignment.center,
-                        # Dimmed backdrop over everything but the command bar; a click on it closes the palette.
-                        top=0, left=0, right=0, bottom=FOOTER_HEIGHT,
-                        bgcolor=ft.Colors.with_opacity(0.6, state.theme.background_color),
-                        on_click=close_command_palette,
-                        data="command_palette",
-                    )
-                )
-            if state.trace_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_decision_trace_viewer(state, on_filter=handle_trace_filter),
-                        alignment=ft.alignment.center_left,
-                        padding=ft.padding.only(left=24),
-                        data="decision_trace_viewer",
-                    )
-                )
-            if state.proposal_history_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_proposal_history_viewer(state, on_action=handle_proposal_history_action),
-                        alignment=ft.alignment.center,
-                        data="proposal_history_viewer",
-                    )
-                )
-            if state.visual_review_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_visual_review_status_viewer(state),
-                        alignment=ft.alignment.center,
-                        data="visual_review_status",
-                    )
-                )
-            if state.telemetry_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_telemetry_snapshot_viewer(state),
-                        alignment=ft.alignment.center,
-                        data="telemetry_snapshot",
-                    )
-                )
-            if state.simulation_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_simulation_viewer(state, on_action=handle_simulation_action),
-                        alignment=ft.alignment.center,
-                        data="simulation_viewer",
-                    )
-                )
-            if state.simulation_create_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_simulation_create_overlay(state, on_create=handle_simulation_create),
-                        alignment=ft.alignment.center,
-                        data="simulation_create_overlay",
-                    )
-                )
-            if state.branch_tree_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_branch_tree_viewer(
-                            state,
-                            on_expand=handle_branch_expand_request,
-                            on_export=handle_simulation_export,
-                        ),
-                        alignment=ft.alignment.center,
-                        data="branch_tree_viewer",
-                    )
-                )
-            if state.simulation_branch_expand_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_branch_expand_overlay(state, on_expand=handle_branch_expand),
-                        alignment=ft.alignment.center,
-                        data="simulation_branch_expand_overlay",
-                    )
-                )
-            if state.data_sources_viewer_open:
-                overlay.append(
-                    ft.Container(
-                        content=build_data_sources_viewer(state),
-                        alignment=ft.alignment.center,
-                        data="data_sources_viewer",
-                    )
-                )
-            # Transparent full-page overlay containers still take part in hit
-            # testing. Keep every operator viewer above the command bar.
-            for control in overlay:
-                if getattr(control, "data", None) in operator_overlays:
-                    if control.top is None:
-                        control.top = 8
-                    if control.bottom is None:
-                        control.bottom = FOOTER_HEIGHT + 8
-                    if control.left is None and control.right is None:
-                        control.left = 8
-                        control.right = 8
-                    control.clip_behavior = ft.ClipBehavior.HARD_EDGE
+        _render_overlays(page, state, h)
         page.update()
     finally:
         state.render_in_progress = False

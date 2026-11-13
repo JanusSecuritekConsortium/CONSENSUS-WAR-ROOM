@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 from core.identity import current_operator_name
 from core.paths import SYSTEM_ROOT

@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from core.data_sources.normalization import utc_now_iso
 from core.data_sources.registry import DataSourceRegistry, build_data_source_registry
-from core.data_sources.source_config import load_data_source_config, missing_credentials, redacted_data_source_config
+from core.data_sources.source_config import missing_credentials, redacted_data_source_config
 
 
 def build_data_sources_status(

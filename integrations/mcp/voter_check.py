@@ -9,7 +9,6 @@ older one. Nothing is saved and no deliberation is started. Refuses while a deli
 """
 from __future__ import annotations
 
-import sys
 import time
 from typing import Any, Callable, Dict, List, Optional
 

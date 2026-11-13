@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from core.knowledge.registry import DEFAULT_KNOWLEDGE_REGISTRY
 
