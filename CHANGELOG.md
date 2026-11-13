@@ -1,5 +1,20 @@
 # Changelog
 
+## 9.12.0 - Each voter thinks in its own way (2026-11-13)
+
+### Added
+- Each voter now has its own sampling style, not just its own temperature. RATIONALIS samples
+  tightly and exactly, AETERNUM has room for longer answers, and BELLATOR samples widely and boldly.
+  The settings reach the model on both of Msty's routes and can be changed per voter in
+  `genesis_config.json`.
+
+### Changed
+- A voter may take up to 25 minutes for an answer (was 15). A big model starting on a busy PC can
+  take more than 15 minutes to load, and it was being cut off.
+- ARBITER's built-in default model is now Hermes 3 (Nous Research) instead of the same model as
+  AETERNUM, matching the model it actually uses.
+- BELLATOR runs on Mistral Small 3.2 24B (from 9.11.0's settings); the old Mixtral files were removed.
+
 ## 9.11.0 - Phone page (2026-11-12)
 
 ### Added

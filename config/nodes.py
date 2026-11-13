@@ -17,6 +17,9 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="B",
         model=AGENT_PROFILES[BELLATOR].model_preference,
         temperature=0.6,
+        top_p=0.95,
+        top_k=60,
+        min_p=0.02,
         mission="growth, opportunity, momentum, decisive action, the risks worth taking, and threats in the field",
         prompt=(
             AGENT_PROFILES[BELLATOR].system_prompt
@@ -30,6 +33,10 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="A",
         model=AGENT_PROFILES[AETERNUM].model_preference,
         temperature=0.3,
+        max_output_tokens=1100,
+        top_p=0.9,
+        min_p=0.05,
+        repeat_penalty=1.05,
         mission="long-horizon value, compounding costs and returns, opportunity cost, durability, historical precedent",
         prompt=(
             AGENT_PROFILES[AETERNUM].system_prompt
@@ -43,6 +50,9 @@ DEFAULT_NODES: Dict[str, NodeIdentity] = {
         symbol="R",
         model=AGENT_PROFILES[RATIONALIS].model_preference,
         temperature=0.2,
+        top_p=0.8,
+        top_k=20,
+        min_p=0.05,
         mission="strategy, planning, sequencing, contingencies, contradictions, hidden assumptions, risks and security exposure",
         prompt=(
             AGENT_PROFILES[RATIONALIS].system_prompt
@@ -65,6 +75,10 @@ def apply_node_overrides(
         "model",
         "temperature",
         "max_output_tokens",
+        "top_p",
+        "top_k",
+        "min_p",
+        "repeat_penalty",
         "mission",
         "prompt",
     }

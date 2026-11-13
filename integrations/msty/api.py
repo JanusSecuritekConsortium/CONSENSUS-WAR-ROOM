@@ -16,7 +16,7 @@ from config.runtime import RuntimeConfig
 from config.version import SYSTEM_VERSION
 from core.analytics.decision_metrics import build_decision_summary, summary_to_csv
 from core.history import migrate_legacy_history, result_to_dict
-from core.llm.backends import OllamaBackend, ProviderRequestError
+from core.llm.backends import OllamaBackend, ProviderRequestError, chat_sampling
 from core.logging import log_event
 from core.models import NodeIdentity, TribunalResult
 from core.paths import ARBITER_DIR, HISTORY_PATH, SYSTEM_ROOT
@@ -1261,6 +1261,7 @@ def send_prompt(
     temperature: float = 0.2,
     max_output_tokens: int = 900,
     control=None,
+    sampling: Optional[Dict[str, float]] = None,
 ) -> str:
     runtime_config = config or RuntimeConfig()
     backend = OllamaBackend(base_url=base_url or resolve_provider_base_url(runtime_config),
@@ -1270,7 +1271,7 @@ def send_prompt(
         "model": model,
         "prompt": full_prompt,
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_output_tokens},
+        "options": {"temperature": temperature, "num_predict": max_output_tokens, **(sampling or {})},
     }
     if control is not None:
         from core.llm.generation import generate_response
@@ -1510,6 +1511,7 @@ def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Di
                     "stream": False,
                     "temperature": options.get("temperature", 0.2),
                     "max_tokens": options.get("num_predict", 900),
+                    **chat_sampling(options),
                 },
                 timeout=backend.timeout,
             )

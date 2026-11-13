@@ -24,6 +24,7 @@ class ReadyLlamaBackend:
         if self.base_url == "http://localhost:11454":
             return [
                 "llama3.3:70b",
+                "hermes3:8b",
                 "deepseek-coder:33b",
                 "mixtral:8x7b",
                 "qwen3:latest",

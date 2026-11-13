@@ -58,7 +58,7 @@ class RuntimeConfig:
     refresh_model_cache: bool = False
     model_cache_ttl_seconds: int = 120
     # A cold 33B model loads from disk for minutes before its first token, so local calls get a long limit.
-    generation_timeout_seconds: int = 900
+    generation_timeout_seconds: int = 1500  # 25 min: a cold 24-34B load on 32 GB RAM can pass 15 min
     # Each voter model is 18-30 GB; the provider keeps a used model loaded for minutes, so free the others first.
     unload_idle_tribunal_models: bool = True
     msty_live_context_default_theme: str = "eva"

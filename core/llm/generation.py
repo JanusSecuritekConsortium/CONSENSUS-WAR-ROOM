@@ -8,7 +8,7 @@ from typing import Callable
 
 import httpx
 
-from core.llm.backends import ProviderRequestError
+from core.llm.backends import ProviderRequestError, chat_sampling
 
 
 class SubmissionCancelled(RuntimeError):
@@ -119,7 +119,7 @@ async def _generate(base_url, payload, control):
         response = await _read_response(client, base_url.rstrip("/") + "/v1/chat/completions", {
             "model": payload["model"], "messages": [{"role": "user", "content": payload["prompt"]}],
             "stream": True, "temperature": options.get("temperature", .2),
-            "max_tokens": options.get("num_predict", 900),
+            "max_tokens": options.get("num_predict", 900), **chat_sampling(options),
         }, control)
         if response is None:
             raise ProviderRequestError("Provider exposes no supported generation route")

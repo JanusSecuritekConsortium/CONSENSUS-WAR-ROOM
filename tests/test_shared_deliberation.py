@@ -126,7 +126,7 @@ def test_assigned_parameters_reach_generation_payload_and_actual_model_is_record
     monkeypatch.setattr(api, "backend_requests_post", lambda backend, payload: sent.append(payload) or {"response": response("Provider verified")})
     runtime = MstyRuntime(RuntimeConfig())
     runtime.send_to_agent(agent, "review", {"model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens, "require_real_model": True})
-    assert sent[0]["options"] == {"temperature": node.temperature, "num_predict": 321}
+    assert sent[0]["options"] == {"temperature": node.temperature, "num_predict": 321, **node.sampling()}
     execution = runtime.last_execution[agent]
     assert {key: execution[key] for key in ("status", "model", "backend")} == {"status": "ready", "model": node.model, "backend": "test-provider"}
     assert not execution["model_fallback"]

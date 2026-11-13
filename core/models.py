@@ -47,6 +47,16 @@ class NodeIdentity:
     mission: str
     prompt: str
     max_output_tokens: int = 900
+    # Optional sampling per voter; None leaves the model server's default.
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    min_p: Optional[float] = None
+    repeat_penalty: Optional[float] = None
+
+    def sampling(self) -> Dict[str, float]:
+        """The sampling settings this voter sets, in the names Ollama and llama.cpp share."""
+        values = {"top_p": self.top_p, "top_k": self.top_k, "min_p": self.min_p, "repeat_penalty": self.repeat_penalty}
+        return {key: value for key, value in values.items() if value is not None}
 
 
 @dataclass(frozen=True)

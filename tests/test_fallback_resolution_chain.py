@@ -13,6 +13,7 @@ from integrations.msty import api as api_module
 
 REQUIRED_MODELS = [
     "llama3.3:70b",
+    "hermes3:8b",
     "deepseek-coder:33b",
     "mixtral:8x7b",
     "qwen3:latest",

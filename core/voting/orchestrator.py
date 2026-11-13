@@ -105,6 +105,7 @@ class VotingOrchestrator:
                 runtime_context.update(deepcopy(packets.get(agent_id, {})))
                 runtime_context.update({
                     "model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
+                    "sampling": node.sampling(),
                     "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
                 })
@@ -144,6 +145,7 @@ class VotingOrchestrator:
                     "status": "failed" if vote.validation_errors else ("simulation" if self.simulation else "completed"),
                     "model": vote.model, "requested_model": node.model, "backend": vote.backend,
                     "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
+                    "sampling": node.sampling(),
                     "vote": vote.vote.value, "confidence": vote.confidence, "evidence_quality": vote.evidence_quality,
                     "critical_risk": vote.critical_risk, "reasoning": vote.reasoning,
                     "argument": deepcopy(vote.argument), "peer_responses": deepcopy(vote.peer_responses),

@@ -39,7 +39,7 @@ def test_model_availability_ready_when_all_models_exist() -> None:
         api_module.list_models = lambda _config=None: {
             "backend": "msty-local",
             "base_url": "mock://provider",
-            "models": ["deepseek-coder:33b", "llama3.3:70b", "mixtral:8x7b"],
+            "models": ["deepseek-coder:33b", "llama3.3:70b", "hermes3:8b", "mixtral:8x7b"],
             "latency_ms": 4.0,
         }
 
@@ -47,7 +47,7 @@ def test_model_availability_ready_when_all_models_exist() -> None:
 
         assert status["status"] == "ready"
         assert status["missing_required_models"] == {}
-        assert status["model_count"] == 3
+        assert status["model_count"] == 4
     finally:
         api_module.list_models = original_list_models
 

@@ -229,6 +229,22 @@ Example override:
 }
 ```
 
+### Per-voter sampling
+
+Each voter also has its own sampling, set in `config/nodes.py` and sent with every request
+(Ollama options, and the same names on the llama.cpp chat route). A setting left out uses the
+model server's default.
+
+| Voter | temperature | top_p | top_k | min_p | repeat_penalty | max output tokens |
+| --- | --- | --- | --- | --- | --- | --- |
+| RATIONALIS | 0.2 | 0.8 | 20 | 0.05 | - | 900 |
+| AETERNUM | 0.3 | 0.9 | - | 0.05 | 1.05 | 1100 |
+| BELLATOR | 0.6 | 0.95 | 60 | 0.02 | - | 900 |
+
+Any of these can be overridden per voter in `node_overrides`, for example
+`"BELLATOR": {"top_p": 0.9}`. Each answer may take up to `generation_timeout_seconds`
+(1500 s by default): a 24–34B model loading cold on a 32 GB PC can take over 15 minutes.
+
 ## Msty Claw Implementation
 
 Use Msty Claw as an autonomous operator, not as the tribunal itself. The AURELIUS layer in `integrations/msty/aurelius.py` can summarize system state, submit proposals to ARBITER, query memory, prepare user-facing responses, and hold future workflow integration calls. It does not cast tribunal votes unless explicitly routed into advisory mode.

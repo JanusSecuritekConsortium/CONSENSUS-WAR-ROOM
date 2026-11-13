@@ -23,7 +23,7 @@ AGENT_PROFILES: Dict[str, AgentProfile] = {
         id=ARBITER,
         display_name="_ARBITER",
         role="tribunal arbiter and final verdict presenter",
-        model_preference="llama3.3:70b",
+        model_preference="hermes3:8b",  # Nous Research; AETERNUM keeps llama3.3:70b
         system_prompt=(
             "You are ARBITER, the CONSENSUS orchestration authority. "
             "Aggregate monolith votes, identify conflict, and present final verdicts."

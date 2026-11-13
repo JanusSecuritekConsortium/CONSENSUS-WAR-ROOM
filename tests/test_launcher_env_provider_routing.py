@@ -12,7 +12,7 @@ from config.runtime import RuntimeConfig
 from integrations.msty import api as api_module
 
 
-MODELS = ["llama3.3:70b", "deepseek-coder:33b", "mixtral:8x7b"]
+MODELS = ["llama3.3:70b", "hermes3:8b", "deepseek-coder:33b", "mixtral:8x7b"]
 
 
 class EndpointAwareBackend:

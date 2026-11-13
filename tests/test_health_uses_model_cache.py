@@ -20,7 +20,7 @@ class HealthCacheBackend:
 
     def list_models(self) -> list[str]:
         HealthCacheBackend.calls += 1
-        return ["llama3.3:70b", "deepseek-coder:33b", "mixtral:8x7b"]
+        return ["llama3.3:70b", "hermes3:8b", "deepseek-coder:33b", "mixtral:8x7b"]
 
 
 def test_health_uses_cached_model_list_when_backend_reachable(tmp_path: Path) -> None:

@@ -18,6 +18,14 @@ class ProviderRequestError(RuntimeError):
     """Normalized provider connectivity failure without leaking raw requests errors."""
 
 
+SAMPLING_KEYS = ("top_p", "top_k", "min_p", "repeat_penalty")
+
+
+def chat_sampling(options: dict) -> dict:
+    """Per-voter sampling from Ollama-style options, for the OpenAI chat route (llama.cpp reads the same names)."""
+    return {key: options[key] for key in SAMPLING_KEYS if options.get(key) is not None}
+
+
 def _request_exceptions() -> tuple[type[BaseException], ...]:
     if requests is None:
         return ()
@@ -165,6 +173,7 @@ class OllamaBackend:
             "options": {
                 "temperature": node.temperature,
                 "num_predict": node.max_output_tokens,
+                **node.sampling(),
             },
         }
         try:

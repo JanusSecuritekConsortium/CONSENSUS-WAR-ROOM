@@ -286,6 +286,7 @@ class MstyRuntime:
                     system_prompt=system_prompt, config=self.config, base_url=health.get("base_url"),
                     temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
                     max_output_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
+                    sampling=dict(context.get("sampling") or (configured_node.sampling() if configured_node else {})),
                     **({"control": self.generation_control} if self.generation_control else {}),
                 )
                 if self.generation_control:
