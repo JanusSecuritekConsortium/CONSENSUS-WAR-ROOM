@@ -1,5 +1,15 @@
 # Changelog
 
+## 9.13.4 - Honest receiver status (2026-11-13)
+
+### Fixed
+- `voice_relay status` no longer says "running" when the receiver has stopped. It now reports
+  `stopped` when no receiver is running, and `disabled` after `stop`, with a note on what to do.
+
+### Documentation
+- VOICE.md notes that Msty Go's Built-in Server can stay silent after Msty Go starts until
+  Settings → Tools is opened, and makes a new token each start.
+
 ## 9.13.3 - Catalan calendar titles (2026-11-13)
 
 ### Added

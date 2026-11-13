@@ -60,7 +60,11 @@ retain their identifiers locally. Never commit the populated store.
 - `G:\Tools\Aurelius Voice Receiver.cmd` starts the receiver; a single-instance
   lock prevents competing copies. A Windows Startup shortcut runs it at sign-in.
 - `python -m integrations.msty.personal.voice_relay status` reports health;
-  `waiting_for_msty` means Telegram reception is alive. Read `msty_failure` and
+  `waiting_for_msty` means Telegram reception is alive. `stopped` means no receiver
+  holds its lock (the rest of the line is the last one it wrote); `disabled` means
+  `stop` turned it off, so set `telegram_voice_relay_enabled` back to true before starting.
+- Msty Go's Built-in Server may not answer after Msty Go starts until Settings → Tools
+  is opened, and it makes a new token each start (reported to Msty on 2026-11-13). Read `msty_failure` and
   `msty_checked_at` for the last Msty Go check. For `unreachable`, check that the
   local Built-in Server is running. For `unauthorized`, refresh the saved token.
   After a sustained outage the relay sends one outage alert. If the server returns

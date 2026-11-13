@@ -449,6 +449,29 @@ def run():
                 time.sleep(10)
 
 
+def receiver_alive():
+    """True while a receiver holds the single-instance lock; None where that cannot be checked."""
+    try:
+        with single_instance():
+            return False
+    except ImportError:
+        return None
+    except OSError:
+        return True
+
+
+def health():
+    """The last recorded state, corrected when no receiver is actually running, so 'running' is never stale."""
+    path=store.ROOT/'voice-relay-health.json'
+    try:state=json.loads(path.read_text(encoding='utf-8'))
+    except (OSError,ValueError):state={'status':'not_started'}
+    if not store.load().get('telegram_voice_relay_enabled'):
+        state={**state,'status':'disabled','note':'Turned off by "stop"; set telegram_voice_relay_enabled to true before starting.'}
+    elif receiver_alive() is False:
+        state={**state,'status':'stopped','note':'No receiver is running; the last line was written at "at".'}
+    return state
+
+
 def main():
     import argparse
     parser=argparse.ArgumentParser()
@@ -459,8 +482,7 @@ def main():
         config=store.load();config['telegram_voice_relay_enabled']=False;store.save(config)
         print('Receiver stop requested. Native Telegram polling remains disabled until explicitly restored.')
     else:
-        path=store.ROOT/'voice-relay-health.json'
-        print(path.read_text() if path.exists() else json.dumps({'status':'not_started'}))
+        print(json.dumps(health()))
 
 
 if __name__=='__main__':main()

@@ -311,3 +311,23 @@ def test_failed_voice_reply_is_recorded_not_resent(isolated,monkeypatch):
     relay.spoken_reply(100,{'chat_id':'42'},'Hola','es',7)
     with relay.database() as db:row=db.execute('SELECT state,error FROM inbox').fetchone()
     assert tuple(row)==('delivered','voice_reply_failed:RuntimeError') and sent==[]
+
+
+def test_status_never_reports_a_dead_receiver_as_running(tmp_path, monkeypatch):
+    monkeypatch.setattr(relay.store, 'ROOT', tmp_path)
+    (tmp_path/'voice-relay-health.json').write_text(json.dumps({'status': 'running', 'at': 'earlier'}), encoding='utf-8')
+    config = {'telegram_voice_relay_enabled': True}
+    monkeypatch.setattr(relay.store, 'load', lambda: config)
+    monkeypatch.setattr(relay, 'receiver_alive', lambda: True)
+    assert relay.health()['status'] == 'running'
+    monkeypatch.setattr(relay, 'receiver_alive', lambda: False)
+    assert relay.health()['status'] == 'stopped' and relay.health()['at'] == 'earlier'
+    config['telegram_voice_relay_enabled'] = False
+    assert relay.health()['status'] == 'disabled'
+
+
+def test_missing_health_file_reads_not_started(tmp_path, monkeypatch):
+    monkeypatch.setattr(relay.store, 'ROOT', tmp_path)
+    monkeypatch.setattr(relay.store, 'load', lambda: {'telegram_voice_relay_enabled': True})
+    monkeypatch.setattr(relay, 'receiver_alive', lambda: None)
+    assert relay.health()['status'] == 'not_started'
