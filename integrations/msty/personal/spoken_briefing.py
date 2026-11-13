@@ -42,7 +42,22 @@ def _spoken_timestamp(match):
     return date+' at '+time
 
 
+# Standing notes that stay in the text reply but are not read aloud: they repeat on every agenda
+# and carry no news. Real overlap warnings and missing-title notices are still spoken.
+FINE_PRINT = (
+    'No overlaps detected among the appointments included in this reminder.',
+    'No se detectaron solapamientos entre las citas de este recordatorio.',
+    'No overlaps detected between events with known start and end times.',
+    'No se detectaron solapamientos entre eventos con horas de inicio y fin conocidas.',
+    'Events without an end time, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
+    'Los eventos sin hora de fin, de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.',
+    'Calendar source may lag updates or have limited coverage.',
+    'La fuente del calendario puede tardar en actualizarse o tener cobertura limitada.',
+)
+
+
 def narration(text, lang='en'):
+    text = chr(10).join(line for line in str(text).splitlines() if line.strip() not in FINE_PRINT)
     # Keep facts and qualifiers verbatim; URLs are useful in text, not speech.
     text = re.sub(r'\[([^\]\n]+)\]\(https?://[^\s)]+\)', r'\1', text)
     text = re.sub(r'https?://\S+', '', text)

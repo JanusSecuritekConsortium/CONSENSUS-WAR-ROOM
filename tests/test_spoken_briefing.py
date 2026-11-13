@@ -146,3 +146,13 @@ def test_spanish_uses_a_male_voice_tuned_for_spanish_and_leaves_english_alone():
 def test_spanish_without_any_spanish_voice_fails_clearly():
     with pytest.raises(RuntimeError, match='Spanish voice unavailable'):
         s.spanish_settings({'base_voice_name': ['Microsoft Mark']}, sapi_voices=[])
+
+def test_voice_notes_skip_standing_fine_print_but_keep_real_warnings():
+    from pathlib import Path
+    sources = ''.join((Path(s.__file__).parent/name).read_text(encoding='utf-8') for name in ('context.py', 'agenda_query.py'))
+    assert all(line in sources for line in s.FINE_PRINT)  # still the exact wording the agenda writes
+    text = '\n'.join(['Viernes 13/11', '- 19:00–20:00: Quedada con August', '', *s.FINE_PRINT,
+                      'SOLAPAMIENTOS DE HORARIO', '- Viernes 13/11 12:00–13:00: A ↔ B. Comprueba si el solapamiento es intencional.'])
+    spoken = s.narration(text, 'es')
+    assert 'Quedada con August' in spoken and 'SOLAPAMIENTOS' in spoken and 'intencional' in spoken
+    assert 'confirman asistencia' not in spoken and 'tardar en actualizarse' not in spoken and 'No se detectaron' not in spoken
