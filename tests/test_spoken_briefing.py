@@ -130,15 +130,17 @@ def test_read_delivered_text_aloud(setup,monkeypatch):
     assert uploads==[1]
 
 def test_spanish_uses_a_male_voice_tuned_for_spanish_and_leaves_english_alone():
-    from voice.voice_profiles import get_voice_profile
-    english = dict(get_voice_profile('AURELIUS').settings)
+    from pathlib import Path
+    config = Path(__file__).resolve().parents[1]/'voice'/'voice_config.json'
+    english = json.loads(config.read_text(encoding='utf-8'))['profiles']['AURELIUS']  # Windows settings on any OS
+    original = json.loads(json.dumps(english))
     spanish = s.spanish_settings(english, sapi_voices=[{'name': 'Microsoft Helena Desktop', 'language': 'es-ES'},
                                                        {'name': 'Microsoft David Desktop', 'language': 'en-US'}])
     assert spanish['base_voice_name'][0] == 'Microsoft Pablo'
     assert spanish['base_voice_name'][-1] == 'Microsoft Helena Desktop'  # installed Spanish voice as fallback
     assert spanish['base_voice_gender'] == 'Male' and spanish['speech_language'] == 'es'
     assert spanish['index_rate'] < english['index_rate'] and spanish['protect'] > english['protect']
-    assert english == dict(get_voice_profile('AURELIUS').settings)
+    assert english == original
     assert english['base_voice_name'][0] == 'Microsoft Mark' and english['base_voice_language'] == 'en-GB'
 
 def test_spanish_without_any_spanish_voice_fails_clearly():
