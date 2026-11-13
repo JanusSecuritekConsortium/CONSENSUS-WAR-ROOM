@@ -76,6 +76,23 @@ def _spanish_timestamp(match):
     return str(day)+' de '+months[month-1]+(' de '+match['year'] if match['year'] else '')+' a las '+match['hour']+':'+match['minute']
 
 
+def spanish_settings(settings, sapi_voices=None):
+    """AURELIUS's settings for Spanish speech; English settings are left as they are.
+
+    A Spanish male voice (Pablo, a OneCore voice SAPI cannot list) is reshaped more gently than English,
+    because the voice model was trained on English speech. Installed SAPI Spanish voices are the fallback."""
+    if sapi_voices is None:
+        from voice.tts_backends import list_sapi_voices
+        sapi_voices = list_sapi_voices()
+    spanish = dict(settings.get('spanish') or {})
+    names = [str(name) for name in spanish.pop('base_voice_name', [])]
+    names += [voice['name'] for voice in sapi_voices if voice.get('language', '').startswith('es')]
+    if not names:
+        raise RuntimeError('Local Spanish voice unavailable')
+    return {**settings, 'base_voice_gender': '', **spanish, 'base_voice_name': names,
+            'base_voice_language': 'es', 'speech_language': 'es'}
+
+
 @contextmanager
 def audio_file(text, lang='en'):
     from voice.aurelius_adapter import AureliusAdapter
@@ -85,12 +102,7 @@ def audio_file(text, lang='en'):
         profile = get_voice_profile('AURELIUS')
         profile = replace(profile, settings={**profile.settings, 'output_dir': folder})
         if lang == 'es':
-            from voice.tts_backends import list_sapi_voices
-            names = [voice['name'] for voice in list_sapi_voices() if voice.get('language', '').startswith('es')]
-            if not names:
-                raise RuntimeError('Local Spanish voice unavailable')
-            profile = replace(profile, settings={**profile.settings, 'base_voice_name': names,
-                              'base_voice_language': 'es', 'base_voice_gender': '', 'speech_language': 'es'})
+            profile = replace(profile, settings=spanish_settings(profile.settings))
         with redirect_stdout(io.StringIO()):
             result = AureliusAdapter(profile=profile).save_only(narration(text, lang))
         if not result.ok or not result.audio_path:

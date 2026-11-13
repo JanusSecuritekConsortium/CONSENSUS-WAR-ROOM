@@ -128,3 +128,19 @@ def test_read_delivered_text_aloud(setup,monkeypatch):
     assert s.handle_choice(message,route,vault=vault)==''
     assert s.handle_choice(message,route,vault=vault)==''
     assert uploads==[1]
+
+def test_spanish_uses_a_male_voice_tuned_for_spanish_and_leaves_english_alone():
+    from voice.voice_profiles import get_voice_profile
+    english = dict(get_voice_profile('AURELIUS').settings)
+    spanish = s.spanish_settings(english, sapi_voices=[{'name': 'Microsoft Helena Desktop', 'language': 'es-ES'},
+                                                       {'name': 'Microsoft David Desktop', 'language': 'en-US'}])
+    assert spanish['base_voice_name'][0] == 'Microsoft Pablo'
+    assert spanish['base_voice_name'][-1] == 'Microsoft Helena Desktop'  # installed Spanish voice as fallback
+    assert spanish['base_voice_gender'] == 'Male' and spanish['speech_language'] == 'es'
+    assert spanish['index_rate'] < english['index_rate'] and spanish['protect'] > english['protect']
+    assert english == dict(get_voice_profile('AURELIUS').settings)
+    assert english['base_voice_name'][0] == 'Microsoft Mark' and english['base_voice_language'] == 'en-GB'
+
+def test_spanish_without_any_spanish_voice_fails_clearly():
+    with pytest.raises(RuntimeError, match='Spanish voice unavailable'):
+        s.spanish_settings({'base_voice_name': ['Microsoft Mark']}, sapi_voices=[])

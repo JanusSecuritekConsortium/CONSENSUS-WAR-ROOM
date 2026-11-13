@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.12.1 - Aurelius speaks clearer Spanish (2026-11-13)
+
+### Fixed
+- Aurelius's Spanish voice notes were hard to follow: they started from Helena, a woman's voice,
+  and were reshaped with settings made for a man's English voice. Spanish now starts from Pablo, a
+  Spanish man's voice, and is reshaped more gently so Spanish sounds stay clear. English is unchanged.
+  The Spanish settings live under "spanish" in `voice/voice_config.json`.
+
 ## 9.12.0 - Each voter thinks in its own way (2026-11-13)
 
 ### Added

@@ -55,7 +55,17 @@
       "output_dir": "_ARBITER/tts_audio",
       "fallback": "windows_sapi",
       "rate": 145,
-      "volume": 0.9
+      "volume": 0.9,
+      "spanish": {
+        "base_voice_name": [
+          "Microsoft Pablo",
+          "Microsoft Alvaro"
+        ],
+        "base_voice_gender": "Male",
+        "transpose": 0,
+        "index_rate": 0.45,
+        "protect": 0.5
+      }
     },
     "ARBITER_GLADOS": {
       "backend": "glados_tts",
