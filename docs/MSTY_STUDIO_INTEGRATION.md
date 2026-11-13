@@ -195,12 +195,22 @@ Active internal health also compiles the modular source boundary. Run this direc
 python main.py --compile-active
 ```
 
-The default monolith model assignments are:
+The built-in fallback model names (`config/agents.py`) are:
 
 ```text
 RATIONALIS / Logic: deepseek-coder:33b
 AETERNUM / Finance: llama3.3:70b
 BELLATOR / Growth: mixtral:8x7b
+ARBITER: hermes3:8b
+```
+
+The installed lineup overrides them in `_ARBITER/genesis_config.json`, one model maker per voter:
+
+```text
+RATIONALIS: Qwen3.8 27B (Alibaba)
+AETERNUM: Yi 34B Chat (01.AI)
+BELLATOR: Mistral Small 3.2 24B (Mistral AI)
+ARBITER: Hermes 3 8B (Nous Research)
 ```
 
 Adjust these in:
