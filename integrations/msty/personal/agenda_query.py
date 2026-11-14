@@ -53,16 +53,19 @@ def answer(text, now=None, *, lang=None, route=None, vault=None):
     lang = lang or detect(text)
     query = ' '.join(fold(text).strip(' .?!¿¡').split())
     query = re.sub(r'[, ]+(?:in english|in spanish|en ingles|en espanol)$', '', query)
-    if re.search(r'\b(?:book|create|cancel|delete|move|reschedule|send|invite|reserva|crea|cancela|borra|elimina|mueve|reprograma|envia|invita)\b', query):
-        return None
-    location = re.fullmatch(r"(?:please )?(?P<verb>where is|where's|where are) (?:(?:my|the) )?(?P<title>.+?)(?: (?:for )?(?P<day>today|tomorrow))?", query)
+    # "today's agenda" reads the same as "agenda for today".
+    query = re.sub(r"\b(today|tomorrow)(?:['’]?s)? (schedule|agenda|calendar)\b", r'\2 for \1', query)
+    location =re.fullmatch(r"(?:please )?(?P<verb>where is|where's|where are) (?:(?:my|the) )?(?P<title>.+?)(?: (?:for )?(?P<day>today|tomorrow))?", query)
     explicit_locations = re.search(r' (?:with|including)(?: the)? (?:locations|venues|addresses)$', query)
     if not location:
         location = re.fullmatch(r'(?:por favor )?(?P<verb>donde es|donde esta|donde estan|donde son) (?:(?:mi|mis|la|las|el|los) )?(?P<title>.+?)(?: (?P<day>hoy|manana))?', query)
     explicit_locations = explicit_locations or re.search(r' (?:con|incluyendo)(?: las)? (?:ubicaciones|direcciones|lugares)$', query)
     schedule_query = query[:explicit_locations.start()] if explicit_locations else query
-    match = re.fullmatch(r'(?:please )?(?:check|show|read|what is|what\'s)(?: me)?(?: my| the)? (?:schedule|agenda|calendar)(?: for)?(?: today| tomorrow)?(?: afternoon| morning| evening)?', schedule_query)
-    match = match or re.fullmatch(r'(?:por favor )?(?:muestra(?:me)?|ensena(?:me)?|lee(?:me)?|revisa|consulta|cual es|que hay en)(?: mi| la| el)? (?:agenda|calendario|horario)(?: (?:para|de))?(?: hoy| manana)?(?: por la (?:manana|tarde|noche))?', schedule_query)
+    match = re.fullmatch(r'(?:please )?(?:check|show|read|send|give|tell|get|what is|what\'s)(?: me)?(?: my| the)? (?:schedule|agenda|calendar)(?: for)?(?: today| tomorrow)?(?: afternoon| morning| evening)?', schedule_query)
+    match = match or re.fullmatch(r'(?:por favor )?(?:muestra(?:me)?|ensena(?:me)?|lee(?:me)?|envia(?:me)?|manda(?:me)?|pasa(?:me)?|dime|dame|revisa|consulta|cual es|que hay en)(?: mi| la| el)? (?:agenda|calendario|horario)(?: (?:para|de))?(?: hoy| manana)?(?: por la (?:manana|tarde|noche))?', schedule_query)
+    # Requests that change or send something else go to the assistant; "send me my agenda" is only a read.
+    if not match and re.search(r'\b(?:book|create|cancel|delete|move|reschedule|send|invite|reserva|crea|cancela|borra|elimina|mueve|reprograma|envia|invita)\b', query):
+        return None
     next_query = query in ("what's next", 'what is next', 'whats next', 'what’s next', 'next appointment',
                            'what is my next meeting', "what's my next meeting", 'que sigue', 'que viene ahora',
                            'cual es mi proxima reunion', 'cual es mi siguiente cita')

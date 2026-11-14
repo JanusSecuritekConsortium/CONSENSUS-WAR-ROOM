@@ -18,3 +18,14 @@ def test_calendar_failure_not_empty_schedule(monkeypatch):
     def failed(*a):raise RuntimeError()
     monkeypatch.setattr(q,'calendar_events',failed)
     assert 'cannot confirm' in q.answer('Check my schedule for tomorrow')
+
+
+def test_sending_or_naming_todays_agenda_is_answered_locally(monkeypatch):
+    monkeypatch.setattr(q.store, 'load', lambda: {'accounts': []})
+    now = datetime(2026, 11, 14, 12, tzinfo=q.TZ)
+    for text in ("Send today's agenda", 'Send me my agenda for today', "What's tomorrow's schedule?",
+                 'Envíame la agenda de hoy', 'Dime la agenda de mañana'):
+        assert 'AGENDA' in q.answer(text, now), text
+    assert '15/11/2026' in q.answer("What's tomorrow's schedule?", now)
+    for text in ('Send an invite for the agenda review', 'Send my agenda to Laura', 'Cancel my agenda today'):
+        assert q.answer(text, now) is None, text

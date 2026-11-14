@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.13.7 - "Send today's agenda" is answered from the calendar (2026-11-14)
+
+### Fixed
+- AURELIUS answers "Send today's agenda", "Send me my agenda", "What's tomorrow's schedule?",
+  "Envíame la agenda de hoy" and "Dime la agenda de mañana" directly from the calendar. Before,
+  the word "send" passed these to the language model, which could take minutes or time out.
+  Requests that send something to someone else, or change the calendar, still go to the assistant.
+
 ## 9.13.6 - Spoken agendas name the calendar once (2026-11-14)
 
 ### Changed
