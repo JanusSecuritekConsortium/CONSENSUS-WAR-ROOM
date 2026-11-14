@@ -61,6 +61,21 @@ def narration(text, lang='en'):
     # The agenda heading's timezone and whole-day window are for reading, not listening.
     text = re.sub(r'\s*·\s*Europe/Madrid\b', '', text)
     text = re.sub(r'\s*·\s*00:00[–-]24:00(?=\s*(?:·|$))', '', text, flags=re.MULTILINE)
+    # Each appointment line ends with its calendar's name in brackets: useful to read, noise to hear.
+    # The calendar is named once, before the first appointment, instead of after every one.
+    calendars = []
+
+    def _without_calendar(match):
+        if match['calendar'] not in calendars:
+            calendars.append(match['calendar'])
+        return match['line']
+    text = re.sub(r'^(?P<line>\s*- (?:\d{2}:\d{2}|All day|Todo el día)\b.*?)[ \t]*\[(?P<calendar>[^\[\]\n]+)\][ \t]*$',
+                  _without_calendar, text, flags=re.MULTILINE)
+    if calendars:
+        names = (' y ' if lang == 'es' else ' and ').join(calendars)
+        intro = ('En '+names+' tienes las siguientes citas:' if lang == 'es' else
+                 'On '+names+' you have the following appointments:')
+        text = re.sub(r'^(?=\s*- (?:\d{2}:\d{2}|All day|Todo el día)\b)', intro+chr(10), text, count=1, flags=re.MULTILINE)
     # Keep facts and qualifiers verbatim; URLs are useful in text, not speech.
     text = re.sub(r'\[([^\]\n]+)\]\(https?://[^\s)]+\)', r'\1', text)
     text = re.sub(r'https?://\S+', '', text)

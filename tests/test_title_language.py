@@ -8,14 +8,25 @@ def test_titles_are_classified_by_their_own_words():
     assert tl.classify('Reunión con el proveedor') == 'es'
     assert tl.classify('Cena con Laura') == 'es'
     assert tl.classify('Dentista') == 'es'
-    assert tl.classify('Laura') is None  # a name alone keeps the reply's voice
+    assert tl.classify('Laura') is None  # a name alone gives no clear signal
 
 
-def test_remember_keeps_only_clear_titles_and_never_raises(tmp_path, monkeypatch):
+def test_remember_reads_unsure_titles_in_spanish_and_never_raises(tmp_path, monkeypatch):
     monkeypatch.setattr(tl.store, 'ROOT', tmp_path)
     tl.remember([{'title': 'Project review'}, {'title': 'Cena con Laura'}, {'title': 'Laura'}, {'title': None}])
-    assert tl.known() == {'Project review': 'en', 'Cena con Laura': 'es'}
+    assert tl.known() == {'Project review': 'en', 'Cena con Laura': 'es', 'Laura': 'es'}
     tl.remember(object())  # bad input is ignored, the calendar still loads
+
+
+def test_spoken_agenda_leaves_out_the_calendar_name():
+    from integrations.msty.personal import spoken_briefing as s
+    text = 'Friday 13/11\n- 09:00–10:00: Project review [Proton Calendar]\n- All day: Laura [Proton Calendar]'
+    spoken = s.narration(text)
+    assert spoken.count('Proton Calendar') == 1 and 'Project review' in spoken and 'Laura' in spoken
+    assert spoken.index('On Proton Calendar you have the following appointments') < spoken.index('Project review')
+    assert s.narration('- Todo el día: Cena con Laura [Proton Calendar]', 'es').startswith('En Proton Calendar tienes las siguientes citas')
+    assert 'appointments' not in s.narration('No events today.')
+    assert 'Work email' in s.narration('- Attention: Invoice [Work email]')  # mail keeps its account
 
 
 def test_other_language_titles_get_their_own_part():

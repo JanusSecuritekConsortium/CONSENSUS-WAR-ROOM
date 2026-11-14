@@ -2,7 +2,7 @@
 
 Titles are classified (Spanish, English or Catalan) when the calendar is read and kept in Aurelius's
 private folder on this PC.
-A title with no clear signal (a name such as "Laura") is not stored and keeps the reply's voice.
+A title with no clear signal (a name such as "Laura") is read in Spanish; English needs a clear signal.
 """
 import json
 import re
@@ -58,8 +58,8 @@ def remember(events):
         titles = dict(known())
         for event in events or []:
             title = re.sub(r'\s+', ' ', str(event.get('title') or '')).strip()
-            lang = classify(title)
-            if lang and 3 <= len(title) <= 120:
+            lang = classify(title) or 'es'  # unsure (a name such as "Laura"): read it in Spanish
+            if 3 <= len(title) <= 120:
                 titles.pop(title, None)
                 titles[title] = lang  # most recent last
         titles = dict(list(titles.items())[-LIMIT:])

@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.13.6 - Spoken agendas name the calendar once (2026-11-14)
+
+### Changed
+- Spoken agendas say the calendar once before the first appointment ("On Proton Calendar you have
+  the following appointments") instead of after every appointment. The text reply is unchanged.
+- A calendar title whose language is unclear (a name, for example) is read in the Spanish voice.
+  English is used only for titles that are clearly English; the rest of the speech keeps its language.
+
 ## 9.13.5 - Fewer model reloads per deliberation (2026-11-13)
 
 ### Changed
