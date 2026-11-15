@@ -361,7 +361,7 @@ def msty_alert(route, ready, failures, reason):
     if ready and alerted:
         text='Aurelius is reachable on Telegram again.'
     elif not ready and failures>=MSTY_ALERT_AFTER and (not alerted or token_followup):
-        text=('Aurelius cannot reach Msty Go: its built-in server rejected the saved token, which changes whenever Msty restarts. '
+        text=('Aurelius cannot reach Msty Go: its built-in server rejected the saved token. '
               'On the PC, copy the token from Msty Go > Settings > Tools > Built-in Server and paste it into the setup form '
               '(it opens by itself; otherwise run integrations.msty.personal.voice_setup).'
               if reason=='unauthorized' else
@@ -404,9 +404,36 @@ def token_form(ready, reason):
     path.write_text(json.dumps({'opened':True,'at':datetime.now(timezone.utc).isoformat()}),encoding='utf-8')
 
 
+MSTY_WAKE_AFTER=2    # failed checks before opening Settings > Tools; Msty Go may still be starting
+MSTY_WAKE_EVERY=300  # seconds between attempts, so the window is not driven continuously
+
+
+def wake_msty():
+    """Open Msty Go > Settings > Tools so its Built-in Server starts listening; returns the script's result.
+
+    Msty Go may not serve its local MCP endpoint after it starts until that page is shown.
+    The script only presses buttons by name through Windows UI Automation and never reads the token.
+    """
+    import subprocess
+    script=Path(__file__).with_name('msty_wake.ps1')
+    try:
+        done=subprocess.run(['powershell','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',str(script)],
+                            capture_output=True,text=True,timeout=60,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+    except (OSError,subprocess.SubprocessError):return 'failed'
+    lines=done.stdout.strip().splitlines()
+    return lines[-1] if lines else 'failed'
+
+
+def should_wake(ready, reason, failures, since_last_wake):
+    """Wake only an unreachable server, after a short grace period, at most every MSTY_WAKE_EVERY seconds."""
+    if ready or reason!='unreachable' or failures<MSTY_WAKE_AFTER:return False
+    if store.load().get('wake_msty_server',True) is False:return False
+    return since_last_wake is None or since_last_wake>=MSTY_WAKE_EVERY
+
+
 def run():
     with single_instance():
-        last_check=0
+        last_check=0;last_wake=None
         msty_ready=False
         failures=0;reason=None;msty_checked_at=None
         while store.load().get('telegram_voice_relay_enabled'):
@@ -427,6 +454,9 @@ def run():
                         if client:client.close()
                         last_check=time.monotonic()
                         msty_checked_at=datetime.now(timezone.utc).isoformat()
+                    if should_wake(msty_ready,reason,failures,None if last_wake is None else time.monotonic()-last_wake):
+                        last_wake=time.monotonic()
+                        if wake_msty()=='opened':last_check=time.monotonic()-45  # check again in ~15 s
                     msty_alert(route,msty_ready,failures,reason)
                     token_form(msty_ready,reason)
                 with database() as db:

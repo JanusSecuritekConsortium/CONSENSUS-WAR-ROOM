@@ -215,6 +215,33 @@ def test_token_form_can_be_turned_off_and_survives_no_desktop(isolated,monkeypat
     assert not (relay.store.ROOT/'msty-token-form.json').exists()  # retried at the next check
 
 
+def test_unreachable_msty_is_woken_after_grace_and_throttled(isolated,monkeypatch):
+    monkeypatch.setattr(relay.store,'load',lambda:{})
+    assert not relay.should_wake(False,'unreachable',relay.MSTY_WAKE_AFTER-1,None)  # Msty Go may still be starting
+    assert relay.should_wake(False,'unreachable',relay.MSTY_WAKE_AFTER,None)
+    assert not relay.should_wake(False,'unreachable',9,relay.MSTY_WAKE_EVERY-1)
+    assert relay.should_wake(False,'unreachable',9,relay.MSTY_WAKE_EVERY)
+    # A server that answers needs no waking; one that rejects the token cannot be fixed by opening a page.
+    assert not relay.should_wake(True,None,0,None)
+    assert not relay.should_wake(False,'unauthorized',9,None)
+    monkeypatch.setattr(relay.store,'load',lambda:{'wake_msty_server':False})
+    assert not relay.should_wake(False,'unreachable',9,None)
+
+
+def test_wake_script_presses_buttons_by_name_and_never_touches_the_token():
+    from pathlib import Path
+    script=Path(relay.__file__).with_name('msty_wake.ps1').read_text(encoding='utf-8')
+    for step in ("'Msty Account menu'","'Settings'","'Tools'","'Back to app'"):assert step in script
+    assert 'Clipboard' not in script and 'ValuePattern' not in script and 'Auth' not in script
+
+
+def test_wake_failure_is_reported_not_raised(monkeypatch):
+    import subprocess
+    def missing(*args,**kwargs):raise OSError('no powershell')
+    monkeypatch.setattr(subprocess,'run',missing)
+    assert relay.wake_msty()=='failed'
+
+
 def test_token_form_keeps_the_saved_address(monkeypatch):
     pytest.importorskip('tkinter')
     from integrations.msty.personal import voice_setup

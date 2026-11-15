@@ -64,18 +64,21 @@ retain their identifiers locally. Never commit the populated store.
   holds its lock (the rest of the line is the last one it wrote); `disabled` means
   `stop` turned it off, so set `telegram_voice_relay_enabled` back to true before starting.
 - Msty Go's Built-in Server may not answer after Msty Go starts until Settings → Tools
-  is opened, and it makes a new token each start (reported to Msty on 2026-11-13). Read `msty_failure` and
+  is opened (reported to Msty on 2026-11-13). After two failed checks the relay opens
+  that page itself through Windows UI Automation (`msty_wake.ps1`: it presses the
+  account menu, Settings, Tools and Back to app by name and never reads the token),
+  at most every five minutes; set `wake_msty_server` to false in the local account
+  store to turn it off. The saved token is reused. Read `msty_failure` and
   `msty_checked_at` for the last Msty Go check. For `unreachable`, check that the
   local Built-in Server is running. For `unauthorized`, refresh the saved token.
   After a sustained outage the relay sends one outage alert. If the server returns
   and rejects the saved token, the relay sends one follow-up with the token instructions.
 - `python -m integrations.msty.personal.voice_setup` opens the local URL/token
   form. Tokens are stored with Windows DPAPI and are never placed in chat or source.
-- Msty Go currently changes its local MCP bearer token after restart. Open
-  Settings → Tools → Built-in Server, copy its current Auth into the local setup
-  form, and save. The token exists only in Msty Go's memory, so it cannot be read
-  automatically; instead, the first time the server rejects the saved token the relay
-  opens this form on the PC, once per restart, with the saved URL already filled in.
+- The saved token is reused after restarts. Only if the awake server rejects it
+  (`unauthorized`) does a new one need saving: copy the Auth from Settings → Tools →
+  Built-in Server into the local setup form. The relay then opens this form on the
+  PC, once per rejected token, with the saved URL already filled in.
   Set `open_token_form` to false in the local account store to turn that off.
   No receiver restart is necessary. If the relay cannot reach
   Msty Go before dispatch, it returns an offline reply. Requests with an uncertain

@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.13.8 - Aurelius wakes Msty Go's server after a restart (2026-11-15)
+
+### Fixed
+- After a PC or Msty Go restart, Msty Go's built-in server could stay silent until someone
+  opened Settings > Tools, so Aurelius did not answer on Telegram. The voice receiver now opens
+  that page itself after two failed checks (at most every five minutes) and returns to the app.
+  It presses buttons by name and never reads the access key; the saved key is reused.
+  Set `wake_msty_server` to false in the local account store to turn this off.
+
 ## 9.13.7 - "Send today's agenda" is answered from the calendar (2026-11-14)
 
 ### Fixed
