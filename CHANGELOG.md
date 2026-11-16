@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.14.1 - Closing the window ends CONSENSUS (2026-11-16)
+
+### Fixed
+- After its window was closed, CONSENSUS.exe kept running invisibly: background refresh threads
+  held the program open, used memory and locked the file so an update could not replace it.
+  The packaged app now ends when its window closes. Deliberations started through Msty run in
+  their own process and are not affected.
+
 ## 9.14.0 - Every window closes; voter cards show real model data (2026-11-16)
 
 ### Fixed

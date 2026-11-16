@@ -3660,6 +3660,24 @@ def run_flet_gui(
         page.run_thread(initialize)
 
     ft.app(target=target)
+    finish_after_window_closed(state)
+
+
+def finish_after_window_closed(state: GuiState, *, frozen: bool | None = None,
+                               exit_process: Callable[[int], None] = os._exit) -> None:
+    """End the program once its window is closed.
+
+    Polling and refresh threads can outlive the window, leaving a windowless CONSENSUS.exe that
+    keeps the file locked (an update cannot replace it) and holds memory. Deliberations run in
+    their own process (integrations.mcp.tribunal_job), so they are unaffected.
+    Only the packaged exe exits this way; tests and source runs return normally.
+    """
+    state.ui_stopped.set()
+    if state.generation_control and state.submission_lock.locked():
+        state.generation_control.cancel()
+    log_war_room_runtime("gui_window_closed", {"theme": state.theme_key})
+    if getattr(sys, "frozen", False) if frozen is None else frozen:
+        exit_process(0)
 
 
 __all__ = [

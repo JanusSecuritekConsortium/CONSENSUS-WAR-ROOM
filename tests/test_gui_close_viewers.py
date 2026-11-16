@@ -76,3 +76,12 @@ def test_every_closable_viewer_is_a_real_state_flag() -> None:
     state = make_gui_state("janus")
     for flag in gui.CLOSABLE_VIEWERS:
         assert getattr(state, flag) is False
+
+
+def test_closing_the_window_ends_the_packaged_app_only() -> None:
+    state = make_gui_state("janus")
+    exits = []
+    gui.finish_after_window_closed(state, frozen=False, exit_process=exits.append)
+    assert state.ui_stopped.is_set() and exits == []  # tests and source runs return normally
+    gui.finish_after_window_closed(state, frozen=True, exit_process=exits.append)
+    assert exits == [0]  # no windowless CONSENSUS.exe left holding the file
