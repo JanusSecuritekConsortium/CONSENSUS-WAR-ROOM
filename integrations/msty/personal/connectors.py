@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import ssl
+from time import monotonic
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
@@ -253,6 +254,11 @@ def calendar_events(account, now, mode='weekly'):
             'source_key': hashlib.sha256(source_identity.encode()).hexdigest()}
 
 
+DRIVE_SCAN_LIMIT = 200_000   # files checked per scan (about a minute on the USB drive)
+DRIVE_SCAN_SECONDS = 90
+DRIVE_RECENT_LIMIT = 100     # changed files reported, newest first
+
+
 def drive_files(account, now):
     if not account.get('path', '').strip():
         raise ValueError('Select a local Proton Drive folder')
@@ -260,23 +266,36 @@ def drive_files(account, now):
     if not root.is_dir():
         raise ValueError('Select a local Proton Drive folder')
     files = []
+    warnings = ['Local synced file inventory only; document contents not read']
     # Inventory only. Do not read document bodies or hydrate cloud-only files.
-    count = 0
+    # The whole tree is checked: a recent change can sit anywhere, and checking dates is cheap.
+    count, started, since = 0, monotonic(), now-timedelta(days=7)
     for directory, dirs, names in os.walk(root, followlinks=False):
         dirs[:] = [name for name in dirs if not (Path(directory)/name).is_symlink()
                    and not (getattr((Path(directory)/name).lstat(), 'st_file_attributes', 0) & 0x400)]
         for name in names:
             count += 1
+            if count > DRIVE_SCAN_LIMIT or monotonic()-started > DRIVE_SCAN_SECONDS:
+                warnings.append(f'Drive inventory stopped after {count-1} files; later changes may be missing')
+                break
             path = Path(directory)/name
-            if count > 1000:
-                return {'files': files, 'warnings': ['Drive inventory limited to 1000 entries; document contents not read']}
-            if path.is_symlink():
-                continue
-            stat = path.stat()
+            try:
+                if path.is_symlink():
+                    continue
+                stat = path.stat()
+            except OSError:
+                continue  # removed or locked while scanning
             changed = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
-            if changed >= now-timedelta(days=7):
+            if changed >= since:
                 files.append({'name': str(path.relative_to(root)), 'modified': changed.isoformat()})
-    return {'files': files, 'warnings': ['Local synced file inventory only; document contents not read']}
+        else:
+            continue
+        break
+    files.sort(key=lambda item: item['modified'], reverse=True)
+    if len(files) > DRIVE_RECENT_LIMIT:
+        warnings.append(f'Showing the {DRIVE_RECENT_LIMIT} most recent of {len(files)} changed files')
+        files = files[:DRIVE_RECENT_LIMIT]
+    return {'files': files, 'warnings': warnings}
 
 
 READERS = {'imap': imap_mail, 'gmail': imap_mail, 'icloud': imap_mail, 'bridge': imap_mail,

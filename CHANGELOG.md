@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.13.9 - Voters answer without thinking; AURELIUS sees every changed Drive file (2026-11-16)
+
+### Fixed
+- RATIONALIS's Qwen model was thinking before every answer again, because Msty rewrote its
+  model file and dropped the "reasoning = off" line. CONSENSUS now asks for no thinking in
+  every voter request, so it no longer depends on that file. On a short test Qwen used 2 tokens
+  instead of 37; on a full vote this saves minutes per turn.
+- AURELIUS's Proton Drive check stopped after the first 1,000 of about 50,000 files, so it
+  reported no changes when five files had changed that week. It now checks the whole folder
+  (up to 200,000 files or 90 seconds) and reports the 100 newest changes.
+
 ## 9.13.8 - Aurelius wakes Msty Go's server after a restart (2026-11-15)
 
 ### Fixed

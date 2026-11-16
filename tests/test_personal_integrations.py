@@ -135,6 +135,34 @@ def test_drive_inventory_does_not_read_contents(tmp_path):
     assert 'Private document body' not in str(result)
 
 
+def test_drive_inventory_finds_recent_changes_past_the_first_thousand_files(tmp_path):
+    import os,time
+    old=time.time()-30*86400
+    for i in range(1500):
+        f=tmp_path/f'old{i:04}.txt';f.write_text('x');os.utime(f,(old,old))
+    (tmp_path/'zz-new.txt').write_text('x')
+    result=c.drive_files({'path':str(tmp_path)},datetime.now(timezone.utc))
+    assert [item['name'] for item in result['files']]==['zz-new.txt']
+
+
+def test_drive_inventory_reports_newest_first_and_caps_the_list(tmp_path,monkeypatch):
+    import os,time
+    monkeypatch.setattr(c,'DRIVE_RECENT_LIMIT',2)
+    for i,age in enumerate((3,1,2)):
+        f=tmp_path/f'f{i}.txt';f.write_text('x');t=time.time()-age*3600;os.utime(f,(t,t))
+    result=c.drive_files({'path':str(tmp_path)},datetime.now(timezone.utc))
+    assert [item['name'] for item in result['files']]==['f1.txt','f2.txt']
+    assert any('2 most recent of 3' in w for w in result['warnings'])
+
+
+def test_drive_inventory_stops_at_its_limit_and_says_so(tmp_path,monkeypatch):
+    monkeypatch.setattr(c,'DRIVE_SCAN_LIMIT',3)
+    for i in range(5):(tmp_path/f'f{i}.txt').write_text('x')
+    result=c.drive_files({'path':str(tmp_path)},datetime.now(timezone.utc))
+    assert len(result['files'])==3
+    assert any('stopped after 3 files' in w for w in result['warnings'])
+
+
 def test_graph_rejects_external_pagination():
     app,cache=MagicMock(),MagicMock()
     app.get_accounts.return_value=[{'username':'u@example.org'}]

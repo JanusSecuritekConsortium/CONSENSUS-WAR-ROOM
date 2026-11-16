@@ -25,7 +25,13 @@ def test_sampling_can_be_overridden_per_voter():
 
 
 def test_chat_route_keeps_only_set_sampling_values():
-    assert chat_sampling({"temperature": 0.2, "top_p": 0.8, "top_k": None, "min_p": 0.05}) == {"top_p": 0.8, "min_p": 0.05}
+    assert chat_sampling({"temperature": 0.2, "top_p": 0.8, "top_k": None, "min_p": 0.05}) == {
+        "top_p": 0.8, "min_p": 0.05, "chat_template_kwargs": {"enable_thinking": False}}
+
+
+def test_chat_route_always_turns_thinking_off():
+    # Msty rewrites its preset file and drops per-model "reasoning = off", so each request says it.
+    assert chat_sampling({})["chat_template_kwargs"] == {"enable_thinking": False}
 
 
 def test_send_prompt_passes_sampling_to_both_routes(monkeypatch):
@@ -53,6 +59,7 @@ def test_send_prompt_passes_sampling_to_both_routes(monkeypatch):
     assert text == "ok"
     assert sent[0][1]["options"] == {"temperature": 0.2, "num_predict": 900, "top_p": 0.8, "top_k": 20}
     assert sent[1][1]["top_p"] == 0.8 and sent[1][1]["top_k"] == 20
+    assert sent[1][1]["chat_template_kwargs"] == {"enable_thinking": False}
 
 
 def test_long_answer_limit_and_arbiter_default():

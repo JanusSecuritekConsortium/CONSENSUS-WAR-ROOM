@@ -23,7 +23,8 @@ def test_msty_chat_translation_preserves_model_prompt_and_settings(monkeypatch, 
     result = backend_requests_post(OllamaBackend("http://localhost:1"), {"model": "assigned-model", "prompt": "role and proposal", "options": {"temperature": 0.6, "num_predict": 321}})
     assert result == {"response": "VOTE: APPROVE"}
     assert calls[1][0] == "http://localhost:1/v1/chat/completions"
-    assert calls[1][1]["json"] == {"model": "assigned-model", "messages": [{"role": "user", "content": "role and proposal"}], "stream": False, "temperature": 0.6, "max_tokens": 321}
+    assert calls[1][1]["json"] == {"model": "assigned-model", "messages": [{"role": "user", "content": "role and proposal"}], "stream": False, "temperature": 0.6, "max_tokens": 321,
+                                      "chat_template_kwargs": {"enable_thinking": False}}
 
 
 def test_ollama_success_does_not_call_chat(monkeypatch):

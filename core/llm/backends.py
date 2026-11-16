@@ -21,9 +21,18 @@ class ProviderRequestError(RuntimeError):
 SAMPLING_KEYS = ("top_p", "top_k", "min_p", "repeat_penalty")
 
 
+# Voters answer in a fixed format within a time limit; a model's thinking mode (Qwen3) only adds
+# minutes. Sent with every request because Msty rewrites its model preset file and drops
+# per-model "reasoning = off". Chat templates without the switch ignore it.
+NO_THINKING = {"chat_template_kwargs": {"enable_thinking": False}}
+
+
 def chat_sampling(options: dict) -> dict:
-    """Per-voter sampling from Ollama-style options, for the OpenAI chat route (llama.cpp reads the same names)."""
-    return {key: options[key] for key in SAMPLING_KEYS if options.get(key) is not None}
+    """Per-voter sampling from Ollama-style options, for the OpenAI chat route (llama.cpp reads the same names).
+
+    Also turns off thinking mode, which voters never use.
+    """
+    return {**{key: options[key] for key in SAMPLING_KEYS if options.get(key) is not None}, **NO_THINKING}
 
 
 def _request_exceptions() -> tuple[type[BaseException], ...]:
