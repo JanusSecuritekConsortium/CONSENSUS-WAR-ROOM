@@ -208,7 +208,7 @@ The installed lineup overrides them in `_ARBITER/genesis_config.json`, one model
 
 ```text
 RATIONALIS: Qwen3.8 27B (Alibaba)
-AETERNUM: Yi 34B Chat (01.AI)
+AETERNUM: Gemma 4 26B-A4B (Google)
 BELLATOR: Mistral Small 3.2 24B (Mistral AI)
 ARBITER: Hermes 3 8B (Nous Research)
 ```

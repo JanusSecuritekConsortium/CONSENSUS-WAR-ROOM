@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.14.2 - AETERNUM runs on Gemma 4 (2026-11-16)
+
+### Changed
+- AETERNUM now uses Google's Gemma 4 26B-A4B (UD-Q4_K_M, 16.9 GB) instead of Yi 34B Chat from
+  2023. On the same question, each loaded from the drive, Gemma answered in 661 s with a reasoned
+  vote; Yi took 1,132 s and abstained with placeholder text. One maker per voter still holds:
+  Alibaba, Google, Mistral AI, Nous Research. The Yi file stays on the drive.
+
 ## 9.14.1 - Closing the window ends CONSENSUS (2026-11-16)
 
 ### Fixed
