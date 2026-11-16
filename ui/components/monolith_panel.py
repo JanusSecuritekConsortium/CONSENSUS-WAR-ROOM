@@ -10,6 +10,7 @@ from config.names import ARBITER, TRIBUNAL_AGENT_IDS
 from core.llm import online as online_models
 from core.models import NodeIdentity, Theme
 from ui.directorate import contrast_ratio
+from ui.model_states import memory_label
 
 
 READINESS_ROW_LABELS = ("SESSION", "MEMORY", "THEME", "PROVIDER", "LAST VERDICT", "LIFECYCLE")
@@ -98,6 +99,9 @@ def _compact_model_name(model: str) -> str:
     quant_match = re.search(r"(q\d(?:_[a-z]){1,2})", lower)
     quant = quant_match.group(1).upper() if quant_match else ""
     families = (
+        ("qwen3.8-27b", "Qwen3.8-27B"),
+        ("mistral-small-3.2-24b", "Mistral-Small-3.2-24B"),
+        ("gemma-4-26b-a4b", "Gemma-4-26B-A4B"),
         ("mixtral-8x7b", "Mixtral-8x7B"),
         ("yi-34b", "Yi-34B"),
         ("deepseek-coder-33b", "DeepSeek-Coder-33B"),
@@ -202,8 +206,14 @@ def build_monolith_panel(
     feedback: Dict[str, tuple[str, float]] | None = None,
     reduced_motion: bool = False,
     now: float | None = None,
+    resolved_models: Dict[str, str] | None = None,
+    model_states: Dict[str, str] | None = None,
 ) -> ft.Control:
+    """resolved_models: the model file each voter really uses on the server (provider check);
+    model_states: the server's load state per model id (ui.model_states)."""
     cards = []
+    resolved_models = resolved_models or {}
+    model_states = model_states or {}
     vote_details = vote_details or {}
     runtime_details = runtime_details or {}
     now = time.monotonic() if now is None else now
@@ -213,8 +223,17 @@ def build_monolith_panel(
         node_name = labels["node"] if labels else key
         core_name = labels["core"] if labels else "CONTROL CORE"
         status = statuses.get(key, "ONLINE")
-        model = nodes[key].model if key in nodes else "operator"
+        node = nodes.get(key)
+        model = str(resolved_models.get(key) or (node.model if node else "") or "--")
         compact_model = _compact_model_name(model)
+        if key == ARBITER:
+            # The verdict is computed by the voting rules; ARBITER's model only announces it.
+            settings_line = f"{memory_label(model, model_states)} | VERDICT BY RULES"
+        elif node is not None:
+            settings_line = (f"{memory_label(model, model_states)} | T {node.temperature:g}"
+                             f" | MAX {node.max_output_tokens} TOK")
+        else:
+            settings_line = memory_label(model, model_states)
         routes = online_models.routes_for(key)
         if routes:
             # The voter tries its online models in order and then falls back to the local one.
@@ -236,8 +255,6 @@ def build_monolith_panel(
             activity = str(runtime.get("activity", activity_state))
             if status == "QUEUED":
                 activity = "WAITING FOR MODEL TURN"
-            latency_ms = int(runtime.get("latency_ms", 0) or 0)
-            signal = str(runtime.get("signal", ""))
             detail_lines.append(
                 ft.Text(
                     f"{glyph} {pulse} {activity}".strip(),
@@ -247,15 +264,17 @@ def build_monolith_panel(
                     overflow=ft.TextOverflow.ELLIPSIS,
                 )
             )
-            detail_lines.append(
-                ft.Text(
-                    f"LATENCY: {latency_ms}ms {signal}",
-                    color=muted_color,
-                    size=9,
-                    max_lines=1,
-                    overflow=ft.TextOverflow.ELLIPSIS,
-                )
+        detail_lines.append(
+            ft.Text(
+                settings_line,
+                color=muted_color,
+                size=9,
+                max_lines=1,
+                overflow=ft.TextOverflow.ELLIPSIS,
+                tooltip="Model state on the server, temperature and answer limit",
+                data="monolith_settings",
             )
+        )
         if details:
             confidence = details.get("confidence")
             evidence_quality = details.get("evidence_quality")
@@ -273,8 +292,10 @@ def build_monolith_panel(
             if critical_risk:
                 detail_lines.append(ft.Text("critical risk flagged", color=theme.error_color, size=9, max_lines=1))
             if response_time is not None:
-                detail_lines.append(
-                    ft.Text(f"response {float(response_time):.2f}s", color=theme.text_color, size=9, max_lines=1)
+                # The real time this voter took for its last answer, model loading included.
+                detail_lines.insert(
+                    min(2, len(detail_lines)),
+                    ft.Text(f"LAST ANSWER {float(response_time):.0f} s", color=theme.text_color, size=9, max_lines=1)
                 )
             if reasoning:
                 snippet = reasoning[:72] + ("..." if len(reasoning) > 72 else "")

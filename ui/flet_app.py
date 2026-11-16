@@ -101,6 +101,7 @@ from core.voting.sources import vote_sources_for_file
 from core.intelligence.world_events import build_world_map_points
 from ui.layout_contract import CENTER_COLUMN_FLEX, FOOTER_HEIGHT, LEFT_COLUMN_FLEX, PROPOSAL_HEIGHT, RIGHT_COLUMN_FLEX
 from ui.themes.catalog import THEMES, get_gui_theme_options, resolve_theme_key
+from ui.model_states import load_states as load_model_states
 from ui.war_room_runtime import (
     append_timeline,
     ambient_message,
@@ -1491,6 +1492,51 @@ def build_command_palette(
     return panel
 
 
+# Windows opened from the command palette or shortcuts, bottom to top as drawn; each closes with
+# its CLOSE button or Esc (topmost first).
+CLOSABLE_VIEWERS = (
+    "trace_viewer_open",
+    "proposal_history_open",
+    "visual_review_viewer_open",
+    "telemetry_viewer_open",
+    "simulation_viewer_open",
+    "simulation_create_open",
+    "branch_tree_viewer_open",
+    "simulation_branch_expand_open",
+    "data_sources_viewer_open",
+)
+
+
+def with_close_bar(content: ft.Control, theme: Any, on_close: Callable[[Any], None] | None) -> ft.Control:
+    """Put a CLOSE button above a viewer, so every window has a visible way out besides Esc."""
+    button = ft.Container(
+        content=ft.Row(
+            [ft.Icon(ft.Icons.CLOSE, size=14, color=theme.accent_color),
+             ft.Text("CLOSE", size=11, color=theme.accent_color, weight=ft.FontWeight.BOLD)],
+            spacing=4, tight=True,
+        ),
+        padding=ft.padding.symmetric(horizontal=10, vertical=4),
+        border=ft.border.all(1, theme.accent_color),
+        bgcolor=theme.surface_color,
+        ink=on_close is not None,
+        on_click=on_close,
+        tooltip="Close (Esc)",
+        data="close_viewer",
+    )
+    return ft.Column([button, content], spacing=4, tight=True, horizontal_alignment=ft.CrossAxisAlignment.END)
+
+
+def _monolith_model_info(state: GuiState) -> Dict[str, Any]:
+    """The model file each voter really uses and whether the server holds it in memory now."""
+    provider = state.provider_status.get("provider", state.provider_status) if isinstance(state.provider_status, dict) else {}
+    if not isinstance(provider, dict):
+        provider = {}
+    resolved = provider.get("resolved_required_models") or {}
+    base_url = str(provider.get("base_url") or "")
+    states = load_model_states(base_url) if base_url.startswith("http") else {}
+    return {"resolved_models": resolved if isinstance(resolved, dict) else {}, "model_states": states}
+
+
 def build_data_sources_viewer(state: GuiState, status: Dict[str, Any] | None = None) -> ft.Control:
     theme = state.theme
     payload = status or state.runtime_snapshot_cache.get("data_sources_status") or build_data_sources_status(attempt_live=False)
@@ -2367,6 +2413,7 @@ def build_gui_layout(
                 ),
                 feedback=state.monolith_feedback,
                 reduced_motion=state.reduced_motion or not state.directorate_animation,
+                **_monolith_model_info(state),
         )),
         expand=LEFT_COLUMN_FLEX,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
@@ -3166,8 +3213,24 @@ def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
             log_event("gui_online_voters", {"open": state.online_voters_open, "theme": state.theme_key})
             _render_page(page, state)
 
+    def close_viewer(flag: str):
+        def close(_=None) -> None:
+            setattr(state, flag, False)
+            _render_page(page, state)
+        return close
+
+    def close_top_viewer() -> bool:
+        """Esc closes the window drawn on top; False when none is open."""
+        for flag in reversed(CLOSABLE_VIEWERS):
+            if getattr(state, flag, False):
+                close_viewer(flag)()
+                return True
+        return False
+
     def on_keyboard_event(event) -> None:
         key = str(getattr(event, "key", "") or "").upper()
+        if key == "ESCAPE" and not (getattr(event, "ctrl", False) or getattr(event, "meta", False)) and close_top_viewer():
+            return
         if getattr(event, "ctrl", False) or getattr(event, "meta", False):
             if key in {"ENTER", "RETURN", "NUMPAD ENTER"}:
                 submit(state.proposal_input_text)
@@ -3326,7 +3389,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.trace_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_decision_trace_viewer(state, on_filter=h.handle_trace_filter),
+                    content=with_close_bar(build_decision_trace_viewer(state, on_filter=h.handle_trace_filter), state.theme, h.close_viewer("trace_viewer_open")),
                     alignment=ft.alignment.center_left,
                     padding=ft.padding.only(left=24),
                     data="decision_trace_viewer",
@@ -3335,7 +3398,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.proposal_history_open:
             overlay.append(
                 ft.Container(
-                    content=build_proposal_history_viewer(state, on_action=h.handle_proposal_history_action),
+                    content=with_close_bar(build_proposal_history_viewer(state, on_action=h.handle_proposal_history_action), state.theme, h.close_viewer("proposal_history_open")),
                     alignment=ft.alignment.center,
                     data="proposal_history_viewer",
                 )
@@ -3343,7 +3406,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.visual_review_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_visual_review_status_viewer(state),
+                    content=with_close_bar(build_visual_review_status_viewer(state), state.theme, h.close_viewer("visual_review_viewer_open")),
                     alignment=ft.alignment.center,
                     data="visual_review_status",
                 )
@@ -3351,7 +3414,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.telemetry_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_telemetry_snapshot_viewer(state),
+                    content=with_close_bar(build_telemetry_snapshot_viewer(state), state.theme, h.close_viewer("telemetry_viewer_open")),
                     alignment=ft.alignment.center,
                     data="telemetry_snapshot",
                 )
@@ -3359,7 +3422,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.simulation_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_simulation_viewer(state, on_action=h.handle_simulation_action),
+                    content=with_close_bar(build_simulation_viewer(state, on_action=h.handle_simulation_action), state.theme, h.close_viewer("simulation_viewer_open")),
                     alignment=ft.alignment.center,
                     data="simulation_viewer",
                 )
@@ -3367,7 +3430,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.simulation_create_open:
             overlay.append(
                 ft.Container(
-                    content=build_simulation_create_overlay(state, on_create=h.handle_simulation_create),
+                    content=with_close_bar(build_simulation_create_overlay(state, on_create=h.handle_simulation_create), state.theme, h.close_viewer("simulation_create_open")),
                     alignment=ft.alignment.center,
                     data="simulation_create_overlay",
                 )
@@ -3375,11 +3438,11 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.branch_tree_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_branch_tree_viewer(
+                    content=with_close_bar(build_branch_tree_viewer(
                         state,
                         on_expand=h.handle_branch_expand_request,
                         on_export=h.handle_simulation_export,
-                    ),
+                    ), state.theme, h.close_viewer("branch_tree_viewer_open")),
                     alignment=ft.alignment.center,
                     data="branch_tree_viewer",
                 )
@@ -3387,7 +3450,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.simulation_branch_expand_open:
             overlay.append(
                 ft.Container(
-                    content=build_branch_expand_overlay(state, on_expand=h.handle_branch_expand),
+                    content=with_close_bar(build_branch_expand_overlay(state, on_expand=h.handle_branch_expand), state.theme, h.close_viewer("simulation_branch_expand_open")),
                     alignment=ft.alignment.center,
                     data="simulation_branch_expand_overlay",
                 )
@@ -3395,7 +3458,7 @@ def _render_overlays(page: ft.Page, state: GuiState, h: SimpleNamespace) -> None
         if state.data_sources_viewer_open:
             overlay.append(
                 ft.Container(
-                    content=build_data_sources_viewer(state),
+                    content=with_close_bar(build_data_sources_viewer(state), state.theme, h.close_viewer("data_sources_viewer_open")),
                     alignment=ft.alignment.center,
                     data="data_sources_viewer",
                 )
@@ -3628,6 +3691,8 @@ __all__ = [
     "build_branch_tree_viewer",
     "build_branch_expand_overlay",
     "build_data_sources_viewer",
+    "with_close_bar",
+    "CLOSABLE_VIEWERS",
     "execute_command_palette_action",
     "filter_decision_traces",
     "runtime_snapshot_from_gui_state",

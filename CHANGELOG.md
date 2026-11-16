@@ -1,5 +1,20 @@
 # Changelog
 
+## 9.14.0 - Every window closes; voter cards show real model data (2026-11-16)
+
+### Fixed
+- Windows opened from the command palette (Data Sources, Decision Traces, Proposal History,
+  Telemetry, Visual Review, Simulation and Branch windows) had no way to close them. Each now
+  has a CLOSE button, and Esc closes the window on top before it closes the palette.
+- The LATENCY figure on the voter cards was an animated placeholder, not a measurement. It is
+  gone.
+
+### Added
+- Each voter card shows the model file it really uses on the server, whether that model is in
+  memory, loading or on disk right now (checked every 10 seconds in the background),
+  its temperature and answer limit, and after a vote the real time its last answer took.
+  ARBITER's card shows its Hermes model and that the verdict comes from the voting rules.
+
 ## 9.13.9 - Voters answer without thinking; AURELIUS sees every changed Drive file (2026-11-16)
 
 ### Fixed

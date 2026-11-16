@@ -55,3 +55,43 @@ if __name__ == "__main__":
     test_global_monolith_display_order_is_bellator_aeternum_rationalis()
     test_arbiter_falls_back_to_canonical_control_core()
     print("test_gui_monolith_naming PASS")
+
+
+def test_cards_show_the_real_model_its_memory_state_and_settings() -> None:
+    from config.names import ARBITER, RATIONALIS
+    resolved = {RATIONALIS: "unsloth/Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf",
+                ARBITER: "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf"}
+    states = {resolved[RATIONALIS]: "loaded", resolved[ARBITER]: "unloaded"}
+    panel = build_monolith_panel(THEMES["military"], DEFAULT_NODES, {}, resolved_models=resolved, model_states=states)
+    rationalis = [c.value for c in _card_texts(panel, 2)]
+    assert "Qwen3.8-27B Q4_K_M" in rationalis
+    node = DEFAULT_NODES[RATIONALIS]
+    assert f"IN MEMORY | T {node.temperature:g} | MAX {node.max_output_tokens} TOK" in rationalis
+    arbiter = [c.value for c in _card_texts(panel, 3)]
+    assert "Hermes-3-Llama-3.1-8B Q4_K_M" in arbiter and "ON DISK | VERDICT BY RULES" in arbiter
+    assert not any("LATENCY" in str(value) for value in rationalis + arbiter)  # no invented numbers
+
+
+def test_card_says_dash_when_the_server_has_not_answered() -> None:
+    panel = build_monolith_panel(THEMES["military"], DEFAULT_NODES, {})
+    assert any(str(c.value).startswith("-- | T ") for c in _card_texts(panel, 0))
+
+
+def test_model_states_refresh_in_the_background_and_never_block() -> None:
+    from ui import model_states
+    model_states.reset({"old": "loaded"})
+    started = []
+
+    class Thread:
+        def __init__(self, target, daemon):
+            self.target = target
+
+        def start(self):
+            started.append(self.target)
+
+    assert model_states.load_states("http://x", now=100.0, fetch=lambda url: {"new": "loading"}, start=Thread) == {"old": "loaded"}
+    started[0]()  # the background check finishes
+    assert model_states.load_states("http://x", now=101.0, start=Thread) == {"new": "loading"}
+    assert len(started) == 1  # no new check within REFRESH_SECONDS
+    assert model_states.memory_label("missing-model-name", {"new": "loading"}) == "MISSING"
+    model_states.reset()
