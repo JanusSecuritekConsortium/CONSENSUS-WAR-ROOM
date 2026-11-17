@@ -1,5 +1,15 @@
 # Changelog
 
+## 9.15.4 - Fair peer quotes; no giant backup models (2026-11-17)
+
+### Fixed
+- A voter quoting another voter's claim is no longer rejected for a missing full stop, different
+  capitals or spacing, or for naming an earlier round when the claim is unchanged in the latest
+  round. In the third test vote this threw out Mistral's valid revision answer.
+- The last-resort backup sweep skips models of 40B parameters or more (judged from the name).
+  Llama 3.3 70B filled the PC's memory for 25 minutes as BELLATOR's final backup and the vote
+  ended in a timeout. Backups the owner configures by name are unchanged.
+
 ## 9.15.3 - Project maxims; every release tagged (2026-11-17)
 
 ### Added

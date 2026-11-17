@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import os
 import time
 from dataclasses import asdict
@@ -588,8 +589,18 @@ def real_model_candidates(
         ordered = sorted(available, key=lambda model: any(
             token in model.lower() for token in ("embed", "rerank", "router", "ui-tars")
         ))
-        candidates.extend(model for model in ordered if model not in candidates)
+        # Never sweep into giant models: loading one fills RAM and jams the PC (maxim 13).
+        candidates.extend(model for model in ordered if model not in candidates and not is_giant_model(model))
     return candidates
+
+
+GIANT_MODEL_BILLIONS = 40
+
+
+def is_giant_model(model: str) -> bool:
+    """True for models of 40B parameters or more, judged from the name (e.g. 'Llama-3.3-70B')."""
+    sizes = [float(size) for size in re.findall(r"(?<![\dx.])(\d+(?:\.\d+)?)b(?![a-z])", model.lower())]
+    return bool(sizes) and max(sizes) >= GIANT_MODEL_BILLIONS
 
 
 def model_availability_report(

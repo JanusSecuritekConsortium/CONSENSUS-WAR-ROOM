@@ -110,6 +110,20 @@ def test_both_peer_claims_are_required_but_agreement_is_valid(phase):
     assert parsed(replace_field(raw, "PEER_RESPONSES", json.dumps(peers)), context).validation_errors
 
 
+def test_a_peer_quote_may_differ_in_punctuation_or_name_an_earlier_round_with_the_same_claim():
+    # Mistral dropped the final full stop; Hermes cited round 1 for a claim repeated unchanged in round 2.
+    context = prior_context("revision")
+    context["deliberation"]["previous_rounds"].insert(0, deepcopy(context["deliberation"]["previous_rounds"][0]) | {"round": 1})
+    raw = raw_vote(context=context)
+    peers = parsed(raw, context).peer_responses
+    peers[0]["claim"] = "  " + peers[0]["claim"].upper() + ". "
+    peers[1]["round"] = 1
+    vote = parsed(replace_field(raw, "PEER_RESPONSES", json.dumps(peers)), context)
+    assert not vote.validation_errors
+    peers[1]["claim"] = peers[1]["claim"] + " and more"
+    assert parsed(replace_field(raw, "PEER_RESPONSES", json.dumps(peers)), context).validation_errors
+
+
 @pytest.mark.parametrize("change", ["vote", "risk", "review"])
 def test_changed_vote_or_cleared_flag_needs_a_reason(change):
     context = prior_context()

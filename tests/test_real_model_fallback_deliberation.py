@@ -48,6 +48,14 @@ def test_candidate_priority_deduplication_aliases_and_strict_mode():
     assert api.real_model_candidates(BELLATOR, "missing", models, config) == []
 
 
+def test_giant_models_are_never_swept_in_as_backups():
+    # Llama 3.3 70B filled the PC's memory for 25 minutes as a last-resort backup (17 Nov vote 3).
+    models = ["preferred", "Llama-3.3-70B-Instruct-Q3_K_L.gguf", "qwen2.5:72b", "Hermes-3-Llama-3.1-8B.gguf", "mixtral:8x7b"]
+    config = RuntimeConfig(base_model="base")
+    assert api.real_model_candidates(BELLATOR, "preferred", models, config) == ["preferred", "Hermes-3-Llama-3.1-8B.gguf", "mixtral:8x7b"]
+    assert api.real_model_candidates(BELLATOR, "qwen2.5:72b", models, config)[0] == "qwen2.5:72b"
+
+
 def test_one_available_model_completes_real_exchange_with_three_role_parameters(monkeypatch):
     provider(monkeypatch, ["base:latest"])
     calls = []

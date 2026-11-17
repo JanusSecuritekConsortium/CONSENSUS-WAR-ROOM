@@ -68,9 +68,14 @@ def validate_argument(vote: Vote, context: Dict[str, Any]) -> list[str]:
         if not isinstance(peer, str) or not isinstance(target_round, int) or isinstance(target_round, bool):
             errors.append("invalid peer response identity or round")
             continue
+        quoted = _same_words(response.get("claim"))
         target = next((item for item in rounds if item.get("round") == target_round), {})
-        claim = target.get("assessments", {}).get(peer, {}).get("argument", {}).get("claim")
-        if peer not in peers or not claim or response.get("claim") != claim:
+        claim = _same_words(target.get("assessments", {}).get(peer, {}).get("argument", {}).get("claim"))
+        latest_claim = _same_words(latest.get("assessments", {}).get(peer, {}).get("argument", {}).get("claim"))
+        if quoted and quoted == latest_claim:
+            # The claim is unchanged in the latest round, so a wrong round number still answers it.
+            target_round, claim = latest.get("round"), latest_claim
+        if peer not in peers or not claim or quoted != claim:
             errors.append("peer response must quote a supplied peer claim")
         if not isinstance(response.get("stance"), str) or response["stance"] not in {"support", "challenge", "accept", "reject"}:
             errors.append("invalid peer response stance")
@@ -87,3 +92,10 @@ def validate_argument(vote: Vote, context: Dict[str, Any]) -> list[str]:
     if (changed or cleared_risk or cleared_review) and not vote.vote_change_reason.strip():
         errors.append("decision change needs vote_change_reason")
     return errors
+
+
+def _same_words(text):
+    """Compare quoted claims by their words: case, spacing, quotes and final punctuation do not matter."""
+    if not isinstance(text, str):
+        return ""
+    return " ".join(text.casefold().split()).strip(" .!?;:'\"“”‘’")
