@@ -151,6 +151,20 @@ def test_a_timeout_stops_instead_of_loading_more_models(monkeypatch):
     assert RuntimeConfig().generation_timeout_seconds >= 600
 
 
+def test_a_too_long_prompt_never_tries_backup_models(monkeypatch):
+    # Every model on the server shares one window; on 17/11 the backups ended at a 70B model that jammed the PC.
+    provider(monkeypatch, ["preferred", "base", "another"])
+    calls = []
+    def send(model, *a, **kw):
+        calls.append(model)
+        raise api.ProviderRequestError("Prompt too long for the model's context window at http://localhost:11454")
+    monkeypatch.setattr(api, "send_prompt", send)
+    runtime = MstyRuntime(RuntimeConfig(base_model="base"))
+    with pytest.raises(api.ProviderRequestError):
+        runtime.send_to_agent(RATIONALIS, "assessment", {"model": "preferred", "session_id": "p", "require_real_model": True})
+    assert calls == ["preferred"]
+
+
 def test_other_tribunal_models_are_unloaded_before_a_voter_runs(monkeypatch):
     provider(monkeypatch, ["deepseek:33b", "yi:34b", "base", "user-chat-model"])
     monkeypatch.setattr(api, "loaded_models", lambda base_url: ["yi:34b", "base", "user-chat-model"])

@@ -1,5 +1,19 @@
 # Changelog
 
+## 9.15.1 - Long prompts are trimmed instead of failing the vote (2026-11-17)
+
+### Fixed
+- A test vote failed: BELLATOR's prompt reached 9,572 tokens on a busy news day, over the 8,192
+  tokens Msty's server gives each model, and the server refused it. Each voter's prompt is now
+  measured before sending and trimmed until it fits with room for the answer, least important
+  first: archive reference passages, news citations, news items, AETERNUM data items, older
+  retrieved decisions, the oldest round, and finally the personal brief is shortened. The
+  proposal, instructions and current round are never cut, and trimmed sources cannot be cited.
+  The same prompt now goes out at 6,218 tokens with three news items kept.
+- A "too long" refusal no longer tries backup models: they share the same limit. On that vote the
+  backups ended at Llama 3.3 70B, which filled the PC's memory and ran 25 minutes before timing
+  out. The refusal is now named in the record ("Prompt too long for the model's context window").
+
 ## 9.15.0 - Aurelius learns on its own (2026-11-17)
 
 ### Added

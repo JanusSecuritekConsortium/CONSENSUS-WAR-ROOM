@@ -1516,6 +1516,10 @@ def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Di
                 },
                 timeout=backend.timeout,
             )
+            if response.status_code == 400 and "exceed_context_size" in (response.text or ""):
+                # Every model on this server has the same window: another model cannot help.
+                raise ProviderRequestError(f"Prompt too long for the model's context window at {backend.base_url}: "
+                                           f"{response.text[:300]}")
             response.raise_for_status()
             body = response.json()
             choices = body.get("choices", [])

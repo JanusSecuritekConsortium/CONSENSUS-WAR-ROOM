@@ -320,6 +320,8 @@ class MstyRuntime:
                 self.last_execution[session.agent_id] = {"status": "failed", "model": model, "backend": attempt["backend"], "model_attempts": list(attempts)}
                 if _timed_out(exc):
                     break  # the provider is busy or still loading; starting another model would only add to the load
+                if "context window" in str(exc):
+                    break  # every model on the server shares the same window; a backup would be refused too
         assert last_error is not None
         raise last_error
 

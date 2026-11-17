@@ -9,6 +9,7 @@ from config.names import AETERNUM, BELLATOR, TRIBUNAL_AGENT_IDS
 from core.data_sources.enrichment import build_aeternum_data_enrichment
 from core.intelligence.bellator_context_builder import ANTI_FABRICATION_INSTRUCTION, build_bellator_context_packet
 from core.llm.prompts import build_node_prompt
+from core.prompting.fit import fit_prompt
 from core.llm import online as online_models
 from core.llm.generation import SubmissionCancelled
 from core.logging import log_error, log_event
@@ -118,13 +119,24 @@ class VotingOrchestrator:
                     "system_prompt": node.prompt,
                     "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
                 })
-                runtime_context["evidence_passages"] = supplied_passages(query, runtime_context)
-                runtime_context["host_claim_reviews"] = deepcopy((memory_context or {}).get("host_claim_reviews", []))
-                runtime_context["evidence_source_ids"] = evidence_source_ids(runtime_context)
+                def render(context: Dict[str, Any], node: NodeIdentity = node) -> str:
+                    # Passages and source ids follow the context, so trimmed extras can never be cited.
+                    context["evidence_passages"] = supplied_passages(query, context)
+                    context["host_claim_reviews"] = deepcopy((memory_context or {}).get("host_claim_reviews", []))
+                    context["evidence_source_ids"] = evidence_source_ids(context)
+                    return build_node_prompt(node, query, context)
+
+                if self.simulation:
+                    prompt, trimmed = render(runtime_context), []
+                else:
+                    prompt, trimmed = fit_prompt(render, runtime_context, node.max_output_tokens, len(node.prompt or ""))
+                if trimmed:
+                    log_event("prompt_trimmed_to_fit", {"session_id": session_id, "agent_id": agent_id, "round": number,
+                                                        "trimmed": len(trimmed), "parts": sorted(set(trimmed)),
+                                                        "prompt_chars": len(prompt)})
                 self._emit(on_event, {"type": "agent_started", "round": number, "phase": phase, "agent_id": agent_id, "context": deepcopy(runtime_context)})
                 started = time.perf_counter()
                 raw = ""
-                prompt = build_node_prompt(node, query, runtime_context)
                 try:
                     raw = self.runtime.send_to_agent(agent_id, prompt, runtime_context)
                     if control:
