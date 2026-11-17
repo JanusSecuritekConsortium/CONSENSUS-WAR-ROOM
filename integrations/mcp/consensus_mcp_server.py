@@ -387,6 +387,20 @@ def tribunal_verdict(arguments=None):
     return {'tool': 'tribunal_verdict', **tribunal_job.status(str(args['ticket']))}
 
 
+def tribunal_answer(arguments=None):
+    """Give the owner's answer to the voters' questions on a paused vote, or stop the questions."""
+    if str(PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(PROJECT_ROOT))
+    from integrations.mcp import tribunal_job
+    args = arguments or {}
+    if not isinstance(args, dict) or 'ticket' not in args or not set(args) <= {'ticket', 'answer', 'stop'}:
+        raise ValueError('Only ticket, answer and stop are accepted')
+    stop = args.get('stop', False)
+    if not isinstance(stop, bool):
+        raise ValueError('stop must be true or false')
+    return {'tool': 'tribunal_answer', **tribunal_job.answer(str(args['ticket']), str(args.get('answer') or ''), stop=stop)}
+
+
 def tribunal_track_record(arguments=None):
     """Past tribunal decisions with their outcomes, those awaiting one, and each member's track record."""
     if str(PROJECT_ROOT) not in sys.path:
@@ -633,6 +647,7 @@ TOOL_HANDLERS = {
     "ghostnotes_search": ghostnotes_search,
     "tribunal_deliberate": tribunal_deliberate,
     "tribunal_verdict": tribunal_verdict,
+    "tribunal_answer": tribunal_answer,
     "tribunal_track_record": tribunal_track_record,
     "tribunal_record_outcome": tribunal_record_outcome,
     "aurelius_odysseus_status": aurelius_odysseus_status,
@@ -669,9 +684,19 @@ TOOLS = [
     },
     {
         'name': 'tribunal_verdict',
-        'description': 'Check a tribunal_deliberate ticket: queued, running (with elapsed minutes; on local models a deliberation can take an hour), finished with the verdict, each vote and next steps, or failed. Starts and sends nothing.',
+        'description': 'Check a tribunal_deliberate ticket: queued, running (with elapsed minutes; on local models a deliberation can take an hour), awaiting_answers (the voters could not agree and wait for the owner\'s answers to their questions, listed per voter; show them to the owner and pass the owner\'s own answer to tribunal_answer), finished with the verdict, each vote and next steps, or failed. Starts and sends nothing.',
         'annotations': {'readOnlyHint': True, 'destructiveHint': False, 'openWorldHint': False},
         'inputSchema': {'type': 'object', 'properties': {'ticket': {'type': 'string', 'pattern': '^[0-9a-f]{12}$'}}, 'required': ['ticket'], 'additionalProperties': False},
+    },
+    {
+        'name': 'tribunal_answer',
+        'description': 'Answer the voters\' questions on a tribunal ticket that is awaiting_answers. Pass only what the owner states, never an invented answer; the vote then reruns with the answer as evidence. stop=true (when the owner does not want to answer) ends the vote with its current result. Writes only the local ticket; sends nothing.',
+        'annotations': {'readOnlyHint': False, 'destructiveHint': False, 'openWorldHint': False},
+        'inputSchema': {'type': 'object', 'properties': {
+            'ticket': {'type': 'string', 'pattern': '^[0-9a-f]{12}$'},
+            'answer': {'type': 'string', 'maxLength': 4000},
+            'stop': {'type': 'boolean'},
+        }, 'required': ['ticket'], 'additionalProperties': False},
     },
     {
         'name': 'tribunal_track_record',

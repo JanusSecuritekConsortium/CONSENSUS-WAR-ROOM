@@ -111,7 +111,7 @@ def test_the_worker_records_the_operator_on_the_decision(phone) -> None:
     class Result:
         pass
 
-    def deliberate(query):
+    def deliberate(query, **_):
         seen.append(identity.current_operator_name())
         raise RuntimeError("stop after the sign-in check")
     job.run(ticket, jobs_dir=jobs_dir, deliberate=deliberate)
@@ -135,6 +135,28 @@ def test_the_list_shows_phone_tickets_only_and_a_summary_only(phone) -> None:
     assert listed[0]["submitted_by"] == "Owner"  # one shared record, with names on it
     assert listed[0]["result"] == {"verdict": "APPROVE", "confidence": 0.8, "reason": "Sound plan.", "next_steps": ["Do it"]}
     assert "raw model text" not in json.dumps(listed)
+
+
+def test_a_paused_phone_vote_shows_the_questions_and_takes_an_answer(phone) -> None:
+    client, jobs_dir, _, _ = phone
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    asks = [{"agent": "AETERNUM", "vote": "ABSTAIN", "asks": ["What power does the rack draw?"]}]
+    waiting = {"status": "awaiting_answers", "requested_at": "2026-11-17T10:00:00+00:00", "questions": asks}
+    (jobs_dir / "aaaaaaaaaaaa.json").write_text(json.dumps({**waiting, "ticket": "aaaaaaaaaaaa", "query": "Rack?",
+                                                             "submitted_by": "Owner"}))
+    (jobs_dir / "bbbbbbbbbbbb.json").write_text(json.dumps({**waiting, "ticket": "bbbbbbbbbbbb", "query": "Desktop?"}))
+    for ticket in ("aaaaaaaaaaaa", "bbbbbbbbbbbb"):
+        (jobs_dir / f"{ticket}.alive").touch()
+    assert client.post("/phone/v1/proposals/aaaaaaaaaaaa/answer", json={"answer": "150 W"}).status_code == 401
+    _sign_in(client)
+    listed = client.get("/phone/v1/proposals").json()["proposals"]
+    assert listed[0]["voter_questions"] == [{"agent": "AETERNUM", "asks": ["What power does the rack draw?"]}]
+    # The owner's desktop ticket is not answerable from the phone.
+    assert client.post("/phone/v1/proposals/bbbbbbbbbbbb/answer", json={"answer": "150 W"}).status_code == 404
+    assert client.post("/phone/v1/proposals/aaaaaaaaaaaa/answer", json={"answer": ""}).status_code == 409
+    assert client.post("/phone/v1/proposals/aaaaaaaaaaaa/answer", json={"answer": "150 W"}).json()["status"] == "answered"
+    assert json.loads((jobs_dir / "aaaaaaaaaaaa.json").read_text())["answer"] == "150 W"
+    assert client.post("/phone/v1/proposals/aaaaaaaaaaaa/answer", json={"stop": True}).status_code == 409  # already answered
 
 
 def test_sign_out_expiry_and_removed_profiles_end_access(phone) -> None:

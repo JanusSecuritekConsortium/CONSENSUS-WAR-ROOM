@@ -1,5 +1,21 @@
 # Changelog
 
+## 9.18.0 - A stuck vote asks the owner the voters' questions (2026-11-17)
+
+### Added
+- Owner decision: test vote 6 reran three times without anyone changing their vote, because no new
+  information arrived. Now, before each rerun, the tribunal collects the open questions from the
+  voters who abstained (their change condition and conditions) and asks the owner. The answer
+  reaches every voter in the next round as citable evidence (`owner_answer_1`, ...). If the owner
+  stops the questions or gives no answer within 24 hours, the vote ends with its current result
+  instead of repeating the same round.
+- Voters are told to write what would settle their vote as a short question the owner can answer.
+- Tickets (MCP and phone page) show the new state `awaiting_answers` with the questions per voter.
+  The new MCP tool `tribunal_answer` takes the owner's answer or `stop`; the phone page has an answer
+  box for its own tickets. While a vote waits, no second vote starts, but the graphics card counts as
+  free for other local work.
+- The decision record keeps the owner's answers (`owner_answers`). Guest votes never ask the owner.
+
 ## 9.17.1 - A slow model load no longer marks a running vote as failed (2026-11-17)
 
 ### Fixed

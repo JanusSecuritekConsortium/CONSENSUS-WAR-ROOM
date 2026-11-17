@@ -26,6 +26,12 @@ MAX_QUERY_CHARS = 4000
 STALE_AFTER = timedelta(hours=2)  # a job with no heartbeat this long after it was requested never ran
 HEARTBEAT_EVERY = 60  # seconds; a running deliberation touches <ticket>.alive this often
 HEARTBEAT_STALE = timedelta(minutes=5)  # a heartbeat older than this means the run died without saying so
+ANSWER_WAIT = timedelta(hours=24)  # how long a vote waits for the owner's answers before it ends with its result
+ANSWER_POLL = 15  # seconds between looks at the record while waiting for answers
+MAX_ANSWER_CHARS = 4000
+# A job in any of these states holds the tribunal: no second deliberation starts.
+ACTIVE = ("queued", "running", "awaiting_answers", "answered", "declined")
+WAITING = ("awaiting_answers", "answered", "declined")  # paused for the owner: the models are idle
 
 
 def _now() -> datetime:
@@ -84,14 +90,16 @@ def _running(jobs_dir: Path) -> Optional[Dict[str, Any]]:
             record = _read(path)
         except (OSError, ValueError):
             continue
-        if record.get("status") in ("queued", "running") and not _stale(record, path):
+        if record.get("status") in ACTIVE and not _stale(record, path):
             return record
     return None
 
 
 def deliberation_running(jobs_dir: Path = JOBS_DIR) -> bool:
-    """True while a tribunal deliberation holds the GPU; other local model work should wait for it."""
-    return _running(jobs_dir) is not None
+    """True while a tribunal deliberation holds the GPU; other local model work should wait for it.
+    A vote paused for the owner's answers leaves the GPU free."""
+    record = _running(jobs_dir)
+    return record is not None and record.get("status") not in WAITING
 
 
 def _free_local_ai() -> list:
@@ -199,6 +207,10 @@ def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_li
     if busy:
         if guest:
             return {"status": "busy", "detail": "The tribunal is busy with another deliberation; try again later."}
+        if busy.get("status") == "awaiting_answers":
+            return {"status": "busy", "ticket": busy["ticket"], "questions": busy.get("questions", []),
+                    "detail": "The tribunal is waiting for the owner's answers to its voters' questions on this ticket; "
+                              "answer them (or stop the questions) with tribunal_answer first."}
         return {"status": "busy", "ticket": busy["ticket"],
                 "detail": "Another deliberation is running; ask again when tribunal_verdict reports it finished."}
     if not guest:
@@ -249,14 +261,76 @@ def status(ticket: str, *, jobs_dir: Path = JOBS_DIR) -> Dict[str, Any]:
     if not path.exists():
         raise ValueError("Unknown ticket")
     record = _read(path)
-    if record.get("status") in ("queued", "running") and _stale(record, path):
+    if record.get("status") in ACTIVE and _stale(record, path):
         record.update(status="failed", error="The deliberation stopped without reporting a result.")
-    elif record.get("status") == "running" and record.get("started_at"):
+    elif record.get("status") in ("running", *WAITING) and record.get("started_at"):
         record["elapsed_minutes"] = int((_now() - datetime.fromisoformat(record["started_at"])).total_seconds() // 60)
+    if record.get("status") == "awaiting_answers":
+        record["detail"] = ("The voters could not agree and are waiting for the owner's answers to their questions. "
+                            "Answer with tribunal_answer; the vote then reruns with the answers. Without an answer "
+                            f"it ends with its current result after {int(ANSWER_WAIT.total_seconds() // 3600)} hours.")
     return record
 
 
-def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable[[str], Any]] = None) -> Dict[str, Any]:
+def answer(ticket: str, text: str = "", *, stop: bool = False, jobs_dir: Path = JOBS_DIR) -> Dict[str, Any]:
+    """Give the owner's answer to the voters' questions on a paused vote, or stop asking (the vote then
+    ends with its current result). Only a vote waiting for answers accepts one."""
+    path = _path(ticket, jobs_dir)
+    if not path.exists():
+        raise ValueError("Unknown ticket")
+    record = status(ticket, jobs_dir=jobs_dir)
+    if record.get("status") != "awaiting_answers":
+        raise ValueError("This ticket is not waiting for answers")
+    text = " ".join(str(text or "").split())
+    if not stop and not text:
+        raise ValueError("An answer is required (or stop the questions)")
+    if len(text) > MAX_ANSWER_CHARS:
+        raise ValueError(f"Answers are limited to {MAX_ANSWER_CHARS} characters")
+    stored = _read(path)
+    stored.update(status="declined" if stop else "answered", answer="" if stop else text,
+                  answer_given_at=_now().isoformat(timespec="seconds"))
+    _write(path, stored)
+    return {"ticket": ticket, "status": stored["status"],
+            "detail": "The vote ends with its current result." if stop else "Answer received; the vote reruns with it."}
+
+
+def _asker(path: Path, record: Dict[str, Any], *, wait: timedelta = ANSWER_WAIT, poll: float = ANSWER_POLL,
+           sleep: Callable[[float], None] = None) -> Callable[[list], Optional[str]]:
+    """ask_owner for a job: pause the record with the voters' questions and wait for answer()."""
+    import time
+    pause = sleep or time.sleep
+
+    def ask(questions: list) -> Optional[str]:
+        record.update(status="awaiting_answers", questions=questions, asked_at=_now().isoformat(timespec="seconds"))
+        record.pop("answer", None)
+        _write(path, record)
+        deadline = _now() + wait
+        reply: Optional[str] = None
+        outcome = "unanswered"
+        while _now() < deadline:
+            pause(poll)
+            try:
+                current = _read(path)
+            except (OSError, ValueError):
+                continue
+            if current.get("status") == "answered":
+                reply, outcome = str(current.get("answer") or ""), "answered"
+                break
+            if current.get("status") == "declined":
+                outcome = "stopped"
+                break
+        record.setdefault("owner_rounds", []).append({
+            "questions": questions, "asked_at": record.get("asked_at"), "outcome": outcome,
+            "answer": reply or "", "answered_at": _now().isoformat(timespec="seconds")})
+        for key in ("questions", "asked_at", "answer", "answer_given_at"):
+            record.pop(key, None)
+        record["status"] = "running"
+        _write(path, record)
+        return reply
+    return ask
+
+
+def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable[..., Any]] = None) -> Dict[str, Any]:
     path = _path(ticket, jobs_dir)
     record = _read(path)
     if record.get("status") != "queued":
@@ -290,8 +364,9 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
             # This worker runs one deliberation; its decision record carries who asked for it.
             from core import identity
             identity.sign_in(identity.Operator(name=str(record["submitted_by"])))
-        result = deliberate(record["query"]) if deliberate else _deliberate(
-            record["query"], guest=guest, guest_local_only=record.get("guest_local_only"))
+        ask_owner = None if guest else _asker(path, record)
+        result = deliberate(record["query"], ask_owner=ask_owner) if deliberate else _deliberate(
+            record["query"], guest=guest, guest_local_only=record.get("guest_local_only"), ask_owner=ask_owner)
         record.update(status="finished", result=summary(result_to_dict(result)))
     except Exception as error:  # the record is the only place a windowless run can report
         record.update(status="failed", error=str(error)[:500])
@@ -319,7 +394,8 @@ def guest_daily_count(jobs_dir: Path = JOBS_DIR, *, now: Optional[datetime] = No
     return count
 
 
-def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[bool] = None):
+def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[bool] = None,
+                ask_owner: Optional[Callable[[list], Optional[str]]] = None):
     """The same tribunal the command line builds from the runtime config.
 
     A guest deliberation uses local models only unless CONSENSUS_GUEST_ONLINE=1, so another system's
@@ -344,7 +420,7 @@ def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[b
         monolith_domain_map=config.monolith_domain_map,
     )
     return Tribunal(nodes, MstyRuntime(config), rules=rules, theme_key=config.theme).deliberate(
-        query, sequential=config.sequential, guest=guest)
+        query, sequential=config.sequential, guest=guest, ask_owner=ask_owner)
 
 
 def main(argv=None) -> int:

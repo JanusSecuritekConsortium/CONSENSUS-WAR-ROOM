@@ -49,6 +49,11 @@ class Proposal(BaseModel):
     question: str = Field(..., min_length=1, max_length=MAX_QUESTION_CHARS)
 
 
+class Answer(BaseModel):
+    answer: str = Field("", max_length=tribunal_job.MAX_ANSWER_CHARS)
+    stop: bool = False
+
+
 class Sessions:
     """Who is signed in on which phone. Kept in memory: closing the page server signs everyone out."""
 
@@ -84,6 +89,9 @@ def _view(record: Dict[str, Any]) -> Dict[str, Any]:
     view = {key: record[key] for key in ("ticket", "status", "requested_at", "started_at", "finished_at",
                                          "elapsed_minutes", "error", "submitted_by") if key in record}
     view["question"] = record.get("query", "")
+    if record.get("status") == "awaiting_answers":
+        view["voter_questions"] = [{"agent": str(item.get("agent", "")), "asks": [str(ask) for ask in item.get("asks", [])]}
+                                   for item in record.get("questions", []) if isinstance(item, dict)]
     result = record.get("result")
     if isinstance(result, dict):
         view["result"] = {key: result.get(key) for key in ("verdict", "confidence", "reason", "next_steps")}
@@ -108,6 +116,7 @@ def recent_phone_tickets(jobs_dir: Path, status: Callable[..., Dict[str, Any]], 
 def create_app(*, jobs_dir: Path = tribunal_job.JOBS_DIR,
                start: Callable[..., Dict[str, Any]] = tribunal_job.start,
                status: Callable[..., Dict[str, Any]] = tribunal_job.status,
+               answer: Callable[..., Dict[str, Any]] = tribunal_job.answer,
                sleep: Callable[[float], None] = time.sleep,
                sessions: Optional[Sessions] = None):
     from fastapi import Cookie, Depends, FastAPI, HTTPException
@@ -182,6 +191,20 @@ def create_app(*, jobs_dir: Path = tribunal_job.JOBS_DIR,
     @app.get("/phone/v1/proposals")
     def proposals(name: str = Depends(signed_in)) -> Dict[str, Any]:
         return {"proposals": recent_phone_tickets(jobs_dir, status)}
+
+    @app.post("/phone/v1/proposals/{ticket}/answer")
+    def answer_questions(ticket: str, body: Answer, name: str = Depends(signed_in)) -> Dict[str, Any]:
+        # Only tickets this page lists can be answered here; the owner's desktop and MCP tickets cannot.
+        try:
+            record = status(ticket, jobs_dir=jobs_dir)
+        except ValueError as error:
+            raise HTTPException(status_code=404, detail="Unknown ticket.") from error
+        if not record.get("submitted_by") or record.get("guest"):
+            raise HTTPException(status_code=404, detail="Unknown ticket.")
+        try:
+            return answer(ticket, body.answer, stop=body.stop, jobs_dir=jobs_dir)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     return app
 

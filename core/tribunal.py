@@ -39,8 +39,12 @@ class Tribunal:
         self.consensus_engine = ConsensusEngine(self.rules, self.theme_key)
         self.voice_announcer = voice_announcer
 
-    def deliberate(self, query: str, sequential: bool = False, *, guest: bool = False) -> TribunalResult:
+    def deliberate(self, query: str, sequential: bool = False, *, guest: bool = False,
+                   ask_owner: Optional[Callable[[list], Optional[str]]] = None) -> TribunalResult:
         """Deliberate on a proposal.
+
+        ask_owner receives the voters' open questions before each rerun and returns the owner's answer,
+        or None to end the reruns. A guest deliberation never asks the owner.
 
         guest=True is for questions from another system: no personal vault brief, prior decisions or
         references reach the voters, and nothing is saved to history, session memory or decision traces,
@@ -65,7 +69,8 @@ class Tribunal:
         rules = self.consensus_engine.rules
         votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context,
                                              include_enrichment=not guest, consensus_check=rules.consensus_reached,
-                                             extra_rounds=rules.consensus_reruns)
+                                             extra_rounds=rules.consensus_reruns,
+                                             ask_owner=None if guest else ask_owner)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
         self.orchestrator.attach_audit(result)
         if not guest:

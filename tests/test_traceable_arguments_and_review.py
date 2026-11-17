@@ -264,7 +264,7 @@ def test_uncertain_voters_abstain_and_review_stays_for_vital_matters():
     from core.prompting import assembler
     text = open(assembler.__file__, encoding="utf-8").read()
     assert "If you are uncertain, vote ABSTAIN" in text
-    assert "the tribunal reruns the vote until a consensus forms" in text
+    assert "before the tribunal reruns the vote, the owner is asked these questions" in text
     assert "REVIEW_REQUIRED true only for critical, vital matters" in text
 
 
@@ -312,6 +312,67 @@ def test_reruns_stop_at_the_cap_and_a_consensus_needs_no_rerun():
     runtime = _ScriptedRuntime(agree_from=1)
     _deliberate(runtime, reruns=3)
     assert max(runtime.rounds_seen) == 3
+
+
+class _InformedRuntime(_ScriptedRuntime):
+    """The abstainers approve once the owner's answer is in their context."""
+
+    def __init__(self):
+        super().__init__(agree_from=99)
+        self.answers_seen = []
+
+    def send_to_agent(self, agent_id, prompt, context):
+        self.answers_seen.append(list(context.get("owner_answers", [])))
+        if context.get("owner_answers"):
+            assert "owner_answer_1" in context["evidence_source_ids"]
+            self.agree_from = context["deliberation"]["round"]
+        return super().send_to_agent(agent_id, prompt, context)
+
+
+def _deliberate_asking(runtime, reply, reruns=3):
+    rules = ConsensusRules(consensus_reruns=reruns)
+    orchestrator = VotingOrchestrator(DEFAULT_NODES, runtime)
+    asked = []
+
+    def ask_owner(questions):
+        asked.append(questions)
+        return reply
+    votes = orchestrator.cast_votes("Buy a rack", "s1", "military", include_enrichment=False,
+                                    consensus_check=rules.consensus_reached, extra_rounds=rules.consensus_reruns,
+                                    ask_owner=ask_owner)
+    return orchestrator, votes, asked
+
+
+def test_before_a_rerun_the_owner_answers_the_voters_questions():
+    runtime = _InformedRuntime()
+    orchestrator, votes, asked = _deliberate_asking(runtime, "The rack holds two mini PCs, 150 W in total.")
+    assert len(asked) == 1  # asked once, after round 3; the answer settled it
+    assert {item["agent"] for item in asked[0]} == {AETERNUM, RATIONALIS}  # only the abstainers
+    assert all(item["asks"] for item in asked[0])
+    assert max(runtime.rounds_seen) == 4
+    assert all(vote.vote == VoteValue.APPROVE for vote in votes.values())
+    assert orchestrator.owner_answers[0]["source"] == "owner_answer_1"
+    assert orchestrator.owner_answers[0]["text"] == "The rack holds two mini PCs, 150 W in total."
+    assert not any(runtime.answers_seen[:9]) and all(runtime.answers_seen[9:])  # only the rerun sees it
+
+
+def test_no_answer_ends_the_reruns_instead_of_repeating_the_round():
+    runtime = _ScriptedRuntime(agree_from=99)
+    orchestrator, votes, asked = _deliberate_asking(runtime, None)
+    assert len(asked) == 1
+    assert max(runtime.rounds_seen) == 3
+    assert orchestrator.owner_answers == []
+    assert orchestrator.complete
+
+
+def test_a_rerun_prompt_points_voters_to_the_owners_answers():
+    from core.llm.prompts import build_node_prompt
+    answers = [{"source": "owner_answer_1", "text": "150 W in total.", "after_round": 3, "questions": []}]
+    prompt = build_node_prompt(DEFAULT_NODES[BELLATOR], "Buy a rack",
+                               {"owner_answers": answers,
+                                "deliberation": {"round": 4, "phase": "revision", "rerun": 1, "previous_rounds": []}})
+    assert "The owner has answered the voters' open questions" in prompt
+    assert "150 W in total." in prompt
 
 
 def test_a_rerun_round_tells_voters_why():

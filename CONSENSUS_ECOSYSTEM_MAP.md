@@ -61,7 +61,7 @@ CONSENSUS — ecosystem / umbrella
 |   +-- RATIONALIS + AETERNUM + BELLATOR: deliberation and votes
 |   +-- ARBITER: deterministic decision rules and audit
 |   +-- Flet desktop / CLI / local API / Msty integration surfaces
-|   +-- CONSENSUS MCP: tribunal_deliberate and tribunal_verdict (ticketed, one run at a time),
+|   +-- CONSENSUS MCP: tribunal_deliberate, tribunal_verdict and tribunal_answer (ticketed, one run at a time; a stuck vote asks the owner),
 |   |     tribunal_track_record and tribunal_record_outcome
 |   +-- voter_check (CLI): does each voter's model load and answer on this machine
 |   +-- voice_check (CLI): are the ARBITER and AURELIUS voice files present (also in the health check)

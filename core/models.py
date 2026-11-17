@@ -167,6 +167,7 @@ class TribunalResult:
     deliberation_transcript: List[Dict[str, Any]] = field(default_factory=list)
     deliberation_complete: bool = False
     simulation: bool = False
+    owner_answers: List[Dict[str, Any]] = field(default_factory=list)  # answers to the voters' questions before reruns
 
 
 class LLMBackend(Protocol):

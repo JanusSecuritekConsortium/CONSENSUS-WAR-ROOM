@@ -17,7 +17,7 @@ from integrations.mcp import consensus_mcp_server as server
 from integrations.mcp import tribunal_job as job
 
 
-def result(query):
+def result(query, **_):
     vote = Vote(node_key="BELLATOR", role="security", vote=VoteValue.DENY, confidence=0.8,
                 reasoning="No offsite copy.", raw_response="RAW MODEL OUTPUT", model="mixtral", response_time=4.0)
     return TribunalResult(query=query, verdict=FinalVerdict.DENY, confidence=0.8, reason="Security risk.",
@@ -117,7 +117,7 @@ class TribunalJobTest(unittest.TestCase):
     def test_failures_and_stale_runs_are_reported(self):
         ticket = self.start()["ticket"]
 
-        def broken(query):
+        def broken(query, **_):
             raise RuntimeError("model server offline")
         self.assertEqual(job.run(ticket, jobs_dir=self.jobs, deliberate=broken)["error"], "model server offline")
         old = self.start("Old question?")["ticket"]
@@ -168,7 +168,7 @@ class TribunalJobTest(unittest.TestCase):
         ticket = self.start()["ticket"]
         seen = {}
 
-        def look(query):
+        def look(query, **_):
             seen.update(json.loads((self.jobs / f"{ticket}.json").read_text()))
             return result(query)
         job.run(ticket, jobs_dir=self.jobs, deliberate=look)
@@ -222,6 +222,68 @@ class TribunalJobTest(unittest.TestCase):
             server.call_tool("tribunal_deliberate", {"question": "q", "model": "x"})
         with self.assertRaises(ValueError):
             server.call_tool("tribunal_verdict", {})
+        self.assertIn("tribunal_answer", names)
+        with self.assertRaises(ValueError):
+            server.call_tool("tribunal_answer", {"ticket": "abc", "extra": 1})
+
+    def _paused_run(self, owner):
+        """Run a job whose vote asks the owner once; `owner(ticket)` acts while the vote waits."""
+        ticket = self.start()["ticket"]
+        path = self.jobs / f"{ticket}.json"
+        seen = {}
+
+        def deliberate(query, ask_owner=None):
+            seen["reply"] = ask_owner([{"agent": "AETERNUM", "vote": "ABSTAIN", "asks": ["What power does it draw?"]}])
+            return result(query)
+
+        def sleep(_seconds):
+            if "paused" not in seen:
+                seen["paused"] = job.status(ticket, jobs_dir=self.jobs)
+                seen["busy"] = self.start("Another question?")
+                seen["gpu_busy"] = job.deliberation_running(self.jobs)
+                owner(ticket)
+        from unittest import mock
+        real = job._asker
+        with mock.patch.object(job, "_asker", lambda p, r: real(p, r, poll=0, sleep=sleep)):
+            record = job.run(ticket, jobs_dir=self.jobs, deliberate=deliberate)
+        return record, seen, path
+
+    def test_a_paused_vote_shows_the_questions_and_reruns_with_the_answer(self):
+        record, seen, _ = self._paused_run(lambda ticket: job.answer(ticket, " 150 W  in total ", jobs_dir=self.jobs))
+        self.assertEqual(seen["paused"]["status"], "awaiting_answers")
+        self.assertEqual(seen["paused"]["questions"][0]["asks"], ["What power does it draw?"])
+        self.assertEqual((seen["busy"]["status"], seen["busy"]["questions"][0]["agent"]), ("busy", "AETERNUM"))
+        self.assertFalse(seen["gpu_busy"])  # the models are idle while it waits
+        self.assertEqual(seen["reply"], "150 W in total")
+        self.assertEqual(record["status"], "finished")
+        self.assertEqual(record["owner_rounds"][0]["outcome"], "answered")
+        self.assertNotIn("questions", record)
+
+    def test_stopping_the_questions_ends_the_vote_with_its_result(self):
+        record, seen, _ = self._paused_run(lambda ticket: job.answer(ticket, stop=True, jobs_dir=self.jobs))
+        self.assertIsNone(seen["reply"])
+        self.assertEqual((record["status"], record["owner_rounds"][0]["outcome"]), ("finished", "stopped"))
+
+    def test_an_unanswered_vote_gives_up_after_the_wait(self):
+        ticket = self.start()["ticket"]
+        path = self.jobs / f"{ticket}.json"
+        record = job._read(path)
+        ask = job._asker(path, record, wait=timedelta(0), poll=0, sleep=lambda _s: None)
+        self.assertIsNone(ask([{"agent": "RATIONALIS", "vote": "ABSTAIN", "asks": ["Which workloads?"]}]))
+        self.assertEqual(job._read(path)["owner_rounds"][0]["outcome"], "unanswered")
+
+    def test_only_a_waiting_vote_takes_an_answer(self):
+        ticket = self.start()["ticket"]
+        with self.assertRaises(ValueError):
+            job.answer(ticket, "Too early", jobs_dir=self.jobs)
+        path = self.jobs / f"{ticket}.json"
+        record = job._read(path)
+        record.update(status="awaiting_answers", questions=[])
+        path.write_text(json.dumps(record))
+        path.with_suffix(".alive").touch()
+        with self.assertRaises(ValueError):
+            job.answer(ticket, "   ", jobs_dir=self.jobs)
+        self.assertEqual(job.answer(ticket, "Yes", jobs_dir=self.jobs)["status"], "answered")
 
 
 if __name__ == "__main__":

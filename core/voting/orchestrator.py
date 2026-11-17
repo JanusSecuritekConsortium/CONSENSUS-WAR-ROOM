@@ -20,6 +20,25 @@ from core.voting.evidence import supplied_passages
 
 
 DELIBERATION_PHASES = ("assessment", "critique", "revision")
+MAX_OWNER_ANSWER_CHARS = 4000
+MAX_QUESTIONS_PER_VOTER = 3
+
+
+def owner_questions(votes: Dict[str, Vote]) -> list[Dict[str, Any]]:
+    """What each undecided voter says would settle its vote: its change condition and conditions.
+
+    Abstainers are asked first; when nobody abstained (a split or low-confidence vote) every voter is."""
+    undecided = [vote for vote in votes.values() if vote.vote == VoteValue.ABSTAIN] or list(votes.values())
+    questions = []
+    for vote in undecided:
+        asks: list[str] = []
+        for text in [(vote.argument or {}).get("change_condition", ""), *vote.conditions]:
+            text = " ".join(str(text or "").split())[:240]
+            if text and text.lower() not in {item.lower() for item in asks}:
+                asks.append(text)
+        if asks:
+            questions.append({"agent": vote.node_key, "vote": vote.vote.value, "asks": asks[:MAX_QUESTIONS_PER_VOTER]})
+    return questions
 
 
 def round_order(agents, number):
@@ -44,6 +63,7 @@ class VotingOrchestrator:
         self.runtime = runtime
         self.transcript: list[Dict[str, Any]] = []
         self.complete = False
+        self.owner_answers: list[Dict[str, Any]] = []
         self.simulation = getattr(getattr(runtime, "config", None), "backend", None) == "mock"
 
     def cast_votes(
@@ -53,9 +73,12 @@ class VotingOrchestrator:
         *, assessment_only: bool = False, agent_ids: Optional[tuple[str, ...]] = None,
         include_enrichment: bool = True,
         consensus_check: Optional[Callable[[Dict[str, Vote]], bool]] = None, extra_rounds: int = 0,
+        ask_owner: Optional[Callable[[list], Optional[str]]] = None,
     ) -> Dict[str, Vote]:
         """Run the rounds. With `consensus_check`, a completed deliberation without consensus gets up to
-        `extra_rounds` further revision rounds (owner rule: uncertain voters abstain and the vote reruns)."""
+        `extra_rounds` further revision rounds (owner rule: uncertain voters abstain and the vote reruns).
+        With `ask_owner`, each rerun first sends the voters' open questions to the owner; the answer becomes
+        citable evidence (owner_answers, source owner_answer_N), and no answer ends the reruns."""
         # Kept for API compatibility. All submissions now use the same round barriers.
         self.transcript = []
         self.complete = False
@@ -85,6 +108,7 @@ class VotingOrchestrator:
         } if include_enrichment else {}
         votes: Dict[str, Vote] = {}
         previous_rounds: list[Dict[str, Any]] = []
+        self.owner_answers = []
 
         def schedule():
             yield from phases
@@ -93,6 +117,21 @@ class VotingOrchestrator:
             for _ in range(max(0, extra_rounds)):
                 if consensus_check(votes):
                     return
+                if ask_owner is not None:
+                    # Owner rule (17 Nov 2026): a rerun without new information repeats the round (test vote 6),
+                    # so the voters' open questions go to the owner first; no answer ends the reruns.
+                    questions = owner_questions(votes)
+                    answer = " ".join(str(ask_owner(questions) or "").split()) if questions else ""
+                    if questions and not answer:
+                        log_event("owner_questions_unanswered", {"session_id": session_id, "questions": len(questions)})
+                        return
+                    if answer:
+                        self.owner_answers.append({
+                            "source": f"owner_answer_{len(self.owner_answers) + 1}", "text": answer[:MAX_OWNER_ANSWER_CHARS],
+                            "after_round": len(previous_rounds), "questions": deepcopy(questions)})
+                        base_context["owner_answers"] = deepcopy(self.owner_answers)
+                        log_event("owner_answered", {"session_id": session_id, "questions": len(questions),
+                                                     "answer_chars": len(answer)})
                 yield "revision"
 
         for number, phase in enumerate(schedule(), 1):
@@ -245,6 +284,7 @@ class VotingOrchestrator:
         result.deliberation_transcript = deepcopy(self.transcript)
         result.deliberation_complete = self.complete
         result.simulation = self.simulation
+        result.owner_answers = deepcopy(self.owner_answers)
         if any(turn.get("model_fallback") for turn in self.transcript):
             result.review_triggers.append("real_model_fallback")
         final_models = [vote.model for vote in result.votes.values()]

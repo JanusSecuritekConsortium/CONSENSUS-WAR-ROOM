@@ -81,14 +81,15 @@ const api = async (path, options = {}) => {
   return {ok: response.ok, status: response.status, data};
 };
 const note = (id, text, kind) => { const el = $(id); el.textContent = text || ''; el.className = 'note ' + (kind || ''); };
-const STATUS = {queued: 'Waiting to start', running: 'Deliberating', finished: 'Finished', failed: 'Failed'};
+const STATUS = {queued: 'Waiting to start', running: 'Deliberating', awaiting_answers: 'Waiting for your answers',
+                answered: 'Answer received', declined: 'Finishing', finished: 'Finished', failed: 'Failed'};
 
 function ticketView(item) {
   const box = document.createElement('div'); box.className = 'ticket';
   const add = (cls, text) => { const el = document.createElement('div'); el.className = cls; el.textContent = text; box.appendChild(el); return el; };
   add('q', item.question);
   let meta = (STATUS[item.status] || item.status) + ' · ' + (item.submitted_by || 'unknown') + ' · ' + (item.requested_at || '').replace('T', ' ').slice(0, 16);
-  if (item.status === 'running' && item.elapsed_minutes != null) meta += ' · ' + item.elapsed_minutes + ' min';
+  if ((item.status === 'running' || item.status === 'awaiting_answers') && item.elapsed_minutes != null) meta += ' · ' + item.elapsed_minutes + ' min';
   add('meta', meta);
   if (item.result) {
     const confidence = item.result.confidence != null ? ' (' + Math.round(item.result.confidence * 100) + '%)' : '';
@@ -96,7 +97,30 @@ function ticketView(item) {
     if (item.result.reason) add('reason', item.result.reason);
   }
   if (item.error) add('reason bad', item.error);
+  if (item.voter_questions) box.appendChild(answerForm(item));
   return box;
+}
+
+function answerForm(item) {
+  const form = document.createElement('div'); form.className = 'asks';
+  const add = (cls, text) => { const el = document.createElement('div'); el.className = cls; el.textContent = text; form.appendChild(el); };
+  add('verdict', 'The voters could not agree. Their questions for you:');
+  item.voter_questions.forEach(entry => entry.asks.forEach(ask => add('reason', entry.agent + ': ' + ask)));
+  const text = document.createElement('textarea'); text.maxLength = 4000; text.placeholder = 'Your answers';
+  const send = document.createElement('button'); send.textContent = 'Send answers and rerun';
+  const stop = document.createElement('button'); stop.className = 'quiet'; stop.textContent = 'Do not answer: finish the vote';
+  const status = document.createElement('div'); status.className = 'note';
+  const reply = async body => {
+    send.disabled = stop.disabled = true;
+    const {ok, status: code, data} = await api('/proposals/' + item.ticket + '/answer', {method: 'POST', body: JSON.stringify(body)});
+    if (code === 401) return showLogin();
+    if (ok) return loadTickets();
+    send.disabled = stop.disabled = false; status.textContent = data.detail || 'Could not send.'; status.className = 'note bad';
+  };
+  send.onclick = () => text.value.trim() ? reply({answer: text.value.trim()}) : (status.textContent = 'Write an answer first.');
+  stop.onclick = () => reply({stop: true});
+  [text, send, stop, status].forEach(el => form.appendChild(el));
+  return form;
 }
 
 async function loadTickets() {
@@ -141,7 +165,9 @@ $('submit').onclick = async () => {
 };
 
 (async () => { const {ok, data} = await api('/me'); ok ? showDesk(data.name) : showLogin(); })();
-setInterval(() => { if (!$('desk').hidden && document.visibilityState === 'visible') loadTickets(); }, 30000);
+// The refresh redraws the list, so it waits while an answer to the voters is being written.
+const writingAnswer = () => [...document.querySelectorAll('.asks textarea')].some(el => el.value.trim() || el === document.activeElement);
+setInterval(() => { if (!$('desk').hidden && document.visibilityState === 'visible' && !writingAnswer()) loadTickets(); }, 30000);
 </script>
 </body>
 </html>
