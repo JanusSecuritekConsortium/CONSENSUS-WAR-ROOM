@@ -67,6 +67,15 @@ def test_known_external_source_is_allowed_but_unprovided_and_peer_sources_are_re
         assert bool(parsed(replace_field(raw, "ARGUMENT", json.dumps(argument)), context).validation_errors) != valid
 
 
+def test_an_answer_wrapped_in_a_code_block_is_read_normally():
+    # Mistral Small 3.2 wraps its whole answer in a json code block; the closing fence broke the last field.
+    fence = "`" * 3
+    clean = parsed(raw_vote())
+    fenced = parsed(fence + "json\n" + raw_vote() + "\n" + fence)
+    assert not fenced.validation_errors
+    assert (fenced.vote, fenced.confidence, fenced.argument) == (clean.vote, clean.confidence, clean.argument)
+
+
 def test_missing_evidence_is_allowed_only_when_quality_is_zero():
     raw = raw_vote()
     argument = parsed(raw).argument

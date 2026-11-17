@@ -32,6 +32,15 @@ def test_extras_go_first_and_the_proposal_and_round_stay(monkeypatch):
     assert context["bellator_context_packet"]["rss_intelligence"]["items"]  # some news still kept
 
 
+def test_the_latest_earlier_round_is_always_kept(monkeypatch):
+    # Round 2 answers round 1: dropping it failed a real vote with "peer round unavailable".
+    monkeypatch.setattr(fit, "char_budget", lambda *a: 10)
+    context = {"deliberation": {"round": 3, "previous_rounds": [{"round": 1, "x": "a" * 500},
+                                                                {"round": 2, "x": "b" * 500}]}}
+    fit.fit_prompt(render, context, 900)
+    assert [r["round"] for r in context["deliberation"]["previous_rounds"]] == [2]
+
+
 def test_personal_brief_is_shortened_last_and_never_below_the_floor(monkeypatch):
     monkeypatch.setattr(fit, "char_budget", lambda *a: 1_000)
     context = {"memory_context": {"second_brain": {"content": "b" * 5_000}}}

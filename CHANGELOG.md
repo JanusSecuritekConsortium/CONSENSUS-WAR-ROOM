@@ -1,5 +1,18 @@
 # Changelog
 
+## 9.15.2 - Mistral's answers are read; round 2 keeps round 1 (2026-11-17)
+
+### Fixed
+- BELLATOR's model, Mistral Small 3.2, wraps its whole answer in a code block. The closing fence was
+  read as part of the last field, so every Mistral answer was rejected ("invalid
+  unresolved_disagreements JSON") and BELLATOR fell back to other makers' models. Fence lines are
+  now ignored; the same real answer now parses cleanly.
+- 9.15.1's trimming could drop the previous round when a later-round prompt was still too long, but
+  later rounds must answer it, so the vote failed ("peer round unavailable"). The latest earlier
+  round is now always kept; older rounds and then the personal brief give way instead.
+- The BELLATOR news store had not been refreshed since June: only a manual tool filled it. A
+  Windows task ("News feeds refresh", every 2 hours) now runs `tools/poll_rss_feeds.py`.
+
 ## 9.15.1 - Long prompts are trimmed instead of failing the vote (2026-11-17)
 
 ### Fixed

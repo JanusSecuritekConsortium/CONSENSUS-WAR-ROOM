@@ -39,6 +39,8 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
         stripped = line.strip()
         if not stripped:
             continue
+        if stripped.startswith("`" * 3):
+            continue  # some models wrap the whole answer in a code block; the fence carries no field
 
         match = re.match(
             r"^(VOTE|RESULT|CONFIDENCE|EVIDENCE_QUALITY|CRITICAL_RISK|RATIONALE|REASONING|RISKS|CONDITIONS|ARGUMENT|PEER_RESPONSES|REVIEW_REQUIRED|REVIEW_REASON|VOTE_CHANGE_REASON|UNRESOLVED_DISAGREEMENTS)\s*:\s*(.*)$",
