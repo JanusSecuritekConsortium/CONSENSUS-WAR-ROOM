@@ -242,6 +242,7 @@ def test_majority_denial_remains_denial_with_review_trigger():
 
 
 def test_argument_failure_advances_to_another_real_model_without_simulation(monkeypatch):
+    monkeypatch.setattr(api, "same_model_maker", lambda first, second: True)  # placeholder names have no maker
     monkeypatch.setattr(api, "health_check", lambda *a, **kw: {"status": "ready", "models": ["preferred", "base"], "base_url": "http://localhost:1"})
     calls = []
     def send(model, *a, **kw):

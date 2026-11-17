@@ -576,13 +576,16 @@ def real_model_candidates(
     ))
     candidates: list[str] = []
     configured = [preferred]
+    same_maker = getattr(config, "backups_same_maker_only", False)
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         configured.extend(config.agent_model_fallbacks.get(agent_id, []))
         configured.append(config.base_model)
     for model in configured:
         if model:
             matched, _ = match_model_alias(model, available)
-            if matched and matched not in candidates:
+            if matched and matched not in candidates and (
+                not candidates or not same_maker or same_model_maker(candidates[0], matched)
+            ):
                 candidates.append(matched)
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         # Prefer conversational models over specialized encoders or routers.
@@ -590,8 +593,47 @@ def real_model_candidates(
             token in model.lower() for token in ("embed", "rerank", "router", "ui-tars")
         ))
         # Never sweep into giant models: loading one fills RAM and jams the PC (maxim 13).
-        candidates.extend(model for model in ordered if model not in candidates and not is_giant_model(model))
+        candidates.extend(
+            model for model in ordered
+            if model not in candidates and not is_giant_model(model)
+            and (not candidates or not same_maker or same_model_maker(candidates[0], model))
+        )
     return candidates
+
+
+# Checked in order: fine-tunes name their builder before the base family (Hermes on Llama is Nous).
+MODEL_MAKERS = (
+    ("Nous Research", ("hermes", "nous")),
+    ("NVIDIA", ("nemotron",)),
+    ("Mistral AI", ("mistral", "mixtral", "codestral", "devstral", "magistral", "ministral", "pixtral")),
+    ("Google", ("gemma", "gemini")),
+    ("Alibaba", ("qwen", "qwq")),
+    ("DeepSeek", ("deepseek",)),
+    ("Meta", ("llama",)),
+    ("Microsoft", ("phi-", "phi3", "phi4")),
+    ("01.AI", ("yi-", "yi:")),
+    ("IBM", ("granite",)),
+    ("Cohere", ("command-r", "aya")),
+    ("OpenAI", ("gpt-oss",)),
+    ("Zhipu AI", ("glm",)),
+    ("Ai2", ("olmo",)),
+)
+
+
+def model_maker(model: str) -> str:
+    """The lab that made a model, judged from its name; '' when unknown."""
+    name = model.lower().rsplit("/", 1)[-1] if "/" in model else model.lower()
+    for text in (name, model.lower()):
+        for maker, keys in MODEL_MAKERS:
+            if any(key in text for key in keys):
+                return maker
+    return ""
+
+
+def same_model_maker(first: str, second: str) -> bool:
+    """True only when both models come from the same known maker."""
+    maker = model_maker(first)
+    return bool(maker) and maker == model_maker(second)
 
 
 GIANT_MODEL_BILLIONS = 40

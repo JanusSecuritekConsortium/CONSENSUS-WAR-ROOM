@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.15.5 - Backups only from the voter's own maker (2026-11-17)
+
+### Changed
+- Owner decision: when a voter's model fails, only a model from the same maker may stand in
+  (Qwen for RATIONALIS, Gemma for AETERNUM, Mistral for BELLATOR, Nous for ARBITER). Makers are
+  read from the model name; a model whose maker is unknown is never used as a backup. If no
+  same-maker model is installed, the voter fails openly instead of borrowing another lab's
+  model. Setting `backups_same_maker_only` (on by default) controls the rule.
+
 ## 9.15.4 - Fair peer quotes; no giant backup models (2026-11-17)
 
 ### Fixed

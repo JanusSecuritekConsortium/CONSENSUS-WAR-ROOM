@@ -18,7 +18,7 @@ The full text, with reasons, is `50 Agents/Consensus Maxims.md` in the local vau
 3. No personal data or secrets in the repository; scan the staged diff.
 4. Code, models and data stay on the portable G: drive.
 5. Real or nothing: failed votes are reported as failed, never simulated.
-6. One model maker per voter.
+6. One model maker per voter; a failing voter's backup must come from the same maker.
 7. CONSENSUS (tribunal) and Aurelius (assistant) are separate layers.
 8. Personal context goes only to local models.
 9. Prove it live: a feature is done when it worked in the real system.

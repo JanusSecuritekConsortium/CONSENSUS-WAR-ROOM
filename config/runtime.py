@@ -55,6 +55,8 @@ class RuntimeConfig:
     real_model_fallback_enabled: bool = True
     base_model: str = "Hermes-3-Llama-3.1-8B"
     agent_model_fallbacks: Dict[str, list[str]] = field(default_factory=dict)
+    # Owner decision 2026-11-17: a failing voter may only be replaced by a model from the same maker.
+    backups_same_maker_only: bool = True
     refresh_model_cache: bool = False
     model_cache_ttl_seconds: int = 120
     # A cold 33B model loads from disk for minutes before its first token, so local calls get a long limit.

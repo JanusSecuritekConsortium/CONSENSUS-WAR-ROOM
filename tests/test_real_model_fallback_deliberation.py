@@ -36,6 +36,31 @@ def provider(monkeypatch, models):
     })
 
 
+REAL_SAME_MAKER = api.same_model_maker
+
+
+@pytest.fixture(autouse=True)
+def any_maker_for_placeholder_names(monkeypatch):
+    # These tests use placeholder names with no maker; the same-maker rule has its own test below.
+    monkeypatch.setattr(api, "same_model_maker", lambda first, second: True)
+
+
+def test_backups_come_only_from_the_voters_own_maker(monkeypatch):
+    monkeypatch.setattr(api, "same_model_maker", REAL_SAME_MAKER)
+    installed = ["unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf", "NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf",
+                 "Aurelius-Qwen3.5-9B-abliterated.Q5_K_M.gguf", "unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf",
+                 "gemma-3-12b-it-Q3_K_L.gguf", "unsloth/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf", "ui-tars-1.5-7b-q4_k_m.gguf"]
+    config = RuntimeConfig(base_model="Hermes-3-Llama-3.1-8B")
+    candidates = lambda preferred: api.real_model_candidates(BELLATOR, preferred, installed, config)
+    assert candidates("unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf") == ["unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"]
+    assert candidates("unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf") == ["unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf", "Aurelius-Qwen3.5-9B-abliterated.Q5_K_M.gguf"]
+    assert candidates("unsloth/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf") == ["unsloth/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf", "gemma-3-12b-it-Q3_K_L.gguf"]
+    assert candidates("NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf") == ["NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf"]
+    assert api.model_maker("ui-tars-1.5-7b-q4_k_m.gguf") == ""
+    config.backups_same_maker_only = False
+    assert len(candidates("unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf")) == len(installed)
+
+
 def test_candidate_priority_deduplication_aliases_and_strict_mode():
     models = ["other", "base:latest", "role:latest", "preferred:latest", "mock", "role:latest"]
     config = RuntimeConfig(base_model="base", agent_model_fallbacks={BELLATOR: ["absent", "role", "base"]})
