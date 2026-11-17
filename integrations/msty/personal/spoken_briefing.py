@@ -49,8 +49,8 @@ FINE_PRINT = (
     'No se detectaron solapamientos entre las citas de este recordatorio.',
     'No overlaps detected between events with known start and end times.',
     'No se detectaron solapamientos entre eventos con horas de inicio y fin conocidas.',
-    'Events without an end time, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
-    'Los eventos sin hora de fin, de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.',
+    'Events without an end time, reminders of five minutes or less, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
+    'Los eventos sin hora de fin, los recordatorios de cinco minutos o menos, los de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.',
     'Calendar source may lag updates or have limited coverage.',
     'La fuente del calendario puede tardar en actualizarse o tener cobertura limitada.',
 )

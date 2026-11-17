@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.14.3 - Quieter morning briefing (2026-11-17)
+
+### Fixed
+- A reminder of five minutes or less (such as a daily pill reminder) no longer counts as a
+  schedule clash. It is still listed; it just marks a moment, not busy time. Three false overlap
+  warnings came from one such reminder in a single briefing.
+- An account whose setup was never finished (for example Outlook without a Microsoft sign-in)
+  now shows as "not configured" instead of a daily "Unavailable" warning. Real outages of
+  finished accounts are still reported.
+- The Yi 34B and DeepSeek Coder 33B model files were removed from the drive (37 GB freed);
+  nothing used them.
+
 ## 9.14.2 - AETERNUM runs on Gemma 4 (2026-11-16)
 
 ### Changed

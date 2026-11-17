@@ -60,6 +60,10 @@ def event_title(event):
     return title
 
 
+# A pill or call reminder a few minutes long marks a moment, not busy time: it never clashes.
+REMINDER_LENGTH = timedelta(minutes=5)
+
+
 def agenda(results, *, excluded_titles=(), include_locations=False, lang='en'):
     """Render an agenda; reminder exclusions hide titles, not occupied time."""
     if not isinstance(excluded_titles, (list, tuple, set)):
@@ -117,14 +121,14 @@ def agenda(results, *, excluded_titles=(), include_locations=False, lang='en'):
                             'No se obtuvieron eventos para este período; revisa la cobertura de las fuentes.'))
     conflicts = []
     for i, (start, end, source, event) in enumerate(events):
-        if not end or end <= start or event.get('all_day') or event.get('transparent'):
+        if not end or end - start <= REMINDER_LENGTH or event.get('all_day') or event.get('transparent'):
             continue
         for other_start, other_end, other_source, other in events[i+1:]:
             if other_start >= end:
                 break
             if omitted(event) and omitted(other):
                 continue
-            if not other_end or other_end <= other_start or other.get('all_day') or other.get('transparent'):
+            if not other_end or other_end - other_start <= REMINDER_LENGTH or other.get('all_day') or other.get('transparent'):
                 continue
             if start < other_end and other_start < end:
                 conflicts.append('- '+days[other_start.weekday()].capitalize()+' '+other_start.strftime('%d/%m')+' '+
@@ -138,6 +142,6 @@ def agenda(results, *, excluded_titles=(), include_locations=False, lang='en'):
     if any('does not share the title' in event_title(e) for _, _, _, e in visible):
         lines.append(choose(lang, 'Event names are missing from the source: share full calendar details or use an ICS export with titles to identify them.',
                             'Faltan nombres en la fuente: comparte los detalles del calendario o utiliza una exportación ICS con títulos.'))
-    lines.append(choose(lang, 'Events without an end time, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
-                        'Los eventos sin hora de fin, de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.'))
+    lines.append(choose(lang, 'Events without an end time, reminders of five minutes or less, all-day events and events marked as available are excluded from conflict checks. Calendar entries do not confirm attendance.',
+                        'Los eventos sin hora de fin, los recordatorios de cinco minutos o menos, los de todo el día o marcados como disponibles no se comprueban para solapamientos. Las citas no confirman asistencia.'))
     return lines

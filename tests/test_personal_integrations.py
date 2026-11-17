@@ -112,10 +112,19 @@ def test_next_week_uses_local_calendar_across_dst():
 
 def test_connector_failure_does_not_expose_secret():
     config={'accounts':[dict(store.defaults()['accounts'][0],enabled=True)]}
-    with patch.dict(c.READERS, {'bridge':MagicMock(side_effect=ValueError('password SECRET'))}):
+    with patch.dict(c.READERS, {'bridge':MagicMock(side_effect=ValueError('password SECRET'))}), \
+         patch('integrations.msty.personal.status.missing_fields', return_value=[]):
         result=c.collect(config,NOW)[0]
     assert result['status']=='unavailable'
     assert 'SECRET' not in str(result)
+
+
+def test_unfinished_account_is_not_reported_as_an_outage():
+    config={'accounts':[dict(store.defaults()['accounts'][0],enabled=True)]}
+    with patch.dict(c.READERS, {'bridge':MagicMock(side_effect=ValueError('no saved password'))}), \
+         patch('integrations.msty.personal.status.missing_fields', return_value=['saved password']):
+        result=c.collect(config,NOW)[0]
+    assert result['status']=='not configured'  # no daily "Unavailable" line for a setup never finished
 
 
 def test_dpapi_round_trip_and_no_plaintext(tmp_path):

@@ -315,7 +315,10 @@ def collect(config, now=None, mode='weekly'):
                 result['status'] = 'ok'
             except Exception as error:
                 # Never surface URLs, tokens, server responses or credentials.
-                result.update(status='unavailable', error_type=type(error).__name__)
+                from .status import missing_fields
+                # An account whose setup was never finished is not an outage: no daily "Unavailable" warning.
+                unfinished = bool(missing_fields(account))
+                result.update(status='not configured' if unfinished else 'unavailable', error_type=type(error).__name__)
         return result
     with ThreadPoolExecutor(max_workers=4) as pool:
         return list(pool.map(read, config['accounts']))

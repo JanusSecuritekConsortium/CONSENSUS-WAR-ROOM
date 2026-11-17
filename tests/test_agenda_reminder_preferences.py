@@ -40,6 +40,15 @@ def test_routine_overlaps_keep_other_appointment_warning_without_private_title()
     assert 'routine calendar block ↔ Project meeting' in text
 
 
+def test_short_reminders_never_count_as_clashes():
+    text = '\n'.join(agenda(sources([event('Pill', '09:15', '09:16'), event('Breakfast', '09:00', '10:00'),
+                                     event('Call back', '09:30', '09:35')])))
+    assert '09:15–09:16: Pill' in text  # still listed
+    assert '↔' not in text and 'No overlaps detected' in text
+    clash = '\n'.join(agenda(sources([event('Breakfast', '09:00', '10:00'), event('Meeting', '09:30', '09:36')])))
+    assert 'Breakfast ↔ Meeting' in clash  # six minutes is real busy time
+
+
 def test_only_excluded_events_do_not_imply_empty_calendar_or_announce_routine_conflicts():
     data = sources([event('Routine block', '12:00', '14:00'), event('Routine check', '13:00', '13:30')])
     text = personal_digest(data, NOW, tasks=[], excluded_titles=['Routine block', 'Routine check'])
