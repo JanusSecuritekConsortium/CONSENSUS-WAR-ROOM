@@ -20,6 +20,47 @@ def _fold_json_fields(raw: str) -> str:
     return normalized
 
 
+VOTE_FIELDS = ("VOTE", "RESULT", "CONFIDENCE", "EVIDENCE_QUALITY", "CRITICAL_RISK", "RATIONALE", "REASONING", "RISKS",
+               "CONDITIONS", "ARGUMENT", "PEER_RESPONSES", "REVIEW_REQUIRED", "REVIEW_REASON", "VOTE_CHANGE_REASON",
+               "UNRESOLVED_DISAGREEMENTS")
+
+
+def _from_json_answer(raw: str) -> str:
+    """Rewrite an answer given as one JSON object ({"VOTE": ..., "CONFIDENCE": ...}) into the field lines.
+
+    Gemma 3 answers this way; the fields and their checks stay exactly the same.
+    """
+    if re.search(r"^\s*(VOTE|RESULT)\s*:", raw, re.I | re.M):
+        return raw
+    start = raw.find("{")
+    if start < 0:
+        return raw
+    try:
+        value, _ = json.JSONDecoder().raw_decode(raw[start:])
+    except ValueError:
+        return raw
+    if not isinstance(value, dict):
+        return raw
+    fields = {str(key).strip().upper(): item for key, item in value.items()}
+    if "VOTE" not in fields and "RESULT" not in fields:
+        return raw
+    lines = []
+    for name in VOTE_FIELDS:
+        if name not in fields:
+            continue
+        item = fields[name]
+        if name in {"ARGUMENT", "PEER_RESPONSES", "UNRESOLVED_DISAGREEMENTS"}:
+            text = json.dumps(item)
+        elif isinstance(item, bool):
+            text = "true" if item else "false"
+        elif isinstance(item, list) and name in {"RISKS", "CONDITIONS"}:
+            text = "; ".join(" ".join(str(part).split()) for part in item)
+        else:
+            text = " ".join(str(item).split()) if item is not None else ""
+        lines.append(f"{name}: {text}")
+    return "\n".join(lines)
+
+
 def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, context: Optional[Dict[str, Any]] = None) -> Vote:
     vote = VoteValue.ABSTAIN
     confidence = 0.5
@@ -35,7 +76,7 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
     structured: Dict[str, Any] = {}
     json_fields = {"ARGUMENT": dict, "PEER_RESPONSES": list, "UNRESOLVED_DISAGREEMENTS": list}
 
-    for line in _fold_json_fields(raw).splitlines():
+    for line in _fold_json_fields(_from_json_answer(raw)).splitlines():
         stripped = line.strip()
         if not stripped:
             continue

@@ -273,16 +273,21 @@ class MstyRuntime:
         configured_node = apply_node_overrides(DEFAULT_NODES, self.config.node_overrides).get(session.agent_id)
         system_prompt = str(context.get("system_prompt") or (configured_node.prompt if configured_node else session.profile.system_prompt))
         last_error: Optional[Exception] = None
-        for model in candidates:
+        queue: list[tuple[str, str]] = [(model, "") for model in candidates]
+        corrected = False
+        while queue:
+            model, correction = queue.pop(0)
             if self.generation_control:
                 self.generation_control.check()
             started = time.perf_counter()
             attempt: Dict[str, Any] = {"model": model, "backend": health.get("active_backend") or health.get("backend") or self.config.backend}
+            if correction:
+                attempt["correction"] = True
             if real_tribunal:
                 self._make_room_for(api_module, health, model)
             try:
                 response = api_module.send_prompt(
-                    model, prompt + f"\n\nExecution model: {model}. Preserve your assigned monolith instructions and parameters.",
+                    model, prompt + correction + f"\n\nExecution model: {model}. Preserve your assigned monolith instructions and parameters.",
                     system_prompt=system_prompt, config=self.config, base_url=health.get("base_url"),
                     temperature=float(context.get("temperature", configured_node.temperature if configured_node else 0.2)),
                     max_output_tokens=int(context.get("max_output_tokens", configured_node.max_output_tokens if configured_node else 900)),
@@ -322,6 +327,13 @@ class MstyRuntime:
                     break  # the provider is busy or still loading; starting another model would only add to the load
                 if "context window" in str(exc):
                     break  # every model on the server shares the same window; a backup would be refused too
+                if real_tribunal and not corrected and str(exc).startswith("Invalid deliberation response: "):
+                    # One second chance on the same, already loaded model, told exactly what was wrong.
+                    corrected = True
+                    problems = str(exc).split(": ", 1)[1]
+                    queue.insert(0, (model, "\n\nYOUR PREVIOUS ANSWER WAS REJECTED for these reasons: " + problems
+                                     + ". Answer again in full, in the required FIELD: value format, fixing exactly these problems."
+                                     + " Every peer in the latest completed round must appear in PEER_RESPONSES, quoting that peer's claim word for word."))
         assert last_error is not None
         raise last_error
 

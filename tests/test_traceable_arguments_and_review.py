@@ -76,6 +76,34 @@ def test_an_answer_wrapped_in_a_code_block_is_read_normally():
     assert (fenced.vote, fenced.confidence, fenced.argument) == (clean.vote, clean.confidence, clean.argument)
 
 
+def test_an_answer_given_as_one_json_object_is_read_like_field_lines():
+    # Gemma 3 answers with {"VOTE": ..., "RISKS": [...], "ARGUMENT": {...}} inside a code block.
+    clean = parsed(raw_vote())
+    fields = {"VOTE": "APPROVE", "CONFIDENCE": 0.9, "EVIDENCE_QUALITY": 0.8, "CRITICAL_RISK": False,
+              "RATIONALE": "The proposal includes a reversible audit plan.", "RISKS": ["unverified assumptions"],
+              "CONDITIONS": ["audit"], "ARGUMENT": clean.argument, "PEER_RESPONSES": [], "REVIEW_REQUIRED": False,
+              "REVIEW_REASON": "", "VOTE_CHANGE_REASON": "", "UNRESOLVED_DISAGREEMENTS": []}
+    fence = "`" * 3
+    vote = parsed("Ok, here is my answer:\n" + fence + "json\n" + json.dumps(fields, indent=2) + "\n" + fence)
+    assert not vote.validation_errors
+    assert (vote.vote, vote.confidence, vote.argument, vote.risks) == (clean.vote, clean.confidence, clean.argument, clean.risks)
+    assert parsed(json.dumps({"note": "no vote here"})).validation_errors
+
+
+def test_a_rejected_answer_gets_one_correction_on_the_same_model(monkeypatch):
+    monkeypatch.setattr(api, "health_check", lambda *a, **kw: {"status": "ready", "models": ["preferred"], "base_url": "http://localhost:1"})
+    prompts = []
+    def send(model, prompt, *a, **kw):
+        prompts.append(prompt)
+        return replace_field(raw_vote(), "ARGUMENT", "{}") if len(prompts) == 1 else raw_vote()
+    monkeypatch.setattr(api, "send_prompt", send)
+    from config.runtime import RuntimeConfig
+    runtime = MstyRuntime(RuntimeConfig(base_model="preferred"))
+    runtime.send_to_agent(BELLATOR, "Review prototype", {"model": "preferred", "require_real_model": True, "require_traceable_argument": True})
+    assert len(prompts) == 2
+    assert "PREVIOUS ANSWER WAS REJECTED" not in prompts[0] and "missing argument.claim" in prompts[1]
+
+
 def test_missing_evidence_is_allowed_only_when_quality_is_zero():
     raw = raw_vote()
     argument = parsed(raw).argument
@@ -253,7 +281,9 @@ def test_argument_failure_advances_to_another_real_model_without_simulation(monk
     runtime = MstyRuntime(RuntimeConfig(base_model="base"))
     monkeypatch.setattr(runtime, "_fallback_response", lambda *a: pytest.fail("Cannot fabricate arguments"))
     runtime.send_to_agent(BELLATOR, "Review prototype", {"model": "preferred", "require_real_model": True, "require_traceable_argument": True})
-    assert calls == ["preferred", "base"]
+    assert calls == ["preferred", "preferred", "base"]  # one correction on the same model, then the backup
+    attempts = runtime.last_execution[BELLATOR]["model_attempts"]
+    assert attempts[1].get("correction") is True
     assert runtime.last_execution[BELLATOR]["model_attempts"][0]["error_type"] == "ValueError"
 
 

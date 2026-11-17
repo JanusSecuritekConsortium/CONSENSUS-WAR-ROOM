@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.15.6 - One correction on the same model; JSON answers read (2026-11-17)
+
+### Fixed
+- A voter whose answer breaks the rules (for example, leaving out one of the other voters) is
+  asked once more on the same, already loaded model, with the exact problems listed, before
+  any backup is tried. In the fourth test vote Gemma 4 answered BELLATOR but skipped RATIONALIS.
+- Answers written as a single JSON object (`{"VOTE": ..., "RISKS": [...]}`), as Gemma 3 does,
+  are read like the usual field lines; every field check still applies.
+
 ## 9.15.5 - Backups only from the voter's own maker (2026-11-17)
 
 ### Changed

@@ -143,13 +143,15 @@ def test_failed_preferred_model_uses_base_and_pins_it_for_later_rounds(monkeypat
     runtime.send_to_agent(RATIONALIS, "assessment", context)
     first = runtime.last_execution[RATIONALIS]
     assert first["model_fallback"] and first["model_fallback_reason"] == "preferred_model_call_failed"
-    assert [a["status"] for a in first["model_attempts"]] == ["failed", "completed"]
+    # A malformed answer gets one correction on the same model before the backup.
+    preferred = ["preferred", "preferred"] if str(failure) == "malformed" else ["preferred"]
+    assert [a["status"] for a in first["model_attempts"]] == ["failed"] * len(preferred) + ["completed"]
     runtime.send_to_agent(RATIONALIS, "critique", context)
     runtime.send_to_agent(RATIONALIS, "revision", context)
-    assert calls == ["preferred", "base", "base", "base"]
+    assert calls == [*preferred, "base", "base", "base"]
     # A new proposal tries the preferred model again; pinning is proposal-specific.
     runtime.send_to_agent(RATIONALIS, "assessment", {**context, "session_id": "proposal-two"})
-    assert calls[-2:] == ["preferred", "base"]
+    assert calls[-len(preferred) - 1:] == [*preferred, "base"]
 
 
 def test_exhausted_real_candidates_are_audited_and_never_simulated(monkeypatch):
