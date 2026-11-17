@@ -5,6 +5,30 @@ Updated: 2026-10-26 (Europe/Madrid). Applies to OpenAI Codex, Claude and other
 agents working on the CONSENSUS umbrella. Markdown conventions do not create
 automatic synchronization, message delivery or enforced locks.
 
+## Project maxims (2026-11-17)
+
+The full text, with reasons, is `50 Agents/Consensus Maxims.md` in the local vault.
+
+1. Every change is its own version: bump `config/version.py` (version and
+   last-patch date), `pyproject.toml` and `tools/packaging/windows_version_info.txt`,
+   add a `CHANGELOG.md` entry, commit on `main`, tag `vX.Y.Z`, push commit and tag,
+   confirm CI, rebuild `dist/CONSENSUS.exe`.
+2. Everything is written in the vault so anyone can pick it up: decision log
+   entry, task record and the project note's current state, after each release.
+3. No personal data or secrets in the repository; scan the staged diff.
+4. Code, models and data stay on the portable G: drive.
+5. Real or nothing: failed votes are reported as failed, never simulated.
+6. One model maker per voter.
+7. CONSENSUS (tribunal) and Aurelius (assistant) are separate layers.
+8. Personal context goes only to local models.
+9. Prove it live: a feature is done when it worked in the real system.
+10. Run every test covering the change on Windows and Linux; CI must be green.
+11. Reversible by default: Recycle Bin, backups, ask before irreversible or
+    outward-facing actions.
+12. Handle Msty with care: no blind setting changes; never ask for the saved key.
+13. Fail fast and loud; never jam the machine with retries on giant models.
+14. Plain words for the owner; act autonomously, ask only real decisions.
+
 ## Shared truth and startup
 
 Use one maintained Markdown source for each subject:

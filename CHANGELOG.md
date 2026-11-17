@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.15.3 - Project maxims; every release tagged (2026-11-17)
+
+### Added
+- Project maxims in `AGENT_COLLABORATION.md`: every change is its own tagged version on GitHub,
+  everything is written in the vault, plus twelve working rules (privacy, G: drive, real votes
+  only, one maker per voter, separate layers, local personal context, prove it live, tests on
+  both systems, reversible by default, careful with Msty, fail fast, plain words).
+- Git tags `v9.1.1` to `v9.15.2` for all 41 past releases; each release from now on gets one.
+
+### Fixed
+- The last-patch date in `config/version.py` had stayed at 2026-11-13 through six releases.
+
 ## 9.15.2 - Mistral's answers are read; round 2 keeps round 1 (2026-11-17)
 
 ### Fixed
