@@ -159,6 +159,7 @@ def test_review_and_critical_risk_keep_precedence_over_evidence_audit():
     votes = {a: Vote(a, DEFAULT_NODES[a].role, VoteValue.APPROVE, .9, "Review needed", evidence_quality=.8,
                     evidence_audit=[{"freshness": "stale"}]) for a in TRIBUNAL_AGENT_IDS}
     votes[RATIONALIS].review_required = True
+    votes[RATIONALIS].critical_risk = True
     votes[RATIONALIS].review_reason = "Resolve prerequisite"
     assert ConsensusEngine(ConsensusRules(), "military").calculate_result("Analyze a test", votes, "fixture").verdict == FinalVerdict.ESCALATE
 

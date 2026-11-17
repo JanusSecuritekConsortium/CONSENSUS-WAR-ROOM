@@ -48,8 +48,12 @@ class ConsensusEngine:
             elif vote.confidence < self.rules.minimum_confidence:
                 review_triggers.append(f"confidence_below_threshold:{vote.node_key}")
 
-        requested_reviews = [vote.node_key for vote in voting_votes if vote.review_required]
+        # Owner rule (17 Nov 2026): a question gets an answer. A review request stops the tribunal
+        # only when the same voter also reports a critical risk; otherwise it is noted and the vote decides.
+        requested_reviews = [vote.node_key for vote in voting_votes if vote.review_required and vote.critical_risk]
         review_triggers.extend(f"review_requested:{key}" for key in requested_reviews)
+        review_triggers.extend(f"review_noted:{vote.node_key}" for vote in voting_votes
+                               if vote.review_required and vote.node_key not in requested_reviews)
         classification_result = classify_proposal(
             query,
             taxonomy=self.rules.proposal_taxonomy,
@@ -60,7 +64,7 @@ class ConsensusEngine:
             has_critical_risk = any(v.critical_risk for v in voting_votes)
             branch = "classification_failure_review_requested" if requested_reviews else ("classification_failure_critical_risk" if has_critical_risk else "classification_failure")
             review_triggers.append(branch)
-            review_reason = " | ".join(f"{vote.node_key}: {vote.review_reason}" for vote in voting_votes if vote.review_required)
+            review_reason = " | ".join(f"{vote.node_key}: {vote.review_reason}" for vote in voting_votes if vote.node_key in requested_reviews)
             return TribunalResult(
                 query=query,
                 verdict=FinalVerdict.ESCALATE if has_critical_risk or requested_reviews else FinalVerdict.NO_CONSENSUS,
@@ -113,7 +117,7 @@ class ConsensusEngine:
                 branch = "explicit_review_requested" if requested_reviews else "domain_critical_risk_review"
                 review_triggers.append(branch)
                 reasons = [f"{vote.node_key}: {vote.review_reason or '; '.join(vote.risks) or vote.reasoning}"
-                           for vote in voting_votes if vote.review_required or (vote.critical_risk and vote.critical_domain_relevance)]
+                           for vote in voting_votes if vote.node_key in requested_reviews or (vote.critical_risk and vote.critical_domain_relevance)]
                 return self._terminal_result(
                     query, FinalVerdict.ESCALATE,
                     "Human review required before approval. " + " | ".join(reasons),

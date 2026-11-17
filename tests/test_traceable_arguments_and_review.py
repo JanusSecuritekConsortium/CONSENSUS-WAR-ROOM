@@ -227,6 +227,7 @@ def test_explicit_review_request_blocks_majority_and_keeps_reason_separate_from_
     items = votes()
     items[RATIONALIS].vote = VoteValue.ABSTAIN
     items[RATIONALIS].review_required = True
+    items[RATIONALIS].critical_risk = True
     items[RATIONALIS].review_reason = "Success criteria contradict the implementation constraint"
     result = decide(items)
     assert result.verdict == FinalVerdict.ESCALATE
@@ -238,11 +239,33 @@ def test_explicit_review_request_blocks_majority_and_keeps_reason_separate_from_
 def test_review_request_survives_classification_failure():
     items = votes()
     items[RATIONALIS].review_required = True
+    items[RATIONALIS].critical_risk = True
     items[RATIONALIS].review_reason = "The proposal needs defined success criteria"
     result = ConsensusEngine(ConsensusRules(), "military").calculate_result("xyzzy", items, "test")
     assert result.verdict == FinalVerdict.ESCALATE
     assert "review_requested:RATIONALIS" in result.review_triggers
     assert items[RATIONALIS].review_reason in result.reason
+
+
+def test_a_review_request_without_critical_risk_does_not_stop_the_answer():
+    # Vote 5 (17 Nov): one approval and two abstentions asking for specs must still give the owner an answer.
+    items = votes()
+    for key in (AETERNUM, RATIONALIS):
+        items[key].vote = VoteValue.ABSTAIN
+        items[key].review_required = True
+        items[key].review_reason = "Hardware specifications missing"
+    result = decide(items)
+    assert result.verdict == FinalVerdict.APPROVE
+    assert "review_noted:RATIONALIS" in result.review_triggers
+    assert not any(t.startswith("review_requested:") for t in result.review_triggers)
+
+
+def test_voters_are_told_to_answer_and_keep_review_for_vital_matters():
+    from core.prompting import assembler
+    text = open(assembler.__file__, encoding="utf-8").read()
+    assert "vote APPROVE or DENY on the most reasonable reading" in text
+    assert "REVIEW_REQUIRED true only for critical, vital matters" in text
+    assert "use ABSTAIN with REVIEW_REQUIRED true" not in text
 
 
 @pytest.mark.parametrize("domain_only", [True, False])

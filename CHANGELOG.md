@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.16.0 - A question gets an answer; ESCALATE only for vital matters (2026-11-17)
+
+### Changed
+- Owner rule: when you ask the tribunal something, it answers. Voters are told to vote yes or no
+  on the most reasonable reading when details are missing, lower their confidence and list what
+  is missing as conditions, and to abstain only when they truly cannot lean either way.
+- A voter's request for human review now stops the vote (ESCALATE) only when the same voter
+  reports a critical risk. Critical risk is reserved for serious harm to people, safety, legal
+  exposure or a large irreversible loss; ordinary costs and missing specifications are normal risks.
+  Other review requests are noted (`review_noted:`) and the vote decides as usual.
+- Test vote 5 (a 900-euro rack) escalated under the old rule; it would now be answered.
+
 ## 9.15.6 - One correction on the same model; JSON answers read (2026-11-17)
 
 ### Fixed
