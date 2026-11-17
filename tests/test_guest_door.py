@@ -143,7 +143,7 @@ def test_a_guest_deliberation_uses_and_saves_nothing_of_the_owner(monkeypatch):
     tribunal = tribunal_module.Tribunal(DEFAULT_NODES, runtime=object(),
                                         voice_announcer=lambda result: pytest.fail("no voice for a guest"))
 
-    def cast_votes(query, session_id, theme, sequential, memory_context, *, include_enrichment=True):
+    def cast_votes(query, session_id, theme, sequential, memory_context, *, include_enrichment=True, **_rerun):
         calls.update(memory=memory_context, enrichment=include_enrichment)
         return {}
     monkeypatch.setattr(tribunal.orchestrator, "cast_votes", cast_votes)

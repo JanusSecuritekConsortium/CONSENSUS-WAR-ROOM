@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.17.0 - Uncertain voters abstain; the vote reruns until a consensus (2026-11-17)
+
+### Changed
+- Owner rule, the project's philosophy: a voter who is uncertain abstains, and the tribunal
+  deliberates again until a consensus forms. After the three normal rounds, if there is no
+  confident majority of APPROVE or DENY, up to 3 further revision rounds run ("RERUN 1", "RERUN 2"...).
+  Each rerun tells the voters the previous round reached no consensus. The cap exists because
+  each local round takes about 30-40 minutes; it is `consensus_reruns` in the consensus rules.
+- Replaces the 9.16.0 instruction to vote yes or no on the most reasonable reading. Kept from
+  9.16.0: human review (ESCALATE) only for critical, vital matters.
+- The revision instruction now asks voters to answer the latest completed round, not "round 2".
+
 ## 9.16.0 - A question gets an answer; ESCALATE only for vital matters (2026-11-17)
 
 ### Changed

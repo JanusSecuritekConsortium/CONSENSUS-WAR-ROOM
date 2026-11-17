@@ -62,8 +62,10 @@ class Tribunal:
         )
         started = time.perf_counter()
         # A guest gets no data packets either: they come from the owner's configured sources (one is a brokerage).
+        rules = self.consensus_engine.rules
         votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context,
-                                             include_enrichment=not guest)
+                                             include_enrichment=not guest, consensus_check=rules.consensus_reached,
+                                             extra_rounds=rules.consensus_reruns)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
         self.orchestrator.attach_audit(result)
         if not guest:

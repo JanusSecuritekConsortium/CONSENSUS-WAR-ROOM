@@ -18,7 +18,11 @@ class ConsensusRules:
         tie_break_priority: Sequence[str] | None = None,
         proposal_taxonomy: Sequence[str] | None = None,
         monolith_domain_map: Dict[str, List[str]] | None = None,
+        consensus_reruns: int = 3,
     ):
+        # Owner rule (17 Nov 2026): uncertain voters abstain and the vote reruns until a majority forms.
+        # Each local round takes about 30-40 minutes, so the reruns are capped.
+        self.consensus_reruns = consensus_reruns
         self.minimum_confidence = minimum_confidence
         self.quorum = quorum
         self.majority = majority
@@ -52,6 +56,13 @@ class ConsensusRules:
                 BELLATOR: ["growth", "security", "geopolitics", "risk", "operations"],
             }
         )
+
+    def consensus_reached(self, votes) -> bool:
+        """A valid, confident majority of APPROVE or DENY; otherwise the tribunal deliberates again."""
+        voting = list(votes.values())
+        if not voting or any(vote.validation_errors for vote in voting):
+            return True  # a failed round ends deliberation; rerunning cannot repair it
+        return majority_result(confidence_qualified_votes(voting, self.minimum_confidence)) is not None
 
 
 def average_confidence(votes: Iterable[Vote]) -> float:

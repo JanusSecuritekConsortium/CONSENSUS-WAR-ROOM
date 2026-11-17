@@ -52,7 +52,10 @@ class VotingOrchestrator:
         on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
         *, assessment_only: bool = False, agent_ids: Optional[tuple[str, ...]] = None,
         include_enrichment: bool = True,
+        consensus_check: Optional[Callable[[Dict[str, Vote]], bool]] = None, extra_rounds: int = 0,
     ) -> Dict[str, Vote]:
+        """Run the rounds. With `consensus_check`, a completed deliberation without consensus gets up to
+        `extra_rounds` further revision rounds (owner rule: uncertain voters abstain and the vote reruns)."""
         # Kept for API compatibility. All submissions now use the same round barriers.
         self.transcript = []
         self.complete = False
@@ -83,8 +86,20 @@ class VotingOrchestrator:
         votes: Dict[str, Vote] = {}
         previous_rounds: list[Dict[str, Any]] = []
 
-        for number, phase in enumerate(phases, 1):
-            self._emit(on_event, {"type": "round_started", "round": number, "phase": phase})
+        def schedule():
+            yield from phases
+            if assessment_only or consensus_check is None:
+                return
+            for _ in range(max(0, extra_rounds)):
+                if consensus_check(votes):
+                    return
+                yield "revision"
+
+        for number, phase in enumerate(schedule(), 1):
+            rerun = max(0, number - len(phases))
+            if rerun:
+                log_event("consensus_rerun", {"session_id": session_id, "round": number, "rerun": rerun})
+            self._emit(on_event, {"type": "round_started", "round": number, "phase": phase, "rerun": rerun})
             round_votes: Dict[str, Vote] = {}
             for agent_id in round_order(agents, number):
                 control = getattr(self.runtime, "generation_control", None)
@@ -117,7 +132,8 @@ class VotingOrchestrator:
                     "model": node.model, "temperature": node.temperature, "max_output_tokens": node.max_output_tokens,
                     "sampling": node.sampling(),
                     "system_prompt": node.prompt,
-                    "deliberation": {"round": number, "phase": phase, "total_rounds": len(phases), "previous_rounds": deepcopy(previous_rounds)},
+                    "deliberation": {"round": number, "phase": phase, "total_rounds": max(len(phases), number), "rerun": rerun,
+                                     "previous_rounds": deepcopy(previous_rounds)},
                 })
                 def render(context: Dict[str, Any], node: NodeIdentity = node) -> str:
                     # Passages and source ids follow the context, so trimmed extras can never be cited.

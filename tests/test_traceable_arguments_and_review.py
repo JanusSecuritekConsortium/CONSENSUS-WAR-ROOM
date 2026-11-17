@@ -260,12 +260,65 @@ def test_a_review_request_without_critical_risk_does_not_stop_the_answer():
     assert not any(t.startswith("review_requested:") for t in result.review_triggers)
 
 
-def test_voters_are_told_to_answer_and_keep_review_for_vital_matters():
+def test_uncertain_voters_abstain_and_review_stays_for_vital_matters():
     from core.prompting import assembler
     text = open(assembler.__file__, encoding="utf-8").read()
-    assert "vote APPROVE or DENY on the most reasonable reading" in text
+    assert "If you are uncertain, vote ABSTAIN" in text
+    assert "the tribunal reruns the vote until a consensus forms" in text
     assert "REVIEW_REQUIRED true only for critical, vital matters" in text
-    assert "use ABSTAIN with REVIEW_REQUIRED true" not in text
+
+
+class _ScriptedRuntime:
+    """Simulated voters: BELLATOR approves; the others abstain until round `agree_from`."""
+
+    def __init__(self, agree_from):
+        self.config = type("Config", (), {"backend": "mock"})()
+        self.agree_from = agree_from
+        self.rounds_seen = []
+        self.reruns_seen = []
+
+    def send_to_agent(self, agent_id, prompt, context):
+        deliberation = context["deliberation"]
+        self.rounds_seen.append(deliberation["round"])
+        self.reruns_seen.append(deliberation.get("rerun", 0))
+        value = "APPROVE" if agent_id == BELLATOR or deliberation["round"] >= self.agree_from else "ABSTAIN"
+        return (f"VOTE: {value}\nCONFIDENCE: 0.9\nEVIDENCE_QUALITY: 0.8\nCRITICAL_RISK: false\n"
+                "RATIONALE: Reasoned position.\nRISKS: none\nCONDITIONS: none\n"
+                + argument_fields(f"{agent_id} position", agent_id, context, value))
+
+
+def _deliberate(runtime, reruns):
+    rules = ConsensusRules(consensus_reruns=reruns)
+    orchestrator = VotingOrchestrator(DEFAULT_NODES, runtime)
+    votes = orchestrator.cast_votes("Buy a rack", "s1", "military", include_enrichment=False,
+                                    consensus_check=rules.consensus_reached, extra_rounds=rules.consensus_reruns)
+    return orchestrator, votes
+
+
+def test_without_consensus_the_vote_reruns_until_a_majority_forms():
+    runtime = _ScriptedRuntime(agree_from=5)
+    orchestrator, votes = _deliberate(runtime, reruns=3)
+    assert max(runtime.rounds_seen) == 5  # three normal rounds plus two reruns, then consensus
+    assert max(runtime.reruns_seen) == 2
+    assert orchestrator.complete
+    assert all(vote.vote == VoteValue.APPROVE for vote in votes.values())
+    assert ConsensusEngine(ConsensusRules(), "military").calculate_result("Buy a rack", votes, "s1").verdict == FinalVerdict.APPROVE
+
+
+def test_reruns_stop_at_the_cap_and_a_consensus_needs_no_rerun():
+    runtime = _ScriptedRuntime(agree_from=99)
+    _deliberate(runtime, reruns=2)
+    assert max(runtime.rounds_seen) == 5
+    runtime = _ScriptedRuntime(agree_from=1)
+    _deliberate(runtime, reruns=3)
+    assert max(runtime.rounds_seen) == 3
+
+
+def test_a_rerun_round_tells_voters_why():
+    from core.llm.prompts import build_node_prompt
+    prompt = build_node_prompt(DEFAULT_NODES[BELLATOR], "Buy a rack",
+                               {"deliberation": {"round": 4, "phase": "revision", "rerun": 1, "previous_rounds": []}})
+    assert "RERUN 1: the previous round reached no consensus" in prompt
 
 
 @pytest.mark.parametrize("domain_only", [True, False])
