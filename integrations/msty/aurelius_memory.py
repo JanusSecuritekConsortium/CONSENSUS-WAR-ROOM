@@ -78,16 +78,17 @@ def _index(db: sqlite3.Connection, revision_id: str, state: dict, stamp: str) ->
     db.execute('INSERT INTO memory_pack_fts(rowid,title,summary,tags,content_text) VALUES(?,?,?,?,?)', (doc_id,PACK_TITLE,state['summary'],'aurelius shared telegram mobile',text))
 
 
-def remember(key: str, value: str, origin: str = 'desktop', *, db_path: Path | None = None) -> dict:
-    return _write(key, validate_value(value), origin, False, db_path)
+def remember(key: str, value: str, origin: str = 'desktop', *, learned: bool = False, db_path: Path | None = None) -> dict:
+    """learned=True marks a fact Aurelius picked up from a chat by itself (memory_learning), not one the user asked to save."""
+    return _write(key, validate_value(value), origin, False, db_path, learned)
 
 
 def forget(key: str, origin: str = 'desktop', *, db_path: Path | None = None) -> dict:
     """Explicit-user-request operation; old revisions remain recoverable."""
-    return _write(key, None, origin, True, db_path)
+    return _write(key, None, origin, True, db_path, False)
 
 
-def _write(key: str, value: str | None, origin: str, deleting: bool, db_path: Path | None) -> dict:
+def _write(key: str, value: str | None, origin: str, deleting: bool, db_path: Path | None, learned: bool) -> dict:
     key = normalize_key(key)
     if re.search(r'(?:^|[_.-])(?:password|passwd|token|secret|credential|api_key)(?:$|[_.-])', key):
         raise ValueError('Credentials must not be saved as shared memories')
@@ -113,12 +114,12 @@ def _write(key: str, value: str | None, origin: str, deleting: bool, db_path: Pa
             if deleting:
                 state['facts'] = [f for f in facts if f.get('key')!=key]
             else:
-                fact = {'id':matching.get('id') if matching else str(uuid4()),'key':key,'value':value,'status':'current','note':'User-confirmed via '+origin+' at '+stamp}
+                fact = {'id':matching.get('id') if matching else str(uuid4()),'key':key,'value':value,'status':'current','note':('Learned from a '+origin+' chat at ' if learned else 'User-confirmed via '+origin+' at ')+stamp}
                 if matching:
                     facts[facts.index(matching)] = fact
                 else:
                     facts.append(fact)
-            state['summary'] = 'Shared user-confirmed Aurelius memory for Telegram and mobile. '+ '; '.join(str(f.get('key',''))+': '+str(f.get('value','')) for f in state['facts'])[:3000]
+            state['summary'] = 'Shared Aurelius memory for Telegram and mobile: facts the user asked to keep and facts learned from chats. '+ '; '.join(str(f.get('key',''))+': '+str(f.get('value','')) for f in state['facts'])[:3000]
             state['changes_since_last_revision'] = [('Forgot ' if deleting else 'Saved ')+key+' via '+origin]
             revision_id = str(uuid4())
             # MAX protects against another native writer's revision numbering.

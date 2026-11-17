@@ -1,5 +1,23 @@
 # Changelog
 
+## 9.15.0 - Aurelius learns on its own (2026-11-17)
+
+### Added
+- Every night at 23:15 Aurelius reads the owner's new messages to it (Telegram and mobile) with the
+  local model, picks out lasting facts (preferences, people, places, ongoing matters, plans,
+  decisions) and saves them to the shared memory both Aurelius agents already use, with no
+  approval step. Forwarded content, tool prompts and short replies are skipped; passwords, codes,
+  account numbers and medical details are refused. Each message is read once.
+- After a run that learned something, Aurelius sends one Telegram message listing the facts, with
+  a Forget button per fact. Learned facts are marked "Learned from a telegram chat"; facts the
+  owner asked to keep still say "User-confirmed".
+- `python -m integrations.msty.memory_learning run --dry` shows what would be learned without
+  saving or sending anything.
+
+### Why
+- Msty Go's own memory suggestions never produced a single candidate, and the shared memory held
+  three facts after two months: saving only on "remember..." was not enough.
+
 ## 9.14.3 - Quieter morning briefing (2026-11-17)
 
 ### Fixed

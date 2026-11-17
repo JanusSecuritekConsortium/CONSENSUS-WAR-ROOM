@@ -29,3 +29,21 @@ a fresh mobile chat without including the answer. Repeat in the other direction.
 The model must actually use the memory tools; a prose acknowledgment alone is
 not proof of a save. If an operation needs approval or fails, the fact has not
 been successfully saved and Aurelius must report that honestly.
+
+## Learning on its own (9.15.0)
+
+Every night at 23:15 the Windows task `\CONSENSUS\Aurelius memory learning` runs
+`python -m integrations.msty.memory_learning run`. It reads the owner's new
+messages to both Aurelius agents (Telegram and mobile) from the local Msty Go
+database, asks the local model for lasting facts (preferences, people, places,
+ongoing matters, plans, decisions) and saves them to this same pack without an
+approval step. Forwarded content, tool prompts and short replies are skipped;
+passwords, codes, account numbers and medical details are refused.
+
+Learned facts carry the note "Learned from a telegram chat"; facts the user
+asked to keep still say "User-confirmed". After a run that learned something,
+Aurelius sends one Telegram message listing the facts with a Forget button per
+fact (buttons last 18 hours; asking Aurelius to forget works any time).
+Where the last run stopped is kept in the private store
+(`memory-learning.json`), so each message is read once. Try it without saving:
+`python -m integrations.msty.memory_learning run --dry`.

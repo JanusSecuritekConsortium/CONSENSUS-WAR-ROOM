@@ -14,6 +14,9 @@ def answer(message, route, lang, request_key, *, callback=None):
     if action == 'memory':
         from integrations.msty import memory_review
         return {'text': memory_review.answer_button(payload), 'items': []}
+    if action == 'memory_forget':
+        from integrations.msty import memory_learning
+        return {'text': memory_learning.answer_forget(payload), 'items': []}
     if action == 'read':
         # A durable voice receipt makes repeated updates and upload uncertainty
         # use the same no-resend protection as scheduled briefing narration.
