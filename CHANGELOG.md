@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.17.1 - A slow model load no longer marks a running vote as failed (2026-11-17)
+
+### Fixed
+- Test vote 6 was reported "stopped without reporting a result" 16 minutes in, while it was still
+  running: loading Gemma 4 with little free memory froze the worker, and its heartbeat, for about
+  6 minutes, past the 5-minute limit. The job now records its worker process, and a worker that is
+  still alive counts as running however late its heartbeat is. A dead or replaced process is
+  still reported as failed.
+
 ## 9.17.0 - Uncertain voters abstain; the vote reruns until a consensus (2026-11-17)
 
 ### Changed

@@ -49,8 +49,27 @@ def _read(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _worker_alive(record: Dict[str, Any]) -> bool:
+    """The worker process named in the record still exists (same process, not a reused number)."""
+    pid, born = record.get("worker_pid"), record.get("worker_started")
+    if not isinstance(pid, int) or not isinstance(born, (int, float)):
+        return False
+    try:
+        import psutil
+        process = psutil.Process(pid)
+        return process.is_running() and abs(process.create_time() - born) < 2
+    except Exception:
+        return False
+
+
 def _stale(record: Dict[str, Any], path: Path) -> bool:
-    """An unfinished job whose process is gone: its heartbeat stopped, or it never started one."""
+    """An unfinished job whose process is gone: its heartbeat stopped, or it never started one.
+
+    Loading an 18 GB voter model can freeze the worker (and its heartbeat) for several minutes
+    when memory is tight (test vote 6, 17 Nov 2026), so a live worker process counts as running.
+    """
+    if _worker_alive(record):
+        return False
     alive = path.with_suffix(".alive")
     try:
         beat = datetime.fromtimestamp(alive.stat().st_mtime, timezone.utc)
@@ -243,6 +262,12 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
     if record.get("status") != "queued":
         return record
     record.update(status="running", started_at=_now().isoformat(timespec="seconds"))
+    try:
+        import os
+        import psutil
+        record.update(worker_pid=os.getpid(), worker_started=psutil.Process(os.getpid()).create_time())
+    except Exception:
+        pass  # the heartbeat alone still reports the run
     _write(path, record)
     alive, done = path.with_suffix(".alive"), threading.Event()
 

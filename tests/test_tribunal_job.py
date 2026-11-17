@@ -146,6 +146,34 @@ class TribunalJobTest(unittest.TestCase):
         os.utime(alive, (stopped, stopped))  # the process died ten minutes ago
         self.assertEqual(job.status(ticket, jobs_dir=self.jobs)["status"], "failed")
 
+    def test_a_live_worker_counts_as_running_even_when_its_heartbeat_is_late(self):
+        import os
+        import psutil
+        ticket = self.start()["ticket"]
+        path = self.jobs / f"{ticket}.json"
+        record = json.loads(path.read_text())
+        record.update(status="running", worker_pid=os.getpid(), worker_started=psutil.Process(os.getpid()).create_time())
+        path.write_text(json.dumps(record))
+        alive = path.with_suffix(".alive")
+        alive.touch()
+        late = (datetime.now(timezone.utc) - timedelta(minutes=10)).timestamp()
+        os.utime(alive, (late, late))  # a model load froze the heartbeat for ten minutes
+        self.assertEqual(job.status(ticket, jobs_dir=self.jobs)["status"], "running")
+        record["worker_started"] -= 100  # same number, different process: the worker is gone
+        path.write_text(json.dumps(record))
+        self.assertEqual(job.status(ticket, jobs_dir=self.jobs)["status"], "failed")
+
+    def test_run_records_its_worker(self):
+        import os
+        ticket = self.start()["ticket"]
+        seen = {}
+
+        def look(query):
+            seen.update(json.loads((self.jobs / f"{ticket}.json").read_text()))
+            return result(query)
+        job.run(ticket, jobs_dir=self.jobs, deliberate=look)
+        self.assertEqual(seen["worker_pid"], os.getpid())
+
     def test_run_leaves_no_heartbeat_behind(self):
         ticket = self.start()["ticket"]
         job.run(ticket, jobs_dir=self.jobs, deliberate=result)
