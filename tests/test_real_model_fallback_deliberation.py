@@ -200,7 +200,8 @@ def test_a_too_long_prompt_never_tries_backup_models(monkeypatch):
     assert calls == ["preferred"]
 
 
-def test_other_tribunal_models_are_unloaded_before_a_voter_runs(monkeypatch):
+def test_every_other_model_is_unloaded_before_a_voter_runs(monkeypatch):
+    # Test vote 8: a model left loaded beside the voter's pushed it into swap; each answer took twenty minutes.
     provider(monkeypatch, ["deepseek:33b", "yi:34b", "base", "user-chat-model"])
     monkeypatch.setattr(api, "loaded_models", lambda base_url: ["yi:34b", "base", "user-chat-model"])
     unloaded = []
@@ -208,7 +209,7 @@ def test_other_tribunal_models_are_unloaded_before_a_voter_runs(monkeypatch):
     monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: valid_response("Room made"))
     config = RuntimeConfig(base_model="base", agent_model_overrides={RATIONALIS: "deepseek:33b", BELLATOR: "yi:34b"})
     MstyRuntime(config).send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "p", "require_real_model": True})
-    assert unloaded == ["base", "yi:34b"]  # the owner's own chat model is left alone
+    assert unloaded == ["base", "user-chat-model", "yi:34b"]  # each reloads on its next use
     unloaded.clear()
     config.unload_idle_tribunal_models = False
     MstyRuntime(config).send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "q", "require_real_model": True})
@@ -265,3 +266,34 @@ def test_fallback_config_roundtrip_and_health_policy(tmp_path, monkeypatch):
     assert restored.base_model == "base" and restored.agent_model_fallbacks[RATIONALIS] == ["role"]
     provider(monkeypatch, ["base"])
     assert MstyRuntime(restored).health_check()["fallback_policy"]["mode"] == "real_model_fallback"
+
+
+def _roomy_provider(monkeypatch, free):
+    provider(monkeypatch, ["deepseek:33b"])
+    gb = 2**30
+    monkeypatch.setattr(api, "loaded_models", lambda base_url: [])
+    monkeypatch.setattr(api, "model_file_sizes", lambda base_url: {"deepseek:33b": 17 * gb})
+    monkeypatch.setattr(api, "free_memory_bytes", lambda: free.pop(0) * gb if len(free) > 1 else free[0] * gb)
+    calls = []
+    monkeypatch.setattr(api, "send_prompt", lambda model, *a, **kw: calls.append(model) or valid_response("Fits"))
+    runtime = MstyRuntime(RuntimeConfig(base_model="deepseek:33b", agent_model_overrides={RATIONALIS: "deepseek:33b"}))
+    slept = []
+    runtime._sleep = slept.append
+    return runtime, calls, slept
+
+
+def test_a_voter_waits_until_its_model_fits_in_memory(monkeypatch):
+    # 17 GB model plus 3 GB headroom: 12 GB free is too little, 21 GB is enough.
+    runtime, calls, slept = _roomy_provider(monkeypatch, [12, 12, 21])
+    runtime.send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "m", "require_real_model": True})
+    assert calls == ["deepseek:33b"] and len(slept) == 2
+
+
+def test_a_voter_fails_openly_instead_of_answering_from_swap(monkeypatch):
+    import integrations.msty.runtime as runtime_module
+    runtime, calls, slept = _roomy_provider(monkeypatch, [12])
+    clock = iter(range(0, 10_000, 300))
+    monkeypatch.setattr(runtime_module.time, "monotonic", lambda: next(clock))
+    with pytest.raises(RuntimeError, match="Not enough free memory for deepseek:33b"):
+        runtime.send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "n", "require_real_model": True})
+    assert calls == []

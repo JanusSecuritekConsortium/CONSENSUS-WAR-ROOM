@@ -66,6 +66,7 @@ class SessionRegistry:
 
 OWN_SERVER_WAIT_SECONDS = 600  # Msty's model server restarted within ~6 minutes in test vote 7
 OWN_SERVER_POLL_SECONDS = 20
+MEMORY_WAIT_SECONDS = 600  # a voter waits this long for memory to free up before it fails openly
 
 
 class MstyRuntime:
@@ -345,16 +346,42 @@ class MstyRuntime:
         raise last_error
 
     def _make_room_for(self, api_module, health: Dict[str, Any], keep: str) -> None:
-        """Unload the other tribunal models so the next voter's model fits in memory beside the rest of the PC."""
+        """Unload every other model the router holds, then wait until the voter's model fits beside the rest of the PC.
+
+        Another model left loaded (Aurelius's assistant model, a chat model), or a PC short of RAM, pushes the
+        voter's model into swap, where one answer took twenty minutes instead of two (test vote 8). A voter whose
+        model still does not fit after MEMORY_WAIT_SECONDS fails openly instead of answering that slowly.
+        """
         if not self.config.unload_idle_tribunal_models or not health.get("base_url"):
             return
-        models = health.get("models", [])
-        configured = [*self.config.agent_model_overrides.values(), self.config.base_model,
-                      *(name for names in self.config.agent_model_fallbacks.values() for name in names)]
-        tribunal = {api_module.match_model_alias(name, models)[0] for name in configured if name} - {None, keep}
-        for model in sorted(tribunal & set(api_module.loaded_models(health["base_url"]))):
-            if api_module.unload_model(health["base_url"], model):
+        base_url = health["base_url"]
+        for model in sorted(set(api_module.loaded_models(base_url)) - {keep}):
+            if api_module.unload_model(base_url, model):
                 log_event("tribunal_model_unloaded", {"model": model, "to_load": keep})
+        if not hasattr(api_module, "free_memory_bytes"):
+            return
+        needed = api_module.model_file_sizes(base_url).get(keep)
+        if not needed:
+            return
+        needed += api_module.MEMORY_HEADROOM_BYTES
+        deadline = time.monotonic() + MEMORY_WAIT_SECONDS
+        waited = False
+        while True:
+            resident = needed - api_module.MEMORY_HEADROOM_BYTES if keep in api_module.loaded_models(base_url) else 0
+            free = api_module.free_memory_bytes() + resident
+            if free >= needed:
+                return
+            gb = lambda value: f"{value / 2**30:.0f} GB"
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"Not enough free memory for {keep}: it needs about {gb(needed)} of RAM and graphics "
+                                   f"memory, but only about {gb(free)} is free. Close other programs and run the vote again.")
+            if not waited:
+                waited = True
+                log_event("tribunal_waits_for_memory", {"model": keep, "needed_gb": round(needed / 2**30, 1),
+                                                        "free_gb": round(free / 2**30, 1)})
+            self._sleep(OWN_SERVER_POLL_SECONDS)
+            if self.generation_control:
+                self.generation_control.check()
 
     def stream_to_agent(
         self,

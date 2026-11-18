@@ -1253,6 +1253,29 @@ def loaded_models(base_url: str) -> list[str]:
             if isinstance(entry, dict) and str((entry.get("status") or {}).get("value")) in {"loaded", "loading"}]
 
 
+MEMORY_HEADROOM_BYTES = 3 * 2**30  # the model's working memory and the rest of the PC need this beside the file
+
+
+def free_gpu_bytes() -> int:
+    """Free graphics memory reported by nvidia-smi; 0 when it cannot be read."""
+    import subprocess
+
+    try:
+        completed = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
+                                   capture_output=True, text=True, timeout=10,
+                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return sum(int(line) for line in completed.stdout.split() if line.strip().isdigit()) * 2**20
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return 0
+
+
+def free_memory_bytes() -> int:
+    """Free RAM plus free graphics memory: what a model loaded now can use without pushing the PC into swap."""
+    import psutil
+
+    return psutil.virtual_memory().available + free_gpu_bytes()
+
+
 def model_file_sizes(base_url: str) -> Dict[str, int]:
     """Bytes of each model file a llama.cpp router would load; empty for providers that do not say."""
     from core.llm import backends

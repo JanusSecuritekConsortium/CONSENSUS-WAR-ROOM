@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.18.2 - A voter's model gets the memory it needs (2026-11-18)
+
+### Fixed
+- Test vote 8 took about twenty minutes per answer instead of two: another model stayed loaded beside
+  the voter's model and only about 1 GB of RAM was free, so the voter's model ran partly from swap.
+- Before each voter answers, every other model Msty's model server holds is now unloaded, not only the
+  tribunal's own (an assistant or chat model reloads on its next use).
+- The voter then waits up to 10 minutes until its model fits in free RAM and graphics memory with 3 GB to
+  spare, and fails openly with a "close other programs" message if it never does.
+- The check before a vote starts uses the same 3 GB margin and counts every loaded model as memory it can free.
+
 ## 9.18.1 - A voter never switches to another server's weaker model (2026-11-18)
 
 ### Fixed

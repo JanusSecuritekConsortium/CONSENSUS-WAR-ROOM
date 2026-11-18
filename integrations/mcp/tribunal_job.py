@@ -118,13 +118,8 @@ def _launch(ticket: str) -> None:
 
 
 def _free_gpu_bytes() -> int:
-    try:
-        completed = subprocess.run(["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
-                                   capture_output=True, text=True, timeout=10,
-                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        return sum(int(line) for line in completed.stdout.split() if line.strip().isdigit()) * 2**20
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return 0
+    from integrations.msty import api
+    return api.free_gpu_bytes()
 
 
 def _guest_local_only() -> bool:
@@ -135,7 +130,8 @@ def _guest_local_only() -> bool:
 def memory_note(*, local_only: bool = False) -> Optional[str]:
     """A warning when the largest voter model will not fit in the free RAM and graphics memory; None if it fits.
 
-    A model larger than what is free makes the model server refuse it, or pushes the whole PC out of memory.
+    A model larger than what is free makes the model server refuse it, or pushes the whole PC into swap, where
+    one answer takes twenty minutes instead of two (test vote 8). The model also needs MEMORY_HEADROOM_BYTES.
     """
     try:
         import psutil
@@ -152,12 +148,13 @@ def memory_note(*, local_only: bool = False) -> Optional[str]:
         needed = {agent: sizes[model] for agent, model in voters.items() if model}
         if not needed:
             return None
-        resident = sum(sizes.get(model, 0) for model in api.loaded_models(base_url) if model in voters.values())
+        # Every model the router holds is unloaded before a voter's model loads, so its memory counts as free.
+        resident = sum(sizes.get(model, 0) for model in api.loaded_models(base_url))
         free = psutil.virtual_memory().available + _free_gpu_bytes() + resident
     except Exception:
         return None
     agent = max(needed, key=needed.get)
-    if needed[agent] <= free:
+    if needed[agent] + api.MEMORY_HEADROOM_BYTES <= free:
         return None
     gb = lambda value: f"{value / 2**30:.0f} GB"
     return (f"Low memory: {agent}'s model needs about {gb(needed[agent])}, but only about {gb(free)} of RAM and "
