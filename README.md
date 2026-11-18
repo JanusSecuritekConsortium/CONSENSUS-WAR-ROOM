@@ -157,10 +157,12 @@ python consensus_war_room_genesis.py --health
 python tools\run_tests.py
 ```
 
-### What the repository does not include
+### What the repository does and does not include
 
-The code and the default configuration are enough for the `mock` backend. A
-real tribunal and the voices need files that are not in Git:
+The repository holds the complete program. Its default backend is Msty's local
+model server (`msty-local`); the `mock` backend needs no downloads and is for
+demos and tests. A real tribunal and the voices also need files that are kept
+out of Git on purpose, because they are large or belong only on your machine:
 
 - **Language models.** Each agent's model is named in
   `_ARBITER/genesis_config.json` (`agent_model_overrides`). The GGUF files are

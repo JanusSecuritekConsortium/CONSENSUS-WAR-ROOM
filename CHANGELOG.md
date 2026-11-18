@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.18.3 - The README no longer reads as mock-only (2026-11-18)
+
+### Changed
+- "What the repository does and does not include" now says the repository holds the complete program,
+  that the default backend is Msty's local model server, and that the model files, voices and accounts
+  are kept out of Git on purpose. An outside AI review had read the old wording as "the public code only
+  runs simulations".
+
 ## 9.18.2 - A voter's model gets the memory it needs (2026-11-18)
 
 ### Fixed
