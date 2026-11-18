@@ -64,6 +64,10 @@ class SessionRegistry:
         self._sessions.pop(agent_id.upper(), None)
 
 
+OWN_SERVER_WAIT_SECONDS = 600  # Msty's model server restarted within ~6 minutes in test vote 7
+OWN_SERVER_POLL_SECONDS = 20
+
+
 class MstyRuntime:
     """Session-owning orchestration adapter for Msty-backed agent execution."""
 
@@ -77,6 +81,7 @@ class MstyRuntime:
     ) -> None:
         self.config = config or RuntimeConfig()
         self.generation_control = generation_control
+        self._sleep: Callable[[float], None] = time.sleep
         self.session_registry = SessionRegistry()
         self.fallback_enabled = self.config.mock_fallback_enabled if fallback_enabled is None else fallback_enabled
         self.fallback_hooks = fallback_hooks or []
@@ -139,6 +144,8 @@ class MstyRuntime:
                 from integrations.msty import api as api_module
 
                 health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
+                if (context or {}).get("require_real_model"):
+                    health = self._await_own_server(api_module, health)
                 if self.generation_control:
                     self.generation_control.check()
                 provider = str(health.get("active_backend") or health.get("backend") or self.config.backend)
@@ -419,6 +426,33 @@ class MstyRuntime:
 
     def register_telemetry_hook(self, hook: TelemetryHook) -> None:
         self.telemetry_hooks.append(hook)
+
+    def _await_own_server(self, api_module, health: Dict[str, Any]) -> Dict[str, Any]:
+        """A tribunal voter runs only on the configured model server (Msty's llama.cpp).
+
+        When that server is down the provider check falls over to another server, such as a separate
+        Ollama, and its same-maker model (test vote 7, 17 Nov 2026: a small "mistral:latest" stood in for
+        Mistral Small 3.2 and broke the answer format). Instead the voter waits for its own server, which
+        Msty restarts by itself within minutes, and fails openly if it stays down."""
+        requested = str(health.get("requested_backend") or "")
+        deadline = time.monotonic() + OWN_SERVER_WAIT_SECONDS
+        waited = False
+        while requested and (health.get("active_backend") != requested or health.get("status") == "offline"):
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"The {requested} model server is not answering; a tribunal voter does not "
+                                   f"switch to {health.get('active_backend') or 'another server'}'s models.")
+            if not waited:
+                log_event("tribunal_waits_for_model_server", {"requested_backend": requested,
+                                                              "active_backend": health.get("active_backend")},
+                          level="WARNING")
+                waited = True
+            self._sleep(OWN_SERVER_POLL_SECONDS)
+            if self.generation_control:
+                self.generation_control.check()
+            if hasattr(api_module, "clear_model_cache"):
+                api_module.clear_model_cache()
+            health = self._provider_health(api_module, apply_node_overrides(DEFAULT_NODES, self.config.node_overrides))
+        return health
 
     def _provider_health(self, api_module, nodes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         try:

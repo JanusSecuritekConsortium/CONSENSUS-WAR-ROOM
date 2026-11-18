@@ -215,6 +215,40 @@ def test_other_tribunal_models_are_unloaded_before_a_voter_runs(monkeypatch):
     assert unloaded == []
 
 
+def _health(active, models):
+    return {"status": "ready", "models": models, "base_url": "http://localhost:1",
+            "requested_backend": "msty-llama-cpp", "active_backend": active}
+
+
+def test_a_voter_waits_for_its_own_server_instead_of_another_servers_model(monkeypatch):
+    # Test vote 7: Msty's server was down, so a small Ollama "mistral:latest" stood in for Mistral Small 3.2.
+    states = [_health("ollama-direct", ["mistral:latest"]), _health("ollama-direct", ["mistral:latest"]),
+              _health("msty-llama-cpp", ["unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"])]
+    monkeypatch.setattr(api, "health_check", lambda *a, **kw: states.pop(0) if len(states) > 1 else states[0])
+    calls = []
+    monkeypatch.setattr(api, "send_prompt", lambda model, *a, **kw: calls.append(model) or valid_response("Back", BELLATOR))
+    runtime = MstyRuntime(RuntimeConfig())
+    naps = []
+    runtime._sleep = naps.append
+    runtime.send_to_agent(BELLATOR, "assessment", {"model": "unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
+                                                   "session_id": "p", "require_real_model": True})
+    assert calls == ["unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"]
+    assert len(naps) == 2
+
+
+def test_a_voter_fails_openly_when_its_server_stays_down(monkeypatch):
+    import integrations.msty.runtime as runtime_module
+    monkeypatch.setattr(api, "health_check", lambda *a, **kw: _health("ollama-direct", ["mistral:latest"]))
+    monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: pytest.fail("No other server's model may answer"))
+    clock = [0.0]
+    monkeypatch.setattr(runtime_module.time, "monotonic", lambda: clock[0])
+    runtime = MstyRuntime(RuntimeConfig())
+    runtime._sleep = lambda seconds: clock.__setitem__(0, clock[0] + seconds)
+    with pytest.raises(RuntimeError, match="does not switch"):
+        runtime.send_to_agent(BELLATOR, "assessment", {"model": "mistral-small", "session_id": "p", "require_real_model": True})
+    assert clock[0] >= runtime_module.OWN_SERVER_WAIT_SECONDS
+
+
 def test_no_available_real_models_fail_explicitly(monkeypatch):
     provider(monkeypatch, [])
     monkeypatch.setattr(api, "send_prompt", lambda *a, **kw: pytest.fail("No real model to call"))

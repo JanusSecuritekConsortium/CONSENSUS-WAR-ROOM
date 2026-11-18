@@ -1,5 +1,15 @@
 # Changelog
 
+## 9.18.1 - A voter never switches to another server's weaker model (2026-11-18)
+
+### Fixed
+- Test vote 7 failed in its first round: Msty's model server was down when the vote started, so
+  the provider check moved to the separate Ollama server, where a small `mistral:latest` (same maker,
+  so allowed as a backup) stood in for Mistral Small 3.2 and could not follow the answer format.
+  A tribunal voter now runs only on the configured model server. If it is down, the voter waits
+  up to 10 minutes for it (Msty restarted it within about 6 minutes), checking every 20 seconds,
+  and then fails openly instead of using another server's models.
+
 ## 9.18.0 - A stuck vote asks the owner the voters' questions (2026-11-17)
 
 ### Added
