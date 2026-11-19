@@ -356,6 +356,41 @@ Real Odysseus can complement AURELIUS over a separate local service:
 [setup and permissions](docs/AURELIUS_ODYSSEUS.md). This route uses the actual
 Odysseus agent API and preserves CONSENSUS reasoning and existing briefing owners.
 
+## What Leaves Your PC
+
+CONSENSUS does not phone home. It has no analytics, no usage reporting and no
+update check. The "telemetry" in the desktop window is local statistics that
+stay on your PC. Checked against the code on 2026-11-19 (9.19.2).
+
+**During a vote**, the voters' models run on Msty's server on your own PC
+(`localhost`). The proposal text goes nowhere else, unless you turn on an
+online voter for a role.
+
+**Without any setup**, the only outside connections are downloads of public
+data. They send nothing about you or your proposals:
+
+| What | Where it comes from | When |
+| --- | --- | --- |
+| World news events for the map | GDELT public event files (`data.gdeltproject.org`) | When the desktop window refreshes its map, at most every 15 minutes |
+| News headlines for BELLATOR | Public RSS feeds listed in `config/data_sources.json` (for example BBC, NPR, UN, CISA) | Only when you run `tools/poll_rss_feeds.py` or schedule it |
+
+`BELLATOR_FEEDS_ENABLED=0` in `.env` stops the map download. Unless you add
+keys for the extra feeds below, a vote uses only news already saved on your
+PC and downloads nothing.
+
+**Only if you set them up**, these connect to an outside service:
+
+| Feature | Connects to | What is sent |
+| --- | --- | --- |
+| Online voters ([ONLINE_MODELS.md](docs/ONLINE_MODELS.md)) | Anthropic, OpenAI, xAI or DeepSeek | That voter's prompt, which includes the proposal |
+| Extra feeds (ACLED, NASA FIRMS, Cloudflare Radar, abuse.ch), fetched during votes once a key is set | Each provider's API | Your key for that service; no proposal text |
+| AURELIUS assistant: Telegram, mail, calendar | Telegram, Microsoft or Proton | Messages and items you ask it to handle |
+
+The guest door, phone page and local API listen on your PC for requests and
+send nothing out on their own. Installing (`setup.bat` or `pip`) downloads
+packages from PyPI. Msty Studio is separate software with its own privacy
+terms.
+
 ## License
 
 CONSENSUS is free for noncommercial use under the

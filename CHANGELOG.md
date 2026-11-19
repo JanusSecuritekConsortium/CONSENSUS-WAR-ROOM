@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.19.2 - The README says what leaves your PC (2026-11-19)
+
+### Added
+- README section "What Leaves Your PC", checked against the code: no analytics, usage reporting or
+  update check; during a vote the proposal stays on the PC unless an online voter is turned on. Without
+  setup, the only outside connections download public data (GDELT map events, and the public news feeds
+  when you run their refresh). It lists what each optional feature connects to and what it sends.
+
 ## 9.19.1 - CONSENSUS has a license: free for noncommercial use (2026-11-19)
 
 ### Added
