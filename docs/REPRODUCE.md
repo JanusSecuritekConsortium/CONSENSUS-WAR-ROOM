@@ -9,6 +9,8 @@ The repository holds the complete program. What it leaves out on purpose:
 - **Voice models.** These are optional; without them the system voice is used.
 - **Accounts and personal context.** Telegram, mail, calendar, online-model keys and the Obsidian vault are optional.
 
+CONSENSUS is free for noncommercial use under the [PolyForm Noncommercial License 1.0.0](../LICENSE.md).
+
 ## What you need
 
 | Item | Tested with | Notes |

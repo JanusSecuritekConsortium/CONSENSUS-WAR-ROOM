@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.19.1 - CONSENSUS has a license: free for noncommercial use (2026-11-19)
+
+### Added
+- `LICENSE.md`: the PolyForm Noncommercial License 1.0.0, unchanged, with the required copyright notice.
+  Anyone may use, copy and change CONSENSUS for personal, study, research, hobby, charity, school or
+  public-body purposes. Commercial use needs a separate license from the author.
+- A License section in the README and a line in `docs/REPRODUCE.md`. Before this, the repository had no
+  license, so others had no legal right to reuse the code.
+
 ## 9.19.0 - Anyone can set up CONSENSUS from the public repository (2026-11-19)
 
 ### Added

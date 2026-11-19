@@ -355,3 +355,12 @@ and read [AURELIUS agent operations](docs/AURELIUS_AGENT.md) before enabling it.
 Real Odysseus can complement AURELIUS over a separate local service:
 [setup and permissions](docs/AURELIUS_ODYSSEUS.md). This route uses the actual
 Odysseus agent API and preserves CONSENSUS reasoning and existing briefing owners.
+
+## License
+
+CONSENSUS is free for noncommercial use under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md): personal projects, study,
+research, hobby use, and charities, schools and public bodies. Anyone may use,
+copy and change it for those purposes, as long as they pass on the license and
+its "Required Notice" line. Commercial use needs a separate license from the
+author; open an issue on GitHub to ask.
