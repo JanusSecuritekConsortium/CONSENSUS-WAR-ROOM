@@ -43,15 +43,16 @@ class VoterCheckTest(unittest.TestCase):
     def test_each_voter_runs_alone_and_a_missing_model_is_named(self):
         config = mock.Mock(agent_model_overrides={"RATIONALIS": "deepseek-missing.gguf", "AETERNUM": YI, "BELLATOR": Q3},
                            base_model=HERMES, generation_timeout_seconds=900)
-        events = []
+        events, shown = [], []
         with mock.patch("integrations.msty.api.resolve_provider_base_url", return_value="http://router"):
-            rows = vc.check(config=config, available=lambda url: [YI, Q3, HERMES],
+            rows = vc.check(config=config, available=lambda url: [YI, Q3, HERMES], on_row=shown.append,
                             unload_all=lambda url: events.append("unload"),
                             check_one=lambda url, model: events.append(model) or {
                                 "model": model, "ok": model != Q3, "seconds": 1.0, "tokens_per_second": None,
                                 "error": "" if model != Q3 else "failed to load"})
         self.assertEqual([row["agent"] for row in rows], ["RATIONALIS", "AETERNUM", "BELLATOR", "BASE"])
         self.assertIn("does not list", rows[0]["error"])
+        self.assertEqual(shown, rows)  # each result is shown as soon as it is known, not only at the end
         self.assertEqual(events, ["unload", YI, "unload", Q3, "unload", HERMES, "unload"])
         text = vc.render(rows)
         self.assertIn("BELLATOR   NOT READY mixtral-8x7b-instruct-v0.1.Q3_K_M.gguf: failed to load", text)

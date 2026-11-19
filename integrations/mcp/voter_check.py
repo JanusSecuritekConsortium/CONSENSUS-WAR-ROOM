@@ -52,7 +52,9 @@ def voter_models(config, available: List[str]) -> Dict[str, Optional[str]]:
 
 
 def check(*, config=None, check_one: Callable[[str, str], Dict[str, Any]] = None,
-          unload_all: Callable[[str], None] = None, available: Callable[[str], List[str]] = None) -> List[Dict[str, Any]]:
+          unload_all: Callable[[str], None] = None, available: Callable[[str], List[str]] = None,
+          on_row: Callable[[Dict[str, Any]], None] = lambda row: None) -> List[Dict[str, Any]]:
+    """Check each voter's model in turn; on_row gets each result as soon as it is known (a load can take minutes)."""
     from integrations.msty import api
     if config is None:
         from config.runtime import load_runtime_config
@@ -67,9 +69,11 @@ def check(*, config=None, check_one: Callable[[str, str], Dict[str, Any]] = None
         if not model:
             rows.append({"agent": agent, "model": None, "ok": False, "seconds": None, "tokens_per_second": None,
                          "error": "the model server does not list this voter's configured model"})
+            on_row(rows[-1])
             continue
         unload_all(base_url)  # one voter at a time, as in a deliberation
         rows.append({"agent": agent, **check_one(base_url, model)})
+        on_row(rows[-1])
     unload_all(base_url)
     return rows
 
@@ -92,8 +96,8 @@ def main(argv=None) -> int:
         print("A deliberation is running; check the voters after it finishes.")
         return 2
     tribunal_job._free_local_ai()
-    rows = check()
-    print(render(rows))
+    print("Loading each voter's model in turn; each can take a few minutes.", flush=True)
+    rows = check(on_row=lambda row: print(render([row]), flush=True))
     return 0 if all(row["ok"] for row in rows) else 1
 
 

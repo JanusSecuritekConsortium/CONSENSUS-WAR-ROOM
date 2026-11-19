@@ -1,5 +1,20 @@
 # Changelog
 
+## 9.19.0 - Anyone can set up CONSENSUS from the public repository (2026-11-19)
+
+### Added
+- `setup.bat` (double-click) and `setup.ps1`: one step that finds Python 3.10+, creates `.venv`, installs
+  the program, runs a simulated test vote and the health check, and lists which voter models Msty's
+  model server already has. Safe to run again.
+- `docs/REPRODUCE.md`: from a fresh clone to a real vote on local models. Covers tested versions and
+  hardware, memory and storage needs, the four exact model files with Hugging Face links and sizes,
+  Msty's settings, how to check each step, optional pieces, and common problems. Linked from the README.
+  Checked by cloning the public repository into an empty folder and following it.
+
+### Changed
+- `python -m integrations.mcp.voter_check` prints each voter's result as soon as it is known; a model
+  load can take minutes, and before it showed nothing until all four were done.
+
 ## 9.18.3 - The README no longer reads as mock-only (2026-11-18)
 
 ### Changed

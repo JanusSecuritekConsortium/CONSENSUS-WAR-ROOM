@@ -118,6 +118,10 @@ cannot establish real-model success. See [evaluation commands and limitations](d
 
 Requirements: Windows and Python 3.10 or newer.
 
+To set up a real tribunal on another PC, run `setup.bat` after cloning, then follow
+[the reproduction guide](docs/REPRODUCE.md) from a fresh clone to a vote on local models. It lists the exact model files, Msty settings, memory and
+disk needs, and how to check each step.
+
 Linux migration support (launchers, voice fallback, and setup requirements)
 is documented in [the Linux migration guide](docs/LINUX_MIGRATION.md).
 Native Linux desktop and voice-model validation is still required.
