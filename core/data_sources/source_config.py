@@ -38,6 +38,19 @@ def _env(name: str, dotenv: Dict[str, str]) -> str:
     return str(os.getenv(name) or dotenv.get(name) or "")
 
 
+def env_setting(name: str, default: str = "") -> str:
+    """A setting from the process environment, else from the .env file beside the code."""
+    return _env(name, _dotenv_values(DOTENV_PATH)) or default
+
+
+def feeds_switch() -> str:
+    """BELLATOR_FEEDS_ENABLED, lower-cased: "auto" unless set to on/1 or off/0/cache."""
+    return env_setting("BELLATOR_FEEDS_ENABLED", "auto").strip().lower()
+
+
+FEEDS_OFF_VALUES = {"0", "false", "no", "off", "cache", "cache_only"}
+
+
 def load_data_source_config(path: Path | None = None) -> Dict[str, Any]:
     target = path or DATA_SOURCE_CONFIG_PATH
     payload = json.loads(target.read_text(encoding="utf-8"))

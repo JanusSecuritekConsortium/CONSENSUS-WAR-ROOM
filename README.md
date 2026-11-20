@@ -360,7 +360,7 @@ Odysseus agent API and preserves CONSENSUS reasoning and existing briefing owner
 
 CONSENSUS does not phone home. It has no analytics, no usage reporting and no
 update check. The "telemetry" in the desktop window is local statistics that
-stay on your PC. Checked against the code on 2026-11-19 (9.19.2).
+stay on your PC. Checked against the code on 2026-11-20 (9.19.3).
 
 **During a vote**, the voters' models run on Msty's server on your own PC
 (`localhost`). The proposal text goes nowhere else, unless you turn on an

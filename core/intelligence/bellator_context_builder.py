@@ -23,6 +23,7 @@ except ImportError:
     from core.intelligence.bellator_risk_scorer import score_events
     from core.intelligence.geospatial_filters import build_geo_filter_config, filter_and_weight_events
 
+from core.data_sources.source_config import FEEDS_OFF_VALUES, env_setting, feeds_switch
 from core.data_sources.enrichment import build_bellator_data_enrichment
 from core.data_sources.rss_backbone import build_bellator_rss_packet
 
@@ -286,10 +287,10 @@ def _operator_note(sources: Dict[str, Dict[str, Any]], events: List[Dict[str, An
 
 
 def _live_enabled() -> bool:
-    setting = os.getenv("BELLATOR_FEEDS_ENABLED", "auto").strip().lower()
+    setting = feeds_switch()
     if setting in {"1", "true", "yes", "on", "live"}:
         return True
-    if setting in {"0", "false", "no", "off", "cache", "cache_only"}:
+    if setting in FEEDS_OFF_VALUES:
         return False
     credential_envs = (
         "ACLED_API_KEY",
@@ -299,7 +300,7 @@ def _live_enabled() -> bool:
         "CLOUDFLARE_API_TOKEN",
         "CLOUDFLARE_RADAR_TOKEN",
     )
-    return any(os.getenv(name) for name in credential_envs) or os.getenv("URLHAUS_ENABLED", "").lower() in {"1", "true", "yes", "on"}
+    return any(env_setting(name) for name in credential_envs) or env_setting("URLHAUS_ENABLED").lower() in {"1", "true", "yes", "on"}
 
 
 def _disabled_result(source: str) -> Dict[str, Any]:

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+from core.data_sources.source_config import env_setting
 
 
 SOURCE = "cloudflare_radar"
@@ -14,8 +15,8 @@ DEFAULT_BASE_URL = "https://api.cloudflare.com/client/v4/radar/annotations/outag
 
 
 def fetch_cloudflare_outages(days: int = 3, limit: int = 100, timeout: int = 8) -> Dict[str, Any]:
-    token = os.getenv("CLOUDFLARE_API_TOKEN") or os.getenv("CLOUDFLARE_RADAR_TOKEN")
-    base_url = os.getenv("CLOUDFLARE_RADAR_BASE_URL", DEFAULT_BASE_URL)
+    token = env_setting("CLOUDFLARE_API_TOKEN") or env_setting("CLOUDFLARE_RADAR_TOKEN")
+    base_url = env_setting("CLOUDFLARE_RADAR_BASE_URL", DEFAULT_BASE_URL)
     fetched_at = datetime.now(timezone.utc).isoformat()
 
     if not token:

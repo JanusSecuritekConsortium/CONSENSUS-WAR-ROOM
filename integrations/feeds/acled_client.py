@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+from core.data_sources.source_config import env_setting
 
 SOURCE = "acled"
 DEFAULT_BASE_URL = "https://acleddata.com/api/acled/read"
@@ -14,7 +15,7 @@ DEFAULT_TOKEN_URL = "https://acleddata.com/oauth/token"
 
 
 def resolve_acled_auth(timeout: int = 8) -> Dict[str, Any]:
-    access_token = os.getenv("ACLED_ACCESS_TOKEN", "").strip()
+    access_token = env_setting("ACLED_ACCESS_TOKEN", "").strip()
     if access_token:
         return {
             "ok": True,
@@ -23,8 +24,8 @@ def resolve_acled_auth(timeout: int = 8) -> Dict[str, Any]:
             "diagnostics": {"auth_mode": "access_token", "oauth_success": True},
         }
 
-    email = os.getenv("ACLED_EMAIL", "").strip()
-    password = os.getenv("ACLED_PASSWORD", "")
+    email = env_setting("ACLED_EMAIL", "").strip()
+    password = env_setting("ACLED_PASSWORD", "")
     if email and password:
         token_result = request_acled_oauth_token(email, password, timeout=timeout)
         if token_result.get("ok"):
@@ -50,8 +51,8 @@ def resolve_acled_auth(timeout: int = 8) -> Dict[str, Any]:
             },
         }
 
-    legacy_enabled = os.getenv("ACLED_ENABLE_LEGACY_KEY", "").strip().lower() in {"1", "true", "yes", "on"}
-    legacy_key = os.getenv("ACLED_API_KEY") or os.getenv("ACLED_KEY")
+    legacy_enabled = env_setting("ACLED_ENABLE_LEGACY_KEY", "").strip().lower() in {"1", "true", "yes", "on"}
+    legacy_key = env_setting("ACLED_API_KEY") or env_setting("ACLED_KEY")
     if legacy_enabled and legacy_key and email:
         return {
             "ok": True,
@@ -74,7 +75,7 @@ def resolve_acled_auth(timeout: int = 8) -> Dict[str, Any]:
 
 
 def request_acled_oauth_token(email: str, password: str, timeout: int = 8) -> Dict[str, Any]:
-    token_url = os.getenv("ACLED_TOKEN_URL", DEFAULT_TOKEN_URL)
+    token_url = env_setting("ACLED_TOKEN_URL", DEFAULT_TOKEN_URL)
     body = urlencode(
         {
             "username": email,
@@ -113,7 +114,7 @@ def request_acled_oauth_token(email: str, password: str, timeout: int = 8) -> Di
 
 
 def fetch_acled_events(days: int = 3, limit: int = 100, timeout: int = 8) -> Dict[str, Any]:
-    base_url = os.getenv("ACLED_BASE_URL", DEFAULT_BASE_URL)
+    base_url = env_setting("ACLED_BASE_URL", DEFAULT_BASE_URL)
     fetched_at = datetime.now(timezone.utc).isoformat()
     auth = resolve_acled_auth(timeout=timeout)
 

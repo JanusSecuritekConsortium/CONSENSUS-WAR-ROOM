@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import csv
-import os
 from datetime import datetime, timezone
 from io import StringIO
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from core.data_sources.source_config import env_setting
 
 
 SOURCE = "nasa_firms"
@@ -14,9 +15,9 @@ DEFAULT_BASE_URL = "https://firms.modaps.eosdis.nasa.gov/api/area/csv"
 
 
 def fetch_nasa_firms_events(days: int = 3, timeout: int = 8) -> Dict[str, Any]:
-    map_key = os.getenv("NASA_FIRMS_MAP_KEY") or os.getenv("FIRMS_MAP_KEY")
-    base_url = os.getenv("NASA_FIRMS_BASE_URL", DEFAULT_BASE_URL)
-    satellite_source = os.getenv("NASA_FIRMS_SOURCE", "VIIRS_SNPP_NRT")
+    map_key = env_setting("NASA_FIRMS_MAP_KEY") or env_setting("FIRMS_MAP_KEY")
+    base_url = env_setting("NASA_FIRMS_BASE_URL", DEFAULT_BASE_URL)
+    satellite_source = env_setting("NASA_FIRMS_SOURCE", "VIIRS_SNPP_NRT")
     fetched_at = datetime.now(timezone.utc).isoformat()
 
     if not map_key:

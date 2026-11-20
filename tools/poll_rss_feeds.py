@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from core.data_sources.rss_backbone import RssIntelligenceBackbone
+from core.data_sources.source_config import FEEDS_OFF_VALUES, feeds_switch
 
 
 def main() -> int:
@@ -19,6 +20,9 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="Print JSON output.")
     parser.add_argument("--watch", action="store_true", help="Continue polling at the configured RSS interval.")
     args = parser.parse_args()
+    if feeds_switch() in FEEDS_OFF_VALUES:
+        print("RSS POLL DISABLED: BELLATOR_FEEDS_ENABLED is off, so nothing was downloaded.", flush=True)
+        return 0
     backbone = RssIntelligenceBackbone()
     while True:
         summary = backbone.poll(force=args.force)

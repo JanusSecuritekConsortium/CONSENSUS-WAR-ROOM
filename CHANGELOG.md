@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.19.3 - The news "off" switch works from the .env file (2026-11-20)
+
+### Fixed
+- `BELLATOR_FEEDS_ENABLED` and the extra feeds' keys (ACLED, NASA FIRMS, Cloudflare Radar, abuse.ch) were
+  read only from Windows environment variables, so putting them in `.env`, as the README says, did
+  nothing. They are now read from `.env` too; a Windows environment variable still wins.
+- The news refresh tool (`tools/poll_rss_feeds.py`) now downloads nothing when the switch is off.
+
+### Added
+- `BELLATOR_FEEDS_ENABLED` in `.env.example`, with what each value does.
+
 ## 9.19.2 - The README says what leaves your PC (2026-11-19)
 
 ### Added

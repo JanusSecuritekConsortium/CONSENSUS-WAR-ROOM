@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-SYSTEM_VERSION = "9.19.2"
-SYSTEM_LAST_PATCH_DATE = "2026-11-19"
+SYSTEM_VERSION = "9.19.3"
+SYSTEM_LAST_PATCH_DATE = "2026-11-20"
 SYSTEM_AUTHOR = "Erhardt Von Grupten Mundt"
 SYSTEM_ORGANIZATION = "CONSENSUS project"

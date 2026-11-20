@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import datetime, timezone
 from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from core.data_sources.source_config import env_setting
 
 
 SOURCE = "abuse_ch_urlhaus"
@@ -14,12 +15,12 @@ DEFAULT_RECENT_URL = "https://urlhaus-api.abuse.ch/v1/urls/recent/"
 
 def fetch_urlhaus_recent(timeout: int = 8) -> Dict[str, Any]:
     fetched_at = datetime.now(timezone.utc).isoformat()
-    auth_key = os.getenv("URLHAUS_AUTH_KEY")
-    enabled = os.getenv("URLHAUS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+    auth_key = env_setting("URLHAUS_AUTH_KEY")
+    enabled = env_setting("URLHAUS_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
     if not enabled:
         return _result(False, "disabled", [], fetched_at, {"enable_with": "URLHAUS_ENABLED=1"})
 
-    url = os.getenv("URLHAUS_RECENT_URL", DEFAULT_RECENT_URL)
+    url = env_setting("URLHAUS_RECENT_URL", DEFAULT_RECENT_URL)
     headers = {"Accept": "application/json", "User-Agent": "CONSENSUS-BELLATOR/7.9"}
     if auth_key:
         headers["Auth-Key"] = auth_key

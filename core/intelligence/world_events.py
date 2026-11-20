@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 from urllib.request import Request, urlopen
 
+from core.data_sources.source_config import env_setting, feeds_switch
 from core.intelligence.bellator_context_builder import FEED_CACHE_DIR, PACKET_CACHE_PATH
 
 SOURCE = "gdelt_events"
@@ -46,9 +47,9 @@ Opener = Callable[[str, int], bytes]
 
 
 def gdelt_enabled() -> bool:
-    if os.getenv("BELLATOR_FEEDS_ENABLED", "auto").strip().lower() in OFF_VALUES:
+    if feeds_switch() in OFF_VALUES:
         return False
-    return os.getenv("BELLATOR_GDELT_EVENTS", "1").strip().lower() not in OFF_VALUES
+    return env_setting("BELLATOR_GDELT_EVENTS", "1").strip().lower() not in OFF_VALUES
 
 
 def _download(url: str, timeout: int) -> bytes:
