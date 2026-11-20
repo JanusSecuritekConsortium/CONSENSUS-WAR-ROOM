@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.20.0 - Window votes rerun and ask the owner; a Windows alert when votes wait (2026-11-20)
+
+### Added
+- A vote started in the desktop window now follows the same owner rule as the command line and the
+  background votes: without consensus it reruns (up to 3 times), and before each rerun a window shows
+  the voters' questions. The answer reaches every voter; SKIP ends the vote with its current result.
+  The window waits up to 24 hours and closes when the vote is cancelled. Reruns show as "Rerun N".
+  Simulated (mock) votes stay at three rounds and ask nothing.
+- A Windows notification ("CONSENSUS needs your answer") whenever a vote, from the window or in the
+  background, is waiting for the owner's answers. It stays on this PC. Turn it off with
+  `CONSENSUS_DESKTOP_ALERTS=0`.
+
 ## 9.19.3 - The news "off" switch works from the .env file (2026-11-20)
 
 ### Fixed

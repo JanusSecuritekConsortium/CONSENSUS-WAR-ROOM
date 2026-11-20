@@ -301,6 +301,8 @@ def _asker(path: Path, record: Dict[str, Any], *, wait: timedelta = ANSWER_WAIT,
         record.update(status="awaiting_answers", questions=questions, asked_at=_now().isoformat(timespec="seconds"))
         record.pop("answer", None)
         _write(path, record)
+        from core.notify import questions_alert
+        questions_alert(questions)  # a Windows notification, so the owner knows the vote is waiting
         deadline = _now() + wait
         reply: Optional[str] = None
         outcome = "unanswered"

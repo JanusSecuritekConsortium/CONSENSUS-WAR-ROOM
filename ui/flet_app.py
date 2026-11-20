@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Dict, List, Literal
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import flet as ft
 
@@ -37,6 +37,8 @@ from core.intelligence.bellator_context_builder import (
 )
 from core.data_sources.health import build_data_sources_status
 from core.logging import log_decision_trace, log_error, log_event
+from core.notify import questions_alert
+from ui.owner_questions import GuiOwnerAsker, build_question_dialog
 from core.manual_visual_review import manual_visual_review_summary
 from core.memory.context import build_context_packet, context_status
 from core.memory.session import upsert_session_record
@@ -691,7 +693,10 @@ def submit_proposal_live_for_gui(
     proposal: str,
     on_update: GuiUpdateCallback | None = None,
     skip_animations: bool = False,
+    ask_owner: Callable[[list], Optional[str]] | None = None,
 ) -> TribunalResult:
+    """Run one vote for the window. Like the command line, a vote without consensus reruns (up to the
+    rules' consensus_reruns); with ask_owner, the voters' questions go to the owner before each rerun."""
     clean_proposal = proposal.strip()
     if not clean_proposal:
         raise ValueError("Proposal is empty.")
@@ -795,6 +800,7 @@ def submit_proposal_live_for_gui(
     )
 
     orchestrator = VotingOrchestrator(state.nodes, runtime)
+    simulated = state.config.backend == "mock"
     current_round_votes: Dict[str, Vote] = {}
     reported_substitutions: set[tuple[str, str]] = set()
 
@@ -817,11 +823,12 @@ def submit_proposal_live_for_gui(
         phase = str(event["phase"])
         event_type = event["type"]
         if event_type == "round_started":
-            state.directorate.emit("TRIBUNAL", "ROUND_STARTED", "RUNNING", f"Round {event['round']}/3: {phase}", session_id)
+            label = f"Rerun {event['rerun']} (round {event['round']})" if event.get("rerun") else f"Round {event['round']}/3"
+            state.directorate.emit("TRIBUNAL", "ROUND_STARTED", "RUNNING", f"{label}: {phase}", session_id)
             current_round_votes.clear()
             if phase == "critique":
                 _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
-            append_reasoning_event(state.reasoning_stream, f"Round {event['round']}/3: {phase}")
+            append_reasoning_event(state.reasoning_stream, f"{label}: {phase}")
         elif event_type == "agent_started":
             agent_id = str(event["agent_id"])
             state.deliberation_pending = {**state.deliberation_pending, agent_id: f"round {event['round']} / {phase}"}
@@ -894,6 +901,9 @@ def submit_proposal_live_for_gui(
         votes = orchestrator.cast_votes(
             clean_proposal, session_id, state.theme_key, state.config.sequential,
             memory_context, on_event=on_deliberation_event,
+            # Simulated voters give canned answers: rerunning them or asking the owner would change nothing.
+            consensus_check=rules.consensus_reached, extra_rounds=0 if simulated else rules.consensus_reruns,
+            ask_owner=None if simulated else ask_owner,
         )
         if state.lifecycle_state != LIFECYCLE_DELIBERATING:
             _set_lifecycle(state, LIFECYCLE_DELIBERATING, on_update)
@@ -2740,8 +2750,25 @@ def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
             def update() -> None:
                 _refresh_live_page(page, state)
 
+            open_dialogs: list = []
+
+            def show_questions(questions: list, reply: Callable[[Optional[str]], None]) -> None:
+                dialog = build_question_dialog(ft, questions, reply, lambda shown: page.close(shown))
+                open_dialogs.append(dialog)
+                state.submission_message = "The voters could not agree and are waiting for your answer."
+                page.open(dialog)
+
+            def dismiss_questions() -> None:
+                for dialog in open_dialogs:
+                    try:
+                        page.close(dialog)
+                    except Exception:
+                        pass
+
+            asker = GuiOwnerAsker(show_questions, check=control.check, alert=questions_alert,
+                                  dismiss=dismiss_questions)
             try:
-                submit_proposal_live_for_gui(state, proposal, on_update=update)
+                submit_proposal_live_for_gui(state, proposal, on_update=update, ask_owner=asker)
                 _set_submission_feedback(page, state, "Verdict recorded. See the result below.")
                 state.retry_available = bool(state.current_result and not getattr(state.current_result, "deliberation_complete", True))
             except SubmissionCancelled:

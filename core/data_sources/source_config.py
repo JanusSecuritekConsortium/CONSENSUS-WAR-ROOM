@@ -40,7 +40,8 @@ def _env(name: str, dotenv: Dict[str, str]) -> str:
 
 def env_setting(name: str, default: str = "") -> str:
     """A setting from the process environment, else from the .env file beside the code."""
-    return _env(name, _dotenv_values(DOTENV_PATH)) or default
+    skip_file = os.environ.get("CONSENSUS_DATA_ENV_FILE") == ""  # the tests ignore the owner's .env
+    return _env(name, {} if skip_file else _dotenv_values(DOTENV_PATH)) or default
 
 
 def feeds_switch() -> str:

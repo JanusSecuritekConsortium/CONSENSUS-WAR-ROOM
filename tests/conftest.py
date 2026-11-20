@@ -25,6 +25,10 @@ if not os.environ.get("CONSENSUS_USERS_FILE"):
 # The world map downloads GDELT news events; tests must not reach the network for them.
 os.environ.setdefault("BELLATOR_GDELT_EVENTS", "0")
 
+# The owner's .env must not switch feeds or keys on in tests, and tests show no Windows notifications.
+os.environ["CONSENSUS_DATA_ENV_FILE"] = ""
+os.environ["CONSENSUS_DESKTOP_ALERTS"] = "0"
+
 # Online voter models: ignore the owner's .env (keys and model choices) and any shell settings,
 # so no test reaches a paid API. Tests that need a route set it themselves.
 os.environ["CONSENSUS_ONLINE_ENV_FILE"] = ""
