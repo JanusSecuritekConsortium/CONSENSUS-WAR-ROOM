@@ -13,16 +13,38 @@ from typing import Callable, Optional
 
 from core.logging import log_error, log_event
 
-# PowerShell's own app id, so Windows shows the notification without registering an app.
+APP_ID = "JanusSecuritek.CONSENSUS"
+_POWERSHELL_APP_ID = r"{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
+
+# Names the sender "CONSENSUS" (a per-user entry under HKCU, no admin rights) and falls back to
+# PowerShell's own app id if that entry cannot be written.
 _TOAST_SCRIPT = r"""
+$app = $env:CONSENSUS_ALERT_APP
+try {
+    $key = "HKCU:\Software\Classes\AppUserModelId\$app"
+    New-Item -Path $key -Force -ErrorAction Stop | Out-Null
+    New-ItemProperty -Path $key -Name DisplayName -Value 'CONSENSUS' -PropertyType String -Force -ErrorAction Stop | Out-Null
+    if ($env:CONSENSUS_ALERT_ICON) {
+        New-ItemProperty -Path $key -Name IconUri -Value $env:CONSENSUS_ALERT_ICON -PropertyType String -Force -ErrorAction Stop | Out-Null
+    }
+} catch { $app = $env:CONSENSUS_ALERT_FALLBACK_APP }
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
 $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
 $lines = $template.GetElementsByTagName('text')
 $lines.Item(0).AppendChild($template.CreateTextNode($env:CONSENSUS_ALERT_TITLE)) | Out-Null
 $lines.Item(1).AppendChild($template.CreateTextNode($env:CONSENSUS_ALERT_TEXT)) | Out-Null
-$app = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
 [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($app).Show([Windows.UI.Notifications.ToastNotification]::new($template))
 """
+
+
+def _icon_path() -> str:
+    try:
+        from ui.assets.app_icon import resolve_app_icon_path
+
+        icon = resolve_app_icon_path(prefer_ico=False)
+    except Exception:
+        return ""
+    return str(icon) if icon else ""
 
 
 def alerts_enabled() -> bool:
@@ -33,7 +55,9 @@ def desktop_alert(title: str, text: str, *, launch: Optional[Callable[..., objec
     """Show a Windows notification without waiting for it. Returns False when it was not shown."""
     if not alerts_enabled() or (launch is None and sys.platform != "win32"):
         return False
-    env = {**os.environ, "CONSENSUS_ALERT_TITLE": title[:120], "CONSENSUS_ALERT_TEXT": text[:400]}
+    env = {**os.environ, "CONSENSUS_ALERT_TITLE": title[:120], "CONSENSUS_ALERT_TEXT": text[:400],
+           "CONSENSUS_ALERT_APP": APP_ID, "CONSENSUS_ALERT_FALLBACK_APP": _POWERSHELL_APP_ID,
+           "CONSENSUS_ALERT_ICON": _icon_path()}
     command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", _TOAST_SCRIPT]
     try:
         (launch or subprocess.Popen)(command, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

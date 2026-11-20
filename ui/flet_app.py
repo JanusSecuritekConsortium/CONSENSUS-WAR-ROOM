@@ -38,7 +38,7 @@ from core.intelligence.bellator_context_builder import (
 from core.data_sources.health import build_data_sources_status
 from core.logging import log_decision_trace, log_error, log_event
 from core.notify import questions_alert
-from ui.owner_questions import GuiOwnerAsker, build_question_dialog
+from ui.owner_questions import GuiOwnerAsker, bring_window_forward, build_question_dialog
 from core.manual_visual_review import manual_visual_review_summary
 from core.memory.context import build_context_packet, context_status
 from core.memory.session import upsert_session_record
@@ -2757,6 +2757,7 @@ def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
                 open_dialogs.append(dialog)
                 state.submission_message = "The voters could not agree and are waiting for your answer."
                 page.open(dialog)
+                bring_window_forward(page)
 
             def dismiss_questions() -> None:
                 for dialog in open_dialogs:

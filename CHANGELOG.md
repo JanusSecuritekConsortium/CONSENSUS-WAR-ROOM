@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.20.2 - Alerts come from CONSENSUS; the window comes forward; two private files stay local (2026-11-20)
+
+### Changed
+- Windows notifications now show "CONSENSUS" as the sender instead of "Windows PowerShell". The
+  program writes its own name and icon under the current user's registry (no admin rights); if that
+  fails, the alert still appears under PowerShell's name.
+- When the voters ask the owner questions, the desktop window restores itself and comes to the front.
+
+### Fixed
+- `_ARBITER/directorate_preferences.json` and `_ARBITER/verdict_notes_sent.json` (the owner's own
+  preferences and sent-notes record) are now ignored by Git, so they cannot be published by mistake.
+
 ## 9.20.1 - Every voter has a same-maker backup model (2026-11-20)
 
 ### Added

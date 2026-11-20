@@ -57,6 +57,8 @@ _ARBITER/decision_history*.json.lock
 _ARBITER/provider_model_cache.json
 _ARBITER/proposal.json
 _ARBITER/users.json
+_ARBITER/directorate_preferences.json
+_ARBITER/verdict_notes_sent.json
 
 # Heavy/generated historical backups
 archive/*

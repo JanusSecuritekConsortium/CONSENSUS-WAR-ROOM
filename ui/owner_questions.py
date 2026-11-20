@@ -97,3 +97,18 @@ def build_question_dialog(ft: Any, questions: list, reply: Callable[[Optional[st
         ],
     )
     return dialog
+
+
+def bring_window_forward(page: Any) -> bool:
+    """Restore and raise the CONSENSUS window so the owner sees the questions. Never stops the vote."""
+    window = getattr(page, "window", None)
+    if window is None:
+        return False
+    try:
+        if getattr(window, "minimized", False):
+            window.minimized = False
+        window.to_front()
+        page.update()
+    except Exception:
+        return False
+    return True
