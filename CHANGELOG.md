@@ -1,5 +1,14 @@
 # Changelog
 
+## 9.20.1 - Every voter has a same-maker backup model (2026-11-20)
+
+### Added
+- `docs/REPRODUCE.md` lists optional backup models, one per role, each from the same maker as the
+  voter's main model: Ministral 3 8B (Mistral AI) for BELLATOR and Hermes 3 3B (Nous Research) for
+  ARBITER join the existing Qwen and Gemma backups. No code change: a voter already switches only to a
+  same-maker model on the server. Both were downloaded on the tested PC, checked against Hugging Face's
+  checksums, and answered a test prompt (Hermes 3 3B in 52 s, Ministral 3 8B in 144 s, including load).
+
 ## 9.20.0 - Window votes rerun and ask the owner; a Windows alert when votes wait (2026-11-20)
 
 ### Added

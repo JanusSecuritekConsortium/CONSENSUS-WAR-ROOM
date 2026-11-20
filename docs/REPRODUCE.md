@@ -126,6 +126,19 @@ Direct download links, if you prefer to download the files yourself and add them
 
 Run `setup.bat` again afterwards: its last section should list all four models as `ready`.
 
+### Optional backup models
+
+If a voter's model fails to load or answer, the voter switches to another model from the **same maker**
+that is already on the server, never to a different maker's model. These smaller files give each role a
+backup; Msty finds them in its models folder after it restarts.
+
+| Backup for | Maker | Hugging Face repository | File | Size |
+| --- | --- | --- | --- | --- |
+| RATIONALIS | Alibaba | any smaller Qwen model | for example a Qwen 3.5 9B GGUF | about 6 GB |
+| AETERNUM | Google | [lmstudio-community/gemma-3-12b-it-GGUF](https://huggingface.co/lmstudio-community/gemma-3-12b-it-GGUF) | `gemma-3-12b-it-Q3_K_L.gguf` | 6.5 GB |
+| BELLATOR | Mistral AI | [mistralai/Ministral-3-8B-Instruct-2512-GGUF](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF) | `Ministral-3-8B-Instruct-2512-Q4_K_M.gguf` | 5.2 GB |
+| ARBITER | Nous Research | [NousResearch/Hermes-3-Llama-3.2-3B-GGUF](https://huggingface.co/NousResearch/Hermes-3-Llama-3.2-3B-GGUF) | `Hermes-3-Llama-3.2-3B.Q4_K_M.gguf` | 2.0 GB |
+
 Each voter comes from a different maker, on purpose: different training gives different reasoning. The
 ARBITER does not vote by opinion. It applies fixed rules, so its model matters little.
 
