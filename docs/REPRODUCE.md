@@ -198,6 +198,7 @@ None of these is needed for a vote. Each has its own guide.
 | Phone page | Submit and answer votes from a phone | [PHONE_ACCESS.md](PHONE_ACCESS.md) |
 | Second brain | Local Obsidian notes as background context | `CONSENSUS_SECOND_BRAIN` in `.env` |
 | Telegram, mail, calendar | AURELIUS assistant features | [AURELIUS_AGENT.md](AURELIUS_AGENT.md) |
+| Data backup | Copies your settings, vote records, voice models and notes to another drive; never deletes there | `python tools/backup_private_data.py --target <folder>`, or set `CONSENSUS_BACKUP_DIR` |
 
 Copy `.env.example` to `.env` and fill in only what you use. Never commit `.env`.
 

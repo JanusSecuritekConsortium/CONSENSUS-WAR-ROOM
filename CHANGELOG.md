@@ -1,5 +1,17 @@
 # Changelog
 
+## 9.21.0 - Weekly backup of the owner's own data (2026-11-23)
+
+### Added
+- `tools/backup_private_data.py` copies what GitHub and model downloads cannot replace: `.env`,
+  `_ARBITER` (vote records and assistant data, without the rebuildable spoken-audio files), reports,
+  logs, voice models and the Obsidian vault. It only adds and updates files, never deletes on the
+  backup drive, and does nothing when that drive is unplugged. `LAST_BACKUP.txt` in the backup
+  folder says when it last ran and whether every part worked. Set the folder with `--target` or
+  `CONSENSUS_BACKUP_DIR`.
+- On the tested PC it runs weekly from Task Scheduler (Sunday 20:00, or at the next start if the PC
+  was off). The first copy was 5.5 GB in under 5 minutes; a repeat run took 6 seconds.
+
 ## 9.20.2 - Alerts come from CONSENSUS; the window comes forward; two private files stay local (2026-11-20)
 
 ### Changed
