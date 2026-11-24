@@ -29,6 +29,15 @@ def isolated_logs(monkeypatch):
     monkeypatch.setattr("core.voting.orchestrator.build_aeternum_data_enrichment", lambda *a, **kw: {})
 
 
+@pytest.fixture(autouse=True)
+def no_real_model_server(monkeypatch):
+    # The memory check before each model load must never reach a real server: on Windows each refused
+    # connection to the fixture address waits seconds, and with Msty running the test seemed to hang.
+    # Tests of that check set their own fakes.
+    monkeypatch.setattr(api, "loaded_models", lambda *a, **kw: [])
+    monkeypatch.setattr(api, "model_file_sizes", lambda *a, **kw: {})
+
+
 def provider(monkeypatch, models):
     monkeypatch.setattr(api, "health_check", lambda *a, **kw: {
         "status": "degraded", "models": models, "base_url": "http://localhost:1",
@@ -315,3 +324,22 @@ def test_a_voter_moves_to_its_smaller_backup_when_memory_is_short(monkeypatch):
     runtime._sleep = lambda seconds: None
     response = runtime.send_to_agent(RATIONALIS, "assessment", {"model": "big:33b", "session_id": "s", "require_real_model": True})
     assert calls == ["small:8b"] and "Fits" in response
+
+
+def test_a_missing_main_model_never_lets_another_makers_model_in(monkeypatch):
+    # Codex review 2026-11-24: with the main model not installed, the rule had nothing to compare against.
+    monkeypatch.setattr(api, "same_model_maker", REAL_SAME_MAKER)
+    config = RuntimeConfig(base_model="Hermes-3-Llama-3.1-8B")
+    hermes = "NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf"
+    ministral = "mistralai/Ministral-3-8B-Instruct-2512-Q4_K_M.gguf"
+    mistral_small = "unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"
+    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, ministral], config) == [ministral]
+    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, "gemma-3-12b-it-Q3_K_L.gguf"], config) == []
+
+
+def test_a_missing_main_model_still_lets_unnamed_local_models_stand_in(monkeypatch):
+    # 9.21.2 lesson: the owner's own unnamed models (and the local stand-in for online voters) stay allowed.
+    monkeypatch.setattr(api, "same_model_maker", REAL_SAME_MAKER)
+    config = RuntimeConfig(base_model="base")
+    mistral_small = "unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"
+    assert api.real_model_candidates(BELLATOR, mistral_small, ["base", "another"], config) == ["base"]

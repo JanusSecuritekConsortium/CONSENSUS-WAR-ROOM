@@ -22,6 +22,12 @@ if not os.environ.get("CONSENSUS_USERS_FILE"):
     os.environ["CONSENSUS_USERS_FILE"] = os.path.join(_users, "users.json")
     atexit.register(shutil.rmtree, _users, ignore_errors=True)
 
+# The one-vote-at-a-time lock: tests use their own file, so a vote running in the owner's app never blocks them.
+if not os.environ.get("CONSENSUS_VOTE_LOCK"):
+    _lock = tempfile.mkdtemp(prefix="consensus-test-vote-lock-")
+    os.environ["CONSENSUS_VOTE_LOCK"] = os.path.join(_lock, "vote_in_progress.lock")
+    atexit.register(shutil.rmtree, _lock, ignore_errors=True)
+
 # The world map downloads GDELT news events; tests must not reach the network for them.
 os.environ.setdefault("BELLATOR_GDELT_EVENTS", "0")
 

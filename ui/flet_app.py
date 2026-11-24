@@ -74,6 +74,7 @@ from core.tribunal_events import (
     phase_for_verdict,
     theme_reasoning_phrase,
 )
+from core import vote_lock
 from core.voting.engine import ConsensusEngine
 from core.voting.orchestrator import VotingOrchestrator
 from core.voting.rules import ConsensusRules
@@ -695,6 +696,22 @@ def submit_proposal_live_for_gui(
     skip_animations: bool = False,
     ask_owner: Callable[[list], Optional[str]] | None = None,
 ) -> TribunalResult:
+    """Run one vote for the window. A real vote holds the one-vote-at-a-time lock (core.vote_lock), so it
+    never overlaps a background, phone or command-line vote on the same graphics card; it raises
+    vote_lock.VoteBusy at once if another vote is running. Simulated votes take no lock."""
+    if state.config.backend == "mock":
+        return _run_window_vote(state, proposal, on_update, skip_animations, ask_owner)
+    with vote_lock.hold("the desktop window"):
+        return _run_window_vote(state, proposal, on_update, skip_animations, ask_owner)
+
+
+def _run_window_vote(
+    state: GuiState,
+    proposal: str,
+    on_update: GuiUpdateCallback | None = None,
+    skip_animations: bool = False,
+    ask_owner: Callable[[list], Optional[str]] | None = None,
+) -> TribunalResult:
     """Run one vote for the window. Like the command line, a vote without consensus reruns (up to the
     rules' consensus_reruns); with ask_owner, the voters' questions go to the owner before each rerun."""
     clean_proposal = proposal.strip()
@@ -902,7 +919,8 @@ def submit_proposal_live_for_gui(
             clean_proposal, session_id, state.theme_key, state.config.sequential,
             memory_context, on_event=on_deliberation_event,
             # Simulated voters give canned answers: rerunning them or asking the owner would change nothing.
-            consensus_check=rules.consensus_reached, extra_rounds=0 if simulated else rules.consensus_reruns,
+            consensus_check=ConsensusEngine(rules, state.theme_key).rerun_check(clean_proposal),
+            extra_rounds=0 if simulated else rules.consensus_reruns,
             ask_owner=None if simulated else ask_owner,
         )
         if state.lifecycle_state != LIFECYCLE_DELIBERATING:
@@ -2775,6 +2793,10 @@ def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
             except SubmissionCancelled:
                 _cancel_submission_state(state)
                 _set_submission_feedback(page, state, "Submission cancelled. RETRY resubmits the same proposal.")
+            except vote_lock.VoteBusy as exc:
+                state.retry_available = True
+                state.provider_warning = str(exc)
+                _set_submission_feedback(page, state, f"Not started. {exc} RETRY sends it again.")
             except Exception as exc:
                 state.retry_available = state.current_result is None
                 log_error("gui_submission_error", exc, {"theme": state.theme_key})

@@ -1,5 +1,45 @@
 # Changelog
 
+## 9.22.0 - One vote at a time, web votes ask the owner, stricter checks (2026-11-24)
+
+The ten proposals from the 2026-11-24 Codex and DeepSeek reviews, approved by the owner, plus one minor fix.
+
+### Changed
+- Reruns go on until ARBITER itself would accept the result. Before, a confident majority stopped the
+  reruns even when ARBITER then returned NO_CONSENSUS (weak combined confidence, stale or weak evidence),
+  so the owner was never asked. Failed rounds, ESCALATE and CAUTION still stop. A vote may now take up
+  to 3 more rounds (about 30-40 minutes each on local models).
+- Only one real vote runs at a time on the PC, whether it starts in the desktop window, from the phone or
+  MCP, from the web API or on the command line. A second vote is refused at once with a message naming the
+  first. The lock is released when the vote's program ends, even after a crash. Simulated votes are not
+  affected.
+- Real votes sent to the local web API (`/consensus`, `/msty/live-context`) now run as background tickets.
+  The voters' questions then reach the owner before a rerun: the API answers 202 with the questions and
+  the ticket, `POST /consensus/<ticket>/answer` sends the answer, `GET /consensus/<ticket>` follows the
+  vote. A finished vote still returns its verdict. Simulated (mock) API votes are unchanged.
+- When a voter's own model is not installed, a backup from another known maker can no longer stand in.
+  Models with no known maker (the owner's own local models) still can, so the local stand-in for a failed
+  online voter keeps working (the cause of the 9.21.2 undo).
+- A voter that cites an outside reference (news, data, a document) must quote it; an answer without the
+  quote gets the usual one correction, then counts as failed. Citing the proposal itself needs no quote.
+- An answer the model server cut off at the output limit is refused on every path (before, only the
+  window's streaming path refused it), so the voter tries again or uses its backup.
+- The `majority` setting is honoured (never below a simple majority). With the default (2 of 3) nothing
+  changes; a stricter value, such as 3 for unanimity, can no longer be overridden by the priority tie-break.
+- The memory check before a background or phone vote counts each voter's smallest allowed model, so a vote
+  is no longer refused when the main model is too big but its smaller same-maker backup fits. Voters
+  without their own model setting are now measured too.
+
+### Added
+- A background vote's ticket shows its progress: round or rerun, the voter answering, the model used, and
+  minutes since the last progress, so a slow model load can be told apart from a stuck vote.
+
+### Fixed
+- A vote in the desktop window whose prompt is too long for the model's context window now stops at once,
+  as background votes already did; before, it loaded every backup model in turn and each failed the same way.
+- The fallback tests no longer reach a real model server, so they no longer seemed to hang on Windows while
+  Msty runs.
+
 ## 9.21.3 - Arasaka logo gets its own box (2026-11-24)
 
 ### Changed

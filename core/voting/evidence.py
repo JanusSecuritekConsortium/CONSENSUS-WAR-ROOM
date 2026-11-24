@@ -53,6 +53,10 @@ def audit_evidence(argument: dict, context: dict, now: datetime | None = None) -
                  "support": "unreviewed", "freshness": "not_required"}
         if quote and not candidates:
             audit["anchor"] = "passage_unavailable"
+        elif not quote and any(r.get("kind") == "reference" and _text(r.get("text", "")) for r in candidates):
+            # The prompt asks for an exact quote whenever a passage is supplied; without one a claim about an
+            # outside reference is unchecked. The proposal itself (an assertion every voter sees) needs none.
+            audit["anchor"] = "missing_quote"
         matches = anchored or candidates
         freshness = []
         for record in matches:

@@ -51,6 +51,12 @@ async def _read_response(client, url, payload, control):
     async with client.stream("POST", url, json=payload) as response:
         if response.status_code in {404, 405}:
             return None
+        if response.status_code == 400:
+            body = (await response.aread()).decode("utf-8", "replace")
+            if "exceed_context_size" in body:
+                # The same words as the background path, so the runtime stops trying backups: every model
+                # on the server shares this window and would be refused too.
+                raise ProviderRequestError(f"Prompt too long for the model's context window at {url}: {body[:300]}")
         response.raise_for_status()
         kind = response.headers.get("content-type", "").lower()
         if "application/json" in kind and "ndjson" not in kind:
@@ -58,6 +64,9 @@ async def _read_response(client, url, payload, control):
             if data.get("error"):
                 raise ProviderRequestError("Provider rejected generation")
             choices = data.get("choices", [])
+            stopped = data.get("done_reason") if "response" in data else (choices[0].get("finish_reason") if choices else None)
+            if stopped in {"length", "content_filter"}:
+                raise ProviderRequestError("Provider did not complete the requested response")
             text = data.get("response") if "response" in data else (choices[0].get("message", {}).get("content") if choices else None)
             if not isinstance(text, str) or not text.strip():
                 raise ProviderRequestError("Provider returned no completed response")

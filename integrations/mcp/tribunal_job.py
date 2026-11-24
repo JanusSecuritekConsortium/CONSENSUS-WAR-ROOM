@@ -142,10 +142,25 @@ def memory_note(*, local_only: bool = False) -> Optional[str]:
         base_url = api.resolve_provider_base_url(config)
         sizes = api.model_file_sizes(base_url)
         from core.llm import online
+        from config.names import TRIBUNAL_AGENT_IDS
+        from config.nodes import DEFAULT_NODES, apply_node_overrides
+        overrides = dict(config.agent_model_overrides or {})
+        node_overrides = config.node_overrides if isinstance(getattr(config, "node_overrides", None), dict) else {}
+        nodes = apply_node_overrides(DEFAULT_NODES, node_overrides)
+        # A voter without its own model setting uses its node's model, so it is measured too (DeepSeek, 2026-11-24).
+        names = {agent: overrides.get(agent) or getattr(nodes.get(agent), "model", "") for agent in TRIBUNAL_AGENT_IDS}
+        names.update({agent: name for agent, name in overrides.items() if agent not in names})
         # Voters on an online model load nothing locally unless every online attempt fails.
-        voters = {agent: api.match_model_alias(name, list(sizes))[0] for agent, name in config.agent_model_overrides.items()
-                  if local_only or not online.routes_for(agent)}
-        needed = {agent: sizes[model] for agent, model in voters.items() if model}
+        needed = {}
+        for agent, name in names.items():
+            if not name or not (local_only or not online.routes_for(agent)):
+                continue
+            # The runtime moves on to a smaller same-maker backup when the main model does not fit
+            # (9.21.1), so a voter fits when its smallest allowed model fits (Codex review 2026-11-24).
+            usable = [sizes[model] for model in api.real_model_candidates(agent, name, list(sizes), config)
+                      if model in sizes]
+            if usable:
+                needed[agent] = min(usable)
         if not needed:
             return None
         # Every model the router holds is unloaded before a voter's model loads, so its memory counts as free.
@@ -157,7 +172,8 @@ def memory_note(*, local_only: bool = False) -> Optional[str]:
     if needed[agent] + api.MEMORY_HEADROOM_BYTES <= free:
         return None
     gb = lambda value: f"{value / 2**30:.0f} GB"
-    return (f"Low memory: {agent}'s model needs about {gb(needed[agent])}, but only about {gb(free)} of RAM and "
+    return (f"Low memory: {agent}'s model needs about {gb(needed[agent])} (its smallest allowed model, backups "
+            f"included), but only about {gb(free)} of RAM and "
             "graphics memory is free. The deliberation will probably fail or slow the PC; close other programs "
             "or unload other models first.")
 
@@ -165,8 +181,11 @@ def memory_note(*, local_only: bool = False) -> Optional[str]:
 def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None] = _launch,
           check_memory: Optional[Callable[[], Optional[str]]] = None,
           free_local_ai: Callable[[], list] = lambda: _free_local_ai(), guest: bool = False,
-          guest_limit: Optional[int] = None, submitted_by: Optional[str] = None) -> Dict[str, Any]:
+          guest_limit: Optional[int] = None, submitted_by: Optional[str] = None,
+          options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Queue a deliberation and return a ticket.
+
+    options carries a web API caller's choices for this vote: theme, sequential, minimum_confidence, source.
 
     submitted_by names the signed-in operator (the phone page passes it); the worker
     records it on the decision.
@@ -194,10 +213,11 @@ def start(query: str, *, jobs_dir: Path = JOBS_DIR, launch: Callable[[str], None
                 raise
             return {"status": "busy", "detail": "The tribunal is admitting another request; try again later."}
         with gate:
-            return _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by)
+            return _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by,
+                          options)
 
 
-def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by=None):
+def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_limit, submitted_by=None, options=None):
     if guest and guest_limit is not None and guest_daily_count(jobs_dir) >= guest_limit:
         return {"status": "limit_reached", "detail": "The daily limit of guest questions is reached."}
     busy = _running(jobs_dir)
@@ -210,6 +230,10 @@ def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_li
                               "answer them (or stop the questions) with tribunal_answer first."}
         return {"status": "busy", "ticket": busy["ticket"],
                 "detail": "Another deliberation is running; ask again when tribunal_verdict reports it finished."}
+    from core import vote_lock
+    held = vote_lock.holder()
+    if held:  # a vote from the desktop window or the command line holds the voters' graphics card
+        return {"status": "busy", "detail": held["detail"]}
     if not guest:
         try:  # before measuring: Local AI's assistant model is memory the tribunal can reclaim
             free_local_ai()
@@ -221,6 +245,9 @@ def _admit(query, jobs_dir, launch, check_memory, free_local_ai, guest, guest_li
         return {"status": "not_started", "detail": warning}
     ticket = uuid.uuid4().hex[:12]
     record = {"ticket": ticket, "query": query, "status": "queued", "requested_at": _now().isoformat(timespec="seconds")}
+    if options:
+        record["options"] = {key: options[key] for key in ("theme", "sequential", "minimum_confidence", "source")
+                             if options.get(key) is not None}
     if guest:
         record.update(guest=True, guest_local_only=local_only)
     elif submitted_by:
@@ -262,6 +289,8 @@ def status(ticket: str, *, jobs_dir: Path = JOBS_DIR) -> Dict[str, Any]:
         record.update(status="failed", error="The deliberation stopped without reporting a result.")
     elif record.get("status") in ("running", *WAITING) and record.get("started_at"):
         record["elapsed_minutes"] = int((_now() - datetime.fromisoformat(record["started_at"])).total_seconds() // 60)
+        if record.get("status") == "running" and _progress_detail(record):
+            record["detail"] = _progress_detail(record)
     if record.get("status") == "awaiting_answers":
         record["detail"] = ("The voters could not agree and are waiting for the owner's answers to their questions. "
                             "Answer with tribunal_answer; the vote then reruns with the answers. Without an answer "
@@ -329,6 +358,55 @@ def _asker(path: Path, record: Dict[str, Any], *, wait: timedelta = ANSWER_WAIT,
     return ask
 
 
+def _progress(path: Path, record: Dict[str, Any]) -> Callable[[Dict[str, Any]], None]:
+    """on_event for a job: keep the round, voter and model on the ticket, so a status check can tell a
+    slow model load from a later round or a backup attempt (Codex review 2026-11-24)."""
+    def note(event: Dict[str, Any]) -> None:
+        kind = event.get("type")
+        if kind not in ("round_started", "agent_started", "vote_received", "round_completed"):
+            return
+        progress = record.setdefault("progress", {"completed_turns": 0})
+        progress.update(round=event.get("round"), phase=event.get("phase"),
+                        last_progress_at=_now().isoformat(timespec="seconds"))
+        agent = event.get("agent_id")
+        if kind == "round_started":
+            progress["rerun"] = int(event.get("rerun") or 0)
+            progress["step"] = "round started"
+        elif kind == "agent_started":
+            progress["voter"] = agent
+            progress["step"] = f"{agent} is answering"
+        elif kind == "vote_received":
+            vote = event.get("vote")
+            progress["completed_turns"] = int(progress.get("completed_turns") or 0) + 1
+            model = getattr(vote, "model", "") or "unknown model"
+            failed = bool(getattr(vote, "validation_errors", None))
+            value = getattr(getattr(vote, "vote", None), "value", "")
+            progress["model"] = model
+            progress["step"] = f"{agent} {'failed' if failed else 'answered ' + value} on {model}"
+        else:
+            progress["step"] = "round completed"
+        try:
+            _write(path, record)
+        except OSError:
+            pass  # progress is a courtesy; the vote goes on
+    return note
+
+
+def _progress_detail(record: Dict[str, Any]) -> Optional[str]:
+    progress = record.get("progress") or {}
+    if not progress.get("round"):
+        return None
+    label = (f"Rerun {progress['rerun']} (round {progress['round']})" if progress.get("rerun")
+             else f"Round {progress['round']}")
+    text = f"{label}, {progress.get('phase')}: {progress.get('step')}"
+    try:
+        minutes = int((_now() - datetime.fromisoformat(progress["last_progress_at"])).total_seconds() // 60)
+        text += f"; last progress {minutes} minutes ago" if minutes else "; just now"
+    except (KeyError, ValueError, TypeError):
+        pass
+    return text + ". Loading one voter model can take 7 to 25 minutes."
+
+
 def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable[..., Any]] = None) -> Dict[str, Any]:
     path = _path(ticket, jobs_dir)
     record = _read(path)
@@ -364,8 +442,14 @@ def run(ticket: str, *, jobs_dir: Path = JOBS_DIR, deliberate: Optional[Callable
             from core import identity
             identity.sign_in(identity.Operator(name=str(record["submitted_by"])))
         ask_owner = None if guest else _asker(path, record)
-        result = deliberate(record["query"], ask_owner=ask_owner) if deliberate else _deliberate(
-            record["query"], guest=guest, guest_local_only=record.get("guest_local_only"), ask_owner=ask_owner)
+        on_event = _progress(path, record)
+        if deliberate:
+            import inspect
+            extra = {"on_event": on_event} if "on_event" in inspect.signature(deliberate).parameters else {}
+            result = deliberate(record["query"], ask_owner=ask_owner, **extra)
+        else:
+            result = _deliberate(record["query"], guest=guest, guest_local_only=record.get("guest_local_only"),
+                                 ask_owner=ask_owner, on_event=on_event, options=record.get("options"))
         record.update(status="finished", result=summary(result_to_dict(result)))
     except Exception as error:  # the record is the only place a windowless run can report
         record.update(status="failed", error=str(error)[:500])
@@ -394,7 +478,9 @@ def guest_daily_count(jobs_dir: Path = JOBS_DIR, *, now: Optional[datetime] = No
 
 
 def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[bool] = None,
-                ask_owner: Optional[Callable[[list], Optional[str]]] = None):
+                ask_owner: Optional[Callable[[list], Optional[str]]] = None,
+                on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
+                options: Optional[Dict[str, Any]] = None):
     """The same tribunal the command line builds from the runtime config.
 
     A guest deliberation uses local models only unless CONSENSUS_GUEST_ONLINE=1, so another system's
@@ -410,16 +496,21 @@ def _deliberate(query: str, guest: bool = False, *, guest_local_only: Optional[b
     from core.voting.rules import ConsensusRules
     from integrations.msty.runtime import MstyRuntime
     config = load_runtime_config(CONFIG_PATH)
+    options = options or {}  # what a web API caller chose for this vote (theme, sequential, minimum confidence)
     nodes = apply_node_overrides(DEFAULT_NODES, config.node_overrides)
+    minimum_confidence = options.get("minimum_confidence")
     rules = ConsensusRules(
-        minimum_confidence=config.minimum_confidence, quorum=config.quorum, majority=config.majority,
+        minimum_confidence=config.minimum_confidence if minimum_confidence is None else float(minimum_confidence),
+        quorum=config.quorum, majority=config.majority,
         high_risk_review=config.high_risk_review, evidence_threshold=config.evidence_threshold,
         classification_confidence_threshold=config.classification_confidence_threshold,
         tie_break_priority=config.tie_break_priority, proposal_taxonomy=config.proposal_taxonomy,
         monolith_domain_map=config.monolith_domain_map,
     )
-    return Tribunal(nodes, MstyRuntime(config), rules=rules, theme_key=config.theme).deliberate(
-        query, sequential=config.sequential, guest=guest, ask_owner=ask_owner)
+    sequential = options.get("sequential")
+    return Tribunal(nodes, MstyRuntime(config), rules=rules, theme_key=options.get("theme") or config.theme).deliberate(
+        query, sequential=config.sequential if sequential is None else bool(sequential), guest=guest,
+        ask_owner=ask_owner, on_event=on_event, source=options.get("source") or "a background vote (phone, MCP or web API)")
 
 
 def main(argv=None) -> int:

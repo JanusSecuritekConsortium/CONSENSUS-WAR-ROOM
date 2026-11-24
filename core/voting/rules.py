@@ -62,7 +62,7 @@ class ConsensusRules:
         voting = list(votes.values())
         if not voting or any(vote.validation_errors for vote in voting):
             return True  # a failed round ends deliberation; rerunning cannot repair it
-        return majority_result(confidence_qualified_votes(voting, self.minimum_confidence)) is not None
+        return majority_result(confidence_qualified_votes(voting, self.minimum_confidence), self.majority) is not None
 
 
 def average_confidence(votes: Iterable[Vote]) -> float:
@@ -86,8 +86,11 @@ def majority_threshold(voting_count: int) -> int:
     return (voting_count // 2) + 1
 
 
-def majority_result(votes: Sequence[Vote]) -> Optional[VoteValue]:
-    threshold = majority_threshold(len(votes))
+def majority_result(votes: Sequence[Vote], required: int = 0) -> Optional[VoteValue]:
+    """APPROVE or DENY when it has a simple majority and at least `required` votes (the configured
+    `majority`, e.g. 3 for unanimity among three voters); otherwise None. Before 9.22.0 the setting was
+    stored but never used (Codex review 2026-11-24)."""
+    threshold = max(majority_threshold(len(votes)), int(required or 0))
     approve = sum(1 for vote in votes if vote.vote == VoteValue.APPROVE)
     deny = sum(1 for vote in votes if vote.vote == VoteValue.DENY)
     if approve >= threshold and deny < threshold:

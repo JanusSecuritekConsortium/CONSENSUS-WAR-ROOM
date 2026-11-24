@@ -215,7 +215,10 @@ python consensus_war_room_genesis.py --list-models
 
 Primary API routes:
 
-- `POST /consensus` runs a tribunal decision.
+- `POST /consensus` runs a tribunal decision. A real (non-simulated) vote runs as a background ticket: it returns the
+  verdict when finished, or `202` with the voters' questions and the ticket when they wait for the owner.
+- `POST /consensus/<ticket>/answer` (`{"answer": "..."}` or `{"stop": true}`) answers them; `GET /consensus/<ticket>`
+  shows the vote's status and progress.
 - `GET /analytics/summary` returns bounded aggregate metrics.
 - `GET /analytics/summary.csv` downloads the same metrics as CSV.
 - `WS /ws/tribunal` streams status-only lifecycle events.

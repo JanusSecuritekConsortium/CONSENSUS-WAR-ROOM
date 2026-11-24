@@ -40,7 +40,24 @@ class Tribunal:
         self.voice_announcer = voice_announcer
 
     def deliberate(self, query: str, sequential: bool = False, *, guest: bool = False,
-                   ask_owner: Optional[Callable[[list], Optional[str]]] = None) -> TribunalResult:
+                   ask_owner: Optional[Callable[[list], Optional[str]]] = None,
+                   on_event: Optional[Callable[[Dict[str, Any]], None]] = None,
+                   source: str = "the command line") -> TribunalResult:
+        """Deliberate on a proposal; a real vote holds the one-vote-at-a-time lock (core.vote_lock) throughout.
+
+        on_event receives the orchestrator's progress events (round, voter, model); source names who
+        started the vote in the message a second vote gets while this one runs.
+        """
+        backend = getattr(getattr(self.runtime, "config", None), "backend", None)
+        if backend is None or backend == "mock":
+            return self._deliberate(query, sequential, guest=guest, ask_owner=ask_owner, on_event=on_event)
+        from core import vote_lock
+        with vote_lock.hold(source):
+            return self._deliberate(query, sequential, guest=guest, ask_owner=ask_owner, on_event=on_event)
+
+    def _deliberate(self, query: str, sequential: bool = False, *, guest: bool = False,
+                    ask_owner: Optional[Callable[[list], Optional[str]]] = None,
+                    on_event: Optional[Callable[[Dict[str, Any]], None]] = None) -> TribunalResult:
         """Deliberate on a proposal.
 
         ask_owner receives the voters' open questions before each rerun and returns the owner's answer,
@@ -68,9 +85,9 @@ class Tribunal:
         # A guest gets no data packets either: they come from the owner's configured sources (one is a brokerage).
         rules = self.consensus_engine.rules
         votes = self.orchestrator.cast_votes(query, session_id, self.theme_key, sequential, memory_context,
-                                             include_enrichment=not guest, consensus_check=rules.consensus_reached,
+                                             include_enrichment=not guest, consensus_check=self.consensus_engine.rerun_check(query),
                                              extra_rounds=rules.consensus_reruns,
-                                             ask_owner=None if guest else ask_owner)
+                                             ask_owner=None if guest else ask_owner, on_event=on_event)
         result = self.consensus_engine.calculate_result(query, votes, session_id)
         self.orchestrator.attach_audit(result)
         if not guest:

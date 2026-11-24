@@ -22,6 +22,21 @@ class ConsensusEngine:
         self.rules = rules
         self.theme_key = theme_key
 
+    def rerun_check(self, query: str):
+        """The test that ends reruns: a confident majority that ARBITER would also accept.
+
+        A majority can still end NO_CONSENSUS (weak combined confidence, stale or contradicted evidence).
+        Those are what another round with the owner's answer can repair, so they rerun instead of stopping.
+        A failed round still stops: rerunning cannot repair it.
+        """
+        def settled(votes: Dict[str, Vote]) -> bool:
+            if not votes or any(vote.validation_errors for vote in votes.values()):
+                return True
+            if not self.rules.consensus_reached(votes):
+                return False
+            return self.calculate_result(query, votes, "rerun_check").verdict != FinalVerdict.NO_CONSENSUS
+        return settled
+
     def calculate_result(self, query: str, votes: Dict[str, Vote], session_id: str) -> TribunalResult:
         review_triggers: List[str] = []
         voting_votes = list(votes.values())
@@ -109,7 +124,7 @@ class ConsensusEngine:
                 quorum_met=False,
             )
 
-        decided = majority_result(qualified_votes)
+        decided = majority_result(qualified_votes, self.rules.majority)
         # A denial remains a denial. Approval (including a priority tie-break)
         # must first clear explicit review requests, relevant risks and evidence.
         if decided != VoteValue.DENY:
@@ -189,6 +204,17 @@ class ConsensusEngine:
                 theme=self.theme_key,
                 terminal_branch="majority",
                 proposal_classification=classification_payload,
+            )
+
+        if majority_result(qualified_votes) is not None:
+            # A simple majority exists but not the configured one (for example unanimity): the priority
+            # tie-break must not override the owner's stricter rule.
+            review_triggers.append("configured_majority_not_met")
+            return self._terminal_result(
+                query, FinalVerdict.NO_CONSENSUS,
+                f"NO_CONSENSUS: the configured majority of {self.rules.majority} matching votes was not reached.",
+                votes, distribution, review_triggers, session_id, "configured_majority_no_consensus",
+                classification_payload,
             )
 
         for vote in priority_ordered_votes(qualified_votes, self.rules.tie_break_priority):

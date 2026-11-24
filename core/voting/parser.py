@@ -176,6 +176,8 @@ def parse_vote(raw: str, node: NodeIdentity, elapsed: float, backend_name: str, 
         for audit in evidence_audit:
             if audit["anchor"] == "mismatch":
                 validation_errors.append("evidence quote does not match supplied passage")
+            elif audit["anchor"] == "missing_quote":
+                validation_errors.append(f"evidence from {audit['source']} needs a short exact quote from its supplied passage")
     if validation_errors:
         return Vote(
             node_key=node.codename,

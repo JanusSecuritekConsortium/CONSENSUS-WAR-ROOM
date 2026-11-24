@@ -85,6 +85,11 @@ class ConsensusRequest(BaseModel):
     minimum_confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
 
 
+class OwnerAnswerRequest(BaseModel):
+    answer: str = ""
+    stop: bool = False
+
+
 class MstyLiveContextRequest(BaseModel):
     query: str = Field(..., min_length=1)
     theme: Optional[str] = None
@@ -580,12 +585,23 @@ def real_model_candidates(
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         configured.extend(config.agent_model_fallbacks.get(agent_id, []))
         configured.append(config.base_model)
+    # When the voter's own model is not installed, its maker still rules out other known labs' models
+    # (Codex review 2026-11-24). Models of unknown maker stay allowed then: they are the owner's own
+    # local models, which also stand in when an online voter fails.
+    anchor = model_maker(preferred or "")
+
+    def allowed(model: str) -> bool:
+        if not same_maker:
+            return True
+        if candidates:
+            return same_model_maker(candidates[0], model)
+        maker = model_maker(model)
+        return not anchor or not maker or maker == anchor
+
     for model in configured:
         if model:
             matched, _ = match_model_alias(model, available)
-            if matched and matched not in candidates and (
-                not candidates or not same_maker or same_model_maker(candidates[0], matched)
-            ):
+            if matched and matched not in candidates and allowed(matched):
                 candidates.append(matched)
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         # Prefer conversational models over specialized encoders or routers.
@@ -595,8 +611,7 @@ def real_model_candidates(
         # Never sweep into giant models: loading one fills RAM and jams the PC (maxim 13).
         candidates.extend(
             model for model in ordered
-            if model not in candidates and not is_giant_model(model)
-            and (not candidates or not same_maker or same_model_maker(candidates[0], model))
+            if model not in candidates and not is_giant_model(model) and allowed(model)
         )
     return candidates
 
@@ -1254,6 +1269,7 @@ def loaded_models(base_url: str) -> list[str]:
 
 
 MEMORY_HEADROOM_BYTES = 3 * 2**30  # the model's working memory and the rest of the PC need this beside the file
+API_TICKET_POLL_SECONDS = 5  # how often a web API call looks at its background vote
 
 
 def free_gpu_bytes() -> int:
@@ -1561,6 +1577,13 @@ def health_check(
         }
 
 
+def _refuse_cut_off(reason: Any) -> None:
+    """An answer the server stopped at the output limit (or filtered) is not a full answer, even when
+    every field is already there (Codex review 2026-11-24); the streaming path refuses it the same way."""
+    if reason in ("length", "content_filter"):
+        raise ProviderRequestError(f"Provider did not complete the requested response (stopped: {reason})")
+
+
 def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Dict[str, Any]:
     if not hasattr(backend, "base_url"):
         raise RuntimeError("Unsupported Msty backend adapter.")
@@ -1601,9 +1624,12 @@ def backend_requests_post(backend: OllamaBackend, payload: Dict[str, Any]) -> Di
             choices = body.get("choices", [])
             if not choices:
                 raise ProviderRequestError("Provider chat response contained no choices")
+            _refuse_cut_off(choices[0].get("finish_reason"))
             return {"response": choices[0].get("message", {}).get("content", "")}
         response.raise_for_status()
-        return response.json()
+        body = response.json()
+        _refuse_cut_off(body.get("done_reason") if isinstance(body, dict) else None)
+        return body
     except (
         backends.requests.ConnectionError,
         backends.requests.Timeout,
@@ -1708,6 +1734,73 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
         )
         return result
 
+    # Real votes from the web API run as background tickets (Codex review 2026-11-24): the voters'
+    # questions then reach the owner before each rerun, and the one-vote lock covers them like any other.
+    from fastapi.responses import JSONResponse
+    from integrations.mcp import tribunal_job
+
+    def ticket_reply(record: Dict[str, Any]):
+        ticket, status = record.get("ticket"), record.get("status")
+        if status == "finished":
+            return {"status": "finished", "ticket": ticket, **(record.get("result") or {})}
+        if status == "failed":
+            raise HTTPException(status_code=502, detail={"status": "failed", "ticket": ticket,
+                                                         "error": record.get("error", "The vote failed.")})
+        body = {"status": status, "ticket": ticket, "detail": record.get("detail", "")}
+        if status == "awaiting_answers":
+            body.update(questions=record.get("questions", []),
+                        detail=f"The voters are waiting for the owner's answers. Send them with POST "
+                               f"/consensus/{ticket}/answer, then follow the vote with GET /consensus/{ticket}.")
+        for key in ("elapsed_minutes", "progress"):
+            if key in record:
+                body[key] = record[key]
+        return JSONResponse(status_code=202, content=body)
+
+    def wait_for_ticket(ticket: str) -> Dict[str, Any]:
+        while True:
+            record = tribunal_job.status(ticket)
+            if record.get("status") in ("finished", "failed", "awaiting_answers"):
+                return record
+            time.sleep(API_TICKET_POLL_SECONDS)
+
+    async def run_real_vote(query: str, theme: Optional[str], sequential: Optional[bool],
+                            minimum_confidence: Optional[float], source: str) -> Dict[str, Any]:
+        theme_key = resolve_theme_key(theme or config.theme)
+        if theme_key not in THEMES:
+            raise HTTPException(status_code=400, detail=f"Unknown theme: {theme_key}")
+        options = {"theme": theme_key, "sequential": sequential, "minimum_confidence": minimum_confidence,
+                   "source": "the web API"}
+        try:
+            started = await run_in_threadpool(tribunal_job.start, query, options=options)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        if started.get("status") != "queued":
+            raise HTTPException(status_code=409 if started.get("status") == "busy" else 503, detail=started)
+        await event_hub.broadcast(_api_event("consensus_started", source=source, ticket=started["ticket"],
+                                             query_preview=query[:240], query_length=len(query)))
+        record = await run_in_threadpool(wait_for_ticket, started["ticket"])
+        await event_hub.broadcast(_api_event(
+            "consensus_complete" if record.get("status") == "finished" else f"consensus_{record.get('status')}",
+            source=source, ticket=started["ticket"], verdict=(record.get("result") or {}).get("verdict")))
+        return record
+
+    def real_vote(backend_name: Optional[str]) -> bool:
+        return (backend_name or config.backend) != "mock"
+
+    @app.get("/consensus/{ticket}")
+    def consensus_ticket(ticket: str):
+        try:
+            return ticket_reply(tribunal_job.status(ticket))
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.post("/consensus/{ticket}/answer")
+    def consensus_answer(ticket: str, request: OwnerAnswerRequest) -> Dict[str, Any]:
+        try:
+            return tribunal_job.answer(ticket, request.answer, stop=request.stop)
+        except ValueError as exc:
+            raise HTTPException(status_code=404 if str(exc) == "Unknown ticket" else 400, detail=str(exc)) from exc
+
     @app.get("/health")
     def health() -> Dict[str, Any]:
         return {
@@ -1744,7 +1837,10 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
         return {key: asdict(node) for key, node in nodes.items()}
 
     @app.post("/consensus")
-    async def consensus(request: ConsensusRequest) -> Dict[str, Any]:
+    async def consensus(request: ConsensusRequest):
+        if real_vote(request.backend):
+            return ticket_reply(await run_real_vote(request.query, request.theme, request.sequential,
+                                                    request.minimum_confidence, "api"))
         result = await run_consensus_with_events(
             request.query,
             request.theme,
@@ -1756,7 +1852,26 @@ def create_api_app(config: RuntimeConfig, nodes: Dict[str, NodeIdentity]):
         return result_to_dict(result)
 
     @app.post("/msty/live-context")
-    async def msty_live_context(request: MstyLiveContextRequest) -> Dict[str, Any]:
+    async def msty_live_context(request: MstyLiveContextRequest):
+        if real_vote(request.backend):
+            record = await run_real_vote(request.query, request.theme or config.msty_live_context_default_theme,
+                                         request.sequential, None, "msty_live_context")
+            if record.get("status") != "finished":
+                return ticket_reply(record)
+            summary = record.get("result") or {}
+            return {
+                "tool": "CONSENSUS War Room Genesis",
+                "verdict": summary.get("verdict"),
+                "confidence": summary.get("confidence"),
+                "summary": f"Tribunal verdict: {summary.get('verdict')} at {float(summary.get('confidence') or 0):.0%}. "
+                           f"{summary.get('reason', '')}",
+                "votes": [f"{key}: {vote.get('vote')} confidence={float(vote.get('confidence') or 0):.0%}"
+                          for key, vote in (summary.get("votes") or {}).items()],
+                "review_triggers": summary.get("review_triggers", []),
+                "session_id": summary.get("session_id"),
+                "ticket": record.get("ticket"),
+                "audit_path": str(HISTORY_PATH),
+            }
         result = await run_consensus_with_events(
             request.query,
             request.theme or config.msty_live_context_default_theme,
