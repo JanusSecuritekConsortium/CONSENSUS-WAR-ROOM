@@ -299,17 +299,6 @@ def test_a_voter_fails_openly_instead_of_answering_from_swap(monkeypatch):
     assert calls == []
 
 
-def test_a_missing_main_model_never_lets_another_makers_model_in(monkeypatch):
-    # Codex review 2026-11-24: with the main model not installed, the rule had nothing to compare against.
-    monkeypatch.setattr(api, "same_model_maker", REAL_SAME_MAKER)
-    config = RuntimeConfig(base_model="Hermes-3-Llama-3.1-8B")
-    hermes = "NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf"
-    ministral = "mistralai/Ministral-3-8B-Instruct-2512-Q4_K_M.gguf"
-    mistral_small = "unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"
-    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, ministral], config) == [ministral]
-    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, "gemma-3-12b-it-Q3_K_L.gguf"], config) == []
-
-
 def test_a_voter_moves_to_its_smaller_backup_when_memory_is_short(monkeypatch):
     # Codex review 2026-11-24: "not enough memory" ended the voter instead of trying the installed smaller backup.
     import integrations.msty.runtime as runtime_module

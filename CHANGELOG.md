@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.21.2 - Undo the same-maker change from 9.21.1 (2026-11-24)
+
+### Fixed
+- 9.21.1 judged backups against a voter's main model even when that model was not installed. That
+  also stopped an unnamed local model, or the local model behind a failed online voter, from
+  standing in, which broke six tests on GitHub. The change is undone; it waits as a proposal for
+  the owner's decision. The other 9.21.1 fixes stay.
+
 ## 9.21.1 - Fixes from Codex's review: window time limit, backups, answer box (2026-11-24)
 
 Found by a read-only Codex review and checked against the code.
@@ -7,7 +15,7 @@ Found by a read-only Codex review and checked against the code.
 ### Fixed
 - A vote started in the desktop window gave each answer only 3 minutes; it now gets the same
   25 minutes as other votes (`generation_timeout_seconds`), so a slow model load no longer fails it.
-- When a voter's main model is not installed, its backups are still judged against that model's
+- (Undone in 9.21.2.) When a voter's main model is not installed, its backups are still judged against that model's
   maker. Before, any installed model (for example ARBITER's Hermes) could stand in for it.
 - A voter whose model does not fit in memory now tries its smaller same-maker backup instead of
   failing the turn at once.

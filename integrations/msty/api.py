@@ -580,20 +580,12 @@ def real_model_candidates(
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         configured.extend(config.agent_model_fallbacks.get(agent_id, []))
         configured.append(config.base_model)
-    # The maker is judged from the voter's own model even when that model is not installed, so a
-    # missing main model can never open the door to another lab's model.
-    anchor = preferred if model_maker(preferred or "") else ""
-
-    def allowed(model: str) -> bool:
-        if not same_maker:
-            return True
-        reference = anchor or (candidates[0] if candidates else "")
-        return not reference or same_model_maker(reference, model)
-
     for model in configured:
         if model:
             matched, _ = match_model_alias(model, available)
-            if matched and matched not in candidates and allowed(matched):
+            if matched and matched not in candidates and (
+                not candidates or not same_maker or same_model_maker(candidates[0], matched)
+            ):
                 candidates.append(matched)
     if config.real_model_fallback_enabled and not config.strict_provider_mode:
         # Prefer conversational models over specialized encoders or routers.
@@ -603,7 +595,8 @@ def real_model_candidates(
         # Never sweep into giant models: loading one fills RAM and jams the PC (maxim 13).
         candidates.extend(
             model for model in ordered
-            if model not in candidates and not is_giant_model(model) and allowed(model)
+            if model not in candidates and not is_giant_model(model)
+            and (not candidates or not same_maker or same_model_maker(candidates[0], model))
         )
     return candidates
 
