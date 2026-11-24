@@ -5,7 +5,7 @@ gitignored `.env` file beside the code:
 
     CONSENSUS_ONLINE_MODEL_RATIONALIS=claude-cli:sonnet      # Claude subscription via Claude Code
     CONSENSUS_ONLINE_MODEL_AETERNUM=codex-cli:default        # ChatGPT subscription via Codex CLI
-    CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-chat   # paid API
+    CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-flash  # paid API
     DEEPSEEK_API_KEY=...
 
 API providers need their key; subscription providers (`*-cli`) need their command-line tool
@@ -179,7 +179,7 @@ SHORT_NAMES = {"anthropic": "Claude", "openai": "OpenAI", "deepseek": "DeepSeek"
 
 
 def display_name(route: OnlineRoute) -> str:
-    """A short card label, e.g. "Claude sonnet · subscription" or "DeepSeek deepseek-chat · API"."""
+    """A short card label, e.g. "Claude sonnet · subscription" or "DeepSeek deepseek-flash · API"."""
     model = "" if route.model.lower() == "default" else f" {route.model}"
     kind = "subscription" if route.provider.subscription else "API"
     return f"{SHORT_NAMES.get(route.provider.name, route.provider.name)}{model} · {kind}"
@@ -270,8 +270,8 @@ CHOICES: list[tuple[str, str]] = [
     ("claude-cli:opus", "Claude Opus - subscription"),
     ("codex-cli:default", "ChatGPT - subscription"),
     ("grok-cli:default", "Grok - subscription"),
-    ("deepseek:deepseek-chat", "DeepSeek chat - paid API"),
-    ("deepseek:deepseek-reasoner", "DeepSeek reasoner - paid API"),
+    ("deepseek:deepseek-flash", "DeepSeek Flash - paid API"),
+    ("deepseek:deepseek-v4-pro", "DeepSeek V4 Pro - paid API"),
     ("anthropic:claude-sonnet-5-5", "Claude Sonnet - paid API"),
 ]
 
@@ -299,6 +299,11 @@ def _env_line_key(line: str) -> str:
     return name[len("export "):].strip() if name.startswith("export ") else name
 
 
+def _env_line_prefix(line: str) -> str:
+    """"export " when the .env line uses that shell form, so a rewrite keeps it."""
+    return "export " if line.strip().startswith("export ") else ""
+
+
 def save_settings(updates: Dict[str, str], *, prefix: str = "CONSENSUS_ONLINE_") -> Path:
     """Write CONSENSUS settings into the .env file, keeping every other line as it is.
 
@@ -320,7 +325,7 @@ def save_settings(updates: Dict[str, str], *, prefix: str = "CONSENSUS_ONLINE_")
     for index, line in enumerate(lines):
         name = _env_line_key(line)
         if name in pending:
-            lines[index] = f"{name}={pending.pop(name)}"
+            lines[index] = f"{_env_line_prefix(line)}{name}={pending.pop(name)}"
     lines.extend(f"{name}={value}" for name, value in pending.items())
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_bytes((newline.join(lines) + newline).encode("utf-8"))  # keeps the file's line endings
@@ -337,7 +342,8 @@ def test_setting(agent_id: str, raw: str, timeout: float = 120.0) -> tuple[bool,
     route = parse_route(agent_id if agent_id in TRIBUNAL_AGENT_IDS else TRIBUNAL_AGENT_IDS[0], raw)
     started = time.monotonic()
     try:
-        complete(route, "", "Reply with the single word READY.", temperature=None, max_tokens=16, timeout=timeout)
+        complete(route, "", "Reply with the single word READY.", temperature=None, max_tokens=16, timeout=timeout,
+                 small=True)
     except OnlineModelError as exc:
         return False, str(exc)[:300]
     return True, f"Answered in {time.monotonic() - started:.0f} s."
@@ -494,7 +500,7 @@ def _cli_result(route: OnlineRoute, stdout: str, output_file: Path) -> OnlineRes
     return OnlineResult(stdout, 0, 0)
 
 
-def _wait(process, stdin_text: str, timeout: float, control) -> tuple[str, str]:
+def _wait(process, stdin_text: Optional[str], timeout: float, control) -> tuple[str, str]:
     """Wait for the tool while honouring cancellation and the time limit."""
     import threading
 
@@ -526,6 +532,8 @@ def _call_cli(route: OnlineRoute, system: str, prompt: str, timeout: float, cont
         raise OnlineModelError(f"'{route.provider.command}' is not installed for {route.provider.label}.")
     system_text = system or "You are a tribunal voter. Answer in the requested format."
     # Codex has no separate system prompt; the instructions lead the prompt instead.
+    # Grok reads its prompt from the file, so it gets no stdin (a large prompt could fill the pipe).
+    prompt_on_stdin = route.provider.name != "grok-cli"
     stdin_text = f"{system_text}\n\n{prompt}" if route.provider.name == "codex-cli" else prompt
     with tempfile.TemporaryDirectory(prefix="consensus-voter-") as scratch:
         folder = Path(scratch)
@@ -534,11 +542,12 @@ def _call_cli(route: OnlineRoute, system: str, prompt: str, timeout: float, cont
         prompt_file.write_text(prompt, encoding="utf-8")
         process = subprocess.Popen(
             cli_command(route, system_text, prompt_file, system_file, output_file),
-            cwd=_cli_workdir(), env=_cli_env(route.provider), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            cwd=_cli_workdir(), env=_cli_env(route.provider),
+            stdin=subprocess.PIPE if prompt_on_stdin else subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         try:
-            stdout, stderr = _wait(process, stdin_text, timeout, control)
+            stdout, stderr = _wait(process, stdin_text if prompt_on_stdin else None, timeout, control)
         finally:
             if process.poll() is None:
                 process.kill()
@@ -573,14 +582,19 @@ def _call(route: OnlineRoute, system: str, prompt: str, temperature: Optional[fl
 
 def complete(route: OnlineRoute, system: str, prompt: str, *, temperature: Optional[float] = 0.2,
              max_tokens: int = 900, timeout: float = DEFAULT_TIMEOUT_SECONDS, control=None,
-             post: Poster = _post) -> OnlineResult:
-    """Ask the online model once. A cancelled submission stops waiting at once."""
-    max_tokens = max(int(max_tokens), MIN_OUTPUT_TOKENS)
+             post: Poster = _post, small: bool = False) -> OnlineResult:
+    """Ask the online model once. A cancelled submission stops waiting at once.
+
+    `small` is for settings tests and pings: they keep their own token and time limits instead of
+    the vote minimums.
+    """
+    if not small:
+        max_tokens = max(int(max_tokens), MIN_OUTPUT_TOKENS)
     if route.provider.subscription:
         if control is not None:
             control.check()
             control.progress("WAITING")
-        result = _call_cli(route, system, prompt, max(timeout, CLI_TIMEOUT_SECONDS), control)
+        result = _call_cli(route, system, prompt, timeout if small else max(timeout, CLI_TIMEOUT_SECONDS), control)
         if control is not None:
             control.check()
             control.progress("GENERATING")
@@ -625,7 +639,8 @@ def main() -> int:
         if route is None:
             continue
         try:
-            result = complete(route, "", "Reply with the single word READY.", temperature=None, max_tokens=16)
+            result = complete(route, "", "Reply with the single word READY.", temperature=None, max_tokens=16,
+                              small=True)
             print(f"{agent_id}: {route.label} answered ({result.input_tokens}+{result.output_tokens} tokens)")
         except OnlineModelError as exc:
             failed += 1

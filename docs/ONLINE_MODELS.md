@@ -27,7 +27,7 @@ roughly 4,000 to 8,000 input tokens each.
 |---|---|---|
 | `anthropic:claude-sonnet-5-5` | `ANTHROPIC_API_KEY` | $0.10 to $0.50 |
 | `openai:<model id>` | `OPENAI_API_KEY` | $0.10 to $0.50 |
-| `deepseek:deepseek-chat` (or `deepseek-reasoner`) | `DEEPSEEK_API_KEY` | about $0.01 to $0.02 |
+| `deepseek:deepseek-flash` (or `deepseek-v4-pro`) | `DEEPSEEK_API_KEY` | about $0.01 to $0.02 |
 | `xai:<grok model id>` | `XAI_API_KEY` | depends on the model |
 
 ## Setup
@@ -41,7 +41,7 @@ By hand, add the settings to the gitignored `.env` file in the CONSENSUS folder 
 ```
 CONSENSUS_ONLINE_MODEL_RATIONALIS=claude-cli:sonnet
 CONSENSUS_ONLINE_MODEL_AETERNUM=codex-cli:default
-CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-chat
+CONSENSUS_ONLINE_MODEL_BELLATOR=deepseek:deepseek-flash
 DEEPSEEK_API_KEY=<your key>
 ```
 
@@ -61,7 +61,7 @@ request to each online voter's model.
 
 ## Shared backup model
 
-`CONSENSUS_ONLINE_FALLBACK` names one more model, for example `deepseek:deepseek-chat`. When
+`CONSENSUS_ONLINE_FALLBACK` names one more model, for example `deepseek:deepseek-flash`. When
 an online voter's own model fails or reaches a usage limit, the voter asks the backup before
 falling back to its local model. Voters without an online model never use the backup.
 

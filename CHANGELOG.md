@@ -1,5 +1,21 @@
 # Changelog
 
+## 9.22.1 - Current DeepSeek models and small online fixes (2026-11-25)
+
+Minor fixes from the 2026-11-24 review, checked against the code first.
+
+### Changed
+- The Online voters screen offers DeepSeek's current models, `deepseek-flash` and `deepseek-v4-pro`
+  (DeepSeek's free model list, checked 2026-11-25). An older saved name such as `deepseek-chat` is kept
+  and shown as it is.
+
+### Fixed
+- The "test this setting" button and `--ping` now send a truly small request: they keep their own
+  16-token and time limits instead of the vote minimums (4000 tokens, 15 minutes for subscription tools).
+- The Grok subscription tool reads its prompt from a file, so it no longer also gets the prompt on its
+  input pipe, where a very large prompt could fill the pipe.
+- Saving a setting keeps an `export ` prefix on that line of the settings file.
+
 ## 9.22.0 - One vote at a time, web votes ask the owner, stricter checks (2026-11-24)
 
 The ten proposals from the 2026-11-24 Codex and DeepSeek reviews, approved by the owner, plus one minor fix.

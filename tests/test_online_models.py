@@ -346,7 +346,8 @@ def test_the_online_voters_screen_saves_only_online_settings(tmp_path, monkeypat
     assert text == (f"# keep me\r\nDEEPSEEK_API_KEY={KEY}\r\n{online.ENV_PREFIX}BELLATOR=deepseek:deepseek-chat\r\n"
                     f"{online.BACKUP_ENV}=\r\n")
     rows = {row["key"]: row for row in online.voter_overview()}
-    assert rows[BELLATOR]["label"] == "DeepSeek chat - paid API" and rows[BELLATOR]["ready"] is True
+    # An older saved model name is kept and shown as it is.
+    assert rows[BELLATOR]["label"] == "deepseek:deepseek-chat" and rows[BELLATOR]["ready"] is True
     assert rows[RATIONALIS]["ready"] is None and rows["BACKUP"]["state"] == "local"
     assert KEY not in json.dumps(list(rows.values()))
     for bad in ({"DEEPSEEK_API_KEY": "x"}, {online.ENV_PREFIX + BELLATOR: "a\nDEEPSEEK_API_KEY=x"}):
@@ -395,3 +396,71 @@ def test_the_online_voters_screen_lists_every_voter_and_the_backup(monkeypatch):
     picker.value = "local"
     picker.on_change(type("Event", (), {"control": picker})())
     assert chosen == [(RATIONALIS, "codex-cli:default"), (RATIONALIS, "")]
+
+
+def test_deepseek_choices_use_the_current_model_names():
+    values = [value for value, _ in online.CHOICES]
+    assert "deepseek:deepseek-flash" in values and "deepseek:deepseek-v4-pro" in values
+    assert not any(name in values for name in ("deepseek:deepseek-chat", "deepseek:deepseek-reasoner"))
+    assert online.choice_label("deepseek:deepseek-flash") == "DeepSeek Flash - paid API"
+
+
+def test_saving_keeps_an_export_prefix(tmp_path, monkeypatch):
+    env_file = tmp_path / ".env"
+    env_file.write_bytes(f"export {online.ENV_PREFIX}BELLATOR=grok-cli:default\nOTHER=1\n".encode())
+    monkeypatch.setenv("CONSENSUS_ONLINE_ENV_FILE", str(env_file))
+    online.save_settings({online.ENV_PREFIX + BELLATOR: "deepseek:deepseek-flash"})
+    assert env_file.read_bytes().decode() == f"export {online.ENV_PREFIX}BELLATOR=deepseek:deepseek-flash\nOTHER=1\n"
+
+
+def test_a_settings_test_keeps_its_own_small_limits(monkeypatch):
+    seen = {}
+
+    def post(url, headers, payload, timeout):
+        seen.update(tokens=payload.get("max_tokens"), timeout=timeout)
+        return _response(200, {"choices": [{"message": {"content": "READY"}, "finish_reason": "stop"}],
+                               "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+
+    monkeypatch.setenv("DEEPSEEK_API_KEY", KEY)
+    route = online.parse_route(BELLATOR, "deepseek:deepseek-flash")
+    online.complete(route, "", "x", max_tokens=16, timeout=30, post=post, small=True)
+    assert seen == {"tokens": 16, "timeout": 30}
+    online.complete(route, "", "x", max_tokens=16, timeout=30, post=post)
+    assert seen["tokens"] == online.MIN_OUTPUT_TOKENS
+    calls = []
+    monkeypatch.setattr(online, "_call_cli", lambda route, system, prompt, timeout, control=None:
+                        calls.append(timeout) or online.OnlineResult("READY", 0, 0))
+    monkeypatch.setattr("shutil.which", lambda name: f"C:/tools/{name}.exe")
+    online._which_cache.clear()
+    cli = online.parse_route(BELLATOR, "claude-cli:sonnet")
+    online.complete(cli, "", "x", timeout=30, small=True)
+    online.complete(cli, "", "x", timeout=30)
+    assert calls == [30, online.CLI_TIMEOUT_SECONDS]
+
+
+@pytest.mark.parametrize("provider, gets_stdin", [("grok-cli", False), ("claude-cli", True), ("codex-cli", True)])
+def test_only_tools_that_read_stdin_get_the_prompt_there(monkeypatch, provider, gets_stdin):
+    import subprocess
+
+    seen = {}
+
+    class FakeProcess:
+        returncode = 0
+
+        def __init__(self, command, **kwargs):
+            seen["stdin"] = kwargs.get("stdin")
+
+        def communicate(self, text=None):
+            seen["text"] = text
+            return ("answer", "")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakeProcess)
+    monkeypatch.setattr("shutil.which", lambda name: f"C:/tools/{name}.exe")
+    online._which_cache.clear()
+    monkeypatch.setattr(online, "_cli_result", lambda route, stdout, output_file: online.OnlineResult(stdout, 0, 0))
+    online._call_cli(online.parse_route(BELLATOR, f"{provider}:default"), "sys", "big prompt", 30)
+    assert (seen["stdin"] == subprocess.PIPE) is gets_stdin
+    assert (seen["text"] is not None) is gets_stdin
