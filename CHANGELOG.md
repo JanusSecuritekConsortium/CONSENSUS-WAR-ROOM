@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.21.3 - Arasaka logo gets its own box (2026-11-24)
+
+### Changed
+- The Arasaka logo now sits in its own red-framed box sized to the logo (600 px wide), like the
+  other themes; the system status and telemetry panel takes the rest of the header. Before, the
+  box frame was almost black, so the logo looked like it shared one box with the telemetry.
+  The logo text itself is unchanged. Other themes keep their frame colours.
+
 ## 9.21.2 - Undo the same-maker change from 9.21.1 (2026-11-24)
 
 ### Fixed

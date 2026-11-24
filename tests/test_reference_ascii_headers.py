@@ -48,7 +48,7 @@ def test_manual_reviewed_header_boxes_are_tight_without_asset_changes() -> None:
     assert widths["nerv"] == 185
     assert widths["wh40k"] == 185
     assert widths["helldivers"] == 380
-    assert widths["arasaka"] == 640
+    assert widths["arasaka"] == 600
 
 
 if __name__ == "__main__":

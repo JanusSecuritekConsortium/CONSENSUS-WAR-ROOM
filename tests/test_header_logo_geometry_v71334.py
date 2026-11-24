@@ -40,8 +40,10 @@ def test_logo_geometry_matches_v71334_theme_policy() -> None:
     assert diagnostics["helldivers"]["logo_region_width"] < BASELINE_71333["helldivers"]["region"][0]
     assert _min_clearance("helldivers") >= 8
 
-    assert diagnostics["arasaka"]["logo_region_width"] == BASELINE_71333["arasaka"]["region"][0]
-    assert diagnostics["arasaka"]["visible_artwork_width"] >= (BASELINE_71333["arasaka"]["art"][0] * 1.12) - 0.01
+    # 9.21.3: Arasaka logo sits in its own 600 px box (same text size); the status panel takes the rest.
+    assert diagnostics["arasaka"]["logo_region_width"] == 600.0
+    # Same text size as before; the fixed box measures with the real Consolas advance (0.55, not 0.62).
+    assert diagnostics["arasaka"]["visible_artwork_width"] >= (BASELINE_71333["arasaka"]["art"][0] * 1.12 * 0.55 / 0.62) - 0.01
     assert diagnostics["arasaka"]["visible_artwork_height"] >= (BASELINE_71333["arasaka"]["art"][1] * 1.12) - 0.01
     assert _min_clearance("arasaka") >= 8
 

@@ -29,7 +29,8 @@ THEME_HEADER_SPLITS = {
 }
 THEME_LOGO_LAYOUTS = {
     "default": {"mode": "percentage", "split": THEME_HEADER_SPLITS["default"]},
-    "arasaka": {"mode": "percentage", "split": THEME_HEADER_SPLITS["arasaka"]},
+    # Own box sized to the logo; the status panel takes the remaining width (owner, 9.21.3).
+    "arasaka": {"mode": "historical"},
     "janus": {"mode": "percentage", "split": THEME_HEADER_SPLITS["janus"]},
     "helldivers": {"mode": "supersampled_rect"},
     "eva": {"mode": "supersampled_rect"},
@@ -481,6 +482,21 @@ def _build_logo_text(logo: str, theme: Theme) -> ft.Text:
     )
 
 
+def _hex_luminance(value: str) -> float:
+    text = str(value or "").lstrip("#")
+    if len(text) != 6:
+        return 0.0
+    red, green, blue = (int(text[index : index + 2], 16) for index in (0, 2, 4))
+    return (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
+
+
+def logo_box_border_color(theme: Theme) -> str:
+    """Logo box frame: the theme's secondary colour, or its main colour when that would be invisible."""
+    if abs(_hex_luminance(theme.secondary_color) - _hex_luminance(theme.background_color)) < 0.15:
+        return theme.primary_color
+    return theme.secondary_color
+
+
 def system_status_label_color(theme: Theme) -> str:
     if theme.key == "arasaka":
         return theme.secondary_text or "#ff8a8f"
@@ -690,7 +706,7 @@ def build_header(
                     **logo_container_kwargs,
                     padding=logo_padding,
                     alignment=_alignment(logo_layout),
-                    border=ft.border.all(1, theme.secondary_color),
+                    border=ft.border.all(1, logo_box_border_color(theme)),
                     bgcolor=theme.background_color,
                     clip_behavior=ft.ClipBehavior.HARD_EDGE,
                     data={
@@ -873,9 +889,10 @@ def logo_runtime_diagnostics(theme: Theme | str, *, header_width: int = 1920) ->
     elif mode == "historical":
         region_width = float(_logo_box_width(logo, layout, cap_to_viewport=False))
         region_height = float(_logo_box_height(layout))
-        visible_width, visible_height = estimate_logo_transformed_bounds(logo, layout)
-        art_width = visible_width
-        art_height = visible_height
+        columns, rows = _visible_logo_columns_and_rows(logo)
+        # Fixed boxes are sized to the measured Consolas glyph advance, not the legacy 0.62 estimate.
+        art_width = columns * layout.logo_font_size * CONSOLAS_CHAR_ADVANCE_FACTOR * layout.logo_visual_scale
+        art_height = rows * layout.logo_font_size * layout.logo_visual_scale
         clearances = (
             (region_width - art_width) / 2,
             (region_width - art_width) / 2,

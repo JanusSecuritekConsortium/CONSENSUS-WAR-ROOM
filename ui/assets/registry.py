@@ -215,7 +215,7 @@ THEME_GRAPHIC_ASSETS: Dict[str, ThemeGraphicAsset] = {
             logo_visual_scale=1.12,
             logo_offset_x=-4,
             logo_offset_y=8,
-            logo_box_width=640,
+            logo_box_width=600,
         ),
         header_profile=LOGO_PROFILES["arasaka"],
         layout_metadata=WarRoomLayoutMetadata(header_logo_width_ratio=0.32),
