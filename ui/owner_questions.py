@@ -69,9 +69,22 @@ class GuiOwnerAsker:
 def build_question_dialog(ft: Any, questions: list, reply: Callable[[Optional[str]], None],
                           close: Callable[[Any], None]) -> Any:
     """The window's dialog: the voters' questions, one answer box, Send and Skip."""
+    from core.voting.orchestrator import MAX_OWNER_ANSWER_CHARS
+
     answer = ft.TextField(label="YOUR ANSWER (it reaches every voter)", multiline=True, min_lines=3,
-                          max_lines=8, autofocus=True)
+                          max_lines=8, autofocus=True, max_length=MAX_OWNER_ANSWER_CHARS)
     done = {"sent": False}
+
+    def send(_: Any) -> None:
+        if not str(answer.value or "").strip():
+            # An empty answer would end the reruns like SKIP; say so instead of doing it silently.
+            answer.error_text = "Type an answer, or press SKIP to end the vote with its current result."
+            try:
+                answer.update()
+            except Exception:  # not shown on a page (tests)
+                pass
+            return
+        finish(answer.value)
 
     def finish(text: Optional[str]) -> None:
         if done["sent"]:
@@ -93,7 +106,7 @@ def build_question_dialog(ft: Any, questions: list, reply: Callable[[Optional[st
         ], tight=True, width=640, spacing=10),
         actions=[
             ft.TextButton("SKIP", on_click=lambda _: finish(None)),
-            ft.FilledButton("SEND ANSWER", on_click=lambda _: finish(answer.value)),
+            ft.FilledButton("SEND ANSWER", on_click=send),
         ],
     )
     return dialog

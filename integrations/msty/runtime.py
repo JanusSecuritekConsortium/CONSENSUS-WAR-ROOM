@@ -291,9 +291,10 @@ class MstyRuntime:
             attempt: Dict[str, Any] = {"model": model, "backend": health.get("active_backend") or health.get("backend") or self.config.backend}
             if correction:
                 attempt["correction"] = True
-            if real_tribunal:
-                self._make_room_for(api_module, health, model)
             try:
+                if real_tribunal:
+                    # Inside the try: a model that cannot fit in memory moves on to a smaller same-maker backup.
+                    self._make_room_for(api_module, health, model)
                 response = api_module.send_prompt(
                     model, prompt + correction + f"\n\nExecution model: {model}. Preserve your assigned monolith instructions and parameters.",
                     system_prompt=system_prompt, config=self.config, base_url=health.get("base_url"),

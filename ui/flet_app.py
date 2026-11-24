@@ -2743,7 +2743,7 @@ def _page_handlers(page: ft.Page, state: GuiState) -> SimpleNamespace:
         state.last_proposal_record_id = ""
         state.retry_proposal = proposal.strip()
         state.retry_available = False
-        control = GenerationControl()
+        control = GenerationControl(timeout=float(state.config.generation_timeout_seconds))
         state.generation_control = control
         state.submission_message = "Proposal accepted. Tribunal starting..."
         def worker() -> None:

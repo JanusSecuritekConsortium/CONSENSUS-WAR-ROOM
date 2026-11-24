@@ -297,3 +297,32 @@ def test_a_voter_fails_openly_instead_of_answering_from_swap(monkeypatch):
     with pytest.raises(RuntimeError, match="Not enough free memory for deepseek:33b"):
         runtime.send_to_agent(RATIONALIS, "assessment", {"model": "deepseek:33b", "session_id": "n", "require_real_model": True})
     assert calls == []
+
+
+def test_a_missing_main_model_never_lets_another_makers_model_in(monkeypatch):
+    # Codex review 2026-11-24: with the main model not installed, the rule had nothing to compare against.
+    monkeypatch.setattr(api, "same_model_maker", REAL_SAME_MAKER)
+    config = RuntimeConfig(base_model="Hermes-3-Llama-3.1-8B")
+    hermes = "NousResearch/Hermes-3-Llama-3.1-8B.Q4_K_M.gguf"
+    ministral = "mistralai/Ministral-3-8B-Instruct-2512-Q4_K_M.gguf"
+    mistral_small = "unsloth/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf"
+    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, ministral], config) == [ministral]
+    assert api.real_model_candidates(BELLATOR, mistral_small, [hermes, "gemma-3-12b-it-Q3_K_L.gguf"], config) == []
+
+
+def test_a_voter_moves_to_its_smaller_backup_when_memory_is_short(monkeypatch):
+    # Codex review 2026-11-24: "not enough memory" ended the voter instead of trying the installed smaller backup.
+    import integrations.msty.runtime as runtime_module
+    provider(monkeypatch, ["big:33b", "small:8b"])
+    gb = 2**30
+    monkeypatch.setattr(api, "loaded_models", lambda base_url: [])
+    monkeypatch.setattr(api, "model_file_sizes", lambda base_url: {"big:33b": 17 * gb, "small:8b": 5 * gb})
+    monkeypatch.setattr(api, "free_memory_bytes", lambda: 12 * gb)
+    clock = iter(range(0, 100_000, 300))
+    monkeypatch.setattr(runtime_module.time, "monotonic", lambda: next(clock))
+    calls = []
+    monkeypatch.setattr(api, "send_prompt", lambda model, *a, **kw: calls.append(model) or valid_response("Fits"))
+    runtime = MstyRuntime(RuntimeConfig(base_model="small:8b", agent_model_overrides={RATIONALIS: "big:33b"}))
+    runtime._sleep = lambda seconds: None
+    response = runtime.send_to_agent(RATIONALIS, "assessment", {"model": "big:33b", "session_id": "s", "require_real_model": True})
+    assert calls == ["small:8b"] and "Fits" in response

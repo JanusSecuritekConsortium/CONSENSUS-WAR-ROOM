@@ -1,5 +1,19 @@
 # Changelog
 
+## 9.21.1 - Fixes from Codex's review: window time limit, backups, answer box (2026-11-24)
+
+Found by a read-only Codex review and checked against the code.
+
+### Fixed
+- A vote started in the desktop window gave each answer only 3 minutes; it now gets the same
+  25 minutes as other votes (`generation_timeout_seconds`), so a slow model load no longer fails it.
+- When a voter's main model is not installed, its backups are still judged against that model's
+  maker. Before, any installed model (for example ARBITER's Hermes) could stand in for it.
+- A voter whose model does not fit in memory now tries its smaller same-maker backup instead of
+  failing the turn at once.
+- The answer box refuses an empty SEND ANSWER (which used to end the reruns like SKIP) and explains
+  what to do; it shows the 4,000-character limit instead of cutting longer answers silently.
+
 ## 9.21.0 - Weekly backup of the owner's own data (2026-11-23)
 
 ### Added

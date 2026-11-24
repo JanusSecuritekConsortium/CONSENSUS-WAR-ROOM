@@ -90,3 +90,18 @@ def test_a_real_window_vote_reruns_and_asks_the_owner(monkeypatch):
     assert captured["ask_owner"] is asker
     assert captured["extra_rounds"] == 3
     assert captured["consensus_check"] is not None
+
+
+def test_an_empty_answer_is_refused_with_an_explanation():
+    replies, closed = [], []
+    dialog = build_question_dialog(ft, [{"agent": "BELLATOR", "vote": "ABSTAIN", "asks": ["Budget?"]}],
+                                   replies.append, closed.append)
+    answer_box = dialog.content.controls[2]
+    skip, send = dialog.actions
+    answer_box.value = "   "
+    send.on_click(None)
+    assert replies == [] and closed == [] and "SKIP" in answer_box.error_text
+    assert answer_box.max_length == 4000
+    answer_box.value = "Budget is 2,000 euros."
+    send.on_click(None)
+    assert replies == ["Budget is 2,000 euros."]
