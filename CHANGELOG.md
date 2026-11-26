@@ -1,5 +1,16 @@
 # Changelog
 
+## 9.22.2 - A vote no longer hangs while trimming its prompt (2026-11-27)
+
+Minor fix from the 2026-11-26 review, checked against the code first.
+
+### Fixed
+- Fitting a voter's prompt into the model's window could loop forever. A personal brief of 601-1238
+  characters was "shortened" to the same 619 characters again and again, so when the prompt still did not
+  fit, the vote hung before any model was asked. The brief now counts as shortened only when it really got
+  shorter; an oversized prompt then goes to the server, whose "context window" refusal stops the vote as
+  designed. What is trimmed, and in which order, is unchanged.
+
 ## 9.22.1 - Current DeepSeek models and small online fixes (2026-11-25)
 
 Minor fixes from the 2026-11-24 review, checked against the code first.

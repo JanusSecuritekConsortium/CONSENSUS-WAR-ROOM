@@ -43,18 +43,28 @@ def _at(context: Dict[str, Any], path: Tuple[str, ...]) -> Any:
     return value
 
 
+def _shorter(text: str) -> str:
+    return text[:max(BRIEF_FLOOR, len(text) // 2)].rstrip() + " [shortened to fit]"
+
+
 def _shorten_brief(context: Dict[str, Any]) -> bool:
+    """Shorten the personal brief once. True only if it really got shorter, so the fitting loop always ends."""
     holder = _at(context, BRIEF[:-1])
     brief = holder.get(BRIEF[-1]) if isinstance(holder, dict) else None
     if isinstance(brief, str) and len(brief) > BRIEF_FLOOR:
-        holder[BRIEF[-1]] = brief[:max(BRIEF_FLOOR, len(brief) // 2)].rstrip() + " [shortened to fit]"
-        return True
+        new = _shorter(brief)
+        if len(new) < len(brief):
+            holder[BRIEF[-1]] = new
+            return True
+        return False
     if isinstance(brief, dict):
         for key in ("summary", "text", "content", "body"):
             text = brief.get(key)
             if isinstance(text, str) and len(text) > BRIEF_FLOOR:
-                brief[key] = text[:max(BRIEF_FLOOR, len(text) // 2)].rstrip() + " [shortened to fit]"
-                return True
+                new = _shorter(text)
+                if len(new) < len(text):
+                    brief[key] = new
+                    return True
     return False
 
 

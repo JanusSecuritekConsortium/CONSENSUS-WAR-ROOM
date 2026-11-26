@@ -70,3 +70,23 @@ def test_too_long_refusal_is_named_and_stops_backups():
             api.backend_requests_post(backend, {"model": "m", "prompt": "p", "options": {}})
     finally:
         backends.requests.post = original
+
+
+@pytest.mark.parametrize("brief_kind", ["string", "dict"])
+def test_a_brief_that_cannot_shrink_further_ends_the_loop(monkeypatch, brief_kind):
+    # An 800-character brief came out at 619 characters every time, so fitting never ended and the vote hung.
+    monkeypatch.setattr(fit, "char_budget", lambda *a: 100)
+    brief = "b" * 800 if brief_kind == "string" else {"summary": "b" * 800}
+    context = {"proposal": "p" * 500, "memory_context": {"second_brain": brief}}
+    calls = []
+
+    def counting_render(ctx):
+        calls.append(1)
+        assert len(calls) < 50, "fit_prompt kept looping"
+        return str(ctx)
+
+    prompt, trimmed = fit.fit_prompt(counting_render, context, 900)
+    assert len(prompt) > 100  # still too big: the server's own refusal stops the vote
+    kept = context["memory_context"]["second_brain"]
+    text = kept if isinstance(kept, str) else kept["summary"]
+    assert text.count(" [shortened to fit]") == 1 and len(text) < 800
